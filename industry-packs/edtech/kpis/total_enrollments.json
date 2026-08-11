@@ -1,0 +1,11 @@
+{
+  "id": "total_enrollments",
+  "label": "Total Enrollments",
+  "description": "Total number of enrollments recorded.",
+  "formula_plain_english": "count(*) across all enrollments",
+  "grain": "transaction",
+  "requires": { "measures": [], "filters": [] },
+  "sql": "SELECT COUNT(*) AS total_enrollments FROM {{fact}}",
+  "unit": "count",
+  "assertions": ["total_enrollments >= 0"]
+}

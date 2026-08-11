@@ -1,0 +1,399 @@
+{
+  "$defs": {
+    "ArchiveSource": {
+      "additionalProperties": false,
+      "description": "Requires target Claude Code >= v2.1.224 \u2014 see docs/plugin-format.md.",
+      "properties": {
+        "source": {
+          "const": "archive",
+          "default": "archive",
+          "title": "Source",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-fA-F]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "url",
+        "sha256"
+      ],
+      "title": "ArchiveSource",
+      "type": "object"
+    },
+    "GitSubdirSource": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "const": "git-subdir",
+          "default": "git-subdir",
+          "title": "Source",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "path": {
+          "title": "Path",
+          "type": "string"
+        },
+        "ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ref"
+        },
+        "sha": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha"
+        }
+      },
+      "required": [
+        "url",
+        "path"
+      ],
+      "title": "GitSubdirSource",
+      "type": "object"
+    },
+    "GitUrlSource": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "const": "url",
+          "default": "url",
+          "title": "Source",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ref"
+        },
+        "sha": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha"
+        }
+      },
+      "required": [
+        "url"
+      ],
+      "title": "GitUrlSource",
+      "type": "object"
+    },
+    "GithubSource": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "const": "github",
+          "default": "github",
+          "title": "Source",
+          "type": "string"
+        },
+        "repo": {
+          "title": "Repo",
+          "type": "string"
+        },
+        "ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ref"
+        },
+        "sha": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha"
+        }
+      },
+      "required": [
+        "repo"
+      ],
+      "title": "GithubSource",
+      "type": "object"
+    },
+    "MarketplaceOwner": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "email": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Email"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "MarketplaceOwner",
+      "type": "object"
+    },
+    "MarketplacePluginEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "title": "Name",
+          "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/GithubSource"
+            },
+            {
+              "$ref": "#/$defs/GitUrlSource"
+            },
+            {
+              "$ref": "#/$defs/GitSubdirSource"
+            },
+            {
+              "$ref": "#/$defs/NpmSource"
+            },
+            {
+              "$ref": "#/$defs/ArchiveSource"
+            }
+          ],
+          "title": "Source"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        },
+        "category": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Category"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "strict": {
+          "default": true,
+          "title": "Strict",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "source"
+      ],
+      "title": "MarketplacePluginEntry",
+      "type": "object"
+    },
+    "NpmSource": {
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "const": "npm",
+          "default": "npm",
+          "title": "Source",
+          "type": "string"
+        },
+        "package": {
+          "title": "Package",
+          "type": "string"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        },
+        "registry": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Registry"
+        }
+      },
+      "required": [
+        "package"
+      ],
+      "title": "NpmSource",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "`.claude-plugin/marketplace.json`.",
+  "properties": {
+    "$schema": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "$Schema"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "owner": {
+      "$ref": "#/$defs/MarketplaceOwner"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    },
+    "version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Version"
+    },
+    "plugins": {
+      "items": {
+        "$ref": "#/$defs/MarketplacePluginEntry"
+      },
+      "title": "Plugins",
+      "type": "array"
+    }
+  },
+  "required": [
+    "name",
+    "owner",
+    "plugins"
+  ],
+  "title": "MarketplaceManifest",
+  "type": "object"
+}

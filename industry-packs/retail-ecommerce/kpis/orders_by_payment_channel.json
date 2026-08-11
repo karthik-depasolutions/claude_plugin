@@ -1,0 +1,12 @@
+{
+  "id": "orders_by_payment_channel",
+  "label": "Orders by Payment Channel",
+  "description": "Order count and revenue grouped by payment channel.",
+  "formula_plain_english": "count(*) and sum(revenue_amount) grouped by payment_channel",
+  "grain": "transaction",
+  "requires": { "measures": ["revenue_amount"], "dimensions": ["payment_channel"] },
+  "sql": "SELECT {{payment_channel}} AS payment_channel, COUNT(*) AS order_count, SUM({{revenue_amount}}) AS revenue FROM {{fact}} GROUP BY {{payment_channel}} ORDER BY revenue DESC",
+  "unit": "mixed",
+  "assertions": [],
+  "optional": true
+}

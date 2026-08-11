@@ -1,0 +1,52 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.9.x"
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install workspace
+        run: uv sync --all-packages --dev
+
+      - name: Build mcp-runtime distributable
+        run: uv build packages/mcp-runtime
+
+      - name: Build forge-core distributable
+        run: uv build packages/forge-core
+
+      - name: Generate the reference healthcare-diagnostics demo plugin
+        run: uv run forge run fixtures/datasets/bookings.csv --pack healthcare-diagnostics --out generated/release --no-llm
+
+      - name: Publish it to the marketplace catalog repo
+        env:
+          GITHUB_TOKEN: ${{ secrets.MARKETPLACE_PUBLISH_TOKEN }}
+          FORGE_MARKETPLACE_REPO: ${{ vars.FORGE_MARKETPLACE_REPO }}
+        run: |
+          git clone "https://github.com/$FORGE_MARKETPLACE_REPO" marketplace-checkout
+          uv run forge publish marketplace \
+            generated/release/healthcare-diagnostics-mis-plugin marketplace-checkout \
+            --marketplace-name mis-plugins --owner-name "MIS Plugin Forge" --push
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            packages/mcp-runtime/dist/*
+            packages/forge-core/dist/*
+          generate_release_notes: true

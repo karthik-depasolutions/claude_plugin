@@ -1,0 +1,185 @@
+{
+  "$defs": {
+    "ConnectionContract": {
+      "additionalProperties": false,
+      "description": "How the runtime should (re)connect to this data at query time.\n\nFor files, `duckdb_attach_sql` registers the file(s) as DuckDB views. For\nlive databases, `read_only` must be true and `duckdb_attach_sql` uses\nDuckDB's scanner/attach extensions. The generator never stores credentials;\n`credential_env_vars` names the environment variables the runtime resolves\nat connection time.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/SourceKind"
+        },
+        "duckdb_attach_sql": {
+          "description": "DuckDB statements (CREATE VIEW / ATTACH) that make every table queryable.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Duckdb Attach Sql",
+          "type": "array"
+        },
+        "read_only": {
+          "default": true,
+          "title": "Read Only",
+          "type": "boolean"
+        },
+        "credential_env_vars": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Credential Env Vars",
+          "type": "array"
+        },
+        "original_paths": {
+          "description": "Absolute source paths, for provenance only.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Original Paths",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "ConnectionContract",
+      "type": "object"
+    },
+    "RawColumn": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "raw_dtype": {
+          "title": "Raw Dtype",
+          "type": "string"
+        },
+        "ordinal": {
+          "title": "Ordinal",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "raw_dtype",
+        "ordinal"
+      ],
+      "title": "RawColumn",
+      "type": "object"
+    },
+    "SourceKind": {
+      "description": "Supported ingestion source kinds. Grows over time (see docs/architecture.md).",
+      "enum": [
+        "csv",
+        "tsv",
+        "excel",
+        "json",
+        "ndjson",
+        "parquet",
+        "sqlite",
+        "postgres",
+        "mysql",
+        "snowflake",
+        "bigquery"
+      ],
+      "title": "SourceKind",
+      "type": "string"
+    },
+    "TableDescriptor": {
+      "additionalProperties": false,
+      "description": "One table (or one flat file treated as a table).",
+      "properties": {
+        "name": {
+          "description": "Logical table name, unique within the DataSource.",
+          "title": "Name",
+          "type": "string"
+        },
+        "physical_ref": {
+          "description": "What DuckDB should query, e.g. a view name or path.",
+          "title": "Physical Ref",
+          "type": "string"
+        },
+        "row_count": {
+          "title": "Row Count",
+          "type": "integer"
+        },
+        "columns": {
+          "items": {
+            "$ref": "#/$defs/RawColumn"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "sample_rows": {
+          "description": "A small, capped sample for profiling only.",
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Sample Rows",
+          "type": "array"
+        },
+        "source_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Path"
+        }
+      },
+      "required": [
+        "name",
+        "physical_ref",
+        "row_count",
+        "columns"
+      ],
+      "title": "TableDescriptor",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Output of Stage 1 \u2014 INGEST. Fully self-describing, source-format-agnostic.",
+  "properties": {
+    "id": {
+      "description": "Stable id for this ingestion run, e.g. a content hash.",
+      "title": "Id",
+      "type": "string"
+    },
+    "kind": {
+      "$ref": "#/$defs/SourceKind"
+    },
+    "tables": {
+      "items": {
+        "$ref": "#/$defs/TableDescriptor"
+      },
+      "title": "Tables",
+      "type": "array"
+    },
+    "connection": {
+      "$ref": "#/$defs/ConnectionContract"
+    },
+    "total_row_count": {
+      "title": "Total Row Count",
+      "type": "integer"
+    },
+    "ingested_at": {
+      "description": "ISO-8601 timestamp.",
+      "title": "Ingested At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "kind",
+    "tables",
+    "connection",
+    "total_row_count",
+    "ingested_at"
+  ],
+  "title": "DataSource",
+  "type": "object"
+}

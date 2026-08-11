@@ -1,0 +1,166 @@
+{
+  "$defs": {
+    "ColumnBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "role": {
+          "description": "Canonical role from the industry pack, e.g. 'revenue_amount'.",
+          "title": "Role",
+          "type": "string"
+        },
+        "table_alias": {
+          "title": "Table Alias",
+          "type": "string"
+        },
+        "physical": {
+          "title": "Physical",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "evidence": {
+          "default": "",
+          "title": "Evidence",
+          "type": "string"
+        },
+        "source": {
+          "default": "deterministic",
+          "description": "'deterministic' | 'llm_proposed' | 'human_override'.",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "table_alias",
+        "physical",
+        "confidence"
+      ],
+      "title": "ColumnBinding",
+      "type": "object"
+    },
+    "TableBinding": {
+      "additionalProperties": false,
+      "properties": {
+        "alias": {
+          "description": "Canonical table alias from the industry pack, e.g. 'fact'.",
+          "title": "Alias",
+          "type": "string"
+        },
+        "physical": {
+          "description": "Real table/view name in the customer's DataSource.",
+          "title": "Physical",
+          "type": "string"
+        },
+        "grain": {
+          "default": "",
+          "title": "Grain",
+          "type": "string"
+        }
+      },
+      "required": [
+        "alias",
+        "physical"
+      ],
+      "title": "TableBinding",
+      "type": "object"
+    },
+    "ValueSetBinding": {
+      "additionalProperties": false,
+      "description": "Resolves a pack-defined logical value set (e.g. 'what counts as\ncompleted') to the customer's actual category strings.",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "values": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Values",
+          "type": "array"
+        },
+        "source": {
+          "default": "deterministic",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "values"
+      ],
+      "title": "ValueSetBinding",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The complete binding artifact for one customer + one industry pack.",
+  "properties": {
+    "pack_slug": {
+      "title": "Pack Slug",
+      "type": "string"
+    },
+    "data_source_id": {
+      "title": "Data Source Id",
+      "type": "string"
+    },
+    "tables": {
+      "items": {
+        "$ref": "#/$defs/TableBinding"
+      },
+      "title": "Tables",
+      "type": "array"
+    },
+    "columns": {
+      "items": {
+        "$ref": "#/$defs/ColumnBinding"
+      },
+      "title": "Columns",
+      "type": "array"
+    },
+    "value_sets": {
+      "items": {
+        "$ref": "#/$defs/ValueSetBinding"
+      },
+      "title": "Value Sets",
+      "type": "array"
+    },
+    "allowed_tables": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Allowed Tables",
+      "type": "array"
+    },
+    "denied_columns": {
+      "description": "Physical columns the runtime must never project.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Denied Columns",
+      "type": "array"
+    },
+    "unresolved_roles": {
+      "description": "Canonical roles no candidate column could satisfy.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Unresolved Roles",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pack_slug",
+    "data_source_id",
+    "tables",
+    "columns",
+    "allowed_tables"
+  ],
+  "title": "SchemaBindings",
+  "type": "object"
+}

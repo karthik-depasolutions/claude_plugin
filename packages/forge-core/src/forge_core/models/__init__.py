@@ -1,0 +1,128 @@
+"""Pydantic contracts shared by every stage of the generator pipeline.
+
+Import from here (`from forge_core.models import SchemaProfile`) rather than
+the submodules directly — this is the stable public surface.
+"""
+
+from forge_core.models.bindings import ColumnBinding, SchemaBindings, TableBinding, ValueSetBinding
+from forge_core.models.common import (
+    CheckStatus,
+    ColumnRole,
+    RunStage,
+    RunStatus,
+    Severity,
+    SourceKind,
+)
+from forge_core.models.datasource import (
+    ConnectionContract,
+    DataSource,
+    RawColumn,
+    TableDescriptor,
+)
+from forge_core.models.industry_pack import (
+    CanonicalKpi,
+    ClassificationResult,
+    Guardrails,
+    IndustryMatch,
+    IndustryPack,
+    PackSignature,
+    RequiredRoles,
+    TemplateRef,
+    VocabularyEntry,
+)
+from forge_core.models.kpi import CompiledKpi, KpiDefsFile
+from forge_core.models.plugin_spec import (
+    AgentFrontmatter,
+    Author,
+    CommandFrontmatter,
+    GeneratedFile,
+    HookHandler,
+    HookMatcherGroup,
+    HooksFile,
+    MarketplaceManifest,
+    MarketplaceOwner,
+    MarketplacePluginEntry,
+    McpConfig,
+    McpRemoteServer,
+    McpStdioServer,
+    PluginManifest,
+    PluginSpec,
+    SkillFrontmatter,
+)
+from forge_core.models.run import RunRecord, StageEvent
+from forge_core.models.schema_profile import (
+    CandidateInsight,
+    ColumnProfile,
+    ColumnSemantic,
+    DataQualityFlag,
+    RelationshipCandidate,
+    SchemaProfile,
+    SemanticProfile,
+    StructuralProfile,
+    TableGrain,
+)
+from forge_core.models.validation import (
+    CHECK_NAMES,
+    ValidationCheckResult,
+    ValidationIssue,
+    ValidationReport,
+)
+
+__all__ = [
+    "CHECK_NAMES",
+    "AgentFrontmatter",
+    "Author",
+    "CandidateInsight",
+    "CanonicalKpi",
+    "CheckStatus",
+    "ClassificationResult",
+    "ColumnBinding",
+    "ColumnProfile",
+    "ColumnRole",
+    "ColumnSemantic",
+    "CommandFrontmatter",
+    "CompiledKpi",
+    "ConnectionContract",
+    "DataQualityFlag",
+    "DataSource",
+    "GeneratedFile",
+    "Guardrails",
+    "HookHandler",
+    "HookMatcherGroup",
+    "HooksFile",
+    "IndustryMatch",
+    "IndustryPack",
+    "KpiDefsFile",
+    "MarketplaceManifest",
+    "MarketplaceOwner",
+    "MarketplacePluginEntry",
+    "McpConfig",
+    "McpRemoteServer",
+    "McpStdioServer",
+    "PackSignature",
+    "PluginManifest",
+    "PluginSpec",
+    "RawColumn",
+    "RelationshipCandidate",
+    "RequiredRoles",
+    "RunRecord",
+    "RunStage",
+    "RunStatus",
+    "SchemaBindings",
+    "SchemaProfile",
+    "SemanticProfile",
+    "Severity",
+    "SkillFrontmatter",
+    "SourceKind",
+    "StageEvent",
+    "StructuralProfile",
+    "TableBinding",
+    "TableDescriptor",
+    "TableGrain",
+    "TemplateRef",
+    "ValidationCheckResult",
+    "ValidationIssue",
+    "ValidationReport",
+    "ValueSetBinding",
+    "VocabularyEntry",
+]

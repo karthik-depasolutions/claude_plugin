@@ -1,0 +1,61 @@
+{
+  "industry": "healthcare_diagnostics",
+  "name": "Healthcare MIS / Diagnostics Booking Pack",
+  "description": "Industry context for diagnostic lab booking MIS data — orders, customers, households, lab partners, and health packages.",
+  "vocabulary": {
+    "booking": "An order or transaction for a diagnostic test or health package",
+    "customer": "Person who booked a test; identified by customer_id",
+    "household": "Group of related customers sharing household_id (family/household bookings)",
+    "lab_partner": "External lab vendor that fulfilled the booking",
+    "package": "Product or service booked (e.g. Full Body Checkup, Diabetes Panel)",
+    "package_category": "General vs Specialty classification of packages",
+    "payment_status": "Paid or Pending — whether payment was collected",
+    "status": "Booking lifecycle: Completed or Cancelled",
+    "is_repeat_customer": "Yes/No flag indicating a returning customer booking"
+  },
+  "kpis": [
+    {
+      "name": "total_revenue",
+      "label": "Total Revenue",
+      "formula": "sum(amount_inr) where status = 'Completed'",
+      "columns": ["amount_inr", "status"],
+      "unit": "INR"
+    },
+    {
+      "name": "repeat_customer_rate",
+      "label": "Repeat Customer Rate",
+      "formula": "percentage of bookings where is_repeat_customer = 'Yes'",
+      "columns": ["is_repeat_customer"],
+      "unit": "percent"
+    },
+    {
+      "name": "cancellation_rate",
+      "label": "Cancellation Rate",
+      "formula": "percentage of bookings where status = 'Cancelled'",
+      "columns": ["status"],
+      "unit": "percent"
+    },
+    {
+      "name": "monthly_revenue_trend",
+      "label": "Monthly Revenue Trend",
+      "formula": "sum(amount_inr) grouped by month(booking_date) where status = 'Completed'",
+      "columns": ["amount_inr", "booking_date", "status"],
+      "unit": "INR"
+    },
+    {
+      "name": "bookings_by_city",
+      "label": "Bookings by City",
+      "formula": "count(booking_id) and sum(amount_inr) grouped by city",
+      "columns": ["booking_id", "amount_inr", "city"],
+      "unit": "mixed"
+    }
+  ],
+  "guardrails": [
+    "Never expose phone or customer_name in aggregate outputs or dashboards",
+    "All data access must be read-only — no INSERT, UPDATE, DELETE, or DDL",
+    "Only reference columns that exist in the dataset schema",
+    "Prefer named KPI tools over ad-hoc SQL when a standard KPI applies",
+    "Limit ad-hoc query results to 200 rows maximum"
+  ],
+  "table_name": "bookings"
+}

@@ -1,0 +1,12 @@
+{
+  "id": "return_rate",
+  "label": "Return Rate",
+  "description": "Percentage of orders that were returned.",
+  "formula_plain_english": "percentage of orders where transaction_status is a returned value",
+  "grain": "transaction",
+  "requires": { "measures": [], "filters": ["transaction_status"] },
+  "sql": "SELECT ROUND(100.0 * SUM(CASE WHEN {{transaction_status}} IN {{returned_values}} THEN 1 ELSE 0 END) / COUNT(*), 2) AS return_percent, COUNT(*) AS total_orders FROM {{fact}}",
+  "unit": "percent",
+  "assertions": ["return_percent >= 0", "return_percent <= 100"],
+  "optional": true
+}

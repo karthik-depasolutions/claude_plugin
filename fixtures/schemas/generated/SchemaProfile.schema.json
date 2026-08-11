@@ -1,0 +1,612 @@
+{
+  "$defs": {
+    "CandidateInsight": {
+      "additionalProperties": false,
+      "properties": {
+        "insight": {
+          "title": "Insight",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "tables": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tables",
+          "type": "array"
+        },
+        "columns": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "suggested_kpi_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Suggested Kpi Name"
+        }
+      },
+      "required": [
+        "insight",
+        "confidence"
+      ],
+      "title": "CandidateInsight",
+      "type": "object"
+    },
+    "ColumnProfile": {
+      "additionalProperties": false,
+      "properties": {
+        "table": {
+          "title": "Table",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "dtype": {
+          "title": "Dtype",
+          "type": "string"
+        },
+        "null_percent": {
+          "title": "Null Percent",
+          "type": "number"
+        },
+        "cardinality": {
+          "title": "Cardinality",
+          "type": "integer"
+        },
+        "distinct_ratio": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Distinct Ratio",
+          "type": "number"
+        },
+        "guessed_role": {
+          "$ref": "#/$defs/ColumnRole"
+        },
+        "min_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min Value"
+        },
+        "max_value": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Value"
+        },
+        "sample_values": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Sample Values",
+          "type": "array"
+        },
+        "is_likely_identifier": {
+          "default": false,
+          "title": "Is Likely Identifier",
+          "type": "boolean"
+        },
+        "is_likely_pii": {
+          "default": false,
+          "title": "Is Likely Pii",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "table",
+        "name",
+        "dtype",
+        "null_percent",
+        "cardinality",
+        "distinct_ratio",
+        "guessed_role"
+      ],
+      "title": "ColumnProfile",
+      "type": "object"
+    },
+    "ColumnRole": {
+      "description": "Deterministic structural role guess for a column. Independent of any industry pack.",
+      "enum": [
+        "identifier",
+        "foreign_key",
+        "date",
+        "datetime",
+        "currency",
+        "numeric",
+        "boolean_flag",
+        "categorical",
+        "free_text",
+        "geographic",
+        "email",
+        "phone",
+        "unknown"
+      ],
+      "title": "ColumnRole",
+      "type": "string"
+    },
+    "ColumnSemantic": {
+      "additionalProperties": false,
+      "properties": {
+        "table": {
+          "title": "Table",
+          "type": "string"
+        },
+        "column": {
+          "title": "Column",
+          "type": "string"
+        },
+        "proposed_meaning": {
+          "title": "Proposed Meaning",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "table",
+        "column",
+        "proposed_meaning",
+        "confidence"
+      ],
+      "title": "ColumnSemantic",
+      "type": "object"
+    },
+    "ConnectionContract": {
+      "additionalProperties": false,
+      "description": "How the runtime should (re)connect to this data at query time.\n\nFor files, `duckdb_attach_sql` registers the file(s) as DuckDB views. For\nlive databases, `read_only` must be true and `duckdb_attach_sql` uses\nDuckDB's scanner/attach extensions. The generator never stores credentials;\n`credential_env_vars` names the environment variables the runtime resolves\nat connection time.",
+      "properties": {
+        "kind": {
+          "$ref": "#/$defs/SourceKind"
+        },
+        "duckdb_attach_sql": {
+          "description": "DuckDB statements (CREATE VIEW / ATTACH) that make every table queryable.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Duckdb Attach Sql",
+          "type": "array"
+        },
+        "read_only": {
+          "default": true,
+          "title": "Read Only",
+          "type": "boolean"
+        },
+        "credential_env_vars": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Credential Env Vars",
+          "type": "array"
+        },
+        "original_paths": {
+          "description": "Absolute source paths, for provenance only.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Original Paths",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "title": "ConnectionContract",
+      "type": "object"
+    },
+    "DataQualityFlag": {
+      "additionalProperties": false,
+      "properties": {
+        "issue": {
+          "title": "Issue",
+          "type": "string"
+        },
+        "severity": {
+          "title": "Severity",
+          "type": "string"
+        },
+        "tables": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tables",
+          "type": "array"
+        },
+        "columns": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Columns",
+          "type": "array"
+        }
+      },
+      "required": [
+        "issue",
+        "severity"
+      ],
+      "title": "DataQualityFlag",
+      "type": "object"
+    },
+    "DataSource": {
+      "additionalProperties": false,
+      "description": "Output of Stage 1 \u2014 INGEST. Fully self-describing, source-format-agnostic.",
+      "properties": {
+        "id": {
+          "description": "Stable id for this ingestion run, e.g. a content hash.",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/SourceKind"
+        },
+        "tables": {
+          "items": {
+            "$ref": "#/$defs/TableDescriptor"
+          },
+          "title": "Tables",
+          "type": "array"
+        },
+        "connection": {
+          "$ref": "#/$defs/ConnectionContract"
+        },
+        "total_row_count": {
+          "title": "Total Row Count",
+          "type": "integer"
+        },
+        "ingested_at": {
+          "description": "ISO-8601 timestamp.",
+          "title": "Ingested At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "tables",
+        "connection",
+        "total_row_count",
+        "ingested_at"
+      ],
+      "title": "DataSource",
+      "type": "object"
+    },
+    "RawColumn": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "raw_dtype": {
+          "title": "Raw Dtype",
+          "type": "string"
+        },
+        "ordinal": {
+          "title": "Ordinal",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "raw_dtype",
+        "ordinal"
+      ],
+      "title": "RawColumn",
+      "type": "object"
+    },
+    "RelationshipCandidate": {
+      "additionalProperties": false,
+      "description": "A candidate join / foreign-key relationship, deterministically inferred\nfrom name similarity and value-overlap sampling \u2014 never invented by an LLM.",
+      "properties": {
+        "from_table": {
+          "title": "From Table",
+          "type": "string"
+        },
+        "from_column": {
+          "title": "From Column",
+          "type": "string"
+        },
+        "to_table": {
+          "title": "To Table",
+          "type": "string"
+        },
+        "to_column": {
+          "title": "To Column",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "evidence": {
+          "title": "Evidence",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from_table",
+        "from_column",
+        "to_table",
+        "to_column",
+        "confidence",
+        "evidence"
+      ],
+      "title": "RelationshipCandidate",
+      "type": "object"
+    },
+    "SemanticProfile": {
+      "additionalProperties": false,
+      "description": "Layer 2 \u2014 LLM-proposed. Every field here is a *claim*, not a fact.",
+      "properties": {
+        "column_semantics": {
+          "items": {
+            "$ref": "#/$defs/ColumnSemantic"
+          },
+          "title": "Column Semantics",
+          "type": "array"
+        },
+        "candidate_insights": {
+          "items": {
+            "$ref": "#/$defs/CandidateInsight"
+          },
+          "title": "Candidate Insights",
+          "type": "array"
+        },
+        "data_quality_flags": {
+          "items": {
+            "$ref": "#/$defs/DataQualityFlag"
+          },
+          "title": "Data Quality Flags",
+          "type": "array"
+        },
+        "likely_central_entities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Likely Central Entities",
+          "type": "array"
+        },
+        "model_used": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Model Used"
+        },
+        "raw_response": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Unmodified LLM JSON, kept for audit/debugging.",
+          "title": "Raw Response"
+        }
+      },
+      "title": "SemanticProfile",
+      "type": "object"
+    },
+    "SourceKind": {
+      "description": "Supported ingestion source kinds. Grows over time (see docs/architecture.md).",
+      "enum": [
+        "csv",
+        "tsv",
+        "excel",
+        "json",
+        "ndjson",
+        "parquet",
+        "sqlite",
+        "postgres",
+        "mysql",
+        "snowflake",
+        "bigquery"
+      ],
+      "title": "SourceKind",
+      "type": "string"
+    },
+    "StructuralProfile": {
+      "additionalProperties": false,
+      "description": "Layer 1 \u2014 deterministic. Must never depend on an LLM call.",
+      "properties": {
+        "columns": {
+          "items": {
+            "$ref": "#/$defs/ColumnProfile"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "relationships": {
+          "items": {
+            "$ref": "#/$defs/RelationshipCandidate"
+          },
+          "title": "Relationships",
+          "type": "array"
+        },
+        "grains": {
+          "items": {
+            "$ref": "#/$defs/TableGrain"
+          },
+          "title": "Grains",
+          "type": "array"
+        }
+      },
+      "required": [
+        "columns"
+      ],
+      "title": "StructuralProfile",
+      "type": "object"
+    },
+    "TableDescriptor": {
+      "additionalProperties": false,
+      "description": "One table (or one flat file treated as a table).",
+      "properties": {
+        "name": {
+          "description": "Logical table name, unique within the DataSource.",
+          "title": "Name",
+          "type": "string"
+        },
+        "physical_ref": {
+          "description": "What DuckDB should query, e.g. a view name or path.",
+          "title": "Physical Ref",
+          "type": "string"
+        },
+        "row_count": {
+          "title": "Row Count",
+          "type": "integer"
+        },
+        "columns": {
+          "items": {
+            "$ref": "#/$defs/RawColumn"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "sample_rows": {
+          "description": "A small, capped sample for profiling only.",
+          "items": {
+            "additionalProperties": true,
+            "type": "object"
+          },
+          "title": "Sample Rows",
+          "type": "array"
+        },
+        "source_path": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Path"
+        }
+      },
+      "required": [
+        "name",
+        "physical_ref",
+        "row_count",
+        "columns"
+      ],
+      "title": "TableDescriptor",
+      "type": "object"
+    },
+    "TableGrain": {
+      "additionalProperties": false,
+      "properties": {
+        "table": {
+          "title": "Table",
+          "type": "string"
+        },
+        "grain_columns": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Grain Columns",
+          "type": "array"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        }
+      },
+      "required": [
+        "table",
+        "grain_columns",
+        "description",
+        "confidence"
+      ],
+      "title": "TableGrain",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The complete Stage 2 output. This is the ground truth every later\nstage (classification, binding, generation, validation) checks against.",
+  "properties": {
+    "data_source_id": {
+      "title": "Data Source Id",
+      "type": "string"
+    },
+    "structural": {
+      "$ref": "#/$defs/StructuralProfile"
+    },
+    "semantic": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/SemanticProfile"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "source": {
+      "$ref": "#/$defs/DataSource"
+    }
+  },
+  "required": [
+    "data_source_id",
+    "structural",
+    "source"
+  ],
+  "title": "SchemaProfile",
+  "type": "object"
+}

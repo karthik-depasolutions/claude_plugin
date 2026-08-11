@@ -1,0 +1,111 @@
+{
+  "tools": [
+    {
+      "name": "describe_schema",
+      "type": "builtin",
+      "description": "Provides details about the database schema, including table names, column names, their data types, and brief descriptions. Use this to understand the available data before formulating queries or KPI requests."
+    },
+    {
+      "name": "run_safe_query",
+      "type": "builtin",
+      "description": "Executes a read-only SQL query against the database. This tool is suitable for retrieving specific data, filtering records, or performing custom aggregations not covered by predefined KPIs. Ensure the query is valid SQL and adheres to safety constraints.",
+      "parameters": [
+        {
+          "name": "sql",
+          "type": "string",
+          "description": "The SQL query string to execute. Must be a SELECT statement."
+        }
+      ],
+      "constraints": [
+        "SELECT only",
+        "max 200 rows"
+      ]
+    },
+    {
+      "name": "get_kpi",
+      "type": "kpi_router",
+      "description": "Retrieves pre-defined Key Performance Indicators (KPIs) related to diagnostic lab bookings. Use this tool to quickly get insights on common business metrics without writing custom SQL.",
+      "parameters": [
+        {
+          "name": "kpi_name",
+          "type": "string",
+          "description": "The name of the KPI to retrieve."
+        }
+      ],
+      "kpis": [
+        {
+          "name": "total_revenue",
+          "label": "Total Revenue",
+          "formula": "sum(amount_inr) where status = 'Completed'",
+          "columns": [
+            "amount_inr",
+            "status"
+          ],
+          "computation_hint": "df[df['status'] == 'Completed']['amount_inr'].sum()"
+        },
+        {
+          "name": "repeat_customer_rate",
+          "label": "Repeat Customer Rate",
+          "formula": "percentage of bookings where is_repeat_customer = 'Yes'",
+          "columns": [
+            "is_repeat_customer"
+          ],
+          "computation_hint": "(df[df['is_repeat_customer'] == 'Yes'].shape[0] / df.shape[0]) * 100"
+        },
+        {
+          "name": "cancellation_rate",
+          "label": "Cancellation Rate",
+          "formula": "percentage of bookings where status = 'Cancelled'",
+          "columns": [
+            "status"
+          ],
+          "computation_hint": "(df[df['status'] == 'Cancelled'].shape[0] / df.shape[0]) * 100"
+        },
+        {
+          "name": "monthly_revenue_trend",
+          "label": "Monthly Revenue Trend",
+          "formula": "sum(amount_inr) grouped by month(booking_date) where status = 'Completed'",
+          "columns": [
+            "amount_inr",
+            "booking_date",
+            "status"
+          ],
+          "computation_hint": "df['booking_date'] = pd.to_datetime(df['booking_date']); df[df['status'] == 'Completed'].groupby(df['booking_date'].dt.to_period('M'))['amount_inr'].sum()"
+        },
+        {
+          "name": "bookings_by_city",
+          "label": "Bookings by City",
+          "formula": "count(booking_id) and sum(amount_inr) grouped by city",
+          "columns": [
+            "booking_id",
+            "amount_inr",
+            "city"
+          ],
+          "computation_hint": "df.groupby('city').agg(total_bookings=('booking_id', 'count'), total_revenue=('amount_inr', 'sum'))"
+        },
+        {
+          "name": "number_of_repeat_customers",
+          "label": "Number of Repeat Customers",
+          "formula": "count(distinct customer_id) where is_repeat_customer = 'Yes'",
+          "columns": [
+            "customer_id",
+            "is_repeat_customer"
+          ],
+          "computation_hint": "df[df['is_repeat_customer'] == 'Yes']['customer_id'].nunique()"
+        },
+        {
+          "name": "revenue_by_lab_partner_and_package",
+          "label": "Revenue by Lab Partner and Package",
+          "formula": "sum(amount_inr) grouped by lab_partner and package_name where status = 'Completed'",
+          "columns": [
+            "lab_partner",
+            "package_name",
+            "amount_inr",
+            "status"
+          ],
+          "computation_hint": "df[df['status'] == 'Completed'].groupby(['lab_partner', 'package_name'])['amount_inr'].sum()"
+        }
+      ]
+    }
+  ]
+}

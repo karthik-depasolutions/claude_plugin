@@ -1,0 +1,11 @@
+{
+  "id": "completion_rate",
+  "label": "Completion Rate",
+  "description": "Percentage of enrollments that are active or completed.",
+  "formula_plain_english": "percentage of enrollments where transaction_status is a completed value",
+  "grain": "transaction",
+  "requires": { "measures": [], "filters": ["transaction_status"] },
+  "sql": "SELECT ROUND(100.0 * SUM(CASE WHEN {{transaction_status}} IN {{completed_values}} THEN 1 ELSE 0 END) / COUNT(*), 2) AS completion_percent, COUNT(*) AS total_enrollments FROM {{fact}}",
+  "unit": "percent",
+  "assertions": ["completion_percent >= 0", "completion_percent <= 100"]
+}

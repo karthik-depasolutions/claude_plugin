@@ -1,0 +1,11 @@
+customer_id,full_name,email_address,signup_date,city,loyalty_tier
+C001,Ananya Rao,ananya.rao@example.com,2024-01-12,Bengaluru,Gold
+C002,Rohit Mehta,rohit.mehta@example.com,2024-02-03,Mumbai,Silver
+C003,Priya Nair,priya.nair@example.com,2024-02-20,Chennai,Silver
+C004,Karan Shah,karan.shah@example.com,2024-03-05,Delhi,Bronze
+C005,Divya Iyer,divya.iyer@example.com,2024-03-18,Bengaluru,Gold
+C006,Arjun Verma,arjun.verma@example.com,2024-04-02,Pune,Bronze
+C007,Sneha Kapoor,sneha.kapoor@example.com,2024-04-22,Mumbai,Silver
+C008,Vikram Singh,vikram.singh@example.com,2024-05-10,Hyderabad,Bronze
+C009,Meera Joshi,meera.joshi@example.com,2024-05-28,Chennai,Gold
+C010,Aditya Kumar,aditya.kumar@example.com,2024-06-14,Delhi,Silver

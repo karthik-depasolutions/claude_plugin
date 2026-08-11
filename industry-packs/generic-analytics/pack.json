@@ -1,0 +1,44 @@
+{
+  "slug": "generic-analytics",
+  "name": "Generic Analytics Pack",
+  "version": "1.0.0",
+  "description": "Industry-agnostic fallback pack for tabular data that doesn't clearly match a specialized industry pack. Deliberately low-confidence by design — see forge_core.classification.matcher — so it never outranks a genuine industry match, but always provides a usable baseline.",
+  "vocabulary": [
+    { "term": "record", "definition": "One row in the primary table being analyzed" }
+  ],
+  "canonical_roles": {
+    "measure_amount": "a primary numeric measure worth aggregating",
+    "category_dim": "a primary categorical dimension worth grouping by",
+    "date_dim": "a primary date dimension worth trending by",
+    "record_ref": "a record identifier"
+  },
+  "table_aliases": {
+    "fact": "the primary table being analyzed"
+  },
+  "value_set_hints": {},
+  "guardrails": {
+    "denied_role_categories": ["free_text", "email", "phone"],
+    "require_read_only": true,
+    "max_query_rows": 200,
+    "query_timeout_seconds": 10,
+    "notes": [
+      "No industry-specific vocabulary is assumed — treat all categorical values literally",
+      "All data access must be read-only"
+    ]
+  },
+  "signature": {
+    "entity_name_hints": [],
+    "column_name_hints": [],
+    "required_role_categories": ["numeric"],
+    "table_count_range": [1, 100]
+  },
+  "skill_templates": [
+    { "id": "general-analyst", "template_path": "skills/general-analyst.md.j2", "requires_roles": [], "description": "General-purpose tabular data analysis" }
+  ],
+  "agent_templates": [
+    { "id": "data-analyst", "template_path": "agents/data-analyst.md.j2", "requires_roles": [], "description": "General-purpose data analysis agent" }
+  ],
+  "recipe_templates": [
+    { "id": "overview-report", "template_path": "recipes/overview-report.md.j2", "requires_roles": [], "description": "Generic data overview report recipe" }
+  ]
+}

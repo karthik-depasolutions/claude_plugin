@@ -1,0 +1,11 @@
+{
+  "id": "cancellation_rate",
+  "label": "Order Cancellation Rate",
+  "description": "Percentage of orders that were cancelled.",
+  "formula_plain_english": "percentage of orders where transaction_status is a cancelled value",
+  "grain": "transaction",
+  "requires": { "measures": [], "filters": ["transaction_status"] },
+  "sql": "SELECT ROUND(100.0 * SUM(CASE WHEN {{transaction_status}} IN {{cancelled_values}} THEN 1 ELSE 0 END) / COUNT(*), 2) AS cancellation_percent, COUNT(*) AS total_orders FROM {{fact}}",
+  "unit": "percent",
+  "assertions": ["cancellation_percent >= 0", "cancellation_percent <= 100"]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "average_order_value",
+  "label": "Average Order Value",
+  "description": "Average revenue per completed order.",
+  "formula_plain_english": "avg(revenue_amount) where transaction_status is a completed value",
+  "grain": "transaction",
+  "requires": { "measures": ["revenue_amount"], "filters": ["transaction_status"] },
+  "sql": "SELECT ROUND(AVG({{revenue_amount}}), 2) AS average_order_value, COUNT(*) AS completed_orders FROM {{fact}} WHERE {{transaction_status}} IN {{completed_values}}",
+  "unit": "currency",
+  "assertions": ["average_order_value >= 0"]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "revenue_by_location",
+  "label": "Revenue by Location",
+  "description": "Order count and revenue grouped by shipping location.",
+  "formula_plain_english": "count(*) and sum(revenue_amount) grouped by location",
+  "grain": "transaction",
+  "requires": { "measures": ["revenue_amount"], "dimensions": ["location"] },
+  "sql": "SELECT {{location}} AS location, COUNT(*) AS order_count, SUM({{revenue_amount}}) AS revenue FROM {{fact}} GROUP BY {{location}} ORDER BY revenue DESC",
+  "unit": "mixed",
+  "assertions": [],
+  "optional": true
+}

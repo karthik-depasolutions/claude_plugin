@@ -1,0 +1,6 @@
+{
+  "method": "generate_text",
+  "system": null,
+  "prompt": "Write exactly one short paragraph (2-3 sentences, plain prose, no markdown headers) that tells an AI assistant when to use a skill for analyzing Healthcare MIS / Diagnostics Booking Pack business data. Industry description: Industry context for diagnostic lab booking MIS data \u2014 bookings, customers, households, lab partners, and health packages.\nDo not invent specific numbers, company names, or KPI values.",
+  "response": "The AI assistant should utilize its analytical skill when presented with business data from diagnostic lab booking operations, encompassing details on bookings, customer demographics, household booking patterns, lab partner performance, or health package utilization. This capability is essential for identifying operational trends, optimizing service delivery, and understanding market dynamics within the healthcare diagnostics booking ecosystem."
+}

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "curelo-bookings": {
+      "command": "C:\\Python313\\python.EXE",
+      "args": [
+        "D:\\claude-plugin-poc\\curelo-bookings-poc\\mcp_server\\server.py"
+      ],
+      "env": {
+        "BOOKINGS_CSV": "D:\\claude-plugin-poc\\curelo-bookings-poc\\data\\sample_bookings_mis.csv"
+      }
+    }
+  }
+}

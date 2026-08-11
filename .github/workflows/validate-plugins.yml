@@ -1,0 +1,66 @@
+name: validate-plugins
+
+# Validates every industry pack, the plugin template skeleton, the marketplace
+# catalog, and any example generated plugins committed under generated/examples/.
+# This is the CI-side enforcement of the same 8-check harness the generator
+# runs locally (forge_core.validation.harness), plus the real `claude plugin
+# validate` CLI so drift in the Claude plugin spec is caught before it reaches
+# a customer.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "industry-packs/**"
+      - "plugin-templates/**"
+      - "marketplace/**"
+      - "packages/forge-core/**"
+  pull_request:
+    paths:
+      - "industry-packs/**"
+      - "plugin-templates/**"
+      - "marketplace/**"
+      - "packages/forge-core/**"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          version: "0.9.x"
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install workspace
+        run: uv sync --all-packages --dev
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Validate industry packs (loads every pack.json + kpis/*.json against the pydantic models)
+        run: uv run forge packs validate industry-packs/
+
+      - name: Validate marketplace catalog
+        run: |
+          if [ -f marketplace/.claude-plugin/marketplace.json ]; then
+            claude plugin validate marketplace/ --strict
+          else
+            echo "No marketplace catalog yet — skipping."
+          fi
+
+      - name: Validate golden fixture plugins
+        run: |
+          claude plugin validate fixtures/golden/_spec-test/plugins/curelo-bookings-poc --strict
+          claude plugin validate fixtures/golden/curelo-bookings --strict
+
+      - name: Run generator against fixture datasets and validate output (the genericity acceptance test)
+        run: |
+          uv run forge run fixtures/datasets/bookings.csv --pack healthcare-diagnostics --out generated/ci/bookings --no-llm
+          claude plugin validate generated/ci/bookings/healthcare-diagnostics-mis-plugin --strict
+          uv run forge run fixtures/datasets/retail_orders --pack retail-ecommerce --out generated/ci/retail --no-llm
+          claude plugin validate generated/ci/retail/retail-ecommerce-mis-plugin --strict

@@ -1,0 +1,11 @@
+{
+  "id": "repeat_customer_rate",
+  "label": "Repeat Customer Rate",
+  "description": "Percentage of bookings made by a returning customer.",
+  "formula_plain_english": "percentage of bookings where repeat_flag indicates a repeat customer",
+  "grain": "transaction",
+  "requires": { "measures": [], "filters": ["repeat_flag"] },
+  "sql": "SELECT ROUND(100.0 * SUM(CASE WHEN {{repeat_flag}} IN {{repeat_values}} THEN 1 ELSE 0 END) / COUNT(*), 2) AS repeat_percent, SUM(CASE WHEN {{repeat_flag}} IN {{repeat_values}} THEN 1 ELSE 0 END) AS repeat_bookings, COUNT(*) AS total_bookings FROM {{fact}}",
+  "unit": "percent",
+  "assertions": ["repeat_percent >= 0", "repeat_percent <= 100"]
+}

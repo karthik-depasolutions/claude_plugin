@@ -1,0 +1,11 @@
+{
+  "id": "total_records",
+  "label": "Total Records",
+  "description": "Total number of rows in the primary table.",
+  "formula_plain_english": "count(*)",
+  "grain": "record",
+  "requires": { "measures": [], "filters": [] },
+  "sql": "SELECT COUNT(*) AS total_records FROM {{fact}}",
+  "unit": "count",
+  "assertions": ["total_records >= 0"]
+}

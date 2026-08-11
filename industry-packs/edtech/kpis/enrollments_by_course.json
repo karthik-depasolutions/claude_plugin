@@ -1,0 +1,12 @@
+{
+  "id": "enrollments_by_course",
+  "label": "Enrollments by Course",
+  "description": "Enrollment count grouped by course.",
+  "formula_plain_english": "count(*) grouped by course_ref",
+  "grain": "transaction",
+  "requires": { "measures": [], "dimensions": ["course_ref"] },
+  "sql": "SELECT {{course_ref}} AS course, COUNT(*) AS enrollment_count FROM {{fact}} GROUP BY {{course_ref}} ORDER BY enrollment_count DESC",
+  "unit": "count",
+  "assertions": [],
+  "optional": true
+}

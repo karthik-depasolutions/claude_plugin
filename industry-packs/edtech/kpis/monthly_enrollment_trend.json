@@ -1,0 +1,11 @@
+{
+  "id": "monthly_enrollment_trend",
+  "label": "Monthly Enrollment Trend",
+  "description": "Enrollment count grouped by month.",
+  "formula_plain_english": "count(*) grouped by month(transaction_date)",
+  "grain": "transaction",
+  "requires": { "measures": [], "dimensions": ["transaction_date"] },
+  "sql": "SELECT STRFTIME(CAST({{transaction_date}} AS TIMESTAMP), '%Y-%m') AS month, COUNT(*) AS enrollment_count FROM {{fact}} GROUP BY month ORDER BY month",
+  "unit": "count",
+  "assertions": []
+}

@@ -1,0 +1,347 @@
+{
+  "$defs": {
+    "CanonicalKpi": {
+      "additionalProperties": false,
+      "description": "A KPI defined once, in canonical-role terms, industry-wide.\n\n`sql` is a Jinja-style template over canonical role names and the\nindustry-wide table aliases declared in `IndustryPack.table_aliases`\n(e.g. `{{fact}}`, `{{revenue_amount}}`, `{{completed_values}}`). It is\nnever executed directly \u2014 `forge_core.compiler.kpi_compiler` renders it\nagainst a customer's `SchemaBindings` into concrete, validated SQL.",
+      "properties": {
+        "id": {
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "formula_plain_english": {
+          "title": "Formula Plain English",
+          "type": "string"
+        },
+        "grain": {
+          "title": "Grain",
+          "type": "string"
+        },
+        "requires": {
+          "$ref": "#/$defs/RequiredRoles"
+        },
+        "sql": {
+          "title": "Sql",
+          "type": "string"
+        },
+        "unit": {
+          "default": "count",
+          "title": "Unit",
+          "type": "string"
+        },
+        "assertions": {
+          "description": "Python expressions over the KPI's own result columns, evaluated during the dry-run validation check, e.g. 'total_revenue >= 0'.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Assertions",
+          "type": "array"
+        },
+        "optional": {
+          "default": false,
+          "description": "If true, absence of required roles is a warn, not a fail.",
+          "title": "Optional",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "description",
+        "formula_plain_english",
+        "grain",
+        "requires",
+        "sql"
+      ],
+      "title": "CanonicalKpi",
+      "type": "object"
+    },
+    "Guardrails": {
+      "additionalProperties": false,
+      "properties": {
+        "denied_role_categories": {
+          "description": "Canonical role categories that must never appear in a KPI projection, artifact, or generated example (e.g. name, phone, email).",
+          "items": {
+            "type": "string"
+          },
+          "title": "Denied Role Categories",
+          "type": "array"
+        },
+        "require_read_only": {
+          "default": true,
+          "title": "Require Read Only",
+          "type": "boolean"
+        },
+        "max_query_rows": {
+          "default": 200,
+          "title": "Max Query Rows",
+          "type": "integer"
+        },
+        "query_timeout_seconds": {
+          "default": 10,
+          "title": "Query Timeout Seconds",
+          "type": "integer"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        }
+      },
+      "title": "Guardrails",
+      "type": "object"
+    },
+    "PackSignature": {
+      "additionalProperties": false,
+      "description": "Deterministic matching fingerprint used by the classifier \u2014 see\nforge_core.classification.matcher. Never LLM-generated; hand-curated per\npack and versioned alongside it.",
+      "properties": {
+        "entity_name_hints": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Entity Name Hints",
+          "type": "array"
+        },
+        "column_name_hints": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Column Name Hints",
+          "type": "array"
+        },
+        "required_role_categories": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Role Categories",
+          "type": "array"
+        },
+        "table_count_range": {
+          "default": [
+            1,
+            50
+          ],
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Table Count Range",
+          "type": "array"
+        }
+      },
+      "title": "PackSignature",
+      "type": "object"
+    },
+    "RequiredRoles": {
+      "additionalProperties": false,
+      "description": "What a KPI needs, expressed in canonical-role terms \u2014 never physical\ncolumn names. This is what the binding resolver must satisfy before a\nKPI can be compiled for a given customer.",
+      "properties": {
+        "measures": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Measures",
+          "type": "array"
+        },
+        "dimensions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Dimensions",
+          "type": "array"
+        },
+        "filters": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Filters",
+          "type": "array"
+        },
+        "entities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Entities",
+          "type": "array"
+        }
+      },
+      "title": "RequiredRoles",
+      "type": "object"
+    },
+    "TemplateRef": {
+      "additionalProperties": false,
+      "description": "Pointer to a Jinja template file inside the pack directory, plus the\nmetadata the generator needs before rendering (which tools it may cite,\nwhat canonical roles must be resolved for it to be relevant).",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "template_path": {
+          "title": "Template Path",
+          "type": "string"
+        },
+        "requires_roles": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Requires Roles",
+          "type": "array"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "template_path"
+      ],
+      "title": "TemplateRef",
+      "type": "object"
+    },
+    "VocabularyEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "term": {
+          "title": "Term",
+          "type": "string"
+        },
+        "definition": {
+          "title": "Definition",
+          "type": "string"
+        }
+      },
+      "required": [
+        "term",
+        "definition"
+      ],
+      "title": "VocabularyEntry",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "The complete pack, loaded from `industry-packs/<slug>/pack.json` plus\nits `kpis/*.json` sibling files.",
+  "properties": {
+    "slug": {
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "title": "Slug",
+      "type": "string"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "version": {
+      "title": "Version",
+      "type": "string"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "vocabulary": {
+      "items": {
+        "$ref": "#/$defs/VocabularyEntry"
+      },
+      "title": "Vocabulary",
+      "type": "array"
+    },
+    "canonical_roles": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "canonical_role -> human description, e.g. 'revenue_amount': 'the monetary amount of a completed transaction'.",
+      "title": "Canonical Roles",
+      "type": "object"
+    },
+    "role_hints": {
+      "additionalProperties": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "description": "canonical_role -> lowercase column-name substrings the deterministic binder should treat as a strong signal, e.g. 'product_name': ['package', 'product', 'item']. Only needed when generic token overlap can't disambiguate synonyms.",
+      "title": "Role Hints",
+      "type": "object"
+    },
+    "table_aliases": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "Canonical table alias -> description, e.g. 'fact': 'the primary transaction table'.",
+      "title": "Table Aliases",
+      "type": "object"
+    },
+    "kpis": {
+      "items": {
+        "$ref": "#/$defs/CanonicalKpi"
+      },
+      "title": "Kpis",
+      "type": "array"
+    },
+    "value_set_hints": {
+      "additionalProperties": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "description": "Logical value-set name (referenced as {{name}} in KPI SQL, usually inside an IN clause) -> lowercase substring hints used to match it against a customer's actual category values, e.g. 'completed_values': ['completed', 'delivered', 'paid'].",
+      "title": "Value Set Hints",
+      "type": "object"
+    },
+    "skill_templates": {
+      "items": {
+        "$ref": "#/$defs/TemplateRef"
+      },
+      "title": "Skill Templates",
+      "type": "array"
+    },
+    "agent_templates": {
+      "items": {
+        "$ref": "#/$defs/TemplateRef"
+      },
+      "title": "Agent Templates",
+      "type": "array"
+    },
+    "recipe_templates": {
+      "items": {
+        "$ref": "#/$defs/TemplateRef"
+      },
+      "title": "Recipe Templates",
+      "type": "array"
+    },
+    "guardrails": {
+      "$ref": "#/$defs/Guardrails"
+    },
+    "signature": {
+      "$ref": "#/$defs/PackSignature"
+    }
+  },
+  "required": [
+    "slug",
+    "name",
+    "version",
+    "description"
+  ],
+  "title": "IndustryPack",
+  "type": "object"
+}

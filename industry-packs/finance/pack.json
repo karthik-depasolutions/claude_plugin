@@ -1,0 +1,54 @@
+{
+  "slug": "finance",
+  "name": "Finance / Transactions Pack",
+  "version": "1.0.0",
+  "description": "Industry context for financial transaction ledgers — payments, transfers, and account activity.",
+  "vocabulary": [
+    { "term": "transaction", "definition": "A single financial movement (payment, transfer, charge, refund)" },
+    { "term": "account", "definition": "The account a transaction is posted against" }
+  ],
+  "canonical_roles": {
+    "revenue_amount": "the monetary amount of a transaction",
+    "transaction_status": "the transaction outcome state (success / failed / pending)",
+    "transaction_date": "the date the transaction was posted",
+    "transaction_type": "the transaction category (debit / credit / payment / refund)",
+    "account_ref": "the account identifier",
+    "customer_ref": "the customer identifier"
+  },
+  "table_aliases": {
+    "fact": "the primary transactions/ledger table"
+  },
+  "value_set_hints": {
+    "completed_values": ["success", "successful", "completed", "settled", "paid"],
+    "cancelled_values": ["failed", "declined", "rejected"]
+  },
+  "guardrails": {
+    "denied_role_categories": ["free_text", "email", "phone"],
+    "require_read_only": true,
+    "max_query_rows": 200,
+    "query_timeout_seconds": 10,
+    "notes": [
+      "Never expose account numbers, SSN, or full name in aggregate outputs",
+      "All data access must be read-only",
+      "Treat all monetary aggregates as sensitive; avoid row-level exposure of individual transactions beyond the row cap"
+    ]
+  },
+  "signature": {
+    "entity_name_hints": ["transaction", "payment", "ledger", "account", "transfer", "invoice"],
+    "column_name_hints": [
+      "transaction_id", "account_id", "transaction_type", "transaction_status", "amount",
+      "currency", "posted_at", "settlement_date"
+    ],
+    "required_role_categories": ["currency", "date", "identifier"],
+    "table_count_range": [1, 15]
+  },
+  "skill_templates": [
+    { "id": "transaction-analyst", "template_path": "skills/transaction-analyst.md.j2", "requires_roles": ["revenue_amount"], "description": "General transaction analytics" }
+  ],
+  "agent_templates": [
+    { "id": "finance-analyst", "template_path": "agents/finance-analyst.md.j2", "requires_roles": [], "description": "Deep-dive financial transaction analysis agent" }
+  ],
+  "recipe_templates": [
+    { "id": "monthly-report", "template_path": "recipes/monthly-report.md.j2", "requires_roles": ["revenue_amount", "transaction_date"], "description": "Monthly transaction report recipe" }
+  ]
+}

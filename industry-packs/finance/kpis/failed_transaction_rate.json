@@ -1,0 +1,11 @@
+{
+  "id": "failed_transaction_rate",
+  "label": "Failed Transaction Rate",
+  "description": "Percentage of transactions that failed.",
+  "formula_plain_english": "percentage of transactions where transaction_status is a failed value",
+  "grain": "transaction",
+  "requires": { "measures": [], "filters": ["transaction_status"] },
+  "sql": "SELECT ROUND(100.0 * SUM(CASE WHEN {{transaction_status}} IN {{cancelled_values}} THEN 1 ELSE 0 END) / COUNT(*), 2) AS failed_percent, COUNT(*) AS total_transactions FROM {{fact}}",
+  "unit": "percent",
+  "assertions": ["failed_percent >= 0", "failed_percent <= 100"]
+}

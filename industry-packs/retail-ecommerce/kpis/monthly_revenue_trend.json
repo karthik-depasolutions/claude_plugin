@@ -1,0 +1,11 @@
+{
+  "id": "monthly_revenue_trend",
+  "label": "Monthly Revenue Trend",
+  "description": "Revenue and order count from completed orders, grouped by month.",
+  "formula_plain_english": "sum(revenue_amount) grouped by month(transaction_date) where transaction_status is completed",
+  "grain": "transaction",
+  "requires": { "measures": ["revenue_amount"], "dimensions": ["transaction_date"], "filters": ["transaction_status"] },
+  "sql": "SELECT STRFTIME(CAST({{transaction_date}} AS TIMESTAMP), '%Y-%m') AS month, SUM({{revenue_amount}}) AS revenue, COUNT(*) AS order_count FROM {{fact}} WHERE {{transaction_status}} IN {{completed_values}} GROUP BY month ORDER BY month",
+  "unit": "currency",
+  "assertions": []
+}

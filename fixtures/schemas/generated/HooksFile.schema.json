@@ -1,0 +1,178 @@
+{
+  "$defs": {
+    "HookHandler": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "enum": [
+            "command",
+            "http",
+            "mcp_tool",
+            "prompt",
+            "agent"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "command": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Command"
+        },
+        "args": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Args",
+          "type": "array"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        },
+        "server": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Server"
+        },
+        "tool": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tool"
+        },
+        "prompt": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout"
+        },
+        "statusMessage": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Statusmessage"
+        },
+        "if": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "If"
+        },
+        "async": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Async"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "HookHandler",
+      "type": "object"
+    },
+    "HookMatcherGroup": {
+      "additionalProperties": false,
+      "properties": {
+        "matcher": {
+          "default": "*",
+          "title": "Matcher",
+          "type": "string"
+        },
+        "hooks": {
+          "items": {
+            "$ref": "#/$defs/HookHandler"
+          },
+          "title": "Hooks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "hooks"
+      ],
+      "title": "HookMatcherGroup",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "hooks/hooks.json. Keys are hook event names, validated against the\ndocumented enum by the plugin-spec validation check, not here (keeping\nthis model forward-compatible with new event names).",
+  "properties": {
+    "hooks": {
+      "additionalProperties": {
+        "items": {
+          "$ref": "#/$defs/HookMatcherGroup"
+        },
+        "type": "array"
+      },
+      "title": "Hooks",
+      "type": "object"
+    }
+  },
+  "title": "HooksFile",
+  "type": "object"
+}

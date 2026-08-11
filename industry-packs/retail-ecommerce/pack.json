@@ -1,0 +1,57 @@
+{
+  "slug": "retail-ecommerce",
+  "name": "Retail / E-commerce Orders Pack",
+  "version": "1.0.0",
+  "description": "Industry context for retail/e-commerce order data — orders, customers, shipping, payments, and product line items.",
+  "vocabulary": [
+    { "term": "order", "definition": "A customer purchase transaction" },
+    { "term": "customer", "definition": "The person who placed the order" },
+    { "term": "line item", "definition": "One product within an order" },
+    { "term": "fulfillment status", "definition": "Whether the order was delivered, cancelled, or returned" }
+  ],
+  "canonical_roles": {
+    "revenue_amount": "the monetary value of an order",
+    "transaction_status": "the order lifecycle state (delivered / cancelled / returned / pending)",
+    "transaction_date": "the date the order was placed",
+    "customer_ref": "the customer identifier",
+    "order_ref": "the order identifier",
+    "location": "the shipping city/region for the order",
+    "payment_channel": "the payment method used for the order"
+  },
+  "table_aliases": {
+    "fact": "the primary order-level transaction table"
+  },
+  "value_set_hints": {
+    "completed_values": ["delivered", "completed", "fulfilled", "paid", "success"],
+    "cancelled_values": ["cancelled", "canceled"],
+    "returned_values": ["returned", "refund", "refunded"]
+  },
+  "guardrails": {
+    "denied_role_categories": ["free_text", "email", "phone"],
+    "require_read_only": true,
+    "max_query_rows": 200,
+    "query_timeout_seconds": 10,
+    "notes": [
+      "Never expose customer email, phone, or full name in aggregate outputs",
+      "All data access must be read-only"
+    ]
+  },
+  "signature": {
+    "entity_name_hints": ["order", "orders", "cart", "checkout", "product", "sku", "shipment"],
+    "column_name_hints": [
+      "order_id", "order_status", "order_total", "shipping_city", "payment_method",
+      "product_category", "quantity", "unit_price", "loyalty_tier"
+    ],
+    "required_role_categories": ["currency", "date", "identifier"],
+    "table_count_range": [1, 15]
+  },
+  "skill_templates": [
+    { "id": "order-analyst", "template_path": "skills/order-analyst.md.j2", "requires_roles": ["revenue_amount"], "description": "General order analytics" }
+  ],
+  "agent_templates": [
+    { "id": "retail-analyst", "template_path": "agents/retail-analyst.md.j2", "requires_roles": [], "description": "Deep-dive retail order analysis agent" }
+  ],
+  "recipe_templates": [
+    { "id": "monthly-report", "template_path": "recipes/monthly-report.md.j2", "requires_roles": ["revenue_amount", "transaction_date"], "description": "Monthly order report recipe" }
+  ]
+}

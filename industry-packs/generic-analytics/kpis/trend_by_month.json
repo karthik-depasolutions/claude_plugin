@@ -1,0 +1,12 @@
+{
+  "id": "trend_by_month",
+  "label": "Trend by Month",
+  "description": "Primary measure summed and record count, grouped by month of the primary date dimension.",
+  "formula_plain_english": "sum(measure_amount) grouped by month(date_dim)",
+  "grain": "record",
+  "requires": { "measures": ["measure_amount"], "dimensions": ["date_dim"] },
+  "sql": "SELECT STRFTIME(CAST({{date_dim}} AS TIMESTAMP), '%Y-%m') AS month, SUM({{measure_amount}}) AS total, COUNT(*) AS record_count FROM {{fact}} GROUP BY month ORDER BY month",
+  "unit": "numeric",
+  "assertions": [],
+  "optional": true
+}

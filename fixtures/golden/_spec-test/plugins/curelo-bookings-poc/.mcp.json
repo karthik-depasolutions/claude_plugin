@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "curelo-bookings": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/server/index.js"],
+      "env": {
+        "DATA_DIR": "${CLAUDE_PLUGIN_ROOT}/data",
+        "CACHE_DIR": "${CLAUDE_PLUGIN_DATA}/cache",
+        "PROJECT_DIR": "${CLAUDE_PROJECT_DIR}",
+        "API_TOKEN": "${user_config.api_token}"
+      }
+    },
+    "remote-api": {
+      "type": "http",
+      "url": "https://mcp.example.com/mcp",
+      "headers": { "Authorization": "Bearer ${user_config.api_token}" }
+    }
+  }
+}

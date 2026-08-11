@@ -1,0 +1,210 @@
+{
+  "fact_check": {
+    "check": "fact_check",
+    "status": "pass",
+    "issues": [],
+    "valid_columns": [
+      "age",
+      "amount_inr",
+      "booking_date",
+      "booking_id",
+      "city",
+      "customer_id",
+      "customer_name",
+      "gender",
+      "household_id",
+      "is_repeat_customer",
+      "lab_partner",
+      "package_category",
+      "package_name",
+      "payment_status",
+      "phone",
+      "report_delivery_date",
+      "status"
+    ]
+  },
+  "self_critique": {
+    "check": "self_critique",
+    "status": "pass",
+    "note": "from prior run"
+  },
+  "dry_run": {
+    "check": "dry_run",
+    "status": "pass",
+    "kpi_results": [
+      {
+        "kpi_name": "total_revenue",
+        "status": "pass",
+        "result": {
+          "kpi": "total_revenue",
+          "value_inr": 28082,
+          "completed_bookings": 18
+        }
+      },
+      {
+        "kpi_name": "repeat_customer_rate",
+        "status": "pass",
+        "result": {
+          "kpi": "repeat_customer_rate",
+          "percent": 40.0,
+          "repeat_bookings": 8,
+          "total_bookings": 20
+        }
+      },
+      {
+        "kpi_name": "cancellation_rate",
+        "status": "pass",
+        "result": {
+          "kpi": "cancellation_rate",
+          "percent": 10.0,
+          "cancelled_bookings": 2,
+          "total_bookings": 20
+        }
+      },
+      {
+        "kpi_name": "monthly_revenue_trend",
+        "status": "pass",
+        "result": {
+          "kpi": "monthly_revenue_trend",
+          "months": [
+            {
+              "month": "2026-01",
+              "revenue_inr": 6696,
+              "booking_count": 4
+            },
+            {
+              "month": "2026-02",
+              "revenue_inr": 11792,
+              "booking_count": 8
+            },
+            {
+              "month": "2026-03",
+              "revenue_inr": 9594,
+              "booking_count": 6
+            }
+          ]
+        }
+      },
+      {
+        "kpi_name": "bookings_by_city",
+        "status": "pass",
+        "result": {
+          "kpi": "bookings_by_city",
+          "cities": [
+            {
+              "city": "Mumbai",
+              "booking_count": 9,
+              "revenue_inr": 14791
+            },
+            {
+              "city": "Pune",
+              "booking_count": 6,
+              "revenue_inr": 9394
+            },
+            {
+              "city": "Bengaluru",
+              "booking_count": 5,
+              "revenue_inr": 8695
+            }
+          ]
+        }
+      },
+      {
+        "kpi_name": "number_of_repeat_customers",
+        "status": "pass",
+        "result": {
+          "kpi": "number_of_repeat_customers",
+          "repeat_customers": 8
+        }
+      },
+      {
+        "kpi_name": "revenue_by_lab_partner_and_package",
+        "status": "pass",
+        "result": {
+          "kpi": "revenue_by_lab_partner_and_package",
+          "breakdown": [
+            {
+              "lab_partner": "MetroPath Labs",
+              "package_name": "Full Body Checkup Basic",
+              "revenue_inr": 4497,
+              "booking_count": 3
+            },
+            {
+              "lab_partner": "MetroPath Labs",
+              "package_name": "Full Body Checkup Advanced",
+              "revenue_inr": 2999,
+              "booking_count": 1
+            },
+            {
+              "lab_partner": "SouthCare Labs",
+              "package_name": "Full Body Checkup Advanced",
+              "revenue_inr": 2999,
+              "booking_count": 1
+            },
+            {
+              "lab_partner": "City Diagnostics",
+              "package_name": "Full Body Checkup Advanced",
+              "revenue_inr": 2999,
+              "booking_count": 1
+            },
+            {
+              "lab_partner": "City Diagnostics",
+              "package_name": "Full Body Checkup Basic",
+              "revenue_inr": 2998,
+              "booking_count": 2
+            },
+            {
+              "lab_partner": "SouthCare Labs",
+              "package_name": "Full Body Checkup Basic",
+              "revenue_inr": 2998,
+              "booking_count": 2
+            },
+            {
+              "lab_partner": "SouthCare Labs",
+              "package_name": "Heart Health Panel",
+              "revenue_inr": 1799,
+              "booking_count": 1
+            },
+            {
+              "lab_partner": "City Diagnostics",
+              "package_name": "Heart Health Panel",
+              "revenue_inr": 1799,
+              "booking_count": 1
+            },
+            {
+              "lab_partner": "MetroPath Labs",
+              "package_name": "Diabetes Panel",
+              "revenue_inr": 1798,
+              "booking_count": 2
+            },
+            {
+              "lab_partner": "SouthCare Labs",
+              "package_name": "Diabetes Panel",
+              "revenue_inr": 899,
+              "booking_count": 1
+            },
+            {
+              "lab_partner": "City Diagnostics",
+              "package_name": "Diabetes Panel",
+              "revenue_inr": 899,
+              "booking_count": 1
+            },
+            {
+              "lab_partner": "City Diagnostics",
+              "package_name": "Thyroid Profile",
+              "revenue_inr": 699,
+              "booking_count": 1
+            },
+            {
+              "lab_partner": "MetroPath Labs",
+              "package_name": "Thyroid Profile",
+              "revenue_inr": 699,
+              "booking_count": 1
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "overall": "pass"
+}

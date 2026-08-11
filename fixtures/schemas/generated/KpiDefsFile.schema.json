@@ -1,0 +1,93 @@
+{
+  "$defs": {
+    "CompiledKpi": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "unit": {
+          "title": "Unit",
+          "type": "string"
+        },
+        "sql": {
+          "description": "Concrete, dialect-checked SELECT statement. No templating left.",
+          "title": "Sql",
+          "type": "string"
+        },
+        "assertions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Assertions",
+          "type": "array"
+        },
+        "result_columns": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Result Columns",
+          "type": "array"
+        },
+        "source_kpi_id": {
+          "description": "The CanonicalKpi.id this was compiled from.",
+          "title": "Source Kpi Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "description",
+        "unit",
+        "sql",
+        "source_kpi_id"
+      ],
+      "title": "CompiledKpi",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Root object serialized to config/kpi_defs.json.",
+  "properties": {
+    "pack_slug": {
+      "title": "Pack Slug",
+      "type": "string"
+    },
+    "generated_at": {
+      "title": "Generated At",
+      "type": "string"
+    },
+    "kpis": {
+      "items": {
+        "$ref": "#/$defs/CompiledKpi"
+      },
+      "title": "Kpis",
+      "type": "array"
+    },
+    "skipped": {
+      "description": "KPI ids that could not be compiled because required roles were unresolved.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Skipped",
+      "type": "array"
+    }
+  },
+  "required": [
+    "pack_slug",
+    "generated_at",
+    "kpis"
+  ],
+  "title": "KpiDefsFile",
+  "type": "object"
+}

@@ -1,0 +1,22 @@
+order_item_id,order_id,product_name,product_category,quantity,unit_price
+I1,O1001,Wireless Mouse,Electronics,1,1299.00
+I2,O1001,Mechanical Keyboard,Electronics,1,3300.00
+I3,O1002,Cotton T-Shirt,Apparel,2,649.75
+I4,O1003,Yoga Mat,Fitness,1,899.00
+I5,O1004,Running Shoes,Footwear,1,2499.00
+I6,O1005,Backpack,Accessories,1,3199.00
+I7,O1006,Bluetooth Speaker,Electronics,1,5499.00
+I8,O1007,Notebook Set,Stationery,4,199.75
+I9,O1008,Desk Lamp,Home,1,1999.00
+I10,O1009,Water Bottle,Fitness,3,933.00
+I11,O1010,Phone Case,Accessories,2,549.50
+I12,O1011,Air Fryer,Home,1,3499.00
+I13,O1012,Smart Watch,Electronics,1,6299.00
+I14,O1013,Sunglasses,Accessories,1,1499.00
+I15,O1014,Table Lamp,Home,1,999.00
+I16,O1015,Resistance Bands,Fitness,1,2199.00
+I17,O1016,Denim Jacket,Apparel,1,3599.00
+I18,O1017,Coffee Mug,Home,3,299.67
+I19,O1018,Wireless Earbuds,Electronics,1,4199.00
+I20,O1019,Hiking Boots,Footwear,1,1799.00
+I21,O1020,Office Chair,Home,1,2599.00

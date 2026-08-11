@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "curelo-bookings-poc",
+  "displayName": "Curelo Bookings POC",
+  "version": "0.1.0",
+  "description": "Diagnostic lab booking analytics",
+  "author": { "name": "Curelo", "email": "dev@example.com", "url": "https://example.com" },
+  "homepage": "https://example.com/docs",
+  "repository": "https://github.com/acme/curelo-bookings-poc",
+  "license": "MIT",
+  "keywords": ["bookings", "analytics"],
+  "defaultEnabled": true,
+  "skills": "./extra-skills/",
+  "agents": ["./agents/booking-analyst.md"],
+  "commands": ["./commands/kpi.md"],
+  "hooks": "./hooks/hooks.json",
+  "mcpServers": "./.mcp.json",
+  "userConfig": {
+    "api_token": {
+      "type": "string",
+      "title": "API token",
+      "description": "Token for the bookings API",
+      "sensitive": true,
+      "required": true
+    }
+  }
+}

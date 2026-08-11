@@ -1,0 +1,11 @@
+{
+  "id": "average_transaction_amount",
+  "label": "Average Transaction Amount",
+  "description": "Average value of successful transactions.",
+  "formula_plain_english": "avg(revenue_amount) where transaction_status is a completed value",
+  "grain": "transaction",
+  "requires": { "measures": ["revenue_amount"], "filters": ["transaction_status"] },
+  "sql": "SELECT ROUND(AVG({{revenue_amount}}), 2) AS average_amount FROM {{fact}} WHERE {{transaction_status}} IN {{completed_values}}",
+  "unit": "currency",
+  "assertions": []
+}

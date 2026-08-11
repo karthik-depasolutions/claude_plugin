@@ -1,0 +1,32 @@
+"""Process-local run registry. A run's `RunRecord` lives here while its
+pipeline thread is active so the SSE endpoint can poll `record.events` in
+real time; `pipeline_runner` mirrors every terminal/paused state to the
+`runs` table so history survives a restart (see forge_api.db)."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+
+from forge_core.models.run import RunRecord
+
+
+@dataclass
+class RunContext:
+    record: RunRecord
+    binding_overrides: dict[str, str] = field(default_factory=dict)
+    running: bool = False
+
+
+_RUNS: dict[str, RunContext] = {}
+
+
+def put(run_id: str, ctx: RunContext) -> None:
+    _RUNS[run_id] = ctx
+
+
+def get(run_id: str) -> RunContext | None:
+    return _RUNS.get(run_id)
+
+
+def all_contexts() -> list[RunContext]:
+    return list(_RUNS.values())

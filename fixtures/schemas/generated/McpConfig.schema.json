@@ -1,0 +1,93 @@
+{
+  "$defs": {
+    "McpRemoteServer": {
+      "additionalProperties": false,
+      "description": "URL-based servers MUST declare `type` explicitly \u2014 a typeless entry\nwith a `url` is a documented runtime trap (read as stdio and skipped).",
+      "properties": {
+        "type": {
+          "enum": [
+            "http",
+            "sse",
+            "ws"
+          ],
+          "title": "Type",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "headers": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Headers",
+          "type": "object"
+        }
+      },
+      "required": [
+        "type",
+        "url"
+      ],
+      "title": "McpRemoteServer",
+      "type": "object"
+    },
+    "McpStdioServer": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "stdio",
+          "default": "stdio",
+          "title": "Type",
+          "type": "string"
+        },
+        "command": {
+          "title": "Command",
+          "type": "string"
+        },
+        "args": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Args",
+          "type": "array"
+        },
+        "env": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Env",
+          "type": "object"
+        }
+      },
+      "required": [
+        "command"
+      ],
+      "title": "McpStdioServer",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "`.mcp.json`.",
+  "properties": {
+    "mcpServers": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "$ref": "#/$defs/McpStdioServer"
+          },
+          {
+            "$ref": "#/$defs/McpRemoteServer"
+          }
+        ]
+      },
+      "title": "Mcpservers",
+      "type": "object"
+    }
+  },
+  "required": [
+    "mcpServers"
+  ],
+  "title": "McpConfig",
+  "type": "object"
+}

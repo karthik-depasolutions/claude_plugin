@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: forge
+      POSTGRES_PASSWORD: forge
+      POSTGRES_DB: forge
+    ports:
+      - "5432:5432"
+    volumes:
+      - forge_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U forge"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      FORGE_DATABASE_URL: postgresql+psycopg://forge:forge@postgres:5432/forge
+      FORGE_RUNS_DIR: /data/runs
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    ports:
+      # Host-side 8420, not 8000 - avoids silently colliding with another
+      # project's container already bound to the common default.
+      - "8420:8000"
+    volumes:
+      - forge_runs:/data/runs
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: apps/web
+    environment:
+      VITE_API_BASE_URL: http://localhost:8420
+    ports:
+      - "5420:5173"
+    depends_on:
+      - api
+
+volumes:
+  forge_pg_data:
+  forge_runs:

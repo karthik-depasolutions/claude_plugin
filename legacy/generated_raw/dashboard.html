@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Booking Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+        .kpi-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .kpi-card {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            text-align: center;
+            transition: transform 0.2s ease-in-out;
+        }
+        .kpi-card:hover {
+            transform: translateY(-5px);
+        }
+        .kpi-card h3 {
+            margin-top: 0;
+            color: #555;
+            font-size: 1.1em;
+        }
+        .kpi-card .value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #3498db;
+            margin-top: 10px;
+        }
+        .kpi-card .unit {
+            font-size: 0.9em;
+            color: #777;
+            margin-top: 5px;
+        }
+        .chart-container, .table-container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        .chart-container h2, .table-container h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            color: #555;
+        }
+        table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        table tbody tr:hover {
+            background-color: #eef;
+        }
+        .dashboard-section {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+        }
+        @media (min-width: 768px) {
+            .dashboard-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <h1>Booking Analytics Dashboard</h1>
+        <p>Overview of key performance indicators for diagnostic lab bookings.</p>
+    </div>
+
+    <div class="kpi-cards">
+        <div class="kpi-card">
+            <h3>Total Revenue</h3>
+            <div class="value" data-kpi-name="total_revenue">INR XXXX</div>
+            <div class="unit">Completed Bookings</div>
+        </div>
+        <div class="kpi-card">
+            <h3>Repeat Customer Rate</h3>
+            <div class="value" data-kpi-name="repeat_customer_rate">XX.X%</div>
+            <div class="unit">Of all bookings</div>
+        </div>
+        <div class="kpi-card">
+            <h3>Cancellation Rate</h3>
+            <div class="value" data-kpi-name="cancellation_rate">XX.X%</div>
+            <div class="unit">Of all bookings</div>
+        </div>
+        <div class="kpi-card">
+            <h3>Number of Repeat Customers</h3>
+            <div class="value" data-kpi-name="number_of_repeat_customers">XXX</div>
+            <div class="unit">Unique customers</div>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <h2>Monthly Revenue Trend</h2>
+        <canvas id="monthlyRevenueChart"></canvas>
+    </div>
+
+    <div class="dashboard-section">
+        <div class="table-container">
+            <h2>Bookings by City</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>City</th>
+                        <th>Total Bookings</th>
+                        <th>Total Revenue (INR)</th>
+                    </tr>
+                </thead>
+                <tbody id="bookingsByCityTableBody" data-kpi-name="bookings_by_city">
+                    <!-- Placeholder rows for initial rendering. These will be replaced by actual data. -->
+                    <tr><td>Mumbai</td><td>5</td><td>7,000</td></tr>
+                    <tr><td>Pune</td><td>3</td><td>4,500</td></tr>
+                    <tr><td>Bengaluru</td><td>2</td><td>3,000</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-container">
+            <h2>Revenue by Lab Partner and Package</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Lab Partner</th>
+                        <th>Package Name</th>
+                        <th>Total Revenue (INR)</th>
+                    </tr>
+                </thead>
+                <tbody id="revenueByLabPartnerAndPackageTableBody" data-kpi-name="revenue_by_lab_partner_and_package">
+                    <!-- Placeholder rows for initial rendering. These will be replaced by actual data. -->
+                    <tr><td>MetroPath Labs</td><td>Full Body Checkup Basic</td><td>1,499</td></tr>
+                    <tr><td>MetroPath Labs</td><td>Diabetes Panel</td><td>899</td></tr>
+                    <tr><td>City Diagnostics</td><td>Full Body Checkup Advanced</td><td>2,999</td></tr>
+                    <tr><td>SouthCare Labs</td><td>Full Body Checkup Basic</td><td>1,499</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // --- Placeholder for KPI data injection ---
+        // The actual plugin will inject real data into these elements at runtime.
+
+        // Example data structures for demonstration purposes:
+        const monthlyRevenueData = {
+            labels: ['Jan 2026', 'Feb 2026', 'Mar 2026'], // Example months
+            data: [15000, 12000, 18000] // Example revenue values
+        };
+        const bookingsByCityData = [
+            { city: 'Mumbai', total_bookings: 8, total_revenue: 12500 },
+            { city: 'Pune', total_bookings: 5, total_revenue: 7800 },
+            { city: 'Bengaluru', total_bookings: 7, total_revenue: 10200 }
+        ];
+        const revenueByLabPartnerAndPackageData = [
+            { lab_partner: 'MetroPath Labs', package_name: 'Full Body Checkup Basic', total_revenue: 4500 },
+            { lab_partner: 'MetroPath Labs', package_name: 'Diabetes Panel', total_revenue: 1800 },
+            { lab_partner: 'City Diagnostics', package_name: 'Full Body Checkup Advanced', total_revenue: 6000 },
+            { lab_partner: 'SouthCare Labs', package_name: 'Thyroid Profile', total_revenue: 1400 }
+        ];
+
+        // --- KPI Card Injection (using data-kpi-name attributes) ---
+        // These will be targeted by the plugin to inject actual KPI values.
+        document.querySelector('[data-kpi-name="total_revenue"]').textContent = 'INR 25,000';
+        document.querySelector('[data-kpi-name="repeat_customer_rate"]').textContent = '35.5%';
+        document.querySelector('[data-kpi-name="cancellation_rate"]').textContent = '8.2%';
+        document.querySelector('[data-kpi-name="number_of_repeat_customers"]').textContent = '15';
+
+        // --- Monthly Revenue Trend Chart ---
+        const ctx = document.getElementById('monthlyRevenueChart').getContext('2d');
+        const monthlyRevenueChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: monthlyRevenueData.labels, // This will be replaced by actual KPI data
+                datasets: [{
+                    label: 'Monthly Revenue (INR)',
+                    data: monthlyRevenueData.data, // This will be replaced by actual KPI data
+                    backgroundColor: 'rgba(52, 152, 219, 0.8)',
+                    borderColor: 'rgba(52, 152, 219, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Monthly Revenue Trend'
+                    },
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Revenue (INR)'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Month'
+                        }
+                    }
+                }
+            }
+        });
+
+        // --- Bookings by City Table (using data-kpi-name attribute for tbody) ---
+        const bookingsByCityTableBody = document.getElementById('bookingsByCityTableBody');
+        bookingsByCityTableBody.innerHTML = ''; // Clear placeholder rows
+        bookingsByCityData.forEach(row => { // This loop will be replaced by actual KPI data
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${row.city}</td><td>${row.total_bookings}</td><td>${row.total_revenue.toLocaleString('en-IN')}</td>`;
+            bookingsByCityTableBody.appendChild(tr);
+        });
+
+        // --- Revenue by Lab Partner and Package Table (using data-kpi-name attribute for tbody) ---
+        const revenueByLabPartnerAndPackageTableBody = document.getElementById('revenueByLabPartnerAndPackageTableBody');
+        revenueByLabPartnerAndPackageTableBody.innerHTML = ''; // Clear placeholder rows
+        revenueByLabPartnerAndPackageData.forEach(row => { // This loop will be replaced by actual KPI data
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${row.lab_partner}</td><td>${row.package_name}</td><td>${row.total_revenue.toLocaleString('en-IN')}</td>`;
+            revenueByLabPartnerAndPackageTableBody.appendChild(tr);
+        });
+
+        // The plugin will look for elements with data-kpi-name attributes
+        // and replace their content or use them as targets for chart/table data.
+        // For charts, it might update the chart.data and call chart.update().
+        // For tables, it might clear and repopulate the tbody.
+    </script>
+</body>
+</html>

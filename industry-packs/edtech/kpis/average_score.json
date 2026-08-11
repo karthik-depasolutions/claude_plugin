@@ -1,0 +1,11 @@
+{
+  "id": "average_score",
+  "label": "Average Score",
+  "description": "Average recorded score across enrollments that have one.",
+  "formula_plain_english": "avg(score) excluding nulls",
+  "grain": "transaction",
+  "requires": { "measures": ["score"], "filters": [] },
+  "sql": "SELECT ROUND(AVG({{score}}), 2) AS average_score, COUNT({{score}}) AS scored_enrollments FROM {{fact}}",
+  "unit": "score",
+  "assertions": []
+}

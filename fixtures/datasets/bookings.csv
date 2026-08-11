@@ -1,0 +1,21 @@
+booking_id,customer_id,customer_name,phone,city,package_name,package_category,lab_partner,booking_date,report_delivery_date,amount_inr,payment_status,is_repeat_customer,household_id,age,gender,status
+B1001,C001,Ramesh Iyer,9820011111,Mumbai,Full Body Checkup Basic,General,MetroPath Labs,2026-01-05,2026-01-08,1499,Paid,No,H001,34,M,Completed
+B1002,C002,Sunita Rao,9820022222,Pune,Full Body Checkup Advanced,General,City Diagnostics,2026-01-06,2026-01-09,2999,Paid,No,H002,45,F,Completed
+B1003,C001,Ramesh Iyer,9820011111,Mumbai,Diabetes Panel,Specialty,MetroPath Labs,2026-02-10,2026-02-12,899,Paid,Yes,H001,34,M,Completed
+B1004,C003,Anjali Mehta,9820033333,Mumbai,Thyroid Profile,Specialty,MetroPath Labs,2026-01-15,2026-01-17,699,Paid,No,H003,29,F,Completed
+B1005,C004,Vikram Shah,9820044444,Bengaluru,Full Body Checkup Basic,General,SouthCare Labs,2026-01-20,2026-01-23,1499,Paid,No,H004,52,M,Completed
+B1006,C002,Sunita Rao,9820022222,Pune,Heart Health Panel,Specialty,City Diagnostics,2026-02-18,2026-02-20,1799,Paid,Yes,H002,45,F,Completed
+B1007,C005,Kavita Nair,9820055555,Mumbai,Full Body Checkup Advanced,General,MetroPath Labs,2026-01-25,2026-01-28,2999,Pending,No,H005,38,F,Cancelled
+B1008,C006,Arjun Desai,9820066666,Pune,Full Body Checkup Basic,General,City Diagnostics,2026-02-01,2026-02-04,1499,Paid,No,H006,41,M,Completed
+B1009,C003,Anjali Mehta,9820033333,Mumbai,Full Body Checkup Basic,General,MetroPath Labs,2026-02-22,2026-02-25,1499,Paid,Yes,H003,29,F,Completed
+B1010,C007,Neha Kulkarni,9820077777,Bengaluru,Diabetes Panel,Specialty,SouthCare Labs,2026-02-05,2026-02-07,899,Paid,No,H007,55,F,Completed
+B1011,C004,Vikram Shah,9820044444,Bengaluru,Heart Health Panel,Specialty,SouthCare Labs,2026-03-01,2026-03-03,1799,Paid,Yes,H004,52,M,Completed
+B1012,C008,Rohit Verma,9820088888,Mumbai,Full Body Checkup Advanced,General,MetroPath Labs,2026-02-10,2026-02-13,2999,Paid,No,H008,60,M,Completed
+B1013,C005,Kavita Nair,9820055555,Mumbai,Full Body Checkup Basic,General,MetroPath Labs,2026-03-05,2026-03-08,1499,Paid,Yes,H005,38,F,Completed
+B1014,C009,Priya Pillai,9820099999,Pune,Thyroid Profile,Specialty,City Diagnostics,2026-02-14,2026-02-16,699,Paid,No,H009,27,F,Completed
+B1015,C006,Arjun Desai,9820066666,Pune,Diabetes Panel,Specialty,City Diagnostics,2026-03-10,2026-03-12,899,Paid,Yes,H006,41,M,Completed
+B1016,C010,Suresh Pandey,9820010101,Bengaluru,Full Body Checkup Basic,General,SouthCare Labs,2026-02-20,2026-02-23,1499,Paid,No,H010,48,M,Completed
+B1017,C007,Neha Kulkarni,9820077777,Bengaluru,Full Body Checkup Advanced,General,SouthCare Labs,2026-03-15,2026-03-18,2999,Paid,Yes,H007,55,F,Completed
+B1018,C011,Meera Joshi,9820011010,Mumbai,Heart Health Panel,Specialty,MetroPath Labs,2026-02-25,2026-02-27,1799,Pending,No,H011,50,F,Cancelled
+B1019,C008,Rohit Verma,9820088888,Mumbai,Diabetes Panel,Specialty,MetroPath Labs,2026-03-20,2026-03-22,899,Paid,Yes,H008,60,M,Completed
+B1020,C012,Deepak Menon,9820012012,Pune,Full Body Checkup Basic,General,City Diagnostics,2026-03-01,2026-03-04,1499,Paid,No,H012,33,M,Completed

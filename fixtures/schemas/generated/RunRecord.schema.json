@@ -1,0 +1,137 @@
+{
+  "$defs": {
+    "RunStage": {
+      "enum": [
+        "ingest",
+        "profile",
+        "classify",
+        "bind",
+        "compile_kpis",
+        "generate",
+        "validate",
+        "package",
+        "publish"
+      ],
+      "title": "RunStage",
+      "type": "string"
+    },
+    "RunStatus": {
+      "enum": [
+        "pending",
+        "running",
+        "needs_input",
+        "succeeded",
+        "failed",
+        "cancelled"
+      ],
+      "title": "RunStatus",
+      "type": "string"
+    },
+    "StageEvent": {
+      "additionalProperties": false,
+      "properties": {
+        "stage": {
+          "$ref": "#/$defs/RunStage"
+        },
+        "message": {
+          "title": "Message",
+          "type": "string"
+        },
+        "timestamp": {
+          "format": "date-time",
+          "title": "Timestamp",
+          "type": "string"
+        },
+        "data": {
+          "additionalProperties": true,
+          "title": "Data",
+          "type": "object"
+        }
+      },
+      "required": [
+        "stage",
+        "message"
+      ],
+      "title": "StageEvent",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "run_id": {
+      "title": "Run Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/RunStatus",
+      "default": "pending"
+    },
+    "current_stage": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RunStage"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "source_path": {
+      "title": "Source Path",
+      "type": "string"
+    },
+    "industry_override": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Industry Override"
+    },
+    "output_dir": {
+      "title": "Output Dir",
+      "type": "string"
+    },
+    "events": {
+      "items": {
+        "$ref": "#/$defs/StageEvent"
+      },
+      "title": "Events",
+      "type": "array"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "updated_at": {
+      "format": "date-time",
+      "title": "Updated At",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "source_path",
+    "output_dir"
+  ],
+  "title": "RunRecord",
+  "type": "object"
+}

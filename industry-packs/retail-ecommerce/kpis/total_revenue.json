@@ -1,0 +1,11 @@
+{
+  "id": "total_revenue",
+  "label": "Total Revenue",
+  "description": "Total revenue from completed orders.",
+  "formula_plain_english": "sum(revenue_amount) where transaction_status is a completed value",
+  "grain": "transaction",
+  "requires": { "measures": ["revenue_amount"], "filters": ["transaction_status"] },
+  "sql": "SELECT SUM({{revenue_amount}}) AS total_revenue, COUNT(*) AS completed_orders FROM {{fact}} WHERE {{transaction_status}} IN {{completed_values}}",
+  "unit": "currency",
+  "assertions": ["total_revenue >= 0"]
+}

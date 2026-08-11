@@ -1,0 +1,11 @@
+{
+  "id": "number_of_repeat_customers",
+  "label": "Number of Repeat Customers",
+  "description": "Count of distinct customers with at least one repeat booking.",
+  "formula_plain_english": "count(distinct customer_ref) where repeat_flag indicates a repeat customer",
+  "grain": "transaction",
+  "requires": { "measures": [], "filters": ["repeat_flag"], "entities": ["customer_ref"] },
+  "sql": "SELECT COUNT(DISTINCT {{customer_ref}}) AS repeat_customers FROM {{fact}} WHERE {{repeat_flag}} IN {{repeat_values}}",
+  "unit": "count",
+  "assertions": ["repeat_customers >= 0"]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "revenue_by_partner_and_product",
+  "label": "Revenue by Partner and Product",
+  "description": "Revenue and booking count from completed bookings, broken down by partner and product.",
+  "formula_plain_english": "sum(revenue_amount) grouped by partner_name and product_name where transaction_status is completed",
+  "grain": "transaction",
+  "requires": { "measures": ["revenue_amount"], "dimensions": ["partner_name", "product_name"], "filters": ["transaction_status"] },
+  "sql": "SELECT {{partner_name}} AS partner, {{product_name}} AS product, SUM({{revenue_amount}}) AS revenue, COUNT(*) AS booking_count FROM {{fact}} WHERE {{transaction_status}} IN {{completed_values}} GROUP BY {{partner_name}}, {{product_name}} ORDER BY revenue DESC",
+  "unit": "currency",
+  "assertions": [],
+  "optional": true
+}

@@ -1,0 +1,12 @@
+{
+  "id": "bookings_by_location",
+  "label": "Bookings by Location",
+  "description": "Booking count and revenue grouped by location.",
+  "formula_plain_english": "count(*) and sum(revenue_amount) grouped by location",
+  "grain": "transaction",
+  "requires": { "measures": ["revenue_amount"], "dimensions": ["location"] },
+  "sql": "SELECT {{location}} AS location, COUNT(*) AS booking_count, SUM({{revenue_amount}}) AS revenue FROM {{fact}} GROUP BY {{location}} ORDER BY revenue DESC",
+  "unit": "mixed",
+  "assertions": [],
+  "optional": true
+}

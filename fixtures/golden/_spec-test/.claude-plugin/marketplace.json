@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "spec-test-marketplace",
+  "owner": {
+    "name": "Spec Test",
+    "email": "test@example.com",
+    "url": "https://example.com"
+  },
+  "description": "Fixture used to verify the generated plugin format",
+  "version": "1.0.0",
+  "metadata": {
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "curelo-bookings-poc",
+      "source": "./plugins/curelo-bookings-poc",
+      "description": "Relative-path source inside the marketplace repo",
+      "version": "0.1.0",
+      "category": "data-analysis",
+      "tags": ["bookings", "analytics"],
+      "strict": true
+    },
+    {
+      "name": "gh-source-plugin",
+      "source": { "source": "github", "repo": "acme/plugin-repo", "ref": "v1.0.0" },
+      "description": "GitHub source"
+    },
+    {
+      "name": "git-url-plugin",
+      "source": { "source": "url", "url": "https://gitlab.com/acme/plugin.git", "ref": "main" },
+      "description": "Generic git URL source"
+    },
+    {
+      "name": "monorepo-plugin",
+      "source": {
+        "source": "git-subdir",
+        "url": "https://github.com/acme/monorepo.git",
+        "path": "tools/claude-plugin"
+      },
+      "description": "Subdirectory of a monorepo"
+    },
+    {
+      "name": "npm-plugin",
+      "source": { "source": "npm", "package": "@acme/claude-plugin", "version": "^2.0.0" },
+      "description": "npm package source"
+    }
+  ]
+}

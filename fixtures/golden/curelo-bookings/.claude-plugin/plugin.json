@@ -1,0 +1,16 @@
+{
+  "name": "curelo-bookings-poc",
+  "version": "0.1.0",
+  "description": "Auto-generated diagnostic lab booking analytics plugin (Gemini pipeline POC)",
+  "author": {
+    "name": "Curelo",
+    "email": "dev@curelo.com"
+  },
+  "keywords": [
+    "bookings",
+    "healthcare",
+    "diagnostics",
+    "analytics",
+    "mcp"
+  ]
+}

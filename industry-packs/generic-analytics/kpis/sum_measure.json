@@ -1,0 +1,11 @@
+{
+  "id": "sum_measure",
+  "label": "Sum of Primary Measure",
+  "description": "Sum of the primary numeric measure.",
+  "formula_plain_english": "sum(measure_amount)",
+  "grain": "record",
+  "requires": { "measures": ["measure_amount"], "filters": [] },
+  "sql": "SELECT SUM({{measure_amount}}) AS total FROM {{fact}}",
+  "unit": "numeric",
+  "assertions": []
+}

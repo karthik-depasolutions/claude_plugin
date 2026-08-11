@@ -1,0 +1,465 @@
+{
+  "structural_profile": {
+    "source": {
+      "source_file": "D:\\claude-plugin-poc\\sample_bookings_mis.csv",
+      "row_count": 20,
+      "column_count": 17,
+      "columns": [
+        "booking_id",
+        "customer_id",
+        "customer_name",
+        "phone",
+        "city",
+        "package_name",
+        "package_category",
+        "lab_partner",
+        "booking_date",
+        "report_delivery_date",
+        "amount_inr",
+        "payment_status",
+        "is_repeat_customer",
+        "household_id",
+        "age",
+        "gender",
+        "status"
+      ],
+      "file_size_bytes": 3054
+    },
+    "table_name": "bookings",
+    "columns": [
+      {
+        "name": "booking_id",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 20,
+        "guessed_role": "identifier",
+        "sample_values": [
+          "B1001",
+          "B1002",
+          "B1003",
+          "B1004",
+          "B1005"
+        ]
+      },
+      {
+        "name": "customer_id",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 12,
+        "guessed_role": "identifier",
+        "sample_values": [
+          "C001",
+          "C002",
+          "C003",
+          "C004",
+          "C005"
+        ]
+      },
+      {
+        "name": "customer_name",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 12,
+        "guessed_role": "free_text",
+        "sample_values": [
+          "Ramesh Iyer",
+          "Sunita Rao",
+          "Anjali Mehta",
+          "Vikram Shah",
+          "Kavita Nair"
+        ]
+      },
+      {
+        "name": "phone",
+        "dtype": "int64",
+        "null_percent": 0.0,
+        "cardinality": 12,
+        "guessed_role": "free_text",
+        "min": 9820010101.0,
+        "max": 9820099999.0
+      },
+      {
+        "name": "city",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 3,
+        "guessed_role": "categorical",
+        "sample_values": [
+          "Mumbai",
+          "Pune",
+          "Bengaluru"
+        ]
+      },
+      {
+        "name": "package_name",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 5,
+        "guessed_role": "free_text",
+        "sample_values": [
+          "Full Body Checkup Basic",
+          "Full Body Checkup Advanced",
+          "Diabetes Panel",
+          "Thyroid Profile",
+          "Heart Health Panel"
+        ]
+      },
+      {
+        "name": "package_category",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 2,
+        "guessed_role": "categorical",
+        "sample_values": [
+          "General",
+          "Specialty"
+        ]
+      },
+      {
+        "name": "lab_partner",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 3,
+        "guessed_role": "categorical",
+        "sample_values": [
+          "MetroPath Labs",
+          "City Diagnostics",
+          "SouthCare Labs"
+        ]
+      },
+      {
+        "name": "booking_date",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 18,
+        "guessed_role": "date",
+        "sample_values": [
+          "2026-01-05",
+          "2026-01-06",
+          "2026-02-10",
+          "2026-01-15",
+          "2026-01-20"
+        ]
+      },
+      {
+        "name": "report_delivery_date",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 20,
+        "guessed_role": "date",
+        "sample_values": [
+          "2026-01-08",
+          "2026-01-09",
+          "2026-02-12",
+          "2026-01-17",
+          "2026-01-23"
+        ]
+      },
+      {
+        "name": "amount_inr",
+        "dtype": "int64",
+        "null_percent": 0.0,
+        "cardinality": 5,
+        "guessed_role": "currency",
+        "min": 699.0,
+        "max": 2999.0
+      },
+      {
+        "name": "payment_status",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 2,
+        "guessed_role": "boolean_flag",
+        "sample_values": [
+          "Paid",
+          "Pending"
+        ]
+      },
+      {
+        "name": "is_repeat_customer",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 2,
+        "guessed_role": "boolean_flag",
+        "sample_values": [
+          "No",
+          "Yes"
+        ]
+      },
+      {
+        "name": "household_id",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 12,
+        "guessed_role": "identifier",
+        "sample_values": [
+          "H001",
+          "H002",
+          "H003",
+          "H004",
+          "H005"
+        ]
+      },
+      {
+        "name": "age",
+        "dtype": "int64",
+        "null_percent": 0.0,
+        "cardinality": 12,
+        "guessed_role": "numeric",
+        "min": 27.0,
+        "max": 60.0
+      },
+      {
+        "name": "gender",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 2,
+        "guessed_role": "categorical",
+        "sample_values": [
+          "M",
+          "F"
+        ]
+      },
+      {
+        "name": "status",
+        "dtype": "object",
+        "null_percent": 0.0,
+        "cardinality": 2,
+        "guessed_role": "boolean_flag",
+        "sample_values": [
+          "Completed",
+          "Cancelled"
+        ]
+      }
+    ]
+  },
+  "gemini_semantic_profile": {
+    "column_semantics": [
+      {
+        "column": "booking_id",
+        "proposed_meaning": "Unique identifier for each diagnostic lab booking.",
+        "confidence": 1.0
+      },
+      {
+        "column": "customer_id",
+        "proposed_meaning": "Unique identifier for each customer.",
+        "confidence": 1.0
+      },
+      {
+        "column": "customer_name",
+        "proposed_meaning": "Full name of the customer.",
+        "confidence": 1.0
+      },
+      {
+        "column": "phone",
+        "proposed_meaning": "Customer's contact phone number.",
+        "confidence": 0.95
+      },
+      {
+        "column": "city",
+        "proposed_meaning": "City where the customer resides or the booking was made.",
+        "confidence": 1.0
+      },
+      {
+        "column": "package_name",
+        "proposed_meaning": "Name of the diagnostic test package booked.",
+        "confidence": 1.0
+      },
+      {
+        "column": "package_category",
+        "proposed_meaning": "Category of the diagnostic package (e.g., General, Specialty).",
+        "confidence": 1.0
+      },
+      {
+        "column": "lab_partner",
+        "proposed_meaning": "Name of the laboratory partner performing the diagnostic tests.",
+        "confidence": 1.0
+      },
+      {
+        "column": "booking_date",
+        "proposed_meaning": "Date when the diagnostic lab booking was made.",
+        "confidence": 1.0
+      },
+      {
+        "column": "report_delivery_date",
+        "proposed_meaning": "Date when the diagnostic report was delivered to the customer.",
+        "confidence": 1.0
+      },
+      {
+        "column": "amount_inr",
+        "proposed_meaning": "Total amount paid for the booking, in Indian Rupees.",
+        "confidence": 1.0
+      },
+      {
+        "column": "payment_status",
+        "proposed_meaning": "Current status of the payment for the booking (Paid or Pending).",
+        "confidence": 1.0
+      },
+      {
+        "column": "is_repeat_customer",
+        "proposed_meaning": "Indicates whether the customer has made previous bookings (Yes or No).",
+        "confidence": 1.0
+      },
+      {
+        "column": "household_id",
+        "proposed_meaning": "Identifier for the household to which the customer belongs.",
+        "confidence": 1.0
+      },
+      {
+        "column": "age",
+        "proposed_meaning": "Age of the customer at the time of booking.",
+        "confidence": 1.0
+      },
+      {
+        "column": "gender",
+        "proposed_meaning": "Gender of the customer (Male or Female).",
+        "confidence": 1.0
+      },
+      {
+        "column": "status",
+        "proposed_meaning": "Overall status of the booking (Completed or Cancelled).",
+        "confidence": 1.0
+      }
+    ],
+    "candidate_insights": [
+      {
+        "insight": "Analyze customer loyalty and re-booking behavior by tracking repeat customers and their booking frequency/value.",
+        "confidence": 0.9,
+        "columns": [
+          "customer_id",
+          "is_repeat_customer",
+          "booking_date",
+          "amount_inr"
+        ],
+        "suggested_kpi_name": "repeat_customer_rate"
+      },
+      {
+        "insight": "Identify top-performing lab partners and most popular diagnostic packages based on booking volume and total revenue generated.",
+        "confidence": 0.9,
+        "columns": [
+          "lab_partner",
+          "package_name",
+          "amount_inr",
+          "status"
+        ],
+        "suggested_kpi_name": "revenue_by_lab_partner_and_package"
+      },
+      {
+        "insight": "Monitor the booking cancellation rate to identify potential issues in the booking process or service delivery.",
+        "confidence": 0.85,
+        "columns": [
+          "status",
+          "booking_id"
+        ],
+        "suggested_kpi_name": "booking_cancellation_rate"
+      }
+    ],
+    "data_quality_flags": [
+      {
+        "issue": "Date columns ('booking_date', 'report_delivery_date') are stored as generic objects (strings) instead of a native date/datetime data type. This may require explicit type conversion for date-based calculations and analysis.",
+        "severity": "low",
+        "columns": [
+          "booking_date",
+          "report_delivery_date"
+        ]
+      }
+    ]
+  },
+  "sample_rows": [
+    {
+      "booking_id": "B1001",
+      "customer_id": "C001",
+      "customer_name": "Ramesh Iyer",
+      "phone": 9820011111,
+      "city": "Mumbai",
+      "package_name": "Full Body Checkup Basic",
+      "package_category": "General",
+      "lab_partner": "MetroPath Labs",
+      "booking_date": "2026-01-05",
+      "report_delivery_date": "2026-01-08",
+      "amount_inr": 1499,
+      "payment_status": "Paid",
+      "is_repeat_customer": "No",
+      "household_id": "H001",
+      "age": 34,
+      "gender": "M",
+      "status": "Completed"
+    },
+    {
+      "booking_id": "B1002",
+      "customer_id": "C002",
+      "customer_name": "Sunita Rao",
+      "phone": 9820022222,
+      "city": "Pune",
+      "package_name": "Full Body Checkup Advanced",
+      "package_category": "General",
+      "lab_partner": "City Diagnostics",
+      "booking_date": "2026-01-06",
+      "report_delivery_date": "2026-01-09",
+      "amount_inr": 2999,
+      "payment_status": "Paid",
+      "is_repeat_customer": "No",
+      "household_id": "H002",
+      "age": 45,
+      "gender": "F",
+      "status": "Completed"
+    },
+    {
+      "booking_id": "B1003",
+      "customer_id": "C001",
+      "customer_name": "Ramesh Iyer",
+      "phone": 9820011111,
+      "city": "Mumbai",
+      "package_name": "Diabetes Panel",
+      "package_category": "Specialty",
+      "lab_partner": "MetroPath Labs",
+      "booking_date": "2026-02-10",
+      "report_delivery_date": "2026-02-12",
+      "amount_inr": 899,
+      "payment_status": "Paid",
+      "is_repeat_customer": "Yes",
+      "household_id": "H001",
+      "age": 34,
+      "gender": "M",
+      "status": "Completed"
+    },
+    {
+      "booking_id": "B1004",
+      "customer_id": "C003",
+      "customer_name": "Anjali Mehta",
+      "phone": 9820033333,
+      "city": "Mumbai",
+      "package_name": "Thyroid Profile",
+      "package_category": "Specialty",
+      "lab_partner": "MetroPath Labs",
+      "booking_date": "2026-01-15",
+      "report_delivery_date": "2026-01-17",
+      "amount_inr": 699,
+      "payment_status": "Paid",
+      "is_repeat_customer": "No",
+      "household_id": "H003",
+      "age": 29,
+      "gender": "F",
+      "status": "Completed"
+    },
+    {
+      "booking_id": "B1005",
+      "customer_id": "C004",
+      "customer_name": "Vikram Shah",
+      "phone": 9820044444,
+      "city": "Bengaluru",
+      "package_name": "Full Body Checkup Basic",
+      "package_category": "General",
+      "lab_partner": "SouthCare Labs",
+      "booking_date": "2026-01-20",
+      "report_delivery_date": "2026-01-23",
+      "amount_inr": 1499,
+      "payment_status": "Paid",
+      "is_repeat_customer": "No",
+      "household_id": "H004",
+      "age": 52,
+      "gender": "M",
+      "status": "Completed"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "method": "generate_text",
+  "system": null,
+  "prompt": "Write one short plain-prose sentence introducing a 'Healthcare MIS / Diagnostics Booking Pack Report' report command for Healthcare MIS / Diagnostics Booking Pack business data. No markdown, no invented numbers.",
+  "response": "The Healthcare MIS / Diagnostics Booking Pack Report command provides access to relevant diagnostics booking data."
+}

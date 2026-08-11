@@ -1,0 +1,15 @@
+{
+  "name": "curelo-bookings-poc-marketplace",
+  "description": "Curelo Gemini-generated booking analytics POC plugin",
+  "owner": {
+    "name": "Curelo"
+  },
+  "plugins": [
+    {
+      "name": "curelo-bookings-poc",
+      "source": ".",
+      "description": "Gemini-pipeline-generated booking MIS analytics plugin",
+      "version": "0.1.0"
+    }
+  ]
+}

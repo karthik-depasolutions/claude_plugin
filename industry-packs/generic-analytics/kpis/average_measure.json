@@ -1,0 +1,11 @@
+{
+  "id": "average_measure",
+  "label": "Average of Primary Measure",
+  "description": "Average of the primary numeric measure.",
+  "formula_plain_english": "avg(measure_amount)",
+  "grain": "record",
+  "requires": { "measures": ["measure_amount"], "filters": [] },
+  "sql": "SELECT ROUND(AVG({{measure_amount}}), 2) AS average FROM {{fact}}",
+  "unit": "numeric",
+  "assertions": []
+}

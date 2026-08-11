@@ -1,0 +1,11 @@
+{
+  "id": "cancellation_rate",
+  "label": "Cancellation Rate",
+  "description": "Percentage of bookings that were cancelled.",
+  "formula_plain_english": "percentage of bookings where transaction_status is a cancelled value",
+  "grain": "transaction",
+  "requires": { "measures": [], "filters": ["transaction_status"] },
+  "sql": "SELECT ROUND(100.0 * SUM(CASE WHEN {{transaction_status}} IN {{cancelled_values}} THEN 1 ELSE 0 END) / COUNT(*), 2) AS cancellation_percent, SUM(CASE WHEN {{transaction_status}} IN {{cancelled_values}} THEN 1 ELSE 0 END) AS cancelled_bookings, COUNT(*) AS total_bookings FROM {{fact}}",
+  "unit": "percent",
+  "assertions": ["cancellation_percent >= 0", "cancellation_percent <= 100"]
+}

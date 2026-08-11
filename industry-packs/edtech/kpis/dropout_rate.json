@@ -1,0 +1,11 @@
+{
+  "id": "dropout_rate",
+  "label": "Dropout Rate",
+  "description": "Percentage of enrollments that were dropped or cancelled.",
+  "formula_plain_english": "percentage of enrollments where transaction_status is a cancelled/dropped value",
+  "grain": "transaction",
+  "requires": { "measures": [], "filters": ["transaction_status"] },
+  "sql": "SELECT ROUND(100.0 * SUM(CASE WHEN {{transaction_status}} IN {{cancelled_values}} THEN 1 ELSE 0 END) / COUNT(*), 2) AS dropout_percent, COUNT(*) AS total_enrollments FROM {{fact}}",
+  "unit": "percent",
+  "assertions": ["dropout_percent >= 0", "dropout_percent <= 100"]
+}

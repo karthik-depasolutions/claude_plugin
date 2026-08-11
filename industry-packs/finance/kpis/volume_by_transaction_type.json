@@ -1,0 +1,12 @@
+{
+  "id": "volume_by_transaction_type",
+  "label": "Volume by Transaction Type",
+  "description": "Transaction count and volume grouped by transaction type.",
+  "formula_plain_english": "count(*) and sum(revenue_amount) grouped by transaction_type",
+  "grain": "transaction",
+  "requires": { "measures": ["revenue_amount"], "dimensions": ["transaction_type"] },
+  "sql": "SELECT {{transaction_type}} AS transaction_type, COUNT(*) AS transaction_count, SUM({{revenue_amount}}) AS volume FROM {{fact}} GROUP BY {{transaction_type}} ORDER BY volume DESC",
+  "unit": "mixed",
+  "assertions": [],
+  "optional": true
+}

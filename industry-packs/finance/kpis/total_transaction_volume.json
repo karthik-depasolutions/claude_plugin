@@ -1,0 +1,11 @@
+{
+  "id": "total_transaction_volume",
+  "label": "Total Transaction Volume",
+  "description": "Total value of successful transactions.",
+  "formula_plain_english": "sum(revenue_amount) where transaction_status is a completed value",
+  "grain": "transaction",
+  "requires": { "measures": ["revenue_amount"], "filters": ["transaction_status"] },
+  "sql": "SELECT SUM({{revenue_amount}}) AS total_volume, COUNT(*) AS successful_transactions FROM {{fact}} WHERE {{transaction_status}} IN {{completed_values}}",
+  "unit": "currency",
+  "assertions": ["total_volume >= 0"]
+}

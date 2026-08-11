@@ -1,0 +1,12 @@
+{
+  "id": "count_by_category",
+  "label": "Count by Category",
+  "description": "Record count grouped by the primary categorical dimension.",
+  "formula_plain_english": "count(*) grouped by category_dim",
+  "grain": "record",
+  "requires": { "measures": [], "dimensions": ["category_dim"] },
+  "sql": "SELECT {{category_dim}} AS category, COUNT(*) AS record_count FROM {{fact}} GROUP BY {{category_dim}} ORDER BY record_count DESC",
+  "unit": "count",
+  "assertions": [],
+  "optional": true
+}
