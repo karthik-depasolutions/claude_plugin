@@ -12,6 +12,8 @@ import { useRunStream } from "../hooks/useRunStream";
 import StageTimeline from "../components/StageTimeline";
 import ValidationReportView from "../components/ValidationReportView";
 import BindingEditor from "../components/BindingEditor";
+import PublishPanel from "../components/PublishPanel";
+import WarehouseCredentialsPanel from "../components/WarehouseCredentialsPanel";
 import type { RankedMatch } from "../lib/types";
 
 export default function Wizard() {
@@ -168,7 +170,13 @@ function RunProgress({
   const classifyEvent = [...events].reverse().find((e) => e.stage === "classify" && e.data.ranked_matches);
   const bindEvent = [...events].reverse().find((e) => e.stage === "bind");
   const validateEvent = [...events].reverse().find((e) => e.stage === "validate");
+  const packageEvent = [...events].reverse().find((e) => e.stage === "package" && e.data.plugin_dir);
   const unresolvedRoles: string[] = bindEvent?.data.unresolved_roles ?? [];
+  // plugin_dir is a server filesystem path (e.g. "generated\runs\<id>\output\
+  // <pack>-mis-plugin") - only the last segment (the plugin's own directory
+  // name, which is also its manifest `name`) is meaningful client-side.
+  const pluginDirPath: string | undefined = packageEvent?.data.plugin_dir;
+  const pluginName = pluginDirPath?.split(/[\\/]/).filter(Boolean).pop();
   const canEditBindings =
     unresolvedRoles.length > 0 && (status === "succeeded" || status === "failed" || status === "needs_input");
 
@@ -217,12 +225,16 @@ function RunProgress({
       {validateEvent?.data.report && <ValidationReportView report={validateEvent.data.report} />}
 
       {status === "succeeded" && (
-        <a
-          href={downloadUrl(runId)}
-          className="inline-block rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
-        >
-          Download plugin (.zip)
-        </a>
+        <div className="space-y-4">
+          <WarehouseCredentialsPanel runId={runId} />
+          <a
+            href={downloadUrl(runId)}
+            className="inline-block rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
+          >
+            Download plugin (.zip)
+          </a>
+          <PublishPanel runId={runId} defaultRepoName={pluginName} />
+        </div>
       )}
     </div>
   );

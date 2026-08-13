@@ -11,7 +11,7 @@ import socket
 from urllib.parse import urlparse
 
 import pytest
-from forge_core.ingestion.postgres import CREDENTIAL_ENV_VAR, PostgresAdapter, redact
+from forge_core.ingestion.postgres import CREDENTIAL_ENV_VAR, PostgresAdapter, extract_schema, redact
 from forge_core.ingestion.registry import default_run_id, ingest, prepare_source_for_persistence
 from forge_core.models.common import SourceKind
 
@@ -54,6 +54,25 @@ def test_redact_is_a_no_op_for_plain_paths():
     assert redact(r"D:\data\bookings.csv") == r"D:\data\bookings.csv"
 
 
+def test_extract_schema_defaults_to_public_when_no_options_present():
+    assert extract_schema("postgresql://forge:forge@localhost:5432/forge") == "public"
+
+
+def test_extract_schema_reads_the_search_path_option():
+    url = "postgresql://u:p@host:5432/db?options=-csearch_path%3Dclient_run123"
+    assert extract_schema(url) == "client_run123"
+
+
+def test_extract_schema_takes_the_first_schema_in_a_comma_separated_search_path():
+    url = "postgresql://u:p@host:5432/db?options=-csearch_path%3Dclient_run123,public"
+    assert extract_schema(url) == "client_run123"
+
+
+def test_extract_schema_ignores_unrelated_options():
+    url = "postgresql://u:p@host:5432/db?options=-cstatement_timeout%3D5000"
+    assert extract_schema(url) == "public"
+
+
 def test_prepare_source_for_persistence_never_returns_the_raw_credential(tmp_path):
     connection_string = "postgresql://forge:s3cr3t@localhost:5432/forge"
     stored = prepare_source_for_persistence(connection_string)
@@ -91,3 +110,57 @@ def test_ingest_via_the_persisted_placeholder_reconnects_using_the_stashed_env_v
     placeholder = prepare_source_for_persistence(TEST_POSTGRES_URL)
     ds = ingest(placeholder)
     assert ds.kind == SourceKind.POSTGRES
+
+
+@requires_live_postgres
+def test_ingest_scans_an_explicit_non_public_schema_and_fully_qualifies_physical_refs():
+    import duckdb
+
+    con = duckdb.connect(":memory:")
+    con.execute("INSTALL postgres; LOAD postgres;")
+    con.execute(f"ATTACH '{TEST_POSTGRES_URL}' AS srcdb (TYPE POSTGRES)")
+    con.execute("CREATE SCHEMA IF NOT EXISTS srcdb.forge_test_schema")
+    con.execute("DROP TABLE IF EXISTS srcdb.forge_test_schema.widgets")
+    con.execute("CREATE TABLE srcdb.forge_test_schema.widgets (id INT, name TEXT)")
+    con.execute("INSERT INTO srcdb.forge_test_schema.widgets VALUES (1, 'a'), (2, 'b')")
+    con.close()
+
+    try:
+        ds = PostgresAdapter().ingest(TEST_POSTGRES_URL, schema="forge_test_schema")
+        assert [t.name for t in ds.tables] == ["widgets"]
+        assert ds.tables[0].physical_ref == 'srcdb."forge_test_schema"."widgets"'
+        assert ds.tables[0].row_count == 2
+    finally:
+        con = duckdb.connect(":memory:")
+        con.execute("INSTALL postgres; LOAD postgres;")
+        con.execute(f"ATTACH '{TEST_POSTGRES_URL}' AS srcdb (TYPE POSTGRES)")
+        con.execute("DROP TABLE IF EXISTS srcdb.forge_test_schema.widgets")
+        con.execute("DROP SCHEMA IF EXISTS srcdb.forge_test_schema")
+        con.close()
+
+
+@requires_live_postgres
+def test_ingest_auto_detects_schema_from_the_search_path_option():
+    import duckdb
+
+    con = duckdb.connect(":memory:")
+    con.execute("INSTALL postgres; LOAD postgres;")
+    con.execute(f"ATTACH '{TEST_POSTGRES_URL}' AS srcdb (TYPE POSTGRES)")
+    con.execute("CREATE SCHEMA IF NOT EXISTS srcdb.forge_test_autodetect")
+    con.execute("DROP TABLE IF EXISTS srcdb.forge_test_autodetect.gadgets")
+    con.execute("CREATE TABLE srcdb.forge_test_autodetect.gadgets (id INT)")
+    con.execute("INSERT INTO srcdb.forge_test_autodetect.gadgets VALUES (1)")
+    con.close()
+
+    scoped_url = f"{TEST_POSTGRES_URL}?options=-csearch_path%3Dforge_test_autodetect"
+    try:
+        ds = PostgresAdapter().ingest(scoped_url)
+        assert [t.name for t in ds.tables] == ["gadgets"]
+        assert ds.tables[0].physical_ref == 'srcdb."forge_test_autodetect"."gadgets"'
+    finally:
+        con = duckdb.connect(":memory:")
+        con.execute("INSTALL postgres; LOAD postgres;")
+        con.execute(f"ATTACH '{TEST_POSTGRES_URL}' AS srcdb (TYPE POSTGRES)")
+        con.execute("DROP TABLE IF EXISTS srcdb.forge_test_autodetect.gadgets")
+        con.execute("DROP SCHEMA IF EXISTS srcdb.forge_test_autodetect")
+        con.close()

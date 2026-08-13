@@ -27,11 +27,19 @@
           "title": "Command"
         },
         "args": {
-          "items": {
-            "type": "string"
-          },
-          "title": "Args",
-          "type": "array"
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Args"
         },
         "url": {
           "anyOf": [

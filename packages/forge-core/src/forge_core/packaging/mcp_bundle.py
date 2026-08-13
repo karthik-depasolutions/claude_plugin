@@ -67,7 +67,12 @@ def bundle_runtime(plugin_dir: Path, mcp_server_dirname: str = "mcp_server") -> 
 
     target_dir = plugin_dir / mcp_server_dirname
     target_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copytree(runtime_source, target_dir / RUNTIME_PACKAGE_NAME, dirs_exist_ok=True)
+    shutil.copytree(
+        runtime_source,
+        target_dir / RUNTIME_PACKAGE_NAME,
+        dirs_exist_ok=True,
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc", "*.pyo"),
+    )
 
     (target_dir / RUNTIME_ENTRY_POINT).write_text(_ENTRY_POINT_TEMPLATE, encoding="utf-8")
 

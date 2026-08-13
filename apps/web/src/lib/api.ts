@@ -1,4 +1,12 @@
-import type { PackSummary, RunDetail, RunSummary, StageEvent, ValidationReport } from "./types";
+import type {
+  PackSummary,
+  PublishGithubResponse,
+  RunDetail,
+  RunSummary,
+  StageEvent,
+  ValidationReport,
+  WarehouseCredentialsResponse,
+} from "./types";
 
 // In dev, vite.config.ts proxies /runs, /packs, /health to uvicorn on :8000.
 // In production this is baked in at build time (see docker-compose.yml).
@@ -64,6 +72,30 @@ export function getReport(runId: string): Promise<ValidationReport> {
 
 export function downloadUrl(runId: string): string {
   return `${BASE}/runs/${runId}/download`;
+}
+
+export function publishToGithub(
+  runId: string,
+  opts: { repoName?: string; owner?: string; private: boolean }
+): Promise<PublishGithubResponse> {
+  return fetch(`${BASE}/runs/${runId}/publish/github`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      repo_name: opts.repoName || null,
+      owner: opts.owner || null,
+      private: opts.private,
+    }),
+  }).then((r) => asJson(r));
+}
+
+/** Only returns a value for a run whose upload was loaded into the client
+ * warehouse - a plain 404 (no such run ever had one) is treated as "nothing
+ * to show" rather than an error, since most runs won't have this. */
+export async function getWarehouseCredentials(runId: string): Promise<WarehouseCredentialsResponse | null> {
+  const response = await fetch(`${BASE}/runs/${runId}/warehouse-credentials`);
+  if (response.status === 404) return null;
+  return asJson(response);
 }
 
 type SsePayload = StageEvent | { final: true; status: string };

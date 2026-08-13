@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 def _validate_component_path(v: str) -> str:
@@ -317,7 +317,13 @@ class HookHandler(BaseModel):
 
     type: Literal["command", "http", "mcp_tool", "prompt", "agent"]
     command: str | None = None
-    args: list[str] = Field(default_factory=list)
+    # `None` (omitted from the serialized JSON via `exclude_none`), not `[]` -
+    # Claude's plugin-content validator rejects `args` outright on any hook
+    # whose `type` isn't `"command"` (confirmed against the real validator:
+    # "Field(s) ['args'] in ... are only valid on type 'command' hooks, not
+    # type 'prompt'"), even when the value is an empty list. A `default_factory
+    # =list` used to serialize `"args": []` on every hook regardless of type.
+    args: list[str] | None = None
     url: str | None = None
     server: str | None = None
     tool: str | None = None
@@ -326,6 +332,33 @@ class HookHandler(BaseModel):
     status_message: str | None = Field(default=None, alias="statusMessage")
     condition: str | None = Field(default=None, alias="if")
     run_async: bool | None = Field(default=None, alias="async")
+
+    @model_validator(mode="after")
+    def _check_type_specific_fields(self) -> HookHandler:
+        # Each of these fields is only meaningful for the hook type it's
+        # named after; the real validator rejects them on every other type,
+        # even when the value is falsy (empty list, empty string). Caught
+        # here so this fails fast in-process instead of only at
+        # `claude plugin validate` time or, worse, remote marketplace sync.
+        # "agent" is excluded here: its field constraints aren't confirmed
+        # against the real validator, unlike the other four (see module
+        # docstring policy on empirically-verified constraints only).
+        type_only_fields = {
+            "command": ("command", "args"),
+            "http": ("url",),
+            "mcp_tool": ("server", "tool"),
+            "prompt": ("prompt",),
+        }
+        for owner_type, fields in type_only_fields.items():
+            if self.type in (owner_type, "agent"):
+                continue
+            set_fields = [f for f in fields if getattr(self, f) is not None]
+            if set_fields:
+                raise ValueError(
+                    f"Field(s) {set_fields} are only valid on type '{owner_type}' hooks, "
+                    f"not type '{self.type}'"
+                )
+        return self
 
 
 class HookMatcherGroup(BaseModel):

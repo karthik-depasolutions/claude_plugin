@@ -26,6 +26,10 @@ jobs:
       # Exercises forge_core.ingestion.postgres for real instead of skipping
       # (test_postgres_adapter.py skips cleanly when this isn't reachable).
       FORGE_TEST_POSTGRES_URL: postgresql://forge:forge@localhost:5432/forge
+      # Same service, used as a superuser admin connection by
+      # test_warehouse.py / test_warehouse_e2e.py (forge_core.ingestion.
+      # warehouse) - also skips cleanly when unset/unreachable.
+      FORGE_TEST_WAREHOUSE_ADMIN_URL: postgresql://forge:forge@localhost:5432/forge
     steps:
       - uses: actions/checkout@v4
 

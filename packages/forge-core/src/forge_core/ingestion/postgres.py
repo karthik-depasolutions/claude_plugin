@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import os
 import re
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 import duckdb
 
@@ -35,7 +35,9 @@ from forge_core.models.datasource import ConnectionContract, DataSource
 
 CATALOG_ALIAS = "srcdb"
 CREDENTIAL_ENV_VAR = "FORGE_SOURCE_DB_URL"
+DEFAULT_SCHEMA = "public"
 URL_SCHEME_PATTERN = re.compile(r"^postgres(ql)?://", re.IGNORECASE)
+SEARCH_PATH_PATTERN = re.compile(r"-c\s*search_path=([^,\s'\"]+)", re.IGNORECASE)
 
 
 def redact(connection_string: str) -> str:
@@ -48,6 +50,25 @@ def redact(connection_string: str) -> str:
     return connection_string.replace(parsed.netloc, redacted_netloc, 1)
 
 
+def extract_schema(connection_string: str, default: str = DEFAULT_SCHEMA) -> str:
+    """Pull the target schema out of a `?options=-csearch_path%3D<schema>`
+    query parameter, if present - this is how the client-warehouse loader
+    (`forge_core.ingestion.warehouse`) tells us which per-client schema to
+    scan, without changing what a plain customer connection string looks
+    like. Falls back to `default` ('public') for every connection string
+    that doesn't set this, which is all of them before this feature existed.
+    """
+    parsed = urlparse(connection_string)
+    options = parse_qs(parsed.query).get("options", [None])[0]
+    if not options:
+        return default
+    match = SEARCH_PATH_PATTERN.search(options)
+    if not match:
+        return default
+    # search_path can list multiple schemas; we only ever set one.
+    return match.group(1).strip('"').split(",")[0]
+
+
 class PostgresAdapter:
     """Not a `Path`-based `IngestionAdapter` - see module docstring. The
     registry dispatches to this one by URL scheme before ever touching the
@@ -58,7 +79,13 @@ class PostgresAdapter:
     def supports(self, source: str) -> bool:
         return bool(URL_SCHEME_PATTERN.match(source))
 
-    def ingest(self, source: str) -> DataSource:
+    def ingest(self, source: str, schema: str | None = None) -> DataSource:
+        """`schema` defaults to whatever `extract_schema()` finds in `source`
+        (itself defaulting to `'public'`) - see that function's docstring.
+        Callers may still pass it explicitly if they already know it."""
+        if schema is None:
+            schema = extract_schema(source)
+
         con = duckdb.connect(":memory:")
         con.execute("INSTALL postgres; LOAD postgres;")
         con.execute(f"ATTACH '{source}' AS {CATALOG_ALIAS} (TYPE POSTGRES, READ_ONLY)")
@@ -67,17 +94,17 @@ class PostgresAdapter:
             row[0]
             for row in con.execute(
                 f"SELECT table_name FROM duckdb_tables() WHERE database_name = '{CATALOG_ALIAS}' "
-                "AND schema_name = 'public' ORDER BY table_name"
+                f"AND schema_name = '{schema}' ORDER BY table_name"
             ).fetchall()
         ]
         if not table_names:
-            raise ValueError(
-                f"No tables found via {redact(source)} (only the 'public' schema is scanned)."
-            )
+            raise ValueError(f"No tables found via {redact(source)} (schema '{schema}' scanned).")
 
-        tables = [describe_relation(con, name, f'{CATALOG_ALIAS}."{name}"') for name in table_names]
+        tables = [
+            describe_relation(con, name, f'{CATALOG_ALIAS}."{schema}"."{name}"') for name in table_names
+        ]
         total_rows = sum(t.row_count for t in tables)
-        source_id = stable_source_id(redact(source), *table_names)
+        source_id = stable_source_id(redact(source), schema, *table_names)
 
         # Set for the rest of this process so later re-opens in the same
         # pipeline run (profiling, dry_run, dashboard generation) resolve
@@ -104,4 +131,11 @@ class PostgresAdapter:
         )
 
 
-__all__ = ["CREDENTIAL_ENV_VAR", "URL_SCHEME_PATTERN", "PostgresAdapter", "redact"]
+__all__ = [
+    "CREDENTIAL_ENV_VAR",
+    "DEFAULT_SCHEMA",
+    "URL_SCHEME_PATTERN",
+    "PostgresAdapter",
+    "extract_schema",
+    "redact",
+]

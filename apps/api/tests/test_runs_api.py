@@ -92,6 +92,142 @@ async def test_upload_rejects_a_zip_with_a_path_traversal_entry(client: AsyncCli
     assert response.status_code == 400
 
 
+async def test_upload_routes_through_the_client_warehouse_when_configured(
+    client: AsyncClient, monkeypatch
+):
+    """Doesn't need a real Postgres - `provision_client_schema` itself is
+    mocked, so this only exercises the router's wiring: it's invoked with the
+    upload directory, the returned connection string is never persisted (the
+    `${FORGE_SOURCE_DB_URL}` placeholder is), and it's retrievable exactly
+    once via the dedicated credentials endpoint."""
+    from forge_api.routers import runs as runs_router
+    from forge_core.ingestion.warehouse import WarehouseCredentials
+
+    monkeypatch.setenv("FORGE_CLIENT_WAREHOUSE_URL", "postgresql://admin:pw@127.0.0.1:5432/forge_warehouse")
+    monkeypatch.setenv("FORGE_CLIENT_WAREHOUSE_PUBLIC_HOST", "example.invalid")
+
+    captured: dict = {}
+    fake_connection_string = (
+        "postgresql://client_fake_ro:s3cr3t@example.invalid:5432/forge_warehouse"
+        "?options=-csearch_path%3Dclient_fake&sslmode=require"
+    )
+
+    def fake_provision(admin_url, run_id, upload_path, *, public_host, public_port, database, label=None):
+        captured.update(
+            admin_url=admin_url,
+            run_id=run_id,
+            upload_path=upload_path,
+            public_host=public_host,
+            public_port=public_port,
+            database=database,
+            label=label,
+        )
+        assert upload_path.exists(), "upload files must be saved to disk before provisioning runs"
+        return WarehouseCredentials(
+            connection_string=fake_connection_string, schema_name="client_fake", role_name="client_fake_ro"
+        )
+
+    monkeypatch.setattr(runs_router, "provision_client_schema", fake_provision)
+    monkeypatch.setattr(runs_router, "deprovision_client_schema", lambda *a, **k: None)
+
+    files = [("files", (BOOKINGS_CSV.name, BOOKINGS_CSV.read_bytes(), "text/csv"))]
+    create_response = await client.post("/runs/upload", params={"use_llm": False}, files=files)
+    assert create_response.status_code == 201
+    run_id = create_response.json()["run_id"]
+
+    assert captured["run_id"] == run_id
+    assert captured["public_host"] == "example.invalid"
+    assert captured["label"] == BOOKINGS_CSV.stem, "schema label should hint at the uploaded file's name"
+    assert not captured["upload_path"].exists(), "local upload copy must be removed once loaded"
+
+    detail = await client.get(f"/runs/{run_id}")
+    assert detail.json()["source_path"] == "${FORGE_SOURCE_DB_URL}"
+    assert "s3cr3t" not in detail.text
+
+    creds_response = await client.get(f"/runs/{run_id}/warehouse-credentials")
+    assert creds_response.status_code == 200
+    assert creds_response.json()["connection_string"] == fake_connection_string
+
+
+async def test_warehouse_credentials_404_for_a_run_that_did_not_use_the_warehouse(client: AsyncClient):
+    create_response = await client.post(
+        "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
+    )
+    run_id = create_response.json()["run_id"]
+
+    response = await client.get(f"/runs/{run_id}/warehouse-credentials")
+    assert response.status_code == 404
+
+
+async def test_publish_to_github_requires_a_successful_run(client: AsyncClient, monkeypatch):
+    create_response = await client.post(
+        "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
+    )
+    run_id = create_response.json()["run_id"]
+
+    # Still running (or at least not yet succeeded) - must be rejected before
+    # ever touching GITHUB_TOKEN or the network.
+    response = await client.post(f"/runs/{run_id}/publish/github", json={})
+    assert response.status_code in (409,)
+
+
+async def test_publish_to_github_requires_a_configured_token(client: AsyncClient, monkeypatch):
+    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    create_response = await client.post(
+        "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
+    )
+    run_id = create_response.json()["run_id"]
+    await _wait_for_terminal(client, run_id)
+
+    response = await client.post(f"/runs/{run_id}/publish/github", json={})
+    assert response.status_code == 400
+    assert "GITHUB_TOKEN" in response.json()["detail"]
+
+
+async def test_publish_to_github_creates_a_repo_and_returns_install_commands(
+    client: AsyncClient, monkeypatch
+):
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+
+    from forge_api.routers import runs as runs_router
+    from forge_core.publishing.standalone_repo import PublishedRepo
+
+    captured: dict = {}
+
+    def fake_publish(plugin_dir, *, token, repo_name, owner, private):
+        captured.update(
+            plugin_dir=plugin_dir, token=token, repo_name=repo_name, owner=owner, private=private
+        )
+        return PublishedRepo(
+            repo_full_name="acme/bookings-mis-plugin",
+            html_url="https://github.com/acme/bookings-mis-plugin",
+            clone_url="https://github.com/acme/bookings-mis-plugin.git",
+            plugin_name="healthcare-diagnostics-mis-plugin",
+            marketplace_add_command="/plugin marketplace add acme/bookings-mis-plugin",
+            install_command="/plugin install healthcare-diagnostics-mis-plugin@bookings-mis-plugin",
+        )
+
+    monkeypatch.setattr(runs_router, "publish_plugin_as_new_repo", fake_publish)
+
+    create_response = await client.post(
+        "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
+    )
+    run_id = create_response.json()["run_id"]
+    final = await _wait_for_terminal(client, run_id)
+    assert final["status"] == "succeeded", final
+
+    response = await client.post(
+        f"/runs/{run_id}/publish/github", json={"repo_name": "bookings-mis-plugin", "private": False}
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["repo_full_name"] == "acme/bookings-mis-plugin"
+    assert body["marketplace_add_command"] == "/plugin marketplace add acme/bookings-mis-plugin"
+    assert captured["repo_name"] == "bookings-mis-plugin"
+    assert captured["private"] is False
+    assert captured["token"] == "fake-token"
+
+
 async def test_sse_stream_replays_events_for_a_finished_run(client: AsyncClient):
     create_response = await client.post(
         "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}

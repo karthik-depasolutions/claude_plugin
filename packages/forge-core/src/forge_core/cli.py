@@ -76,6 +76,18 @@ app.add_typer(publish_app, name="publish")
 console = Console()
 
 
+@app.callback()
+def _load_env() -> None:
+    """Every subcommand may read a `FORGE_*`/`GEMINI_API_KEY`/`GITHUB_*` env
+    var straight from `os.environ` (see `publish github`, `publish
+    marketplace --push`) - load `.env` once, here, instead of relying on
+    each of those call sites (or forge_core.llm, which already does this
+    for its own use) to remember to."""
+    from dotenv import load_dotenv
+
+    load_dotenv()
+
+
 @app.command()
 def run(
     source: str = typer.Argument(
@@ -209,6 +221,35 @@ def publish_marketplace_cmd(
             repo, result_dir, commit_message=f"Publish {marketplace_name}", repo_full_name=repo_full_name
         )
         console.print(f"[bold green]Pushed to {repo_full_name}@{source.sha}[/]")
+
+
+@publish_app.command("github")
+def publish_github_cmd(
+    plugin_dir: Path = typer.Argument(..., help="A packaged plugin directory."),
+    repo_name: str = typer.Option(None, help="Repo (and catalog) name. Defaults to the plugin's own name."),
+    owner: str = typer.Option(
+        None, help="GitHub org/user for the new repo. Defaults to GITHUB_ORG, then the token's own account."
+    ),
+    private: bool = typer.Option(
+        False, help="Create the repo as private (needs the installer to have GitHub access to see it)."
+    ),
+) -> None:
+    """Create a brand-new GitHub repo for PLUGIN_DIR and push it - no
+    pre-existing repo or marketplace needed. The repo is immediately
+    installable with the two commands this prints."""
+    from forge_core.publishing import publish_plugin_as_new_repo
+
+    result = publish_plugin_as_new_repo(
+        plugin_dir,
+        token=os.environ["GITHUB_TOKEN"],
+        repo_name=repo_name,
+        owner=owner or os.environ.get("GITHUB_ORG"),
+        private=private,
+    )
+    console.print(f"[bold green]Published to {result.html_url}[/]")
+    console.print("Install with:")
+    console.print(f"  {result.marketplace_add_command}")
+    console.print(f"  {result.install_command}")
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import shutil
 import uuid
 import zipfile
@@ -16,9 +17,11 @@ from typing import IO, Annotated, Any
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from forge_core.ingestion.registry import prepare_source_for_persistence
+from forge_core.ingestion.warehouse import deprovision_client_schema, provision_client_schema
 from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.run import RunRecord, StageEvent
 from forge_core.packaging import zip_plugin
+from forge_core.publishing import publish_plugin_as_new_repo
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -30,8 +33,11 @@ from forge_api.schemas import (
     BindingOverridesRequest,
     ConfirmIndustryRequest,
     CreateRunFromPathRequest,
+    PublishGithubRequest,
+    PublishGithubResponse,
     RunDetail,
     RunSummary,
+    WarehouseCredentialsResponse,
 )
 
 router = APIRouter(prefix="/runs", tags=["runs"])
@@ -71,17 +77,82 @@ async def create_run_from_upload(
     """Accepts one or more files - multiple CSVs (or a mix of CSV/Excel/JSON/
     Parquet) become a multi-table source, same as pointing `forge run` at a
     directory. A single `.zip` is unpacked first so a customer can upload
-    "all my tables" as one archive instead of selecting each file."""
+    "all my tables" as one archive instead of selecting each file.
+
+    If the client data warehouse is configured (`FORGE_CLIENT_WAREHOUSE_URL`),
+    the upload is loaded into a dedicated Postgres schema instead of being
+    kept as local files - see forge_core.ingestion.warehouse. Otherwise this
+    behaves exactly as before."""
     run_id = _new_run_id()
     source_dir = get_settings().runs_dir / run_id / "source"
     source_dir.mkdir(parents=True, exist_ok=True)
     ingest_path = _save_uploads(files, source_dir)
 
+    settings = get_settings()
+    warehouse_connection_string: str | None = None
+    if settings.client_warehouse_enabled:
+        warehouse_connection_string = await asyncio.to_thread(
+            _provision_and_get_source, run_id, ingest_path, source_dir
+        )
+        # Never let the raw credential reach RunRecord/the jobs DB/a log line -
+        # same placeholder scheme create_run_from_path already uses for a
+        # customer-supplied postgresql:// source.
+        source_for_run = prepare_source_for_persistence(warehouse_connection_string)
+    else:
+        source_for_run = str(ingest_path)
+
     output_dir = str(get_settings().runs_dir / run_id / "output")
     ctx = await pipeline_runner.start_run(
-        run_id, str(ingest_path), output_dir, industry_override=industry, use_llm=use_llm
+        run_id, source_for_run, output_dir, industry_override=industry, use_llm=use_llm
     )
+    if warehouse_connection_string is not None:
+        ctx.warehouse_connection_string = warehouse_connection_string
     return _summary(ctx.record)
+
+
+def _label_for_upload(ingest_path: Path) -> str | None:
+    """A short, human-readable hint for the schema name - purely so someone
+    poking around in pgAdmin can tell `client_sales_data_6c34dcc7569a` apart
+    from `client_customer_list_a2579a24b4b1` without cross-referencing the
+    API. Best-effort: falls back to no label rather than failing the run."""
+    try:
+        if ingest_path.is_file():
+            return ingest_path.stem
+        files = sorted(p for p in ingest_path.iterdir() if p.is_file())
+        return files[0].stem if files else None
+    except OSError:
+        return None
+
+
+def _provision_and_get_source(run_id: str, ingest_path: Path, source_dir: Path) -> str:
+    """Loads the upload into the warehouse and returns the raw connection
+    string - the caller immediately passes this through
+    `prepare_source_for_persistence` before it touches `RunRecord`, exactly
+    like a customer-supplied live-database source already works today.
+
+    Runs on a thread (it makes a real network connection) and best-effort
+    rolls back a partial schema if anything fails partway through."""
+    settings = get_settings()
+    assert settings.client_warehouse_url and settings.client_warehouse_public_host  # checked by caller
+    label = _label_for_upload(ingest_path)
+    try:
+        creds = provision_client_schema(
+            settings.client_warehouse_url,
+            run_id,
+            ingest_path,
+            public_host=settings.client_warehouse_public_host,
+            public_port=settings.client_warehouse_public_port,
+            database=settings.client_warehouse_database,
+            label=label,
+        )
+    except Exception:
+        deprovision_client_schema(settings.client_warehouse_url, run_id, label=label)
+        raise
+    finally:
+        # The uploaded files' only job was to get loaded into Postgres above;
+        # don't leave a second, unredacted copy sitting on our own disk.
+        shutil.rmtree(source_dir, ignore_errors=True)
+    return creds.connection_string
 
 
 def _save_uploads(files: list[UploadFile], source_dir: Path) -> Path:
@@ -216,6 +287,70 @@ async def download_plugin(run_id: str, session: SessionDep) -> FileResponse:
     if not zip_path.exists() or zip_path.stat().st_mtime < plugin_dir.stat().st_mtime:
         zip_plugin(plugin_dir, zip_path)
     return FileResponse(zip_path, filename=zip_path.name, media_type="application/zip")
+
+
+@router.get("/{run_id}/warehouse-credentials", response_model=WarehouseCredentialsResponse)
+async def get_warehouse_credentials(run_id: str, session: SessionDep) -> WarehouseCredentialsResponse:
+    """Returns the connection string once, from this process's memory only -
+    see `RunContext.warehouse_connection_string`. 404s for any run that
+    either wasn't loaded through the warehouse, or whose API process has
+    since restarted (there is deliberately no persisted copy to fall back
+    to)."""
+    await _load_record(run_id, session)  # 404s early if the run truly doesn't exist
+    ctx = registry.get(run_id)
+    if ctx is None or ctx.warehouse_connection_string is None:
+        raise HTTPException(
+            404,
+            "No warehouse credentials available for this run (either it wasn't loaded via the "
+            "client warehouse, or this API process restarted since - credentials are never stored).",
+        )
+    return WarehouseCredentialsResponse(connection_string=ctx.warehouse_connection_string)
+
+
+@router.post("/{run_id}/publish/github", response_model=PublishGithubResponse)
+async def publish_run_to_github(
+    run_id: str, body: PublishGithubRequest, session: SessionDep
+) -> PublishGithubResponse:
+    """Creates a brand-new GitHub repo for this run's packaged plugin and
+    pushes it - the repo is immediately installable in Claude Code/Desktop
+    with the two commands this returns. Only available once validation has
+    passed (RunStatus.SUCCEEDED); see forge_core.publishing.standalone_repo."""
+    record = await _load_record(run_id, session)
+    if record.status != RunStatus.SUCCEEDED:
+        raise HTTPException(
+            409, f"Run is {record.status.value}; publish is only available after a successful run."
+        )
+    event = _last_event(record, RunStage.PACKAGE)
+    if event is None or "plugin_dir" not in event.data:
+        raise HTTPException(404, "This run hasn't produced a packaged plugin yet.")
+
+    plugin_dir = Path(event.data["plugin_dir"])
+    if not plugin_dir.is_dir():
+        raise HTTPException(410, "Packaged plugin output is no longer on disk.")
+
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        raise HTTPException(400, "GITHUB_TOKEN is not configured on the API server; can't publish to GitHub.")
+
+    try:
+        result = await asyncio.to_thread(
+            publish_plugin_as_new_repo,
+            plugin_dir,
+            token=token,
+            repo_name=body.repo_name,
+            owner=body.owner or os.environ.get("GITHUB_ORG"),
+            private=body.private,
+        )
+    except Exception as exc:  # GithubException, ValueError from an invalid plugin, network errors, ...
+        raise HTTPException(502, f"Publishing to GitHub failed: {exc}") from exc
+
+    return PublishGithubResponse(
+        repo_full_name=result.repo_full_name,
+        html_url=result.html_url,
+        plugin_name=result.plugin_name,
+        marketplace_add_command=result.marketplace_add_command,
+        install_command=result.install_command,
+    )
 
 
 def _summary(record: RunRecord) -> RunSummary:

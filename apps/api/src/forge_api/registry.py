@@ -15,6 +15,12 @@ class RunContext:
     record: RunRecord
     binding_overrides: dict[str, str] = field(default_factory=dict)
     running: bool = False
+    # Set only when this run's data was loaded into the client warehouse
+    # (forge_core.ingestion.warehouse). Intentionally in-memory only, never
+    # part of `record` - it must never reach the `runs` table, a log line, or
+    # a persisted JSON file. Lost on API restart; that's the point (see
+    # /runs/{run_id}/warehouse-credentials - "show once").
+    warehouse_connection_string: str | None = None
 
 
 _RUNS: dict[str, RunContext] = {}

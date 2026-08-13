@@ -10,6 +10,7 @@ from forge_core.compiler import compile_all
 from forge_core.generation import generate_plugin_content
 from forge_core.ingestion.registry import ingest
 from forge_core.llm import get_provider
+from forge_core.models.plugin_spec import HookHandler
 from forge_core.models.schema_profile import SchemaProfile
 from forge_core.profiling import build_structural_only
 
@@ -26,6 +27,17 @@ def _profile_for(source_path: Path) -> SchemaProfile:
     ds = ingest(source_path)
     structural = build_structural_only(ds)
     return SchemaProfile(data_source_id=ds.id, structural=structural, semantic=None, source=ds)
+
+
+def test_hook_handler_rejects_type_mismatched_fields():
+    """Mirrors a real `/plugin marketplace add` rejection: `args` set on a
+    non-`command` hook. Must fail at construction, not just at packaging."""
+    with pytest.raises(ValueError, match="only valid on type 'command' hooks"):
+        HookHandler(type="prompt", prompt="hi", args=["oops"])
+
+    # The matching type is always fine.
+    HookHandler(type="command", command="node", args=["script.js"])
+    HookHandler(type="prompt", prompt="hi")
 
 
 def test_generate_plugin_content_grounds_every_kpi_id(bookings_csv: Path):
@@ -55,6 +67,12 @@ def test_generate_plugin_content_grounds_every_kpi_id(bookings_csv: Path):
     # Hooks are deterministic guardrail text, not executable commands.
     session_hooks = content.hooks.hooks["SessionStart"]
     assert session_hooks[0].hooks[0].type == "prompt"
+    # Regression: Claude's plugin-content validator rejects `args` outright
+    # on any hook whose type isn't "command" - confirmed against a real
+    # `/plugin marketplace add` failure ("Field(s) ['args'] in 'SessionStart'
+    # matcher 0 hook 0 are only valid on type 'command' hooks, not type
+    # 'prompt'") when this defaulted to `[]` instead of being omitted.
+    assert "args" not in content.hooks.to_json_dict()["hooks"]["SessionStart"][0]["hooks"][0]
 
     # PII never leaks into the generated dashboard snapshot.
     for denied in bindings.denied_columns:

@@ -4,6 +4,10 @@
 !.env.example
 *.key
 *.pem
+# SSH private keys are often extensionless (id_rsa, id_ed25519, id_<name>) -
+# never rely on an extension check alone for these.
+id_*
+!id_*.pub
 
 # Python
 __pycache__/

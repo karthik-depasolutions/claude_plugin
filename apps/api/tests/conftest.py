@@ -16,6 +16,12 @@ def isolated_env(tmp_path, monkeypatch):
     monkeypatch.setenv("FORGE_DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
     monkeypatch.setenv("FORGE_RUNS_DIR", str(runs_dir))
     monkeypatch.setenv("FORGE_LLM_CASSETTE_MODE", "off")
+    # A developer's local .env may configure the client warehouse (it's
+    # loaded by `Settings(env_file=".env")` regardless of monkeypatch) - the
+    # API test suite must stay hermetic and exercise the plain-local-files
+    # path by default, so explicitly force the feature off here.
+    monkeypatch.setenv("FORGE_CLIENT_WAREHOUSE_URL", "")
+    monkeypatch.setenv("FORGE_CLIENT_WAREHOUSE_PUBLIC_HOST", "")
 
     from forge_api import db as db_module
     from forge_api import registry as registry_module

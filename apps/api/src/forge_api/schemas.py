@@ -51,3 +51,39 @@ class PackSummary(BaseModel):
     version: str
     description: str
     kpi_count: int
+
+
+class PublishGithubRequest(BaseModel):
+    repo_name: str | None = Field(
+        None, description="Repo (and marketplace catalog) name. Defaults to the plugin's own name."
+    )
+    owner: str | None = Field(
+        None,
+        description="GitHub org/user to create the repo under. Defaults to the GITHUB_ORG env var, "
+        "then the GITHUB_TOKEN's own account.",
+    )
+    private: bool = Field(
+        False,
+        description="Create the repo as private. Public by default so anyone with the URL can add it as a "
+        "Claude Desktop/Code marketplace without first being granted GitHub access to a private repo.",
+    )
+
+
+class PublishGithubResponse(BaseModel):
+    repo_full_name: str
+    html_url: str
+    plugin_name: str
+    marketplace_add_command: str
+    install_command: str
+
+
+class WarehouseCredentialsResponse(BaseModel):
+    """The one-time-viewable connection string for a run whose data was
+    loaded into the client warehouse (forge_core.ingestion.warehouse). Never
+    persisted server-side outside process memory - see
+    forge_api.registry.RunContext.warehouse_connection_string."""
+
+    connection_string: str = Field(
+        ..., description="Set FORGE_SOURCE_DB_URL to this before launching Claude Desktop."
+    )
+    env_var_name: str = "FORGE_SOURCE_DB_URL"

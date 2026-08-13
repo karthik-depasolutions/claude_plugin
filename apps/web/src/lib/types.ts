@@ -84,3 +84,16 @@ export interface ValidationReport {
   checks: ValidationCheckResult[];
   overall: CheckStatus;
 }
+
+export interface PublishGithubResponse {
+  repo_full_name: string;
+  html_url: string;
+  plugin_name: string;
+  marketplace_add_command: string;
+  install_command: string;
+}
+
+export interface WarehouseCredentialsResponse {
+  connection_string: string;
+  env_var_name: string;
+}

@@ -28,12 +28,19 @@ plugin to a team or customer who isn't the one running the generator.
 ## 3. From a customer-specific GitHub repo
 
 ```text
-/plugin marketplace add <org>/<customer-repo>
-/plugin install <plugin-name>@<customer-repo>
+/plugin marketplace add <owner>/<repo>
+/plugin install <plugin-name>@<repo>
+/reload-plugins
 ```
 
-Use this for a plugin pushed via `forge_core.publishing.github` — one repo
-per customer, useful when a customer's schema (and therefore their
+Use this for a plugin published with `forge_core.publishing.standalone_repo`
+— either via the web wizard's "Publish to GitHub" button (shown once a run
+succeeds), `POST /runs/{run_id}/publish/github`, or `forge publish github
+<plugin_dir>` from the CLI. Each of these creates a brand-new, self-
+installable repo (see [marketplace.md](marketplace.md#one-click-publish-standalone-repo))
+and hands back the exact two commands above with the real owner/repo/plugin
+names filled in — the repo's own `README.md` has them too. One repo per
+customer this way is useful when a customer's schema (and therefore their
 generated plugin) is updated on its own release cadence independent of the
 shared marketplace.
 
@@ -57,9 +64,9 @@ pip install -r <plugin-dir>/mcp_server/requirements.txt
 If the plugin was generated from a live database connection (Postgres, for
 now) rather than uploaded files, `mcp_server/` connects live on every query
 instead of reading from a bundled `data/` folder — there is no data
-snapshot inside the plugin at all. Before first use, export the same
-credential the generator used, under the env var name
-`config/data_source.json` names (`FORGE_SOURCE_DB_URL`, by default):
+snapshot inside the plugin at all. Before first use, export the credential
+under the env var name `config/data_source.json` names (`FORGE_SOURCE_DB_URL`,
+by default):
 
 ```bash
 export FORGE_SOURCE_DB_URL="postgresql://user:password@host:5432/dbname"
@@ -67,6 +74,21 @@ export FORGE_SOURCE_DB_URL="postgresql://user:password@host:5432/dbname"
 
 Without it, the bundled runtime fails closed with a clear error naming the
 missing variable — it never falls back to any default or cached data.
+
+There are two ways this connection string comes about:
+
+- **Customer's own database** — you supply the credential yourself; it's the
+  same one the generator connected with while profiling your schema.
+- **Client data warehouse** (uploads made through the web wizard's "upload
+  files" flow, when the API is configured with `FORGE_CLIENT_WAREHOUSE_URL`) —
+  your uploaded files were loaded into a dedicated, isolated Postgres schema
+  that only your plugin's narrow, read-only credential can reach. That
+  credential is shown to you **exactly once**, right after your run
+  succeeds, on the web wizard's success screen — it is never written to any
+  file, log, or repo, including this plugin's own. If you lose it, there is
+  no way to recover it; ask whoever operates the generator to re-run your
+  upload. See `packages/forge-core/src/forge_core/ingestion/warehouse.py`
+  for exactly how that schema and credential are provisioned.
 
 ## Verifying an install is healthy
 
