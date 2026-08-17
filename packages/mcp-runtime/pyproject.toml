@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Generic, config-driven MCP server that powers every generated MIS plugin. One implementation, many customers — behavior comes entirely from config/*.json."
 requires-python = ">=3.11"
 dependencies = [
-    "mcp[cli]>=1.2.0",
+    "mcp[cli]>=2.0.0",
     "pandas>=2.2.0",
     "duckdb>=1.1.0",
     "openpyxl>=3.1.0",

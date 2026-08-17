@@ -101,6 +101,13 @@ def run(
     use_llm: bool = typer.Option(
         True, "--llm/--no-llm", help="Use Gemini for semantic profiling/generation/critique."
     ),
+    use_agent: bool = typer.Option(
+        False,
+        "--agent/--no-agent",
+        help="Use a tool-using LangChain agent (schema inspection, live data preview, web "
+        "search) for schema roles the deterministic scorer and single-shot LLM proposer "
+        "both fail to resolve, instead of leaving them unresolved.",
+    ),
 ) -> None:
     """Run the full pipeline end-to-end against SOURCE."""
     # SOURCE is a plain `str`, not `Path`, so Typer never mangles a
@@ -129,6 +136,7 @@ def run(
             profiling_provider=profiling_provider,
             generation_provider=generation_provider,
             critique_provider=critique_provider,
+            use_agent=use_agent,
         )
         # The final `record.status` transition (SUCCEEDED/FAILED) happens
         # after the last `log()` call, so the checklist needs one more
@@ -237,7 +245,23 @@ def publish_github_cmd(
     """Create a brand-new GitHub repo for PLUGIN_DIR and push it - no
     pre-existing repo or marketplace needed. The repo is immediately
     installable with the two commands this prints."""
+    from forge_core.packaging import bind_http_mcp, ensure_mcp_token, hosted_mcp_url, run_id_from_plugin_dir
     from forge_core.publishing import publish_plugin_as_new_repo
+
+    public_base = os.environ.get("FORGE_PUBLIC_BASE_URL")
+    if not public_base:
+        console.print(
+            "[red]FORGE_PUBLIC_BASE_URL is not set. Claude Desktop cannot auto-connect a local "
+            "python MCP from GitHub; set it to a public HTTPS origin that reaches the Forge API.[/]"
+        )
+        raise typer.Exit(code=1)
+    run_id = run_id_from_plugin_dir(plugin_dir)
+    if not run_id:
+        console.print(
+            f"[red]could not infer run id from {plugin_dir} (expected .../runs/<run_id>/output/<plugin>)[/]"
+        )
+        raise typer.Exit(code=1)
+    bind_http_mcp(plugin_dir, hosted_mcp_url(public_base, run_id, ensure_mcp_token(plugin_dir.parent)))
 
     result = publish_plugin_as_new_repo(
         plugin_dir,

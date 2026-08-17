@@ -30,7 +30,7 @@ class ColumnBinding(BaseModel):
     evidence: str = ""
     source: str = Field(
         default="deterministic",
-        description="'deterministic' | 'llm_proposed' | 'human_override'.",
+        description="'deterministic' | 'llm_proposed' | 'agent_proposed' | 'human_override'.",
     )
 
 

@@ -20,7 +20,7 @@ from forge_core.ingestion.registry import prepare_source_for_persistence
 from forge_core.ingestion.warehouse import deprovision_client_schema, provision_client_schema
 from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.run import RunRecord, StageEvent
-from forge_core.packaging import zip_plugin
+from forge_core.packaging import bind_http_mcp, ensure_mcp_token, hosted_mcp_url, zip_plugin
 from forge_core.publishing import publish_plugin_as_new_repo
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -65,14 +65,19 @@ async def create_run_from_path(body: CreateRunFromPathRequest) -> RunSummary:
     run_id = _new_run_id()
     output_dir = str(get_settings().runs_dir / run_id)
     ctx = await pipeline_runner.start_run(
-        run_id, source_for_run, output_dir, industry_override=body.industry, use_llm=body.use_llm
+        run_id,
+        source_for_run,
+        output_dir,
+        industry_override=body.industry,
+        use_llm=body.use_llm,
+        use_agent=body.use_agent,
     )
     return _summary(ctx.record)
 
 
 @router.post("/upload", response_model=RunSummary, status_code=201)
 async def create_run_from_upload(
-    files: list[UploadFile], industry: str | None = None, use_llm: bool = True
+    files: list[UploadFile], industry: str | None = None, use_llm: bool = True, use_agent: bool = False
 ) -> RunSummary:
     """Accepts one or more files - multiple CSVs (or a mix of CSV/Excel/JSON/
     Parquet) become a multi-table source, same as pointing `forge run` at a
@@ -103,7 +108,7 @@ async def create_run_from_upload(
 
     output_dir = str(get_settings().runs_dir / run_id / "output")
     ctx = await pipeline_runner.start_run(
-        run_id, source_for_run, output_dir, industry_override=industry, use_llm=use_llm
+        run_id, source_for_run, output_dir, industry_override=industry, use_llm=use_llm, use_agent=use_agent
     )
     if warehouse_connection_string is not None:
         ctx.warehouse_connection_string = warehouse_connection_string
@@ -144,6 +149,7 @@ def _provision_and_get_source(run_id: str, ingest_path: Path, source_dir: Path) 
             public_port=settings.client_warehouse_public_port,
             database=settings.client_warehouse_database,
             label=label,
+            public_username_suffix=settings.client_warehouse_public_username_suffix,
         )
     except Exception:
         deprovision_client_schema(settings.client_warehouse_url, run_id, label=label)
@@ -331,6 +337,17 @@ async def publish_run_to_github(
     token = os.environ.get("GITHUB_TOKEN")
     if not token:
         raise HTTPException(400, "GITHUB_TOKEN is not configured on the API server; can't publish to GitHub.")
+
+    settings = get_settings()
+    if not settings.public_base_url:
+        raise HTTPException(
+            400,
+            "FORGE_PUBLIC_BASE_URL is not set. Claude Desktop will not auto-connect a local "
+            "python run_server.py from a GitHub plugin. Set FORGE_PUBLIC_BASE_URL to a public "
+            "HTTPS origin that reaches this API (a tunnel URL is fine for demos) and retry.",
+        )
+    mcp_token = ensure_mcp_token(Path(record.output_dir))
+    bind_http_mcp(plugin_dir, hosted_mcp_url(settings.public_base_url, run_id, mcp_token))
 
     try:
         result = await asyncio.to_thread(

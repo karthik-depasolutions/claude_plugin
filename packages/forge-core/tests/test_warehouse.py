@@ -20,6 +20,19 @@ from forge_core.ingestion.warehouse import (
 TEST_ADMIN_URL = os.environ.get(
     "FORGE_TEST_WAREHOUSE_ADMIN_URL", "postgresql://forge:forge@localhost:5432/forge"
 )
+# Derived from the admin URL itself, not hardcoded: true for docker-compose
+# (host reachable at its own address) and a real managed Postgres like
+# Supabase (publicly reachable, same address for admin and clients) alike.
+# Only the old tunnel-only staging box needed a genuinely different
+# "public" address than the admin one - that's the exception, not the rule.
+_parsed_admin_url = urlparse(TEST_ADMIN_URL)
+TEST_PUBLIC_HOST = _parsed_admin_url.hostname or "127.0.0.1"
+TEST_PUBLIC_PORT = _parsed_admin_url.port or 5432
+TEST_DATABASE = (_parsed_admin_url.path or "/forge").lstrip("/") or "forge"
+# Only set when TEST_ADMIN_URL points at a pooler (e.g. Supabase's) that
+# needs "<role>.<project_ref>" usernames - see provision_client_schema's
+# docstring. None for a plain docker-compose/direct Postgres.
+TEST_PUBLIC_USERNAME_SUFFIX = os.environ.get("FORGE_TEST_WAREHOUSE_PUBLIC_USERNAME_SUFFIX")
 
 
 def _postgres_reachable(url: str) -> bool:
@@ -88,8 +101,10 @@ def test_provision_creates_a_schema_scoped_role_that_can_read_its_own_tables(sam
             TEST_ADMIN_URL,
             run_id,
             sample_upload,
-            public_host="127.0.0.1",
-            public_port=urlparse(TEST_ADMIN_URL).port or 5432,
+            public_host=TEST_PUBLIC_HOST,
+            public_port=TEST_PUBLIC_PORT,
+            database=TEST_DATABASE,
+            public_username_suffix=TEST_PUBLIC_USERNAME_SUFFIX,
         )
         assert creds.schema_name == f"client_{run_id}"
         assert creds.role_name == f"client_{run_id}_ro"
@@ -125,6 +140,26 @@ def test_provision_with_a_label_makes_the_schema_name_identifiable(sample_upload
         assert f"search_path%3Dclient_orders_export_csv_{run_id}" in creds.connection_string
     finally:
         deprovision_client_schema(TEST_ADMIN_URL, run_id, label="Orders Export!!.csv")
+
+
+@requires_live_postgres
+def test_provision_with_a_username_suffix_builds_a_pooler_style_username(sample_upload):
+    run_id = "wtest04"
+    try:
+        creds = provision_client_schema(
+            TEST_ADMIN_URL,
+            run_id,
+            sample_upload,
+            public_host=TEST_PUBLIC_HOST,
+            public_port=TEST_PUBLIC_PORT,
+            database=TEST_DATABASE,
+            public_username_suffix="my-project-ref",
+        )
+        # e.g. postgresql://client_wtest04_ro.my-project-ref:...@host:port/db -
+        # the pooler-required "<role>.<project_ref>" username shape.
+        assert f"client_{run_id}_ro.my-project-ref:" in creds.connection_string
+    finally:
+        deprovision_client_schema(TEST_ADMIN_URL, run_id)
 
 
 @requires_live_postgres

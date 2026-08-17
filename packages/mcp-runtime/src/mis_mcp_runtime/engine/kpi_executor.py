@@ -7,12 +7,17 @@ KPI's own assertions against the result.
 
 from __future__ import annotations
 
+import math
+import time
 from typing import Any
 
 import duckdb
 
 from mis_mcp_runtime.config import CompiledKpiConfig
-from mis_mcp_runtime.security.limits import run_with_timeout
+from mis_mcp_runtime.security.limits import QueryTimeoutError, run_with_timeout
+
+_QUERY_RETRY_ATTEMPTS = 3
+_QUERY_RETRY_BASE_DELAY_S = 1.5
 
 _SAFE_BUILTINS = {"abs": abs, "min": min, "max": max, "round": round, "len": len}
 
@@ -28,11 +33,38 @@ def _check_assertions(assertions: list[str], row: dict[str, Any]) -> list[dict[s
     return results
 
 
+def _json_safe(value: Any) -> Any:
+    if hasattr(value, "item") and not isinstance(value, (bytes, str)):
+        try:
+            return _json_safe(value.item())
+        except (AttributeError, ValueError):
+            pass
+    if isinstance(value, float) and math.isnan(value):
+        return None
+    return value
+
+
 def execute_kpi(
     con: duckdb.DuckDBPyConnection, kpi: CompiledKpiConfig, timeout_seconds: int
 ) -> dict[str, Any]:
-    df = run_with_timeout(con, kpi.sql, timeout_seconds)
-    rows = df.where(df.notnull(), None).to_dict(orient="records")
+    last_error: Exception | None = None
+    df = None
+    for attempt in range(_QUERY_RETRY_ATTEMPTS):
+        try:
+            df = run_with_timeout(con, kpi.sql, timeout_seconds)
+            break
+        except (duckdb.Error, QueryTimeoutError) as exc:
+            last_error = exc
+            if attempt < _QUERY_RETRY_ATTEMPTS - 1:
+                time.sleep(_QUERY_RETRY_BASE_DELAY_S * (attempt + 1))
+    if df is None:
+        assert last_error is not None
+        raise last_error
+
+    rows = [
+        {key: _json_safe(val) for key, val in row.items()}
+        for row in df.where(df.notnull(), None).to_dict(orient="records")
+    ]
 
     assertion_results: list[dict[str, Any]] = []
     if rows and kpi.assertions:

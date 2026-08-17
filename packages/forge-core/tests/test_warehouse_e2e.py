@@ -23,6 +23,13 @@ from forge_core.orchestrator import run_pipeline
 TEST_ADMIN_URL = os.environ.get(
     "FORGE_TEST_WAREHOUSE_ADMIN_URL", "postgresql://forge:forge@localhost:5432/forge"
 )
+# Derived from the admin URL itself - see the matching comment in
+# test_warehouse.py for why this can't just be hardcoded to 127.0.0.1.
+_parsed_admin_url = urlparse(TEST_ADMIN_URL)
+TEST_PUBLIC_HOST = _parsed_admin_url.hostname or "127.0.0.1"
+TEST_PUBLIC_PORT = _parsed_admin_url.port or 5432
+TEST_DATABASE = (_parsed_admin_url.path or "/forge").lstrip("/") or "forge"
+TEST_PUBLIC_USERNAME_SUFFIX = os.environ.get("FORGE_TEST_WAREHOUSE_PUBLIC_USERNAME_SUFFIX")
 
 
 def _postgres_reachable(url: str) -> bool:
@@ -52,8 +59,10 @@ def test_upload_through_the_warehouse_packages_with_no_data_folder_and_no_litera
         TEST_ADMIN_URL,
         run_id,
         bookings_csv,
-        public_host="127.0.0.1",
-        public_port=urlparse(TEST_ADMIN_URL).port or 5432,
+        public_host=TEST_PUBLIC_HOST,
+        public_port=TEST_PUBLIC_PORT,
+        database=TEST_DATABASE,
+        public_username_suffix=TEST_PUBLIC_USERNAME_SUFFIX,
     )
     try:
         record = RunRecord(run_id=run_id, source_path=creds.connection_string, output_dir=str(tmp_path))

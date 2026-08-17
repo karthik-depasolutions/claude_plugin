@@ -11,6 +11,7 @@ BOM-less UTF-8 and bundles the generic MCP runtime alongside it.
 from __future__ import annotations
 
 import json
+import secrets
 from pathlib import Path
 
 from forge_core.generation import MCP_SERVER_NAME, GeneratedPlugin
@@ -22,9 +23,11 @@ from forge_core.models.plugin_spec import (
     Author,
     GeneratedFile,
     McpConfig,
+    McpRemoteServer,
     McpStdioServer,
     PluginManifest,
     PluginSpec,
+    UserConfigOption,
 )
 from forge_core.models.schema_profile import SchemaProfile
 from forge_core.packaging.mcp_bundle import bundle_runtime
@@ -81,19 +84,86 @@ def _config_files(
     ]
 
 
-def _mcp_config() -> McpConfig:
+def _mcp_config(*, inject_source_db_url: bool = False) -> McpConfig:
+    env = {
+        "MIS_MCP_CONFIG_DIR": "${CLAUDE_PLUGIN_ROOT}/config",
+        "MIS_MCP_DATA_DIR": "${CLAUDE_PLUGIN_ROOT}/data",
+    }
+    if inject_source_db_url:
+        # Desktop prompts for this via plugin.json userConfig when the user
+        # clicks Connect on mis-mcp-runtime — never bake the credential in.
+        env["FORGE_SOURCE_DB_URL"] = "${user_config.source_db_url}"
     return McpConfig(
         mcpServers={
             MCP_SERVER_NAME: McpStdioServer(
                 command="python",
                 args=["${CLAUDE_PLUGIN_ROOT}/mcp_server/run_server.py"],
-                env={
-                    "MIS_MCP_CONFIG_DIR": "${CLAUDE_PLUGIN_ROOT}/config",
-                    "MIS_MCP_DATA_DIR": "${CLAUDE_PLUGIN_ROOT}/data",
-                },
+                env=env,
             )
         }
     )
+
+
+def hosted_mcp_url(public_base_url: str, run_id: str, token: str) -> str:
+    return f"{public_base_url.rstrip('/')}/mcp/{run_id}/{token}"
+
+
+MCP_TOKEN_FILENAME = ".mcp_token"
+
+
+def mcp_token_path(output_dir: Path) -> Path:
+    return output_dir / MCP_TOKEN_FILENAME
+
+
+def ensure_mcp_token(output_dir: Path) -> str:
+    path = mcp_token_path(output_dir)
+    if path.is_file():
+        return path.read_text(encoding="utf-8").strip()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    token = secrets.token_urlsafe(32)
+    path.write_text(token, encoding="utf-8")
+    return token
+
+
+def run_id_from_plugin_dir(plugin_dir: Path) -> str | None:
+    """`generated/runs/<run_id>/output/<plugin>` → run_id."""
+    parts = plugin_dir.resolve().parts
+    if "runs" not in parts:
+        return None
+    index = parts.index("runs")
+    if index + 1 >= len(parts):
+        return None
+    return parts[index + 1]
+
+
+def bind_http_mcp(plugin_dir: Path, url: str) -> None:
+    """Point an already-written plugin at a hosted MCP URL so Claude Desktop
+    can connect from GitHub install without local Python / claude_desktop_config."""
+    spec = McpConfig(mcpServers={MCP_SERVER_NAME: McpRemoteServer(type="http", url=url)})
+    _write_text(plugin_dir / ".mcp.json", json.dumps(spec.to_json_dict(), indent=2))
+    manifest_path = plugin_dir / ".claude-plugin" / "plugin.json"
+    if manifest_path.is_file():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        user_config = manifest.get("userConfig") or {}
+        user_config.pop("source_db_url", None)
+        if user_config:
+            manifest["userConfig"] = user_config
+        else:
+            manifest.pop("userConfig", None)
+        _write_text(manifest_path, json.dumps(manifest, indent=2))
+    readme_path = plugin_dir / "README.md"
+    if readme_path.is_file():
+        text = readme_path.read_text(encoding="utf-8")
+        text = text.replace(
+            "1. Install the bundled MCP server's dependencies: "
+            "`pip install -r mcp_server/requirements.txt`\n"
+            "2. Install this plugin directory in Claude Code (`/plugin install <path>` or via a "
+            "marketplace).\n",
+            "Install this plugin from its GitHub marketplace. Claude Desktop/Code start the "
+            "hosted MCP from `.mcp.json` automatically — no local Python and no "
+            "`claude_desktop_config.json`.\n",
+        )
+        _write_text(readme_path, text)
 
 
 def _readme(pack: IndustryPack, kpi_defs: KpiDefsFile, plugin_name: str, version: str) -> str:
@@ -127,6 +197,19 @@ def build_plugin_spec(
     `hooks/hooks.json`, `.mcp.json`) so the manifest relies on Claude Code's
     auto-discovery and never needs to declare explicit component paths."""
     name = plugin_name or plugin_name_for(pack)
+    needs_source_db = "FORGE_SOURCE_DB_URL" in profile.source.connection.credential_env_vars
+    user_config = {}
+    if needs_source_db:
+        user_config["source_db_url"] = UserConfigOption(
+            type="string",
+            title="Database connection string",
+            description=(
+                "Paste the postgresql:// URL shown after generate. "
+                "Only the URL — do not include FORGE_SOURCE_DB_URL= or quotes."
+            ),
+            sensitive=True,
+            required=True,
+        )
 
     manifest = PluginManifest(
         name=name,
@@ -135,6 +218,11 @@ def build_plugin_spec(
         description=pack.description,
         author=author or DEFAULT_AUTHOR,
         keywords=[pack.slug, "mis-plugin-forge"],
+        # Desktop (and some Code versions) will not attach the bundled MCP
+        # server from `.mcp.json` unless the manifest points at it. Skills /
+        # agents / commands still use conventional auto-discovery.
+        mcpServers="./.mcp.json",
+        userConfig=user_config,
     )
 
     files: list[GeneratedFile] = [
@@ -163,7 +251,7 @@ def build_plugin_spec(
 
     return PluginSpec(
         manifest=manifest,
-        mcp_config=_mcp_config(),
+        mcp_config=_mcp_config(inject_source_db_url=needs_source_db),
         hooks=generated.hooks,
         files=files,
         readme=_readme(pack, kpi_defs, name, version),

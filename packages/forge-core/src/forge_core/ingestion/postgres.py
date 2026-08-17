@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import os
 import re
+import time
 from urllib.parse import parse_qs, urlparse
 
 import duckdb
@@ -38,6 +39,34 @@ CREDENTIAL_ENV_VAR = "FORGE_SOURCE_DB_URL"
 DEFAULT_SCHEMA = "public"
 URL_SCHEME_PATTERN = re.compile(r"^postgres(ql)?://", re.IGNORECASE)
 SEARCH_PATH_PATTERN = re.compile(r"-c\s*search_path=([^,\s'\"]+)", re.IGNORECASE)
+_ATTACH_RETRY_ATTEMPTS = 5
+_ATTACH_RETRY_BASE_DELAY_S = 3.0
+
+
+def _connect_and_attach_with_retry(source: str) -> duckdb.DuckDBPyConnection:
+    """A pooling proxy in front of Postgres (e.g. Supabase's Supavisor) can
+    occasionally serve a stale catalog snapshot right after a role/schema was
+    just created elsewhere - ATTACH's own schema introspection then fails
+    with something like `ERROR: invalid role OID` even though the
+    credentials and schema are entirely valid. Rare and self-resolving within
+    a few seconds, so a short retry clears it up instead of failing the whole
+    run over a transient proxy hiccup. Reconnects from scratch each attempt -
+    a connection that failed partway through ATTACH's own (multi-statement)
+    introspection query isn't assumed to be reusable."""
+    last_error: Exception | None = None
+    for attempt in range(_ATTACH_RETRY_ATTEMPTS):
+        con = duckdb.connect(":memory:")
+        try:
+            con.execute("INSTALL postgres; LOAD postgres;")
+            con.execute(f"ATTACH '{source}' AS {CATALOG_ALIAS} (TYPE POSTGRES, READ_ONLY)")
+            return con
+        except duckdb.Error as exc:
+            last_error = exc
+            con.close()
+            if attempt < _ATTACH_RETRY_ATTEMPTS - 1:
+                time.sleep(_ATTACH_RETRY_BASE_DELAY_S * (attempt + 1))
+    assert last_error is not None
+    raise last_error
 
 
 def redact(connection_string: str) -> str:
@@ -86,9 +115,7 @@ class PostgresAdapter:
         if schema is None:
             schema = extract_schema(source)
 
-        con = duckdb.connect(":memory:")
-        con.execute("INSTALL postgres; LOAD postgres;")
-        con.execute(f"ATTACH '{source}' AS {CATALOG_ALIAS} (TYPE POSTGRES, READ_ONLY)")
+        con = _connect_and_attach_with_retry(source)
 
         table_names = [
             row[0]

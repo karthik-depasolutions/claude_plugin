@@ -91,8 +91,8 @@ export default function PublishPanel({
   return (
     <div className="space-y-3 rounded border border-slate-700 bg-slate-900/50 p-4">
       <p className="text-sm text-slate-300">
-        Creates a brand-new GitHub repo and pushes this plugin to it, ready for anyone to install into
-        Claude Code or Claude Desktop.
+        Creates a GitHub repo and pushes this plugin to it. If that name is already taken, a new
+        repo is created as name-v1 (then name-v2, and so on) instead of overwriting.
       </p>
       <label className="block text-sm text-slate-300">
         Repo name
@@ -104,11 +104,11 @@ export default function PublishPanel({
         />
       </label>
       <label className="block text-sm text-slate-300">
-        Owner (org or user - optional, defaults to the API's GITHUB_ORG / token account)
+        Owner (org or user — leave blank to use your GitHub account)
         <input
           value={owner}
           onChange={(e) => setOwner(e.target.value)}
-          placeholder="acme"
+          placeholder="leave blank for your account"
           className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2"
         />
       </label>
@@ -126,7 +126,7 @@ export default function PublishPanel({
           onClick={submit}
           className="rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
         >
-          {submitting ? "Creating repo and pushing files…" : "Create repo & publish"}
+          {submitting ? "Publishing…" : "Publish"}
         </button>
         <button
           type="button"

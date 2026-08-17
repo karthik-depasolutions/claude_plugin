@@ -15,10 +15,12 @@ from forge_core.packaging import build_plugin_spec, write_plugin
 from forge_core.profiling import build_structural_only
 from forge_core.publishing import standalone_repo
 from forge_core.publishing.standalone_repo import (
+    _already_exists,
     _required_credential_env_vars,
     _standalone_readme,
     publish_plugin_as_new_repo,
     slugify_repo_name,
+    versioned_repo_names,
 )
 
 PACKS_ROOT = Path(__file__).resolve().parents[3] / "industry-packs"
@@ -81,6 +83,10 @@ class _FakeRepo:
     full_name = "acme/healthcare-diagnostics-mis-plugin"
     html_url = "https://github.com/acme/healthcare-diagnostics-mis-plugin"
     clone_url = "https://github.com/acme/healthcare-diagnostics-mis-plugin.git"
+
+    @property
+    def name(self) -> str:
+        return self.full_name.rsplit("/", 1)[-1]
 
     def __init__(self) -> None:
         self.ref = _FakeRef("base-commit-sha")
@@ -226,3 +232,160 @@ def test_publish_plugin_as_new_repo(bookings_csv: Path, tmp_path: Path, monkeypa
     )
     assert catalog_content["name"] == "healthcare-diagnostics-mis-plugin"
     assert {p["name"] for p in catalog_content["plugins"]} == {"healthcare-diagnostics-mis-plugin"}
+
+
+def test_publish_plugin_as_new_repo_uses_uniquified_github_name_as_catalog(
+    bookings_csv: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    plugin_dir = _packaged_plugin(
+        bookings_csv, "healthcare-diagnostics", tmp_path, "healthcare-diagnostics-mis-plugin"
+    )
+    fake_repo = _FakeRepo()
+    fake_repo.full_name = "acme/healthcare-diagnostics-mis-plugin-v1"
+    fake_repo.html_url = "https://github.com/acme/healthcare-diagnostics-mis-plugin-v1"
+    fake_repo.clone_url = fake_repo.html_url + ".git"
+
+    monkeypatch.setattr(standalone_repo, "create_repo", lambda *a, **k: fake_repo)
+
+    result = publish_plugin_as_new_repo(plugin_dir, token="fake-token", owner="acme")
+
+    assert result.repo_full_name == "acme/healthcare-diagnostics-mis-plugin-v1"
+    assert result.marketplace_add_command == (
+        "/plugin marketplace add acme/healthcare-diagnostics-mis-plugin-v1"
+    )
+    assert result.install_command == (
+        "/plugin install healthcare-diagnostics-mis-plugin@healthcare-diagnostics-mis-plugin-v1"
+    )
+    import base64
+
+    elements_by_path = {el._identity["path"]: el._identity for el in fake_repo.tree_elements}
+    catalog_content = json.loads(
+        base64.b64decode(
+            fake_repo.blob_content_by_sha[elements_by_path[".claude-plugin/marketplace.json"]["sha"]]
+        ).decode("utf-8")
+    )
+    assert catalog_content["name"] == "healthcare-diagnostics-mis-plugin-v1"
+
+
+class _FakeGithubException(Exception):
+    def __init__(self, status: int, message: str = "Not Found") -> None:
+        self.status = status
+        super().__init__(message)
+
+
+class _FakeAuth:
+    class Token:
+        def __init__(self, token: str) -> None:
+            self.token = token
+
+
+def test_already_exists_detects_github_422():
+    assert _already_exists(_FakeGithubException(422, "name already exists on this account"))
+    assert not _already_exists(_FakeGithubException(404, "Not Found"))
+    assert not _already_exists(_FakeGithubException(500, "server error"))
+
+
+def test_versioned_repo_names_appends_v1_then_v2():
+    names = versioned_repo_names("generic-analytics-mis-plugin", limit=4)
+    assert names == [
+        "generic-analytics-mis-plugin",
+        "generic-analytics-mis-plugin-v1",
+        "generic-analytics-mis-plugin-v2",
+        "generic-analytics-mis-plugin-v3",
+    ]
+
+
+def test_versioned_repo_names_increments_an_existing_v_suffix():
+    assert versioned_repo_names("generic-analytics-mis-plugin-v1", limit=3) == [
+        "generic-analytics-mis-plugin-v1",
+        "generic-analytics-mis-plugin-v2",
+        "generic-analytics-mis-plugin-v3",
+    ]
+
+
+def test_create_repo_appends_v1_when_the_name_is_taken(monkeypatch: pytest.MonkeyPatch):
+    created: list[str] = []
+    taken = {"karthik/generic-analytics-mis-plugin"}
+
+    class _CreatedRepo(_FakeRepo):
+        full_name = "karthik/generic-analytics-mis-plugin-v1"
+        html_url = "https://github.com/karthik/generic-analytics-mis-plugin-v1"
+        clone_url = "https://github.com/karthik/generic-analytics-mis-plugin-v1.git"
+
+    class _FakeUser:
+        login = "karthik"
+
+        def create_repo(self, name: str, **kwargs: Any) -> _CreatedRepo:
+            created.append(name)
+            return _CreatedRepo()
+
+    class _FakeGithub:
+        def __init__(self, auth: Any = None) -> None:
+            pass
+
+        def get_user(self) -> _FakeUser:
+            return _FakeUser()
+
+        def get_repo(self, full_name: str) -> _FakeRepo:
+            if full_name in taken:
+                return _FakeRepo()
+            raise _FakeGithubException(404)
+
+        def get_organization(self, owner: str) -> Any:
+            raise _FakeGithubException(404)
+
+    import github as github_mod
+
+    monkeypatch.setattr(github_mod, "Github", _FakeGithub)
+    monkeypatch.setattr(github_mod, "Auth", _FakeAuth)
+    monkeypatch.setattr(github_mod, "GithubException", _FakeGithubException)
+
+    repo = standalone_repo.create_repo("fake-token", "generic-analytics-mis-plugin")
+
+    assert created == ["generic-analytics-mis-plugin-v1"]
+    assert repo.name == "generic-analytics-mis-plugin-v1"
+
+
+def test_create_repo_falls_back_to_user_account_and_still_uniquifies(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    created: list[str] = []
+    taken = {"karthik/generic-analytics-mis-plugin"}
+
+    class _CreatedRepo(_FakeRepo):
+        full_name = "karthik/generic-analytics-mis-plugin-v1"
+
+    class _FakeUser:
+        login = "karthik"
+
+        def create_repo(self, name: str, **kwargs: Any) -> _CreatedRepo:
+            created.append(name)
+            return _CreatedRepo()
+
+    class _FakeGithub:
+        def __init__(self, auth: Any = None) -> None:
+            pass
+
+        def get_user(self) -> _FakeUser:
+            return _FakeUser()
+
+        def get_repo(self, full_name: str) -> _FakeRepo:
+            if full_name in taken:
+                return _FakeRepo()
+            raise _FakeGithubException(404)
+
+        def get_organization(self, owner: str) -> Any:
+            raise _FakeGithubException(404)
+
+    import github as github_mod
+
+    monkeypatch.setattr(github_mod, "Github", _FakeGithub)
+    monkeypatch.setattr(github_mod, "Auth", _FakeAuth)
+    monkeypatch.setattr(github_mod, "GithubException", _FakeGithubException)
+
+    repo = standalone_repo.create_repo(
+        "fake-token", "generic-analytics-mis-plugin", owner="acme"
+    )
+
+    assert created == ["generic-analytics-mis-plugin-v1"]
+    assert repo.name == "generic-analytics-mis-plugin-v1"

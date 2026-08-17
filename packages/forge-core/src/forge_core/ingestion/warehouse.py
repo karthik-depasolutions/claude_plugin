@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import re
 import secrets
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote
@@ -37,6 +38,8 @@ STATEMENT_TIMEOUT = "15s"
 RUN_ID_PATTERN = re.compile(r"^[a-z0-9]{1,32}$")
 LABEL_MAX_LEN = 20
 _LABEL_SEPARATOR_PATTERN = re.compile(r"[^a-z0-9]+")
+_WARMUP_ATTEMPTS = 6
+_WARMUP_BASE_DELAY_S = 2.0
 
 _EXTENSION_TABLE_SQL: dict[str, str] = {
     ".csv": "read_csv_auto('{path}')",
@@ -127,6 +130,7 @@ def provision_client_schema(
     database: str = "forge_warehouse",
     catalog: str = "srcdb",
     label: str | None = None,
+    public_username_suffix: str | None = None,
 ) -> WarehouseCredentials:
     """Loads `upload_path` (a single file or a directory of files, same shape
     `FileAdapter` accepts) into a brand-new `client_<run_id>` schema (or
@@ -137,6 +141,13 @@ def provision_client_schema(
     network-reachable address), not wherever `admin_connection_string`
     itself resolves to (typically an SSH-tunnelled loopback address, which
     only this process can reach).
+
+    `public_username_suffix`: set this when `public_host` is a connection
+    pooler that multiplexes many tenants' Postgres instances behind one
+    address and needs the target project encoded in the username - e.g.
+    Supabase's pooler, where the role must be given as `<role>.<project_ref>`
+    rather than plain `<role>`. Direct (non-pooled) connections leave this
+    `None`.
     """
     _validate_run_id(run_id)
     schema_name = schema_name_for(run_id, label)
@@ -159,13 +170,43 @@ def provision_client_schema(
     finally:
         con.close()
 
+    public_user = f"{role_name}.{public_username_suffix}" if public_username_suffix else role_name
+    _wait_until_role_is_connectable(public_host, public_port, database, public_user, password)
     connection_string = (
-        f"postgresql://{quote(role_name)}:{quote(password)}@{public_host}:{public_port}/{database}"
+        f"postgresql://{quote(public_user)}:{quote(password)}@{public_host}:{public_port}/{database}"
         f"?options=-csearch_path%3D{schema_name}&sslmode=require"
     )
     return WarehouseCredentials(
         connection_string=connection_string, schema_name=schema_name, role_name=role_name
     )
+
+
+def _wait_until_role_is_connectable(
+    public_host: str, public_port: int, database: str, public_user: str, password: str
+) -> None:
+    """A pooling proxy in front of Postgres (e.g. Supabase's Supavisor) can
+    cache role credentials and reject a role for several seconds right after
+    it's created - a well-documented race (see supabase/supavisor#728) that
+    otherwise shows up as an intermittent, hard-to-reproduce auth failure the
+    *first* time a freshly-provisioned run tries to read its own data back.
+    Retrying here, before `provision_client_schema` ever hands out the
+    connection string, means callers only ever see credentials that already
+    work. Near-instant (one attempt) against a direct, non-pooled Postgres.
+    Best-effort: gives up silently after the last retry rather than raising,
+    since by then a genuine first use is likely to succeed anyway, and if
+    the role really is broken that will surface naturally at query time."""
+    probe_url = f"postgresql://{quote(public_user)}:{quote(password)}@{public_host}:{public_port}/{database}?sslmode=require"
+    for attempt in range(_WARMUP_ATTEMPTS):
+        con = duckdb.connect(":memory:")
+        try:
+            con.execute("INSTALL postgres; LOAD postgres;")
+            con.execute(f"ATTACH '{probe_url}' AS warmup (TYPE POSTGRES, READ_ONLY)")
+            return
+        except Exception:  # noqa: BLE001 - any failure just means "not ready yet"
+            if attempt < _WARMUP_ATTEMPTS - 1:
+                time.sleep(_WARMUP_BASE_DELAY_S * (attempt + 1))
+        finally:
+            con.close()
 
 
 def _create_scoped_role(

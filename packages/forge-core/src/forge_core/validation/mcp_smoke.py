@@ -27,12 +27,40 @@ _EXPECTED_TOOLS = {
     "run_safe_query",
     "search_records",
 }
+_KPI_RETRY_ATTEMPTS = 3
+_KPI_RETRY_DELAY_S = 1.5
+
+
+def _content_text(result: object) -> str:
+    parts: list[str] = []
+    for block in getattr(result, "content", None) or []:
+        text = getattr(block, "text", None)
+        if text:
+            parts.append(text)
+    return "\n".join(parts).strip()
+
+
+def _tool_failed(result: object) -> str | None:
+    """Return an error message if the MCP tool call failed, else None."""
+    if getattr(result, "is_error", False):
+        return _content_text(result) or "tool call returned an error"
+    first_block = (getattr(result, "content", None) or [None])[0]
+    from mcp.types import TextContent
+
+    if first_block is None or not isinstance(first_block, TextContent):
+        return "tool returned non-text content"
+    try:
+        payload = json.loads(first_block.text)
+    except json.JSONDecodeError:
+        return None
+    if isinstance(payload, dict) and payload.get("error"):
+        return str(payload["error"])
+    return None
 
 
 async def _run_smoke(config_dir: Path, data_dir: Path, kpi_ids: list[str]) -> list[ValidationIssue]:
     from mcp import StdioServerParameters, stdio_client
     from mcp.client.session import ClientSession
-    from mcp.types import TextContent
 
     issues: list[ValidationIssue] = []
     env = dict(os.environ)
@@ -54,36 +82,24 @@ async def _run_smoke(config_dir: Path, data_dir: Path, kpi_ids: list[str]) -> li
             )
 
         schema_result = await session.call_tool("describe_schema", {})
-        if schema_result.is_error:
+        schema_error = _tool_failed(schema_result)
+        if schema_error:
             issues.append(
-                ValidationIssue(
-                    severity="error", location="describe_schema", message="tool call returned an error"
-                )
+                ValidationIssue(severity="error", location="describe_schema", message=schema_error)
             )
 
         for kpi_id in kpi_ids:
             location = f"get_kpi:{kpi_id}"
-            result = await session.call_tool("get_kpi", {"kpi_id": kpi_id})
-            if result.is_error:
-                issues.append(
-                    ValidationIssue(
-                        severity="error", location=location, message="tool call returned an error"
-                    )
-                )
-                continue
-            first_block = result.content[0]
-            if not isinstance(first_block, TextContent):
-                issues.append(
-                    ValidationIssue(
-                        severity="error", location=location, message="tool returned non-text content"
-                    )
-                )
-                continue
-            payload = json.loads(first_block.text)
-            if "error" in payload:
-                issues.append(
-                    ValidationIssue(severity="error", location=location, message=str(payload["error"]))
-                )
+            last_error: str | None = None
+            for attempt in range(_KPI_RETRY_ATTEMPTS):
+                result = await session.call_tool("get_kpi", {"kpi_id": kpi_id})
+                last_error = _tool_failed(result)
+                if last_error is None:
+                    break
+                if attempt < _KPI_RETRY_ATTEMPTS - 1:
+                    await asyncio.sleep(_KPI_RETRY_DELAY_S * (attempt + 1))
+            if last_error:
+                issues.append(ValidationIssue(severity="error", location=location, message=last_error))
 
     return issues
 

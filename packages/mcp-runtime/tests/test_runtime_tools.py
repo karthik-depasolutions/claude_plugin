@@ -115,3 +115,13 @@ def test_search_records_rejects_denied_filter_column(bookings_config_dir: Path):
     config, con = _load(bookings_config_dir)
     result = search_records(config, con, "bookings", filters={"phone": "123"})
     assert "error" in result
+
+
+def test_normalize_env_value_unwraps_pasted_export_lines():
+    from mis_mcp_runtime.engine.duckdb_session import _normalize_env_value
+
+    url = "postgresql://u:p@host:5432/db?sslmode=require"
+    assert _normalize_env_value(url) == url
+    assert _normalize_env_value(f'FORGE_SOURCE_DB_URL="{url}"') == url
+    assert _normalize_env_value(f'export FORGE_SOURCE_DB_URL="{url}"') == url
+    assert _normalize_env_value(f'"{url}"') == url

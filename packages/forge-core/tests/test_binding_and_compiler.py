@@ -92,3 +92,27 @@ def test_denied_columns_never_appear_in_compiled_sql(bookings_csv: Path):
     for kpi in kpi_defs.kpis:
         for denied in bindings.denied_columns:
             assert f'"{denied}"' not in kpi.sql
+
+
+def test_generic_pack_never_binds_a_denied_column(tmp_path: Path):
+    source = tmp_path / "users.csv"
+    source.write_text(
+        "user_uuid,full_name,username,xp,last_active_date\n"
+        "u1,Alice Smith,alice,10,2026-01-01\n"
+        "u2,Bob Jones,bob,20,2026-02-01\n",
+        encoding="utf-8",
+    )
+    profile = _profile_for(source)
+    pack = load_pack(PACKS_ROOT / "generic-analytics")
+
+    bindings = resolve_bindings(profile, pack)
+    bound_columns = {column.physical for column in bindings.columns}
+
+    assert "full_name" in bindings.denied_columns
+    assert bound_columns.isdisjoint(bindings.denied_columns)
+
+    kpi_defs = compile_all(pack, bindings)
+    assert "count_by_category" in kpi_defs.skipped
+    for kpi in kpi_defs.kpis:
+        for denied in bindings.denied_columns:
+            assert f'"{denied}"' not in kpi.sql

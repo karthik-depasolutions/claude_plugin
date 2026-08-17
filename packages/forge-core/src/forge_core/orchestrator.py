@@ -40,6 +40,7 @@ def run_pipeline(
     generation_provider: LLMProvider | None = None,
     critique_provider: LLMProvider | None = None,
     binding_overrides: dict[str, str] | None = None,
+    use_agent: bool = False,
 ) -> RunRecord:
     record.status = RunStatus.RUNNING
     try:
@@ -50,6 +51,7 @@ def run_pipeline(
             generation_provider=generation_provider,
             critique_provider=critique_provider,
             binding_overrides=binding_overrides,
+            use_agent=use_agent,
         )
     except Exception as exc:  # the orchestrator must never raise past the caller
         record.status = RunStatus.FAILED
@@ -66,6 +68,7 @@ def _run_pipeline_inner(
     generation_provider: LLMProvider | None,
     critique_provider: LLMProvider | None,
     binding_overrides: dict[str, str] | None,
+    use_agent: bool = False,
 ) -> None:
     record.log(RunStage.INGEST, f"Ingesting {redact_connection_string(record.source_path)}")
     # Pass the raw string, not Path(record.source_path) - a live-database
@@ -101,12 +104,13 @@ def _run_pipeline_inner(
     pack_slug = record.industry_override or classification.primary_pack_slug
     pack = load_pack(packs_root / pack_slug)
 
-    record.log(RunStage.BIND, f"Binding schema to {pack.slug}")
-    bindings = resolve_bindings(profile, pack, profiling_provider, binding_overrides)
+    record.log(RunStage.BIND, f"Binding schema to {pack.slug}" + (" (agent-assisted)" if use_agent else ""))
+    bindings = resolve_bindings(profile, pack, profiling_provider, binding_overrides, use_agent=use_agent)
     record.log(
         RunStage.BIND,
         f"Bound {len(bindings.columns)} role(s); {len(bindings.unresolved_roles)} unresolved",
         unresolved_roles=bindings.unresolved_roles,
+        agent_bound_roles=[c.role for c in bindings.columns if c.source == "agent_proposed"],
     )
 
     record.log(RunStage.COMPILE_KPIS, "Compiling KPIs")

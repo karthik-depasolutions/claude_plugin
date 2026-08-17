@@ -15,6 +15,10 @@ class RunContext:
     record: RunRecord
     binding_overrides: dict[str, str] = field(default_factory=dict)
     running: bool = False
+    # Carried across a NEEDS_INPUT pause/resume (industry confirmation,
+    # binding overrides) since it's a run-level choice, not something the
+    # caller re-supplies each time it drives the state machine forward.
+    use_agent: bool = False
     # Set only when this run's data was loaded into the client warehouse
     # (forge_core.ingestion.warehouse). Intentionally in-memory only, never
     # part of `record` - it must never reach the `runs` table, a log line, or

@@ -42,7 +42,12 @@ def _resolve_env_vars(stmt: str) -> str:
             raise ValueError(
                 f"duckdb_attach_sql references ${{{var_name}}}, but that environment variable isn't set."
             )
-        return value
+        stripped = value.strip().strip('"').strip("'")
+        for marker in ("postgresql://", "postgres://"):
+            idx = stripped.lower().find(marker)
+            if idx != -1:
+                return stripped[idx:].strip().strip('"').strip("'")
+        return stripped
 
     return _ENV_VAR_PATTERN.sub(_replace, stmt)
 

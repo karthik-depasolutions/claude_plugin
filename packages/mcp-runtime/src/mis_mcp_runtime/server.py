@@ -8,6 +8,7 @@ runtime interprets it, identically, for every customer and every industry.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
 from mcp.server.mcpserver import MCPServer
@@ -21,78 +22,84 @@ from mis_mcp_runtime.tools.get_kpi import list_kpis as _list_kpis
 from mis_mcp_runtime.tools.run_safe_query import run_safe_query as _run_safe_query
 from mis_mcp_runtime.tools.search_records import search_records as _search_records
 
-mcp: MCPServer = MCPServer(
-    name="mis-mcp-runtime",
-    version="0.1.0",
-    instructions=(
-        "Tools for querying this business's MIS data. Prefer get_kpi for standard metrics; "
-        "use describe_schema first if you're unsure what's available; use run_safe_query only "
-        "for questions no existing KPI answers, and always as a read-only SELECT."
-    ),
+StateFn = Callable[[], tuple[RuntimeConfig, Any]]
+
+_INSTRUCTIONS = (
+    "Tools for querying this business's MIS data. Prefer get_kpi for standard metrics; "
+    "use describe_schema first if you're unsure what's available; use run_safe_query only "
+    "for questions no existing KPI answers, and always as a read-only SELECT."
 )
 
-_state: dict[str, Any] = {}
+
+def create_server(get_state: StateFn | None = None) -> MCPServer:
+    """Build an MCP server. `get_state` lets a host (the Forge API) supply
+    per-request config instead of the process-wide env dirs stdio uses."""
+    mcp = MCPServer(name="mis-mcp-runtime", version="0.1.0", instructions=_INSTRUCTIONS)
+    state: dict[str, Any] = {}
+
+    def _default_state() -> tuple[RuntimeConfig, Any]:
+        if "config" not in state:
+            config = load_runtime_config()
+            con = open_session(config.data_source, config.data_dir)
+            state["config"] = config
+            state["con"] = con
+        return state["config"], state["con"]
+
+    resolve = get_state or _default_state
+
+    @mcp.tool()
+    def describe_schema() -> dict[str, Any]:
+        """Return the tables and columns available to query, with guessed roles.
+        Never includes row-level data. Call this first if you're unsure what
+        tables or columns exist."""
+        config, _ = resolve()
+        return _describe_schema(config)
+
+    @mcp.tool()
+    def get_data_profile(table: str) -> dict[str, Any]:
+        """Return per-column data quality stats (null percentage, cardinality)
+        for one table. Denied/PII columns are always excluded."""
+        config, con = resolve()
+        return _get_data_profile(config, con, table)
+
+    @mcp.tool()
+    def list_kpis() -> dict[str, Any]:
+        """List every pre-computed KPI available via get_kpi, with a short
+        description of what each one measures."""
+        config, _ = resolve()
+        return _list_kpis(config)
+
+    @mcp.tool()
+    def get_kpi(kpi_id: str) -> dict[str, Any]:
+        """Compute a named, pre-validated business KPI (see list_kpis for the
+        available ids). Always prefer this over run_safe_query when a KPI already
+        covers the question being asked."""
+        try:
+            config, con = resolve()
+            return _get_kpi(config, con, kpi_id)
+        except Exception as exc:  # noqa: BLE001 - never crash the MCP session over one KPI
+            return {"error": str(exc)}
+
+    @mcp.tool()
+    def run_safe_query(sql: str) -> dict[str, Any]:
+        """Run a read-only SQL SELECT against the allowed table(s) for questions
+        no existing KPI answers. Must be a single SELECT/WITH statement with
+        explicit columns (no `SELECT *`); denied columns and non-allowed tables
+        are rejected; a row limit and timeout are always enforced."""
+        config, con = resolve()
+        return _run_safe_query(config, con, sql)
+
+    @mcp.tool()
+    def search_records(table: str, filters: dict[str, Any] | None = None, limit: int = 20) -> dict[str, Any]:
+        """Look up rows in one allowed table by exact-match column filters.
+        Denied columns are never returned; results are always capped."""
+        config, con = resolve()
+        return _search_records(config, con, table, filters, limit)
+
+    return mcp
 
 
-def _get_state() -> tuple[RuntimeConfig, Any]:
-    if "config" not in _state:
-        config = load_runtime_config()
-        con = open_session(config.data_source, config.data_dir)
-        _state["config"] = config
-        _state["con"] = con
-    return _state["config"], _state["con"]
-
-
-@mcp.tool()
-def describe_schema() -> dict[str, Any]:
-    """Return the tables and columns available to query, with guessed roles.
-    Never includes row-level data. Call this first if you're unsure what
-    tables or columns exist."""
-    config, _ = _get_state()
-    return _describe_schema(config)
-
-
-@mcp.tool()
-def get_data_profile(table: str) -> dict[str, Any]:
-    """Return per-column data quality stats (null percentage, cardinality)
-    for one table. Denied/PII columns are always excluded."""
-    config, con = _get_state()
-    return _get_data_profile(config, con, table)
-
-
-@mcp.tool()
-def list_kpis() -> dict[str, Any]:
-    """List every pre-computed KPI available via get_kpi, with a short
-    description of what each one measures."""
-    config, _ = _get_state()
-    return _list_kpis(config)
-
-
-@mcp.tool()
-def get_kpi(kpi_id: str) -> dict[str, Any]:
-    """Compute a named, pre-validated business KPI (see list_kpis for the
-    available ids). Always prefer this over run_safe_query when a KPI already
-    covers the question being asked."""
-    config, con = _get_state()
-    return _get_kpi(config, con, kpi_id)
-
-
-@mcp.tool()
-def run_safe_query(sql: str) -> dict[str, Any]:
-    """Run a read-only SQL SELECT against the allowed table(s) for questions
-    no existing KPI answers. Must be a single SELECT/WITH statement with
-    explicit columns (no `SELECT *`); denied columns and non-allowed tables
-    are rejected; a row limit and timeout are always enforced."""
-    config, con = _get_state()
-    return _run_safe_query(config, con, sql)
-
-
-@mcp.tool()
-def search_records(table: str, filters: dict[str, Any] | None = None, limit: int = 20) -> dict[str, Any]:
-    """Look up rows in one allowed table by exact-match column filters.
-    Denied columns are never returned; results are always capped."""
-    config, con = _get_state()
-    return _search_records(config, con, table, filters, limit)
+mcp = create_server()
 
 
 def main() -> None:

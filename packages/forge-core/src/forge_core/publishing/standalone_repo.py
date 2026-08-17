@@ -24,7 +24,9 @@ from forge_core.publishing.github import push_plugin_to_repo
 from forge_core.publishing.marketplace import publish_to_marketplace
 
 _SLUG_INVALID = re.compile(r"[^a-z0-9-]+")
+_VERSION_SUFFIX = re.compile(r"-v(\d+)$")
 DEFAULT_BRANCH = "main"
+MAX_NAME_ATTEMPTS = 50
 
 
 def slugify_repo_name(name: str) -> str:
@@ -33,6 +35,20 @@ def slugify_repo_name(name: str) -> str:
     `^[a-z][a-z0-9-]*$` - slugify once, up front, so both stay valid."""
     slug = _SLUG_INVALID.sub("-", name.lower()).strip("-")
     return slug or "mis-plugin"
+
+
+def versioned_repo_names(requested: str, *, limit: int = MAX_NAME_ATTEMPTS) -> list[str]:
+    """`foo`, then `foo-v1`, `foo-v2`, ... If `requested` is already `foo-v3`,
+    keep going from there (`foo-v3`, `foo-v4`, ...) so we never produce
+    `foo-v3-v1`."""
+    match = _VERSION_SUFFIX.search(requested)
+    if match:
+        base = requested[: match.start()]
+        start = int(match.group(1))
+        names = [requested, *[f"{base}-v{n}" for n in range(start + 1, start + limit)]]
+    else:
+        names = [requested, *[f"{requested}-v{n}" for n in range(1, limit)]]
+    return names[:limit]
 
 
 @dataclass
@@ -45,6 +61,13 @@ class PublishedRepo:
     install_command: str
 
 
+def _already_exists(exc: BaseException) -> bool:
+    status = getattr(exc, "status", None)
+    if status == 422:
+        return True
+    return "already exists" in str(exc).lower()
+
+
 def create_repo(
     token: str,
     name: str,
@@ -53,25 +76,52 @@ def create_repo(
     private: bool = False,
     description: str | None = None,
 ) -> Any:
-    """Creates a brand-new repo, auto-initialized with a commit (so it has a
-    `main` branch to push onto immediately). Tries `owner` as an
-    organization first - falls back to the token's own account if `owner`
-    is unset or isn't an org the token can create repos in."""
-    from github import Auth, Github
+    """Creates a new GitHub repo. If `name` is already taken, creates
+    `{name}-v1`, then `-v2`, and so on, rather than overwriting the
+    existing repo or failing with 422.
+
+    `owner` is tried as an organization first; if it isn't an org the token
+    can create repos in, we fall back to the token's own account."""
+    from github import Auth, Github, GithubException
 
     client = Github(auth=Auth.Token(token))
+    user: Any = client.get_user()
+    description = description or ""
+    candidates = versioned_repo_names(name)
+
+    def _get(full_name: str) -> Any | None:
+        try:
+            return client.get_repo(full_name)
+        except GithubException as exc:
+            if getattr(exc, "status", None) != 404:
+                raise
+            return None
+
+    def _create(factory: Any, owner_login: str) -> Any:
+        for candidate in candidates:
+            if _get(f"{owner_login}/{candidate}") is not None:
+                continue
+            try:
+                return factory.create_repo(
+                    candidate, private=private, description=description, auto_init=True
+                )
+            except GithubException as exc:
+                if _already_exists(exc):
+                    continue
+                raise
+        raise RuntimeError(
+            f"could not find a free GitHub repo name after {len(candidates)} "
+            f"attempts starting from {name!r}"
+        )
+
     if owner:
         try:
-            return client.get_organization(owner).create_repo(
-                name, private=private, description=description or "", auto_init=True
-            )
-        except Exception:
-            pass
-    # get_user() is typed as `NamedUser | AuthenticatedUser` (no-arg vs.
-    # by-login overloads share one signature) - called with no arguments
-    # against a token-authed client, it's always the latter at runtime.
-    user: Any = client.get_user()
-    return user.create_repo(name, private=private, description=description or "", auto_init=True)
+            org = client.get_organization(owner)
+        except GithubException:
+            return _create(user, user.login)
+        return _create(org, owner)
+
+    return _create(user, user.login)
 
 
 def _required_credential_env_vars(plugin_dir: Path) -> list[str]:
@@ -131,15 +181,22 @@ def publish_plugin_as_new_repo(
     private: bool = False,
 ) -> PublishedRepo:
     """Package `plugin_dir` (already validated - see forge_core.validation)
-    into a fresh GitHub repo that any Claude Code/Desktop user can install
-    from with nothing but the two commands this returns."""
+    into a GitHub repo that any Claude Code/Desktop user can install from
+    with nothing but the two commands this returns. If a repo of that name
+    already exists, a new one is created as `{name}-v1` (then `-v2`, ...)
+    instead of overwriting."""
     from forge_core.validation.plugin_spec import load_manifest
 
     manifest, issues = load_manifest(plugin_dir)
     if manifest is None:
         raise ValueError(f"cannot publish an invalid plugin: {[i.message for i in issues]}")
 
-    catalog_name = slugify_repo_name(repo_name or manifest.name)
+    requested_name = slugify_repo_name(repo_name or manifest.name)
+    repo = create_repo(
+        token, requested_name, owner=owner, private=private, description=manifest.description
+    )
+    catalog_name = repo.name
+    repo_full_name = repo.full_name
 
     with tempfile.TemporaryDirectory() as tmp:
         marketplace_dir = Path(tmp) / catalog_name
@@ -150,11 +207,6 @@ def publish_plugin_as_new_repo(
             owner=MarketplaceOwner(name=owner or "MIS Plugin Forge"),
             marketplace_description=manifest.description,
         )
-
-        repo = create_repo(
-            token, catalog_name, owner=owner, private=private, description=manifest.description
-        )
-        repo_full_name = repo.full_name
 
         readme = _standalone_readme(manifest, repo_full_name, catalog_name, plugin_dir)
         (marketplace_dir / "README.md").write_text(readme, encoding="utf-8", newline="\n")
@@ -177,4 +229,10 @@ def publish_plugin_as_new_repo(
     )
 
 
-__all__ = ["PublishedRepo", "create_repo", "publish_plugin_as_new_repo", "slugify_repo_name"]
+__all__ = [
+    "PublishedRepo",
+    "create_repo",
+    "publish_plugin_as_new_repo",
+    "slugify_repo_name",
+    "versioned_repo_names",
+]

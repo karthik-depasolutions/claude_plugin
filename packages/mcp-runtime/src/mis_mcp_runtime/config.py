@@ -90,9 +90,13 @@ def _read_json(path: Path) -> dict:
         raise ConfigError(f"Invalid JSON in {path}: {exc}") from exc
 
 
-def load_runtime_config() -> RuntimeConfig:
-    config_dir = _resolve_dir("MIS_MCP_CONFIG_DIR", "config", "./config")
-    data_dir = _resolve_dir("MIS_MCP_DATA_DIR", "data", "./data")
+def load_runtime_config(
+    config_dir: Path | None = None, data_dir: Path | None = None
+) -> RuntimeConfig:
+    config_dir = (
+        Path(config_dir).resolve() if config_dir else _resolve_dir("MIS_MCP_CONFIG_DIR", "config", "./config")
+    )
+    data_dir = Path(data_dir).resolve() if data_dir else _resolve_dir("MIS_MCP_DATA_DIR", "data", "./data")
 
     ds_raw = _read_json(config_dir / "data_source.json")
     bindings_raw = _read_json(config_dir / "schema_bindings.json")

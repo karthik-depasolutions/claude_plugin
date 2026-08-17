@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import io
+import json
 import zipfile
 from pathlib import Path
 
@@ -112,7 +113,17 @@ async def test_upload_routes_through_the_client_warehouse_when_configured(
         "?options=-csearch_path%3Dclient_fake&sslmode=require"
     )
 
-    def fake_provision(admin_url, run_id, upload_path, *, public_host, public_port, database, label=None):
+    def fake_provision(
+        admin_url,
+        run_id,
+        upload_path,
+        *,
+        public_host,
+        public_port,
+        database,
+        label=None,
+        public_username_suffix=None,
+    ):
         captured.update(
             admin_url=admin_url,
             run_id=run_id,
@@ -184,10 +195,26 @@ async def test_publish_to_github_requires_a_configured_token(client: AsyncClient
     assert "GITHUB_TOKEN" in response.json()["detail"]
 
 
+async def test_publish_to_github_requires_a_public_base_url(client: AsyncClient, monkeypatch):
+    monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    monkeypatch.delenv("FORGE_PUBLIC_BASE_URL", raising=False)
+    monkeypatch.setenv("FORGE_PUBLIC_BASE_URL", "")
+    create_response = await client.post(
+        "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
+    )
+    run_id = create_response.json()["run_id"]
+    await _wait_for_terminal(client, run_id)
+
+    response = await client.post(f"/runs/{run_id}/publish/github", json={})
+    assert response.status_code == 400
+    assert "FORGE_PUBLIC_BASE_URL" in response.json()["detail"]
+
+
 async def test_publish_to_github_creates_a_repo_and_returns_install_commands(
     client: AsyncClient, monkeypatch
 ):
     monkeypatch.setenv("GITHUB_TOKEN", "fake-token")
+    monkeypatch.setenv("FORGE_PUBLIC_BASE_URL", "https://forge.example")
 
     from forge_api.routers import runs as runs_router
     from forge_core.publishing.standalone_repo import PublishedRepo
@@ -226,6 +253,48 @@ async def test_publish_to_github_creates_a_repo_and_returns_install_commands(
     assert captured["repo_name"] == "bookings-mis-plugin"
     assert captured["private"] is False
     assert captured["token"] == "fake-token"
+    mcp = json.loads((captured["plugin_dir"] / ".mcp.json").read_text(encoding="utf-8"))
+    url = mcp["mcpServers"]["mis-mcp-runtime"]["url"]
+    assert url.startswith("https://forge.example/mcp/")
+    assert mcp["mcpServers"]["mis-mcp-runtime"]["type"] == "http"
+
+
+async def test_hosted_mcp_rejects_a_bad_token_and_serves_tools_with_a_good_one(
+    client: AsyncClient, isolated_env
+):
+    from forge_core.packaging import ensure_mcp_token
+
+    create_response = await client.post(
+        "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
+    )
+    run_id = create_response.json()["run_id"]
+    final = await _wait_for_terminal(client, run_id)
+    assert final["status"] == "succeeded", final
+
+    bad = await client.post(f"/mcp/{run_id}/not-the-token")
+    assert bad.status_code == 401
+
+    token = ensure_mcp_token(isolated_env / run_id)
+    init = {
+        "jsonrpc": "2.0",
+        "id": 1,
+        "method": "initialize",
+        "params": {
+            "protocolVersion": "2025-03-26",
+            "capabilities": {},
+            "clientInfo": {"name": "test", "version": "0"},
+        },
+    }
+    ok = await client.post(
+        f"/mcp/{run_id}/{token}",
+        json=init,
+        headers={
+            "Accept": "application/json, text/event-stream",
+            "Content-Type": "application/json",
+        },
+    )
+    assert ok.status_code != 401
+    assert ok.status_code < 500
 
 
 async def test_sse_stream_replays_events_for_a_finished_run(client: AsyncClient):

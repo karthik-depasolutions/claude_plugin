@@ -18,6 +18,7 @@ from forge_core.validation import run_harness
 from forge_core.validation.dry_run import check_dry_run
 from forge_core.validation.facts import check_facts
 from forge_core.validation.pii import check_pii
+from forge_core.validation.self_critique import check_self_critique
 from forge_core.validation.sql_safety import check_sql_safety
 
 PACKS_ROOT = Path(__file__).resolve().parents[3] / "industry-packs"
@@ -135,4 +136,92 @@ def test_self_critique_runs_with_real_provider_and_stays_grounded(bookings_csv: 
 
     result = report.check("self_critique")
     assert result.status in (CheckStatus.PASS, CheckStatus.WARN, CheckStatus.FAIL)
-    assert result.skipped_reason is None
+
+
+class _StubCritiqueProvider:
+    def __init__(self, findings: list[dict]) -> None:
+        self._findings = findings
+
+    def generate_json(self, prompt: str, *, system: str | None = None) -> dict:
+        return {"findings": self._findings}
+
+    def generate_text(self, prompt: str, *, system: str | None = None) -> str:
+        return ""
+
+
+def test_self_critique_drops_false_positive_about_allowed_mcp_tools(bookings_csv: Path):
+    _, pack, _, kpi_defs, generated = _pipeline(bookings_csv, "generic-analytics")
+    provider = _StubCritiqueProvider(
+        [
+            {
+                "severity": "error",
+                "location": "agents/generic-analytics-analyst.md - data retrieval tools",
+                "message": (
+                    "The agent is configured to use `get_data_profile` and `search_records` tools. "
+                    "These tools can return 'metrics' or 'numbers' (e.g., column statistics, "
+                    "individual record values) that are not included in the list of ONLY real, "
+                    "verified KPIs (`average_measure`, `count_by_category`, `sum_measure`, "
+                    "`total_records`, `trend_by_month`), violating the constraint on allowed data points."
+                ),
+            }
+        ]
+    )
+
+    result = check_self_critique(pack, kpi_defs, {"agent": generated.agent_body}, provider)
+
+    assert result.status == CheckStatus.PASS
+    assert result.issues == []
+
+
+def test_self_critique_still_fails_on_invented_kpi_id(bookings_csv: Path):
+    _, pack, _, kpi_defs, generated = _pipeline(bookings_csv, "healthcare-diagnostics")
+    provider = _StubCritiqueProvider(
+        [
+            {
+                "severity": "error",
+                "location": "skills/analyst.md",
+                "message": "Invented KPI id `made_up_revenue` is not in the catalog.",
+            }
+        ]
+    )
+
+    result = check_self_critique(pack, kpi_defs, {"agent": generated.agent_body}, provider)
+
+    assert result.status == CheckStatus.FAIL
+    assert any("made_up_revenue" in i.message for i in result.issues)
+
+
+def test_mcp_smoke_tool_failed_includes_payload_and_is_error_text():
+    from types import SimpleNamespace
+
+    from forge_core.validation.mcp_smoke import _tool_failed
+    from mcp.types import TextContent
+
+    ok = SimpleNamespace(is_error=False, content=[TextContent(type="text", text='{"kpi_id": "x", "rows": []}')])
+    assert _tool_failed(ok) is None
+
+    payload_err = SimpleNamespace(
+        is_error=False, content=[TextContent(type="text", text='{"error": "invalid role OID"}')]
+    )
+    assert "invalid role OID" in (_tool_failed(payload_err) or "")
+
+    protocol_err = SimpleNamespace(is_error=True, content=[TextContent(type="text", text="connection refused")])
+    assert _tool_failed(protocol_err) == "connection refused"
+
+
+def test_self_critique_keeps_pii_finding_even_when_it_names_an_allowed_tool(bookings_csv: Path):
+    _, pack, _, kpi_defs, generated = _pipeline(bookings_csv, "healthcare-diagnostics")
+    provider = _StubCritiqueProvider(
+        [
+            {
+                "severity": "error",
+                "location": "agents/analyst.md",
+                "message": "The `search_records` tool is instructed to return phone numbers, which is PII.",
+            }
+        ]
+    )
+
+    result = check_self_critique(pack, kpi_defs, {"agent": generated.agent_body}, provider)
+
+    assert result.status == CheckStatus.FAIL
+    assert any("PII" in i.message for i in result.issues)

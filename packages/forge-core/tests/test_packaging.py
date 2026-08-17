@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from forge_core.binding import resolve_bindings
@@ -40,11 +41,23 @@ def test_build_plugin_spec_is_pure_and_conventional(bookings_csv: Path):
 
     assert spec.manifest.name == plugin_name_for(pack)
     assert isinstance(spec.manifest, PluginManifest)
-    # Every declared component uses the conventional auto-discovery layout -
-    # no explicit paths needed, and none set.
     assert spec.manifest.skills is None
     assert spec.manifest.agents is None
     assert spec.manifest.commands is None
+    assert spec.manifest.mcpServers == "./.mcp.json"
+    assert spec.manifest.userConfig == {}
+
+
+def test_live_db_plugin_prompts_for_the_connection_string_in_user_config(bookings_csv: Path):
+    profile, pack, bindings, kpi_defs, generated = _pipeline(bookings_csv, "healthcare-diagnostics")
+    profile.source.connection.credential_env_vars = ["FORGE_SOURCE_DB_URL"]
+    spec = build_plugin_spec(pack, profile, bindings, kpi_defs, generated)
+
+    assert "source_db_url" in spec.manifest.userConfig
+    assert spec.manifest.userConfig["source_db_url"].required is True
+    assert spec.manifest.userConfig["source_db_url"].sensitive is True
+    mcp_env = spec.mcp_config.mcpServers["mis-mcp-runtime"].env
+    assert mcp_env["FORGE_SOURCE_DB_URL"] == "${user_config.source_db_url}"
     relative_paths = {f.relative_path for f in spec.files}
     assert f"skills/{generated.skill_name}/SKILL.md" in relative_paths
     assert f"agents/{generated.agent_name}.md" in relative_paths
@@ -60,6 +73,8 @@ def test_write_plugin_produces_a_bom_less_spec_valid_plugin(bookings_csv: Path, 
 
     assert (plugin_dir / ".claude-plugin" / "plugin.json").is_file()
     assert (plugin_dir / ".mcp.json").is_file()
+    manifest_on_disk = json.loads((plugin_dir / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+    assert manifest_on_disk["mcpServers"] == "./.mcp.json"
     assert (plugin_dir / "hooks" / "hooks.json").is_file()
     assert (plugin_dir / "mcp_server" / "run_server.py").is_file()
     assert (plugin_dir / "mcp_server" / "mis_mcp_runtime" / "server.py").is_file()
@@ -78,6 +93,24 @@ def test_write_plugin_produces_a_bom_less_spec_valid_plugin(bookings_csv: Path, 
 
     result = check_plugin_spec(plugin_dir)
     assert result.status == CheckStatus.PASS, result.issues
+
+
+def test_bind_http_mcp_rewrites_stdio_to_a_remote_url(bookings_csv: Path, tmp_path: Path):
+    profile, pack, bindings, kpi_defs, generated = _pipeline(bookings_csv, "healthcare-diagnostics")
+    spec = build_plugin_spec(pack, profile, bindings, kpi_defs, generated)
+    plugin_dir = tmp_path / spec.manifest.name
+    write_plugin(spec, plugin_dir, bundle_mcp_runtime=False)
+
+    from forge_core.packaging import bind_http_mcp
+
+    bind_http_mcp(plugin_dir, "https://forge.example/mcp/abc/tok")
+    mcp = json.loads((plugin_dir / ".mcp.json").read_text(encoding="utf-8"))
+    server = mcp["mcpServers"]["mis-mcp-runtime"]
+    assert server["type"] == "http"
+    assert server["url"] == "https://forge.example/mcp/abc/tok"
+    assert "command" not in server
+    manifest = json.loads((plugin_dir / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+    assert "source_db_url" not in (manifest.get("userConfig") or {})
 
 
 def test_end_to_end_run_harness_against_a_real_packaged_plugin(bookings_csv: Path, tmp_path: Path):

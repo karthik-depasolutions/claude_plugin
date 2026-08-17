@@ -20,6 +20,12 @@ class CreateRunFromPathRequest(BaseModel):
     )
     industry: str | None = Field(None, description="Force a pack slug, skipping auto-classification.")
     use_llm: bool = Field(True, description="Use Gemini for semantic profiling, generation, and critique.")
+    use_agent: bool = Field(
+        False,
+        description="Use a tool-using LangChain agent (schema inspection, live data preview, "
+        "web search) to resolve schema roles the deterministic scorer and single-shot LLM "
+        "proposer both fail on, instead of leaving them unresolved.",
+    )
 
 
 class RunSummary(BaseModel):

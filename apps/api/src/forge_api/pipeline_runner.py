@@ -20,12 +20,19 @@ from forge_api.models_orm import RunORM
 
 
 async def start_run(
-    run_id: str, source_path: str, output_dir: str, *, industry_override: str | None, use_llm: bool
+    run_id: str,
+    source_path: str,
+    output_dir: str,
+    *,
+    industry_override: str | None,
+    use_llm: bool,
+    use_agent: bool = False,
 ) -> registry.RunContext:
     record = RunRecord(
         run_id=run_id, source_path=source_path, output_dir=output_dir, industry_override=industry_override
     )
     ctx = registry.RunContext(record=record)
+    ctx.use_agent = use_agent
     registry.put(run_id, ctx)
     await _persist(ctx)
     asyncio.create_task(_execute(ctx, use_llm=use_llm))  # noqa: RUF006 - fire-and-forget job, tracked via ctx
@@ -51,6 +58,7 @@ async def _execute(ctx: registry.RunContext, *, use_llm: bool) -> None:
             generation_provider=generation,
             critique_provider=critique,
             binding_overrides=ctx.binding_overrides or None,
+            use_agent=ctx.use_agent,
         )
     except Exception as exc:
         # Provider construction (e.g. a missing GEMINI_API_KEY) happens
