@@ -10,6 +10,7 @@ eight checks by name.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -62,16 +63,28 @@ def run_harness(
     config_dir: Path | None = None,
     data_dir: Path | None = None,
     plugin_name: str | None = None,
+    on_check: Callable[[ValidationCheckResult], None] | None = None,
 ) -> ValidationReport:
+    """`on_check`, if given, fires right after each check finishes - lets a
+    caller (the orchestrator) surface per-check progress instead of one
+    opaque block, since several of these checks (dry_run, cli_validate,
+    mcp_smoke, self_critique) can each individually run for tens of seconds."""
+
+    def _run(check_fn: Callable[..., ValidationCheckResult], *args: object) -> ValidationCheckResult:
+        result = check_fn(*args)
+        if on_check is not None:
+            on_check(result)
+        return result
+
     checks: list[ValidationCheckResult] = [
-        check_facts(pack, bindings, profile, kpi_defs.skipped),
-        check_sql_safety(kpi_defs, bindings),
-        check_dry_run(kpi_defs, profile.source),
-        check_pii(kpi_defs, bindings, _pii_scan_texts(generated)),
-        check_plugin_spec(plugin_dir),
-        check_cli_validate(plugin_dir),
-        check_mcp_smoke(config_dir, data_dir, kpi_defs),
-        check_self_critique(pack, kpi_defs, _prose_texts(generated), provider),
+        _run(check_facts, pack, bindings, profile, kpi_defs.skipped),
+        _run(check_sql_safety, kpi_defs, bindings),
+        _run(check_dry_run, kpi_defs, profile.source),
+        _run(check_pii, kpi_defs, bindings, _pii_scan_texts(generated)),
+        _run(check_plugin_spec, plugin_dir),
+        _run(check_cli_validate, plugin_dir),
+        _run(check_mcp_smoke, config_dir, data_dir, kpi_defs),
+        _run(check_self_critique, pack, kpi_defs, _prose_texts(generated), provider),
     ]
 
     return ValidationReport(

@@ -11,6 +11,7 @@ from typing import Any
 import duckdb
 
 from mis_mcp_runtime.config import RuntimeConfig
+from mis_mcp_runtime.engine.rows import to_json_rows
 from mis_mcp_runtime.security.allowlist import AllowlistError, check_tables_allowed
 from mis_mcp_runtime.security.limits import QueryTimeoutError, enforce_row_limit, run_with_timeout
 from mis_mcp_runtime.security.pii_policy import PiiPolicyError, check_no_denied_columns
@@ -28,5 +29,5 @@ def run_safe_query(config: RuntimeConfig, con: duckdb.DuckDBPyConnection, sql: s
     except (SqlPolicyError, AllowlistError, PiiPolicyError, QueryTimeoutError) as exc:
         return {"error": str(exc), "error_type": type(exc).__name__}
 
-    rows = df.where(df.notnull(), None).to_dict(orient="records")
+    rows = to_json_rows(df)
     return {"rows": rows, "row_count": len(rows), "executed_sql": final_sql}

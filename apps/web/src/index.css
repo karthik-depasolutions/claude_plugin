@@ -1,1 +1,70 @@
 @import "tailwindcss";
+
+@theme {
+  /* Landing page design tokens - see docs in Landing.tsx. The existing
+     wizard pages keep using plain Tailwind slate/sky, untouched. */
+  --color-ink: #0b0e14;
+  --color-paper: #eceef3;
+  --color-canonical: #8b8fff;
+  --color-physical: #2fd9a8;
+  --color-line: #1e2330;
+  --color-muted: #7a8194;
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Code", monospace;
+}
+
+@layer utilities {
+  @keyframes reveal-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes stage-check {
+    from {
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes drift {
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+    50% {
+      transform: translate(24px, -18px);
+    }
+  }
+
+  .animate-reveal-up {
+    animation: reveal-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .animate-stage-check {
+    animation: stage-check 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+
+  .animate-drift {
+    animation: drift 14s ease-in-out infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-reveal-up,
+  .animate-stage-check,
+  .animate-drift {
+    animation: none !important;
+  }
+}

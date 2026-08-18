@@ -11,6 +11,7 @@ BOM-less UTF-8 and bundles the generic MCP runtime alongside it.
 from __future__ import annotations
 
 import json
+import re
 import secrets
 from pathlib import Path
 
@@ -38,12 +39,44 @@ from forge_core.validation.frontmatter import render_frontmatter
 DEFAULT_AUTHOR = Author(name="MIS Plugin Forge")
 
 
-def plugin_name_for(pack: IndustryPack) -> str:
-    return f"{pack.slug}-mis-plugin"
+def _slugify_label(text: str) -> str:
+    """A local, minimal slugify - deliberately not importing
+    `forge_core.publishing.standalone_repo.slugify_repo_name` here, since
+    packaging is a stage *before* publishing and shouldn't depend on it."""
+    slug = re.sub(r"[^a-z0-9]+", "-", text.strip().lower()).strip("-")
+    return slug[:40]
+
+
+def plugin_name_for(pack: IndustryPack, customer_label: str | None = None) -> str:
+    """Every customer of the same pack otherwise gets the exact same plugin
+    name (`generic-analytics-mis-plugin`, unconditionally) - folding in an
+    optional human-chosen label makes the on-disk directory, manifest name,
+    and default GitHub repo name (PublishPanel pre-fills from this) actually
+    distinguish one customer's plugin from another's.
+
+    `pack.slug` - guaranteed by its own field pattern to start with a
+    lowercase letter - always comes first, specifically so a label starting
+    with a digit (e.g. "2024 Sales Data") can never produce a manifest
+    `name` that fails `PluginManifest`'s `^[a-z][a-z0-9-]*$` pattern."""
+    slug = _slugify_label(customer_label) if customer_label else ""
+    return f"{pack.slug}-{slug}-mis-plugin" if slug else f"{pack.slug}-mis-plugin"
+
+
+def _column_profiles_by_table(profile: SchemaProfile) -> dict[str, list[dict]]:
+    """Per-table `column_profiles`, PII-safe by construction: denied/PII
+    columns are simply never in `profile.structural.columns` for a table the
+    binder didn't select from, and `get_data_profile` already excludes denied
+    columns on its live-compute fallback - this pre-computed path must match."""
+    by_table: dict[str, list[dict]] = {}
+    for col in profile.structural.columns:
+        by_table.setdefault(col.table, []).append(
+            {"column": col.name, "null_percent": col.null_percent, "cardinality": col.cardinality}
+        )
+    return by_table
 
 
 def _config_files(
-    profile: SchemaProfile, bindings: SchemaBindings, kpi_defs: KpiDefsFile
+    pack: IndustryPack, profile: SchemaProfile, bindings: SchemaBindings, kpi_defs: KpiDefsFile
 ) -> list[GeneratedFile]:
     source = profile.source
     data_source_json = {
@@ -57,9 +90,24 @@ def _config_files(
             for t in source.tables
         ],
     }
+    denied = set(bindings.denied_columns)
+    column_profiles = _column_profiles_by_table(profile)
     schema_summary_json = {
         "pack_slug": kpi_defs.pack_slug,
-        "tables": [{"name": t.name, "columns": [c.name for c in t.columns]} for t in source.tables],
+        "tables": [
+            {
+                "name": t.name,
+                "columns": [c.name for c in t.columns],
+                "column_profiles": [
+                    p for p in column_profiles.get(t.name, []) if p["column"] not in denied
+                ],
+            }
+            for t in source.tables
+        ],
+        "guardrails": {
+            "max_query_rows": pack.guardrails.max_query_rows,
+            "query_timeout_seconds": pack.guardrails.query_timeout_seconds,
+        },
     }
 
     return [
@@ -189,14 +237,20 @@ def build_plugin_spec(
     generated: GeneratedPlugin,
     *,
     plugin_name: str | None = None,
+    customer_label: str | None = None,
     version: str = INITIAL_VERSION,
     author: Author | None = None,
 ) -> PluginSpec:
     """Build the complete in-memory plugin. Every path here is a
     conventional directory (`skills/`, `agents/`, `commands/`,
     `hooks/hooks.json`, `.mcp.json`) so the manifest relies on Claude Code's
-    auto-discovery and never needs to declare explicit component paths."""
-    name = plugin_name or plugin_name_for(pack)
+    auto-discovery and never needs to declare explicit component paths.
+
+    `customer_label`, if given, personalizes the plugin name/displayName
+    (see `plugin_name_for`); `plugin_name` still wins as an exact override
+    when both are supplied."""
+    name = plugin_name or plugin_name_for(pack, customer_label)
+    display_name = f"{customer_label} — {pack.name} Analyst" if customer_label else f"{pack.name} Analyst"
     needs_source_db = "FORGE_SOURCE_DB_URL" in profile.source.connection.credential_env_vars
     user_config = {}
     if needs_source_db:
@@ -213,7 +267,7 @@ def build_plugin_spec(
 
     manifest = PluginManifest(
         name=name,
-        displayName=f"{pack.name} Analyst",
+        displayName=display_name,
         version=version,
         description=pack.description,
         author=author or DEFAULT_AUTHOR,
@@ -247,7 +301,7 @@ def build_plugin_spec(
                 content=render_frontmatter(command.frontmatter.to_frontmatter_dict(), command.body),
             )
         )
-    files.extend(_config_files(profile, bindings, kpi_defs))
+    files.extend(_config_files(pack, profile, bindings, kpi_defs))
 
     return PluginSpec(
         manifest=manifest,

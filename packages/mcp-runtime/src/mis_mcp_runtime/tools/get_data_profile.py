@@ -9,6 +9,7 @@ from typing import Any
 import duckdb
 
 from mis_mcp_runtime.config import RuntimeConfig
+from mis_mcp_runtime.security.limits import QueryTimeoutError, run_with_timeout
 
 
 def get_data_profile(config: RuntimeConfig, con: duckdb.DuckDBPyConnection, table: str) -> dict[str, Any]:
@@ -22,21 +23,35 @@ def get_data_profile(config: RuntimeConfig, con: duckdb.DuckDBPyConnection, tabl
 
     denied = set(config.bindings.denied_columns)
     columns = [c for c in table_cfg.columns if c not in denied]
-    profiles = []
-    for col in columns:
+    if not columns:
+        return {"table": table, "columns": []}
+
+    # One scan with a pair of aggregates per column, rather than one full scan
+    # per column - and routed through run_with_timeout so this tool sits behind
+    # the same timeout guardrail as every other query path. Aliases are indexed
+    # rather than column-derived so no column name is ever spliced into one.
+    aggregates = ["COUNT(*) AS total"]
+    for i, col in enumerate(columns):
         quoted = f'"{col}"'
-        row = con.execute(
-            f"SELECT COUNT(*) AS total, "
-            f"COUNT(*) FILTER (WHERE {quoted} IS NULL) AS nulls, "
-            f"COUNT(DISTINCT {quoted}) AS distinct_count "
-            f"FROM {table_cfg.physical_ref}"
-        ).fetchone()
-        total, nulls, distinct_count = row if row else (0, 0, 0)
-        profiles.append(
-            {
-                "column": col,
-                "null_percent": round((nulls / total * 100.0) if total else 0.0, 2),
-                "cardinality": distinct_count,
-            }
-        )
+        aggregates.append(f"COUNT(*) FILTER (WHERE {quoted} IS NULL) AS nulls_{i}")
+        aggregates.append(f"COUNT(DISTINCT {quoted}) AS distinct_{i}")
+    sql = f"SELECT {', '.join(aggregates)} FROM {table_cfg.physical_ref}"
+
+    try:
+        df = run_with_timeout(con, sql, config.query_timeout_seconds)
+    except QueryTimeoutError as exc:
+        return {"error": str(exc)}
+    if df.empty:
+        return {"table": table, "columns": []}
+
+    row = df.iloc[0]
+    total = int(row["total"])
+    profiles = [
+        {
+            "column": col,
+            "null_percent": round((int(row[f"nulls_{i}"]) / total * 100.0) if total else 0.0, 2),
+            "cardinality": int(row[f"distinct_{i}"]),
+        }
+        for i, col in enumerate(columns)
+    ]
     return {"table": table, "columns": profiles}

@@ -31,6 +31,7 @@ from forge_core.models.industry_pack import (
     VocabularyEntry,
 )
 from forge_core.models.kpi import CompiledKpi, KpiDefsFile
+from forge_core.models.quality import DataQuestion, DataReview, QualityFinding, ValueCount
 from forge_core.models.plugin_spec import (
     AgentFrontmatter,
     Author,
@@ -84,6 +85,8 @@ __all__ = [
     "CompiledKpi",
     "ConnectionContract",
     "DataQualityFlag",
+    "DataQuestion",
+    "DataReview",
     "DataSource",
     "GeneratedFile",
     "Guardrails",
@@ -102,6 +105,7 @@ __all__ = [
     "PackSignature",
     "PluginManifest",
     "PluginSpec",
+    "QualityFinding",
     "RawColumn",
     "RelationshipCandidate",
     "RequiredRoles",
@@ -123,6 +127,7 @@ __all__ = [
     "ValidationCheckResult",
     "ValidationIssue",
     "ValidationReport",
+    "ValueCount",
     "ValueSetBinding",
     "VocabularyEntry",
 ]

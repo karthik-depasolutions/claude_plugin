@@ -41,6 +41,7 @@ export interface RunDetail extends RunSummary {
   source_path: string;
   industry_override: string | null;
   output_dir: string;
+  label: string | null;
   events: StageEvent[];
   created_at: string;
   updated_at: string;

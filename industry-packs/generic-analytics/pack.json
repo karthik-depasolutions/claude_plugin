@@ -20,7 +20,7 @@
     "denied_role_categories": ["free_text", "email", "phone"],
     "require_read_only": true,
     "max_query_rows": 200,
-    "query_timeout_seconds": 10,
+    "query_timeout_seconds": 25,
     "notes": [
       "No industry-specific vocabulary is assumed — treat all categorical values literally",
       "All data access must be read-only"

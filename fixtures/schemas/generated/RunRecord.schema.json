@@ -1,5 +1,117 @@
 {
   "$defs": {
+    "DataQuestion": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "Equals the finding.id it's grounded in, or 'general_notes'.",
+          "title": "Id",
+          "type": "string"
+        },
+        "question": {
+          "title": "Question",
+          "type": "string"
+        },
+        "context": {
+          "default": "",
+          "description": "The finding summary, shown under the question.",
+          "title": "Context",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "question"
+      ],
+      "title": "DataQuestion",
+      "type": "object"
+    },
+    "DataReview": {
+      "additionalProperties": false,
+      "description": "The complete Stage 2b output. `findings` is always populated (or\nempty); `questions` is empty until an LLM (or the deterministic\nfallback) has phrased them - see profiling/quality.py.",
+      "properties": {
+        "generated_at": {
+          "title": "Generated At",
+          "type": "string"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/QualityFinding"
+          },
+          "title": "Findings",
+          "type": "array"
+        },
+        "questions": {
+          "items": {
+            "$ref": "#/$defs/DataQuestion"
+          },
+          "title": "Questions",
+          "type": "array"
+        },
+        "skipped_tables": {
+          "description": "Tables too large for the frequency pass - see MAX_ROWS_FOR_FREQUENCY.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Skipped Tables",
+          "type": "array"
+        }
+      },
+      "required": [
+        "generated_at"
+      ],
+      "title": "DataReview",
+      "type": "object"
+    },
+    "QualityFinding": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "code:table.column - server-assigned, never LLM-invented.",
+          "title": "Id",
+          "type": "string"
+        },
+        "code": {
+          "description": "dominant_value | high_null | inconsistent_format | mixed_types | single_value",
+          "title": "Code",
+          "type": "string"
+        },
+        "severity": {
+          "$ref": "#/$defs/Severity"
+        },
+        "table": {
+          "title": "Table",
+          "type": "string"
+        },
+        "column": {
+          "title": "Column",
+          "type": "string"
+        },
+        "summary": {
+          "description": "Deterministic English with the real numbers, e.g. '85.2% of 12,431 non-null rows are \"unclear\"'.",
+          "title": "Summary",
+          "type": "string"
+        },
+        "top_values": {
+          "description": "<= 5, count desc then value asc.",
+          "items": {
+            "$ref": "#/$defs/ValueCount"
+          },
+          "title": "Top Values",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "code",
+        "severity",
+        "table",
+        "column",
+        "summary"
+      ],
+      "title": "QualityFinding",
+      "type": "object"
+    },
     "RunStage": {
       "enum": [
         "ingest",
@@ -25,6 +137,18 @@
         "cancelled"
       ],
       "title": "RunStatus",
+      "type": "string"
+    },
+    "Severity": {
+      "enum": [
+        "info",
+        "low",
+        "medium",
+        "high",
+        "warning",
+        "error"
+      ],
+      "title": "Severity",
       "type": "string"
     },
     "StageEvent": {
@@ -53,6 +177,30 @@
         "message"
       ],
       "title": "StageEvent",
+      "type": "object"
+    },
+    "ValueCount": {
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "title": "Value",
+          "type": "string"
+        },
+        "count": {
+          "title": "Count",
+          "type": "integer"
+        },
+        "percent": {
+          "title": "Percent",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value",
+        "count",
+        "percent"
+      ],
+      "title": "ValueCount",
       "type": "object"
     }
   },
@@ -96,6 +244,44 @@
     "output_dir": {
       "title": "Output Dir",
       "type": "string"
+    },
+    "label": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Label"
+    },
+    "data_review": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DataReview"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "data_answers": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Data Answers"
     },
     "events": {
       "items": {

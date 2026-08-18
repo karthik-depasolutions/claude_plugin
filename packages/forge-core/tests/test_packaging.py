@@ -48,6 +48,43 @@ def test_build_plugin_spec_is_pure_and_conventional(bookings_csv: Path):
     assert spec.manifest.userConfig == {}
 
 
+def test_build_plugin_spec_personalizes_name_with_a_customer_label(bookings_csv: Path):
+    profile, pack, bindings, kpi_defs, generated = _pipeline(bookings_csv, "healthcare-diagnostics")
+
+    spec = build_plugin_spec(pack, profile, bindings, kpi_defs, generated, customer_label="Sparda Music Academy")
+
+    assert spec.manifest.name == "healthcare-diagnostics-sparda-music-academy-mis-plugin"
+    assert spec.manifest.displayName == "Sparda Music Academy — Healthcare MIS / Diagnostics Booking Pack Analyst"
+    # An unlabeled build for the same pack must stay exactly as before - no
+    # cross-customer collision, and the generic default is unaffected.
+    assert spec.manifest.name != plugin_name_for(pack)
+
+
+def test_plugin_name_for_slugifies_and_bounds_an_arbitrary_label():
+    from forge_core.classification import load_pack
+
+    pack = load_pack(PACKS_ROOT / "healthcare-diagnostics")
+    name = plugin_name_for(pack, "  Weird!! Name_With (Punctuation) & CAPS  " + "x" * 60)
+
+    assert name.startswith("healthcare-diagnostics-weird-name-with-punctuation-caps-x")
+    assert " " not in name and "!" not in name and "(" not in name
+    assert plugin_name_for(pack, None) == plugin_name_for(pack)  # no label -> unchanged default
+    assert plugin_name_for(pack, "") == plugin_name_for(pack)  # blank label -> unchanged default
+
+
+def test_plugin_name_for_stays_manifest_valid_when_label_starts_with_a_digit(bookings_csv: Path):
+    """`pack.slug` must lead the name - PluginManifest.name requires
+    ^[a-z][a-z0-9-]*$, and a label like "2024 Sales Data" would otherwise
+    put a digit first."""
+    from forge_core.classification import load_pack
+
+    pack = load_pack(PACKS_ROOT / "healthcare-diagnostics")
+    name = plugin_name_for(pack, "2024 Sales Data")
+
+    assert name[0].isalpha()
+    PluginManifest(name=name)  # raises if the pattern is violated
+
+
 def test_live_db_plugin_prompts_for_the_connection_string_in_user_config(bookings_csv: Path):
     profile, pack, bindings, kpi_defs, generated = _pipeline(bookings_csv, "healthcare-diagnostics")
     profile.source.connection.credential_env_vars = ["FORGE_SOURCE_DB_URL"]

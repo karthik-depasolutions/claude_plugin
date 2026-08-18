@@ -13,6 +13,7 @@ sets `record.industry_override` and calls `run_pipeline` again to continue.
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 from forge_core.binding import resolve_bindings
@@ -23,9 +24,12 @@ from forge_core.ingestion.postgres import redact as redact_connection_string
 from forge_core.ingestion.registry import ingest
 from forge_core.llm.provider import LLMProvider
 from forge_core.models.common import RunStage, RunStatus
+from forge_core.models.quality import DataReview
 from forge_core.models.run import RunRecord
 from forge_core.packaging import build_plugin_spec, write_plugin
 from forge_core.profiling import build_schema_profile
+from forge_core.profiling.quality import build_data_review
+from forge_core.runtime_session import open_session
 from forge_core.validation import run_harness
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
@@ -85,6 +89,36 @@ def _run_pipeline_inner(
     profile = build_schema_profile(data_source, profiling_provider)
     record.log(RunStage.PROFILE, "Profile complete", columns=len(profile.structural.columns))
 
+    # Computed once and reused on every resume - see RunRecord.data_review's
+    # docstring. Wrapped in its own try/except: a data-quality review must
+    # inform, never block, so it can never be what turns this whole run into
+    # a FAILED one (unlike everything else in this function, which is
+    # allowed to raise up into run_pipeline's own catch-all).
+    if record.data_review is None:
+        con = open_session(data_source)
+        try:
+            record.data_review = build_data_review(
+                data_source,
+                profile.structural,
+                con,
+                # No provider => findings only, no LLM-phrased questions.
+                # Set when the caller has already declared it won't ask
+                # (e.g. the CLI's default, without --review) - no point
+                # paying for question generation nobody will read answers to.
+                provider=profiling_provider if record.data_answers is None else None,
+                semantic=profile.semantic,
+            )
+        except Exception as exc:  # noqa: BLE001 - informs, never blocks
+            record.data_review = DataReview(generated_at=datetime.now(UTC).isoformat())
+            record.log(RunStage.PROFILE, f"Data-quality review unavailable: {exc}")
+        finally:
+            con.close()
+    record.log(
+        RunStage.PROFILE,
+        f"Data quality: {len(record.data_review.findings)} finding(s)",
+        review=record.data_review.model_dump(mode="json"),
+    )
+
     record.log(RunStage.CLASSIFY, "Classifying industry")
     packs = load_all_packs(packs_root)
     classification = classify(profile, packs)
@@ -126,12 +160,12 @@ def _run_pipeline_inner(
     record.log(RunStage.GENERATE, "Generation complete", commands=[c.name for c in generated.commands])
 
     record.log(RunStage.PACKAGE, "Packaging plugin")
-    spec = build_plugin_spec(pack, profile, bindings, kpi_defs, generated)
+    spec = build_plugin_spec(pack, profile, bindings, kpi_defs, generated, customer_label=record.label)
     plugin_dir = Path(record.output_dir) / spec.manifest.name
     write_plugin(spec, plugin_dir, source=data_source, profile=profile, pack=pack)
     record.log(RunStage.PACKAGE, f"Packaged to {plugin_dir}", plugin_dir=str(plugin_dir))
 
-    record.log(RunStage.VALIDATE, "Running validation harness")
+    record.log(RunStage.VALIDATE, "Running validation harness (8 checks)")
     report = run_harness(
         pack=pack,
         profile=profile,
@@ -142,6 +176,9 @@ def _run_pipeline_inner(
         plugin_dir=plugin_dir,
         config_dir=plugin_dir / "config",
         data_dir=plugin_dir / "data",
+        on_check=lambda result: record.log(
+            RunStage.VALIDATE, f"{result.check}: {result.status.value}", check=result.check, status=result.status.value
+        ),
     )
     record.log(
         RunStage.VALIDATE,

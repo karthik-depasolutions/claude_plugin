@@ -33,6 +33,7 @@ function ConnectStep({ onStarted }: { onStarted: (runId: string) => void }) {
   const [path, setPath] = useState("");
   const [industry, setIndustry] = useState("");
   const [useLlm, setUseLlm] = useState(true);
+  const [label, setLabel] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,7 +41,7 @@ function ConnectStep({ onStarted }: { onStarted: (runId: string) => void }) {
     setError(null);
     setSubmitting(true);
     try {
-      const opts = { industry: industry || undefined, useLlm };
+      const opts = { industry: industry || undefined, useLlm, label: label.trim() || undefined };
       const run =
         mode === "upload" && files.length > 0
           ? await createRunFromUpload(files, opts)
@@ -95,6 +96,20 @@ function ConnectStep({ onStarted }: { onStarted: (runId: string) => void }) {
           className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
         />
       )}
+
+      <label className="block text-sm text-slate-300">
+        Project / business name (optional)
+        <input
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+          placeholder="e.g. Sparda Music Academy"
+          className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2"
+        />
+        <span className="mt-1 block text-xs text-slate-500">
+          Names the plugin and (for warehouse-backed uploads) the database schema. Defaults to a
+          generic name based on the detected industry if left blank.
+        </span>
+      </label>
 
       <label className="block text-sm text-slate-300">
         Industry (optional - skips auto-classification)
@@ -202,7 +217,14 @@ function RunProgress({
 
   return (
     <div className="space-y-6">
-      <StageTimeline events={events} status={status} currentStage={currentStage} />
+      <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
+        <div className="mb-3 flex items-center justify-between border-b border-slate-800/80 pb-3">
+          <span className="text-xs text-slate-500">
+            Run <span className="font-mono text-slate-400">{runId}</span>
+          </span>
+        </div>
+        <StageTimeline events={events} status={status} currentStage={currentStage} />
+      </div>
 
       {status === "needs_input" && classifyEvent && (
         <IndustryConfirm

@@ -12,6 +12,7 @@ TOOL_NAMES = [
     "get_kpi",
     "run_safe_query",
     "search_records",
+    "render_chart",
 ]
 
 

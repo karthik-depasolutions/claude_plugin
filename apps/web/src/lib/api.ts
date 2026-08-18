@@ -26,21 +26,27 @@ export function listPacks(): Promise<PackSummary[]> {
 
 export function createRunFromPath(
   sourcePath: string,
-  opts: { industry?: string; useLlm: boolean }
+  opts: { industry?: string; useLlm: boolean; label?: string }
 ): Promise<RunSummary> {
   return fetch(`${BASE}/runs`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ source_path: sourcePath, industry: opts.industry ?? null, use_llm: opts.useLlm }),
+    body: JSON.stringify({
+      source_path: sourcePath,
+      industry: opts.industry ?? null,
+      use_llm: opts.useLlm,
+      label: opts.label ?? null,
+    }),
   }).then((r) => asJson(r));
 }
 
 export function createRunFromUpload(
   files: File[],
-  opts: { industry?: string; useLlm: boolean }
+  opts: { industry?: string; useLlm: boolean; label?: string }
 ): Promise<RunSummary> {
   const params = new URLSearchParams({ use_llm: String(opts.useLlm) });
   if (opts.industry) params.set("industry", opts.industry);
+  if (opts.label) params.set("label", opts.label);
   const form = new FormData();
   for (const file of files) form.append("files", file);
   return fetch(`${BASE}/runs/upload?${params}`, { method: "POST", body: form }).then((r) => asJson(r));

@@ -27,6 +27,7 @@ class SqliteAdapter(IngestionAdapter):
 
     def ingest(self, source_path: Path) -> DataSource:
         con = duckdb.connect(":memory:")
+        con.execute("SET enable_progress_bar = false")
         con.execute("INSTALL sqlite; LOAD sqlite;")
         abs_path = source_path.resolve()
         con.execute(f"ATTACH '{abs_path.as_posix()}' AS {CATALOG_ALIAS} (TYPE SQLITE, READ_ONLY)")

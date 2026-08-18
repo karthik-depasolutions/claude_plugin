@@ -108,6 +108,12 @@ def run(
         "search) for schema roles the deterministic scorer and single-shot LLM proposer "
         "both fail to resolve, instead of leaving them unresolved.",
     ),
+    label: str | None = typer.Option(
+        None,
+        "--label",
+        help="Optional project/business name (e.g. 'Sparda Music Academy') - personalizes the "
+        "plugin's displayName and on-disk/repo name instead of the generic '<pack>-mis-plugin'.",
+    ),
 ) -> None:
     """Run the full pipeline end-to-end against SOURCE."""
     # SOURCE is a plain `str`, not `Path`, so Typer never mangles a
@@ -122,6 +128,7 @@ def run(
         source_path=source_for_run,
         output_dir=str(output_dir.resolve()),
         industry_override=pack,
+        label=label,
     )
 
     profiling_provider = get_provider(role="profiling") if use_llm else None

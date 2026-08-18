@@ -26,6 +26,12 @@ class CreateRunFromPathRequest(BaseModel):
         "web search) to resolve schema roles the deterministic scorer and single-shot LLM "
         "proposer both fail on, instead of leaving them unresolved.",
     )
+    label: str | None = Field(
+        None,
+        description="Optional project/business name (e.g. 'Sparda Music Academy') - personalizes "
+        "the packaged plugin's displayName/name and, for an upload loaded into the client "
+        "warehouse, the Postgres schema name. Defaults to a generic '<pack>-mis-plugin' name.",
+    )
 
 
 class RunSummary(BaseModel):

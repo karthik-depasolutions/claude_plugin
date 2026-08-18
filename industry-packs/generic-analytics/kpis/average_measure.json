@@ -7,5 +7,6 @@
   "requires": { "measures": ["measure_amount"], "filters": [] },
   "sql": "SELECT ROUND(AVG({{measure_amount}}), 2) AS average FROM {{fact}}",
   "unit": "numeric",
-  "assertions": []
+  "assertions": [],
+  "optional": true
 }

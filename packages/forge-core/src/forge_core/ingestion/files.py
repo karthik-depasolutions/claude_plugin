@@ -84,6 +84,7 @@ class FileAdapter(IngestionAdapter):
 
     def ingest(self, source_path: Path) -> DataSource:
         con = duckdb.connect(":memory:")
+        con.execute("SET enable_progress_bar = false")
         files = self._resolve_files(source_path)
 
         tables = []

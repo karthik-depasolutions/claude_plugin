@@ -71,13 +71,18 @@ async def create_run_from_path(body: CreateRunFromPathRequest) -> RunSummary:
         industry_override=body.industry,
         use_llm=body.use_llm,
         use_agent=body.use_agent,
+        label=body.label,
     )
     return _summary(ctx.record)
 
 
 @router.post("/upload", response_model=RunSummary, status_code=201)
 async def create_run_from_upload(
-    files: list[UploadFile], industry: str | None = None, use_llm: bool = True, use_agent: bool = False
+    files: list[UploadFile],
+    industry: str | None = None,
+    use_llm: bool = True,
+    use_agent: bool = False,
+    label: str | None = None,
 ) -> RunSummary:
     """Accepts one or more files - multiple CSVs (or a mix of CSV/Excel/JSON/
     Parquet) become a multi-table source, same as pointing `forge run` at a
@@ -87,7 +92,11 @@ async def create_run_from_upload(
     If the client data warehouse is configured (`FORGE_CLIENT_WAREHOUSE_URL`),
     the upload is loaded into a dedicated Postgres schema instead of being
     kept as local files - see forge_core.ingestion.warehouse. Otherwise this
-    behaves exactly as before."""
+    behaves exactly as before.
+
+    `label`, if given, names both that Postgres schema and the packaged
+    plugin (see `_provision_and_get_source` / `plugin_name_for`) instead of
+    the schema falling back to the first uploaded file's own name."""
     run_id = _new_run_id()
     source_dir = get_settings().runs_dir / run_id / "source"
     source_dir.mkdir(parents=True, exist_ok=True)
@@ -97,7 +106,7 @@ async def create_run_from_upload(
     warehouse_connection_string: str | None = None
     if settings.client_warehouse_enabled:
         warehouse_connection_string = await asyncio.to_thread(
-            _provision_and_get_source, run_id, ingest_path, source_dir
+            _provision_and_get_source, run_id, ingest_path, source_dir, label
         )
         # Never let the raw credential reach RunRecord/the jobs DB/a log line -
         # same placeholder scheme create_run_from_path already uses for a
@@ -108,7 +117,13 @@ async def create_run_from_upload(
 
     output_dir = str(get_settings().runs_dir / run_id / "output")
     ctx = await pipeline_runner.start_run(
-        run_id, source_for_run, output_dir, industry_override=industry, use_llm=use_llm, use_agent=use_agent
+        run_id,
+        source_for_run,
+        output_dir,
+        industry_override=industry,
+        use_llm=use_llm,
+        use_agent=use_agent,
+        label=label,
     )
     if warehouse_connection_string is not None:
         ctx.warehouse_connection_string = warehouse_connection_string
@@ -129,17 +144,24 @@ def _label_for_upload(ingest_path: Path) -> str | None:
         return None
 
 
-def _provision_and_get_source(run_id: str, ingest_path: Path, source_dir: Path) -> str:
+def _provision_and_get_source(
+    run_id: str, ingest_path: Path, source_dir: Path, label: str | None = None
+) -> str:
     """Loads the upload into the warehouse and returns the raw connection
     string - the caller immediately passes this through
     `prepare_source_for_persistence` before it touches `RunRecord`, exactly
     like a customer-supplied live-database source already works today.
 
+    `label`, if the caller supplied one, wins over the auto-derived-from-
+    filename default - resolved once, up front, so the except branch's
+    deprovision call always targets the exact same schema name the
+    provision call above it used.
+
     Runs on a thread (it makes a real network connection) and best-effort
     rolls back a partial schema if anything fails partway through."""
     settings = get_settings()
     assert settings.client_warehouse_url and settings.client_warehouse_public_host  # checked by caller
-    label = _label_for_upload(ingest_path)
+    label = label or _label_for_upload(ingest_path)
     try:
         creds = provision_client_schema(
             settings.client_warehouse_url,

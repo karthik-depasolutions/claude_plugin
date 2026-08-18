@@ -14,6 +14,14 @@ from sqlglot import exp
 DEFAULT_MAX_ROWS = 200
 DEFAULT_TIMEOUT_SECONDS = 10
 
+# The runtime shares one DuckDB connection across all tool calls (cached in
+# server.create_server's state dict, or per-run in the API's hosted_mcp
+# _sessions). `con.interrupt()` is connection-wide, not query-wide, so without
+# this lock a slow request's timeout timer can cancel a *different* request's
+# query - only reachable over Streamable HTTP, where calls genuinely overlap.
+# ponytail: one global query lock; per-request connections if throughput matters.
+_QUERY_LOCK = threading.Lock()
+
 
 class QueryTimeoutError(RuntimeError):
     pass
@@ -40,12 +48,13 @@ def enforce_row_limit(statement: exp.Expression, max_rows: int) -> exp.Expressio
 def run_with_timeout(
     con: duckdb.DuckDBPyConnection, sql: str, timeout_seconds: int, params: dict[str, Any] | None = None
 ) -> pd.DataFrame:
-    timer = threading.Timer(timeout_seconds, con.interrupt)
-    timer.start()
-    try:
-        result = con.execute(sql, params or {}).fetchdf()
-    except duckdb.InterruptException as exc:
-        raise QueryTimeoutError(f"Query exceeded {timeout_seconds}s and was interrupted.") from exc
-    finally:
-        timer.cancel()
+    with _QUERY_LOCK:
+        timer = threading.Timer(timeout_seconds, con.interrupt)
+        timer.start()
+        try:
+            result = con.execute(sql, params or {}).fetchdf()
+        except duckdb.InterruptException as exc:
+            raise QueryTimeoutError(f"Query exceeded {timeout_seconds}s and was interrupted.") from exc
+        finally:
+            timer.cancel()
     return result

@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>KPI Chart</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 1rem; color: #1a1a1a; background: #fff; }
+  @media (prefers-color-scheme: dark) {
+    body { color: #e8e8e8; background: #1e1e1e; }
+  }
+  h1 { font-size: 1rem; margin: 0 0 0.75rem; font-weight: 600; }
+  .unit { color: #888; font-weight: normal; font-size: 0.8rem; }
+  .number-tile { font-size: 2.5rem; font-weight: 600; }
+  .bar-label, .bar-value { font-size: 9px; }
+  .empty { color: #888; font-size: 0.85rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
+  th, td { border: 1px solid #8884; padding: 0.3rem 0.5rem; text-align: left; }
+</style>
+</head>
+<body>
+<div id="root" class="empty">Waiting for data&hellip;</div>
+<script>
+(function () {
+  "use strict";
+  var PROTOCOL_VERSION = "2026-01-26";
+  var SVG_NS = "http://www.w3.org/2000/svg";
+  var nextId = 1;
+  var pendingInitId = null;
+
+  function send(msg) {
+    window.parent.postMessage(msg, "*");
+  }
+
+  function initialize() {
+    pendingInitId = nextId++;
+    send({
+      jsonrpc: "2.0",
+      id: pendingInitId,
+      method: "ui/initialize",
+      params: {
+        capabilities: {},
+        clientInfo: { name: "mis-mcp-runtime-chart", version: "0.1.0" },
+        protocolVersion: PROTOCOL_VERSION,
+        appCapabilities: { availableDisplayModes: ["inline"] }
+      }
+    });
+  }
+
+  var dataReceived = false;
+
+  function showDiagnostic(text) {
+    if (dataReceived) return; // real data already rendered - don't clobber it
+    var root = document.getElementById("root");
+    root.className = "empty";
+    root.textContent = text;
+  }
+
+  function handleMessage(event) {
+    var msg = event.data;
+    if (!msg || msg.jsonrpc !== "2.0") return;
+
+    if (pendingInitId !== null && msg.id === pendingInitId) {
+      pendingInitId = null;
+      if (msg.error) {
+        showDiagnostic("Host rejected ui/initialize: " + (msg.error.message || JSON.stringify(msg.error)));
+        return;
+      }
+      send({ jsonrpc: "2.0", method: "ui/notifications/initialized", params: {} });
+      showDiagnostic("Initialized - waiting for the tool result to arrive…");
+      return;
+    }
+    if (msg.method === "ui/notifications/tool-result" && msg.params) {
+      render(msg.params);
+    }
+  }
+
+  // Every failure mode above is "nothing happens" from the user's point of
+  // view - a host that never replies, replies with an error we don't handle,
+  // or never pushes the tool result. Without this, all of those look
+  // identical to "loading" forever. This turns silence into a visible,
+  // actionable message instead.
+  setTimeout(function () {
+    if (dataReceived) return;
+    if (pendingInitId !== null) {
+      showDiagnostic(
+        "No response from the host to ui/initialize after 6s - this client may not support " +
+          "MCP Apps for this connection, or uses an incompatible protocol version."
+      );
+    } else {
+      showDiagnostic("Initialized, but no data arrived from the host after 6s.");
+    }
+  }, 6000);
+
+  function render(callToolResult) {
+    var data = callToolResult.structuredContent;
+    if (!data && callToolResult.content && callToolResult.content.length) {
+      try {
+        data = JSON.parse(callToolResult.content[0].text);
+      } catch (e) {
+        // not JSON - leave data unset, handled as "no data" below
+      }
+    }
+    dataReceived = true;
+    var root = document.getElementById("root");
+    if (!data || callToolResult.isError) {
+      root.className = "empty";
+      root.textContent = (data && data.error) || "No data returned.";
+      return;
+    }
+    root.className = "";
+    root.innerHTML = "";
+    root.appendChild(renderKpi(data));
+  }
+
+  function renderKpi(data) {
+    var wrap = document.createElement("div");
+    var h1 = document.createElement("h1");
+    h1.textContent = data.label || data.kpi_id || "KPI";
+    if (data.unit) {
+      var unit = document.createElement("span");
+      unit.className = "unit";
+      unit.textContent = " (" + data.unit + ")";
+      h1.appendChild(unit);
+    }
+    wrap.appendChild(h1);
+
+    var rows = data.rows || [];
+    var chart = data.chart;
+    if (chart && chart.type === "number" && rows.length) {
+      wrap.appendChild(renderNumber(rows[0]));
+    } else if (chart && chart.type === "bar" && chart.labels && chart.values) {
+      wrap.appendChild(renderBarChart(chart.labels, chart.values));
+    } else {
+      wrap.appendChild(renderTable(rows));
+    }
+    return wrap;
+  }
+
+  function renderNumber(row) {
+    var keys = Object.keys(row);
+    var value = keys.length ? row[keys[0]] : "";
+    var div = document.createElement("div");
+    div.className = "number-tile";
+    div.textContent = String(value);
+    return div;
+  }
+
+  function renderTable(rows) {
+    if (!rows.length) {
+      var p = document.createElement("p");
+      p.className = "empty";
+      p.textContent = "No rows.";
+      return p;
+    }
+    var table = document.createElement("table");
+    var thead = document.createElement("thead");
+    var headRow = document.createElement("tr");
+    Object.keys(rows[0]).forEach(function (key) {
+      var th = document.createElement("th");
+      th.textContent = key;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement("tbody");
+    // ponytail: 200-row client-side cap: the runtime's own query cap already
+    // keeps result sets small, so this is a display sanity bound, not a data limit.
+    rows.slice(0, 200).forEach(function (row) {
+      var tr = document.createElement("tr");
+      Object.keys(row).forEach(function (key) {
+        var td = document.createElement("td");
+        var value = row[key];
+        td.textContent = value === null || value === undefined ? "" : String(value);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+    return table;
+  }
+
+  function svgEl(tag, attrs) {
+    var node = document.createElementNS(SVG_NS, tag);
+    for (var key in attrs || {}) node.setAttribute(key, attrs[key]);
+    return node;
+  }
+
+  function truncate(text, max) {
+    return text.length > max ? text.slice(0, max - 1) + "…" : text;
+  }
+
+  function renderBarChart(labels, values) {
+    var width = 480, height = 220, padding = 32;
+    var numericValues = values.map(function (v) { return Number(v) || 0; });
+    var max = Math.max.apply(null, numericValues.concat([1]));
+    var barCount = labels.length || 1;
+    var barGap = 8;
+    var barWidth = Math.max(4, (width - padding * 2 - barGap * (barCount - 1)) / barCount);
+    var chartHeight = height - padding * 2;
+
+    var svg = svgEl("svg", { viewBox: "0 0 " + width + " " + height, width: "100%", height: height, role: "img" });
+
+    labels.forEach(function (label, i) {
+      var value = numericValues[i];
+      var barHeight = Math.max((value / max) * chartHeight, 1);
+      var x = padding + i * (barWidth + barGap);
+      var y = height - padding - barHeight;
+
+      svg.appendChild(svgEl("rect", {
+        x: x, y: y, width: barWidth, height: barHeight, fill: "#3b82f6", opacity: "0.85", rx: "2"
+      }));
+
+      var valueText = svgEl("text", {
+        x: x + barWidth / 2, y: y - 4, "text-anchor": "middle", class: "bar-value", fill: "currentColor"
+      });
+      valueText.textContent = String(value);
+      svg.appendChild(valueText);
+
+      var labelText = svgEl("text", {
+        x: x + barWidth / 2, y: height - padding + 12, "text-anchor": "middle", class: "bar-label", fill: "currentColor"
+      });
+      labelText.textContent = truncate(String(label), 10);
+      svg.appendChild(labelText);
+    });
+
+    svg.appendChild(svgEl("line", {
+      x1: padding, y1: height - padding, x2: width - padding, y2: height - padding,
+      stroke: "currentColor", "stroke-opacity": "0.3"
+    }));
+
+    return svg;
+  }
+
+  window.addEventListener("message", handleMessage);
+  initialize();
+})();
+</script>
+</body>
+</html>

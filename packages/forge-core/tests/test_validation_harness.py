@@ -173,6 +173,34 @@ def test_self_critique_drops_false_positive_about_allowed_mcp_tools(bookings_csv
     assert result.issues == []
 
 
+def test_self_critique_drops_false_positive_about_skipped_kpi_ids(bookings_csv: Path):
+    """A dataset with no numeric measure at all skips average_measure/
+    sum_measure/trend_by_month (see generic-analytics's `optional: true` on
+    those KPIs). SKILL.md correctly lists them under "Not available for
+    this data source" - the critic must not treat that as an invented KPI
+    id just because the message names no tool and only quotes skipped ids."""
+    _, pack, _, kpi_defs, generated = _pipeline(bookings_csv, "generic-analytics")
+    tampered_defs = kpi_defs.model_copy(deep=True)
+    tampered_defs.skipped = ["average_measure", "sum_measure", "trend_by_month"]
+    provider = _StubCritiqueProvider(
+        [
+            {
+                "severity": "error",
+                "location": f"skills/{generated.skill_name}/SKILL.md",
+                "message": (
+                    "KPI IDs `average_measure`, `sum_measure`, and `trend_by_month` are listed as "
+                    "available but are not in the verified KPI catalog."
+                ),
+            }
+        ]
+    )
+
+    result = check_self_critique(pack, tampered_defs, {"skill": generated.skill_body}, provider)
+
+    assert result.status == CheckStatus.PASS
+    assert result.issues == []
+
+
 def test_self_critique_still_fails_on_invented_kpi_id(bookings_csv: Path):
     _, pack, _, kpi_defs, generated = _pipeline(bookings_csv, "healthcare-diagnostics")
     provider = _StubCritiqueProvider(

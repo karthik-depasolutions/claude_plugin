@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -NoProfile -Command \"Stop-Process -Id 23844 -Force\")",
+      "Bash(uv run *)",
+      "Bash(echo \"started PID $!\")",
+      "Bash(curl -s http://127.0.0.1:8420/health)",
+      "Bash(curl -s -X POST http://127.0.0.1:8420/runs -H 'content-type: application/json' -d '{\"source_path\": \"fixtures/datasets/bookings.csv\", \"use_llm\": false}')",
+      "Bash(sleep 5; cat /tmp/api_test.log | tail -40)",
+      "Read(//tmp/**)",
+      "Bash(powershell -NoProfile -Command \"Stop-Process -Id 21292 -Force -ErrorAction SilentlyContinue; Stop-Process -Id 1474 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(python3 -c ' *)",
+      "Bash(node --check /tmp/chart_script.js)",
+      "Bash(awk '/<script>/{flag=1; next} /<\\\\/script>/{flag=0} flag' packages/mcp-runtime/src/mis_mcp_runtime/ui/chart.html)",
+      "Bash(node --check 'C:\\\\Users\\\\Abcom\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--claude-plugin-poc\\\\f0473ef4-65ea-4096-ab14-daa4edf11758\\\\scratchpad/chart_script.js')",
+      "Bash(node 'C:\\\\Users\\\\Abcom\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--claude-plugin-poc\\\\f0473ef4-65ea-4096-ab14-daa4edf11758\\\\scratchpad/test_chart_handshake.js' 'C:\\\\Users\\\\Abcom\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--claude-plugin-poc\\\\f0473ef4-65ea-4096-ab14-daa4edf11758\\\\scratchpad/chart_script.js')",
+      "WebFetch(domain:github.com)",
+      "WebSearch",
+      "Bash(npm install *)",
+      "Bash(npx serve *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4173/)",
+      "Bash(npx vite *)",
+      "Bash(node 'C:\\\\Users\\\\Abcom\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--claude-plugin-poc\\\\f0473ef4-65ea-4096-ab14-daa4edf11758\\\\scratchpad/screenshot_landing.js' 'C:\\\\Users\\\\Abcom\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--claude-plugin-poc\\\\f0473ef4-65ea-4096-ab14-daa4edf11758\\\\scratchpad')",
+      "Bash(node .tmp-screenshot.cjs 'C:\\\\Users\\\\Abcom\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--claude-plugin-poc\\\\f0473ef4-65ea-4096-ab14-daa4edf11758\\\\scratchpad')",
+      "Bash(npm ls *)",
+      "Bash(npx playwright *)",
+      "Bash(npm uninstall *)",
+      "Bash(powershell -NoProfile -Command \"Stop-Process -Id 43000 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(powershell -NoProfile -Command \"Stop-Process -Id 29960 -Force -ErrorAction SilentlyContinue\")",
+      "Bash(echo \"TS_EXIT=$?\")",
+      "Read(//c/Users/Abcom/AppData/Local/Temp/**)",
+      "Bash(rm -f /tmp/dirty_leads_preview.csv \"C:\\\\Users\\\\Abcom\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--claude-plugin-poc\\\\f0473ef4-65ea-4096-ab14-daa4edf11758\\\\scratchpad\\\\sparda_leads_synthetic.csv\")"
+    ],
+    "additionalDirectories": [
+      "\\tmp"
+    ]
+  }
+}

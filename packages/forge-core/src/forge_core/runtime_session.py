@@ -54,6 +54,13 @@ def _resolve_env_vars(stmt: str) -> str:
 
 def open_session(data_source: DataSource, data_dir: Path | None = None) -> duckdb.DuckDBPyConnection:
     con = duckdb.connect(":memory:")
+    # DuckDB's own progress bar writes straight to the terminal for any query
+    # it judges "long enough" - including a live Postgres scan over a slow
+    # tunnel - which renders as garbled box-drawing characters on a
+    # non-UTF-8 console (e.g. Windows PowerShell). This is a generator-process
+    # session (profiling/binding/dry-run/dashboard), not the shipped runtime,
+    # so nothing here is meant to be interactive.
+    con.execute("SET enable_progress_bar = false")
     resolved_dir = None
     if data_source.connection.original_paths:
         resolved_dir = (data_dir or default_data_dir(data_source)).resolve()

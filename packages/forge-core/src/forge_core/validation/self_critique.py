@@ -39,9 +39,20 @@ def _build_prompt(pack: IndustryPack, kpi_defs: KpiDefsFile, generated_texts: di
     guardrails = "\n".join(f"- {n}" for n in pack.guardrails.notes)
     sections = "\n\n".join(f"### {name}\n{text}" for name, text in generated_texts.items())
     allowed_tools = ", ".join(TOOL_NAMES)
+    skipped_note = ""
+    if kpi_defs.skipped:
+        skipped_note = (
+            "These KPI ids are declared by the industry pack but could NOT be computed for this "
+            "customer's data (a required column was missing), so they are NOT in the catalog above: "
+            f"{', '.join(kpi_defs.skipped)}. The generated content is EXPECTED and CORRECT to name "
+            "them as unavailable/not supported for this data source - do not flag that as an invented "
+            "or hallucinated KPI id; only flag one of these ids if it is presented as something a "
+            "user can actually call get_kpi with right now.\n\n"
+        )
     return (
         f"You are reviewing AI-generated content for a Claude plugin covering {pack.name} business data.\n"
         f"The ONLY real, verified KPI ids (for get_kpi) are:\n{kpi_catalog}\n\n"
+        f"{skipped_note}"
         f"The plugin's MCP runtime also exposes these tools, and agent/skill/command files "
         f"MUST mention them: {allowed_tools}. "
         "get_data_profile returns column-quality stats, search_records returns row lookups, "
@@ -71,12 +82,18 @@ def _tool_basename(token: str) -> str:
     return token
 
 
-def _is_allowed_tool_false_positive(message: str, known_kpi_ids: set[str]) -> bool:
-    """The critic sometimes treats the runtime's legitimate MCP tools as
-    invented metrics because they return numbers that aren't in the KPI
-    catalog. Those tools are supposed to exist — drop that class of finding,
-    but keep anything that also looks like PII, a fabricated number, or an
-    unknown KPI id."""
+def _is_known_entity_false_positive(message: str, known_kpi_ids: set[str]) -> bool:
+    """Two recurring false-positive shapes, both from the critic flagging
+    something that legitimately exists: (a) a real MCP tool name treated as
+    an invented metric because it returns numbers outside the KPI catalog,
+    and (b) a KPI id the pack declares but that couldn't compile for this
+    customer's data - `known_kpi_ids` already covers both compiled *and*
+    skipped ids (see check_self_critique), and skipped ids are expected to
+    appear in generated prose framed as "not available". A finding whose
+    every quoted token is one of those known-legitimate names can't be
+    describing a truly invented identifier, by construction - but keep
+    anything that also looks like PII, a fabricated number, or a guardrail
+    violation regardless of what it quotes."""
     lower = message.lower()
     if any(marker in lower for marker in _KEEP_MARKERS):
         return False
@@ -85,7 +102,7 @@ def _is_allowed_tool_false_positive(message: str, known_kpi_ids: set[str]) -> bo
         return False
     allowed = set(TOOL_NAMES) | known_kpi_ids
     leftover = {_tool_basename(token) for token in quoted} - allowed
-    return not leftover and any(_tool_basename(token) in TOOL_NAMES for token in quoted)
+    return not leftover
 
 
 def check_self_critique(
@@ -116,7 +133,7 @@ def check_self_critique(
     issues: list[ValidationIssue] = []
     for finding in raw_findings:
         message = finding.get("message", "unspecified finding")
-        if _is_allowed_tool_false_positive(message, known_kpi_ids):
+        if _is_known_entity_false_positive(message, known_kpi_ids):
             continue
         severity = finding.get("severity", "warning")
         if severity not in _VALID_SEVERITIES:

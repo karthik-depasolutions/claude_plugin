@@ -8,15 +8,35 @@ now set, which is exactly how the orchestrator is designed to be driven."""
 from __future__ import annotations
 
 import asyncio
+import logging
 
 from forge_core.llm import get_provider
 from forge_core.models.common import RunStage, RunStatus
-from forge_core.models.run import RunRecord
+from forge_core.models.run import RunRecord, StageEvent
 from forge_core.orchestrator import DEFAULT_PACKS_ROOT, run_pipeline
 
 from forge_api import registry
 from forge_api.db import session_factory
 from forge_api.models_orm import RunORM
+
+# A dedicated, explicitly-configured logger rather than relying on the root
+# logger: uvicorn only sets up handlers on its own "uvicorn"/"uvicorn.access"
+# loggers, so plain `logging.getLogger(__name__).info(...)` would otherwise
+# be silently dropped (root's default level is WARNING, no handler attached).
+# This is the only place run progress reaches the API process's own
+# terminal - the SSE stream (`RunRecord.events`) is what the browser sees,
+# this is what whoever is running the server sees.
+logger = logging.getLogger("forge_api.pipeline")
+if not logger.handlers:
+    _handler = logging.StreamHandler()
+    _handler.setFormatter(logging.Formatter("%(asctime)s %(message)s", datefmt="%H:%M:%S"))
+    logger.addHandler(_handler)
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+
+def _log_event(run_id: str, event: StageEvent) -> None:
+    logger.info("[%s] %-13s %s", run_id, event.stage.value, event.message)
 
 
 async def start_run(
@@ -27,14 +47,21 @@ async def start_run(
     industry_override: str | None,
     use_llm: bool,
     use_agent: bool = False,
+    label: str | None = None,
 ) -> registry.RunContext:
     record = RunRecord(
-        run_id=run_id, source_path=source_path, output_dir=output_dir, industry_override=industry_override
+        run_id=run_id,
+        source_path=source_path,
+        output_dir=output_dir,
+        industry_override=industry_override,
+        label=label,
     )
+    record.on_event(lambda event: _log_event(run_id, event))
     ctx = registry.RunContext(record=record)
     ctx.use_agent = use_agent
     registry.put(run_id, ctx)
     await _persist(ctx)
+    logger.info("[%s] started - source=%s industry=%s use_llm=%s", run_id, source_path, industry_override, use_llm)
     asyncio.create_task(_execute(ctx, use_llm=use_llm))  # noqa: RUF006 - fire-and-forget job, tracked via ctx
     return ctx
 
@@ -72,6 +99,7 @@ async def _execute(ctx: registry.RunContext, *, use_llm: bool) -> None:
     finally:
         ctx.running = False
         await _persist(ctx)
+        logger.info("[%s] finished - status=%s%s", record.run_id, record.status.value, f" ({record.error})" if record.error else "")
 
 
 async def _persist(ctx: registry.RunContext) -> None:

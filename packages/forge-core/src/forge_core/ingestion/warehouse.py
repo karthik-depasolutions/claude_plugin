@@ -157,6 +157,7 @@ def provision_client_schema(
     files = _resolve_upload_files(upload_path)
 
     con = duckdb.connect(":memory:")
+    con.execute("SET enable_progress_bar = false")
     try:
         con.execute("INSTALL postgres; LOAD postgres;")
         con.execute(f"ATTACH '{admin_connection_string}' AS {catalog} (TYPE POSTGRES)")
@@ -198,6 +199,7 @@ def _wait_until_role_is_connectable(
     probe_url = f"postgresql://{quote(public_user)}:{quote(password)}@{public_host}:{public_port}/{database}?sslmode=require"
     for attempt in range(_WARMUP_ATTEMPTS):
         con = duckdb.connect(":memory:")
+        con.execute("SET enable_progress_bar = false")
         try:
             con.execute("INSTALL postgres; LOAD postgres;")
             con.execute(f"ATTACH '{probe_url}' AS warmup (TYPE POSTGRES, READ_ONLY)")
@@ -241,6 +243,7 @@ def deprovision_client_schema(
     role_name = f"{schema_name}_ro"
 
     con = duckdb.connect(":memory:")
+    con.execute("SET enable_progress_bar = false")
     try:
         con.execute("INSTALL postgres; LOAD postgres;")
         con.execute(f"ATTACH '{admin_connection_string}' AS {catalog} (TYPE POSTGRES)")

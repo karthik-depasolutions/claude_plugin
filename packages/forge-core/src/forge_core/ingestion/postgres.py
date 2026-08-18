@@ -56,6 +56,7 @@ def _connect_and_attach_with_retry(source: str) -> duckdb.DuckDBPyConnection:
     last_error: Exception | None = None
     for attempt in range(_ATTACH_RETRY_ATTEMPTS):
         con = duckdb.connect(":memory:")
+        con.execute("SET enable_progress_bar = false")
         try:
             con.execute("INSTALL postgres; LOAD postgres;")
             con.execute(f"ATTACH '{source}' AS {CATALOG_ALIAS} (TYPE POSTGRES, READ_ONLY)")

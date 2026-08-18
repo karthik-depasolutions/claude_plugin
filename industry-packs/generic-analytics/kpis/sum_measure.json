@@ -7,5 +7,6 @@
   "requires": { "measures": ["measure_amount"], "filters": [] },
   "sql": "SELECT SUM({{measure_amount}}) AS total FROM {{fact}}",
   "unit": "numeric",
-  "assertions": []
+  "assertions": [],
+  "optional": true
 }

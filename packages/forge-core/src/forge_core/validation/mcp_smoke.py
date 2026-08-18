@@ -15,18 +15,15 @@ import os
 import sys
 from pathlib import Path
 
+from forge_core.generation.constants import TOOL_NAMES
 from forge_core.models.common import CheckStatus
 from forge_core.models.kpi import KpiDefsFile
 from forge_core.models.validation import ValidationCheckResult, ValidationIssue
 
-_EXPECTED_TOOLS = {
-    "describe_schema",
-    "get_data_profile",
-    "list_kpis",
-    "get_kpi",
-    "run_safe_query",
-    "search_records",
-}
+# Sourced from the generator's own TOOL_NAMES rather than a second hardcoded
+# list, so a tool added to the runtime can never drift out of sync with what
+# this check expects to find.
+_EXPECTED_TOOLS = set(TOOL_NAMES)
 _KPI_RETRY_ATTEMPTS = 3
 _KPI_RETRY_DELAY_S = 1.5
 
