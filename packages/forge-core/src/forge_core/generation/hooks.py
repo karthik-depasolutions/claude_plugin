@@ -1,36 +1,103 @@
-"""Stage 5e — hooks/hooks.json.
+"""Stage 5e — hooks/hooks.json + hooks/session_context.py.
 
 Deterministic only. Hook configuration decides what runs automatically in
 the user's session, so unlike the prose stages it is never LLM-authored -
 only the industry pack's hand-curated `guardrails.notes` feed it.
+
+SessionStart context is injected via a `command` handler whose stdout is
+surfaced as session context. A `prompt` handler on SessionStart would never
+fire: per the current hook schema, prompt-type handlers are only supported
+on Stop, SubagentStop, UserPromptSubmit, and PreToolUse. The script reads
+config/schema_summary.json at session start, so regenerating `config/` alone
+keeps the guardrails current without duplicating the content in this file.
 """
 
 from __future__ import annotations
 
 from forge_core.models.industry_pack import IndustryPack
 from forge_core.models.plugin_spec import HookHandler, HookMatcherGroup, HooksFile
-from forge_core.models.quality import render_data_context
 
-_DEFAULT_NOTES = [
+DEFAULT_GUARDRAIL_NOTES = [
     "Never display or infer personally identifiable information.",
     "Prefer get_kpi over run_safe_query whenever a KPI already covers the question.",
 ]
 
+_SESSION_CONTEXT_SCRIPT = '''"""SessionStart hook for the MIS plugin.
+
+Prints this plugin's guardrails and data-quality findings to stdout, which
+Claude Code surfaces as session context. Reads config/schema_summary.json at
+session start so regenerating config/ alone keeps the guardrails current.
+
+Kept small and dependency-free (stdlib only) because its latency is prepended
+to every session start.
+"""
+
+import json
+import sys
+from pathlib import Path
+
+PLUGIN_ROOT = Path(__file__).resolve().parent.parent
+
+
+def main() -> int:
+    summary = PLUGIN_ROOT / "config" / "schema_summary.json"
+    if not summary.is_file():
+        print("Working with MIS data.", file=sys.stderr)
+        return 0
+    try:
+        data = json.loads(summary.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        print("Could not read config/schema_summary.json.", file=sys.stderr)
+        return 0
+
+    guardrails = data.get("guardrails") or {}
+    pack_name = guardrails.get("pack_name") or data.get("pack_slug", "MIS")
+    notes = guardrails.get("notes") or []
+
+    lines = [f"You are working with {pack_name} MIS data. Guardrails for this session:"]
+    lines += [f"- {note}" for note in notes]
+
+    context = data.get("data_context") or {}
+    ctx_notes = context.get("notes") or []
+    if ctx_notes:
+        lines.append("## What the business owner told us")
+        for note in ctx_notes:
+            lines.append(f"- Q: {note['question']}  A: {note['answer']}")
+    if context.get("findings"):
+        lines.append("## Known data-quality findings")
+        for finding in context["findings"]:
+            location = f"{finding['table']}.{finding['column']}"
+            lines.append(f"- [{finding['severity']}] {location}: {finding['summary']}")
+
+    print("\\n".join(lines))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+'''
+
 
 def generate_hooks(pack: IndustryPack, data_context: dict | None = None) -> HooksFile:
-    """A SessionStart reminder that surfaces the pack's guardrails as context,
-    without executing any customer- or LLM-controlled command.
+    """A SessionStart `command` handler whose stdout (the guardrails block,
+    rendered by hooks/session_context.py from live config) is injected as
+    session context. No customer- or LLM-controlled command is executed.
 
-    `data_context` (the DataReview.to_context payload) is appended as a
-    "what the business owner told us" block, capped at 2000 chars since it
-    is injected into *every* session. `args` stays None per the validator's
-    requirement."""
-    notes = pack.guardrails.notes or _DEFAULT_NOTES
-    reminder = f"You are working with {pack.name} MIS data. Guardrails for this session:\n" + "\n".join(
-        f"- {n}" for n in notes
+    `data_context` (the DataReview.to_context payload) is *not* baked in
+    here - the script reads it from config/schema_summary.json at session
+    start, so the shipped content never goes stale when config/ is
+    regenerated. Kept for API compatibility with older call sites."""
+    handler = HookHandler(
+        type="command",
+        command='python "${CLAUDE_PLUGIN_ROOT}/hooks/session_context.py"',
     )
-    context_block = render_data_context(data_context)
-    if context_block:
-        reminder += f"\n\n{context_block}"
-    handler = HookHandler(type="prompt", prompt=reminder)
     return HooksFile(hooks={"SessionStart": [HookMatcherGroup(matcher="*", hooks=[handler])]})
+
+
+def session_context_script() -> str:
+    """The hooks/session_context.py body, written alongside hooks.json so the
+    SessionStart command handler actually has something to run."""
+    return _SESSION_CONTEXT_SCRIPT
+
+
+__all__ = ["DEFAULT_GUARDRAIL_NOTES", "generate_hooks", "session_context_script"]

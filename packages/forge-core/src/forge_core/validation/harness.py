@@ -1,11 +1,11 @@
-"""Stage 6 - the validation harness. Runs all nine checks described in
+"""Stage 6 - the validation harness. Runs all ten checks described in
 plan §5 and gates packaging on `fail`.
 
-Checks 5-8 (`plugin_spec`, `cli_validate`, `mcp_smoke`) need an
+Checks 6-9 (`plugin_spec`, `cli_validate`, `mcp_smoke`, `hooks_smoke`) need an
 already-packaged plugin directory / config directory - before M9 exists (or
 when called mid-pipeline, pre-packaging) they report `skipped` rather than
 being silently omitted, so a `ValidationReport` always accounts for all
-nine checks by name.
+ten checks by name.
 """
 
 from __future__ import annotations
@@ -24,6 +24,7 @@ from forge_core.models.validation import ValidationCheckResult, ValidationReport
 from forge_core.validation.cli_validate import check_cli_validate
 from forge_core.validation.dry_run import check_dry_run
 from forge_core.validation.facts import check_facts
+from forge_core.validation.hooks_smoke import check_hooks_smoke
 from forge_core.validation.mcp_smoke import check_mcp_smoke
 from forge_core.validation.pii import check_pii
 from forge_core.validation.plausibility import check_binding_plausibility
@@ -86,6 +87,7 @@ def run_harness(
         _run(check_plugin_spec, plugin_dir),
         _run(check_cli_validate, plugin_dir),
         _run(check_mcp_smoke, config_dir, data_dir, kpi_defs),
+        _run(check_hooks_smoke, plugin_dir),
         _run(check_self_critique, pack, kpi_defs, _prose_texts(generated), provider),
     ]
 

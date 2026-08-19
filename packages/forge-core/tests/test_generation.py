@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -64,15 +67,14 @@ def test_generate_plugin_content_grounds_every_kpi_id(bookings_csv: Path):
     for kpi in kpi_defs.kpis:
         assert kpi.id in command.body
 
-    # Hooks are deterministic guardrail text, not executable commands.
+    # Hooks are a SessionStart `command` handler: a `prompt` handler would
+    # never fire on SessionStart (prompt types are only supported on Stop/
+    # SubagentStop/UserPromptSubmit/PreToolUse), so the guardrail block is
+    # rendered at session start by hooks/session_context.py instead.
     session_hooks = content.hooks.hooks["SessionStart"]
-    assert session_hooks[0].hooks[0].type == "prompt"
-    # Regression: Claude's plugin-content validator rejects `args` outright
-    # on any hook whose type isn't "command" - confirmed against a real
-    # `/plugin marketplace add` failure ("Field(s) ['args'] in 'SessionStart'
-    # matcher 0 hook 0 are only valid on type 'command' hooks, not type
-    # 'prompt'") when this defaulted to `[]` instead of being omitted.
-    assert "args" not in content.hooks.to_json_dict()["hooks"]["SessionStart"][0]["hooks"][0]
+    handler = session_hooks[0].hooks[0]
+    assert handler.type == "command"
+    assert handler.command == 'python "${CLAUDE_PLUGIN_ROOT}/hooks/session_context.py"'
 
     # PII never leaks into the generated dashboard snapshot.
     for denied in bindings.denied_columns:
@@ -112,3 +114,55 @@ def test_generate_plugin_content_with_llm_provider_stays_grounded(bookings_csv: 
     # what must never happen is one appearing as data in the dashboard snapshot.
     for denied in bindings.denied_columns:
         assert denied not in content.dashboard_html
+
+
+def test_session_context_script_reads_live_config(tmp_path: Path):
+    """The SessionStart command hook runs hooks/session_context.py, which must
+    render the guardrail block from config/schema_summary.json at session start
+    - not from anything baked into the script at generation time."""
+    from forge_core.generation.hooks import session_context_script
+    from forge_core.validation.hooks_smoke import check_hooks_smoke
+
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    (config_dir / "schema_summary.json").write_text(
+        json.dumps(
+            {
+                "pack_slug": "healthcare-diagnostics",
+                "guardrails": {
+                    "pack_name": "Healthcare Diagnostics",
+                    "notes": ["Never expose patient identifiers.", "Prefer get_kpi first."],
+                },
+                "data_context": {
+                    "notes": [{"question": "What's the source?", "answer": "Bookings export."}],
+                    "findings": [
+                        {"severity": "warn", "table": "bookings", "column": "amount",
+                         "summary": "has zero rows"},
+                    ],
+                },
+            }
+        )
+    )
+
+    (tmp_path / "hooks").mkdir()
+    script_path = tmp_path / "hooks" / "session_context.py"
+    script_path.write_text(session_context_script())
+
+    result = check_hooks_smoke(tmp_path)
+    assert result.status.name == "PASS"
+    assert result.issues == []
+
+    # The guardrail text must come from the live config, not the script body.
+    assert "Healthcare Diagnostics" not in session_context_script()
+    assert "Never expose patient identifiers" not in session_context_script()
+
+    # The script resolves the config relative to its own location (plugin root).
+    output = subprocess.run(
+        [sys.executable, str(script_path)], capture_output=True, text=True, timeout=30
+    )
+    assert output.returncode == 0
+    assert "Healthcare Diagnostics" in output.stdout
+    assert "Never expose patient identifiers" in output.stdout
+    assert "Bookings export." in output.stdout
+    assert "bookings.amount" in output.stdout
+    assert "## What the business owner told us" in output.stdout

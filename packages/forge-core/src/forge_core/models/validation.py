@@ -1,6 +1,6 @@
 """Validation harness contracts — Stage 5 output. See
 forge_core.validation.harness for the check implementations and
-docs/architecture.md §5 for why each of the nine checks exists.
+docs/architecture.md §5 for why each of the ten checks exists.
 """
 
 from __future__ import annotations
@@ -20,6 +20,7 @@ CHECK_NAMES = (
     "plugin_spec",
     "cli_validate",
     "mcp_smoke",
+    "hooks_smoke",
     "self_critique",
 )
 

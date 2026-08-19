@@ -16,6 +16,7 @@ import secrets
 from pathlib import Path
 
 from forge_core.generation import MCP_SERVER_NAME, GeneratedPlugin
+from forge_core.generation.hooks import DEFAULT_GUARDRAIL_NOTES, session_context_script
 from forge_core.models.bindings import SchemaBindings
 from forge_core.models.datasource import DataSource
 from forge_core.models.industry_pack import IndustryPack
@@ -123,8 +124,13 @@ def _config_files(
             for t in source.tables
         ],
         "guardrails": {
+            "pack_name": pack.name,
             "max_query_rows": pack.guardrails.max_query_rows,
             "query_timeout_seconds": pack.guardrails.query_timeout_seconds,
+            # The hand-curated guardrail notes, so hooks/session_context.py can
+            # render the same block from live config that the generator used to
+            # bake into the SessionStart hook directly.
+            "notes": pack.guardrails.notes or DEFAULT_GUARDRAIL_NOTES,
         },
     }
 
@@ -339,6 +345,10 @@ def build_plugin_spec(
             )
         )
     files.extend(_config_files(pack, profile, bindings, kpi_defs, data_context, denied_by_table))
+    if generated.hooks is not None:
+        # The SessionStart command handler in hooks.json runs this script;
+        # it must ship alongside or the hook has nothing to execute.
+        files.append(GeneratedFile(relative_path="hooks/session_context.py", content=session_context_script()))
 
     return PluginSpec(
         manifest=manifest,
