@@ -28,7 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from forge_api import pipeline_runner, registry
 from forge_api.config import get_settings
 from forge_api.db import get_session
-from forge_api.models_orm import RunORM
+from forge_api.models_orm import RunORM, UserORM
 from forge_api.routers.auth import get_current_user
 from forge_api.schemas import (
     BindingOverridesRequest,
@@ -52,7 +52,9 @@ def _new_run_id() -> str:
 
 
 @router.post("", response_model=RunSummary, status_code=201)
-async def create_run_from_path(body: CreateRunFromPathRequest) -> RunSummary:
+async def create_run_from_path(
+    body: CreateRunFromPathRequest, user: Annotated[UserORM, Depends(get_current_user)]
+) -> RunSummary:
     # `body.source_path` may be a filesystem path *or* a live-database
     # connection string (postgresql://...) - prepare_source_for_persistence
     # tells them apart and, for the latter, stashes the credential in this
@@ -74,6 +76,7 @@ async def create_run_from_path(body: CreateRunFromPathRequest) -> RunSummary:
         use_llm=body.use_llm,
         use_agent=body.use_agent,
         label=body.label,
+        tenant_id=user.email,
     )
     return _summary(ctx.record)
 
@@ -81,6 +84,7 @@ async def create_run_from_path(body: CreateRunFromPathRequest) -> RunSummary:
 @router.post("/upload", response_model=RunSummary, status_code=201)
 async def create_run_from_upload(
     files: list[UploadFile],
+    user: Annotated[UserORM, Depends(get_current_user)],
     industry: str | None = None,
     use_llm: bool = True,
     use_agent: bool = False,
@@ -126,6 +130,7 @@ async def create_run_from_upload(
         use_llm=use_llm,
         use_agent=use_agent,
         label=label,
+        tenant_id=user.email,
     )
     if warehouse_connection_string is not None:
         ctx.warehouse_connection_string = warehouse_connection_string

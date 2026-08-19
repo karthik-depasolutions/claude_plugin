@@ -52,7 +52,7 @@ def test_agent_binds_revenue_role_from_data_content_not_column_name(tmp_path: Pa
     description = pack.canonical_roles["revenue_amount"]
 
     column = propose_binding_with_agent(
-        "revenue_amount", description, table_cols, data_source, fact_table.physical_ref
+        "revenue_amount", description, table_cols, data_source, fact_table.physical_ref, tenant_id="_local"
     )
 
     assert column == "col_a", (
@@ -74,7 +74,7 @@ def test_agent_returns_none_rather_than_inventing_a_column(tmp_path: Path):
     description = pack.canonical_roles["revenue_amount"]
 
     column = propose_binding_with_agent(
-        "revenue_amount", description, table_cols, data_source, fact_table.physical_ref
+        "revenue_amount", description, table_cols, data_source, fact_table.physical_ref, tenant_id="_local"
     )
 
     assert column is None
@@ -95,7 +95,7 @@ def test_agent_skips_the_llm_entirely_on_an_exact_schema_cache_hit(
     fact_table = data_source.table(data_source.tables[0].name)
 
     fingerprint = memory.schema_fingerprint(table_cols)
-    memory.record_decision("some-pack", "revenue_amount", fingerprint, "revenue", 0.9, "cached earlier")
+    memory.record_decision("some-pack", "revenue_amount", fingerprint, "revenue", 0.9, "cached earlier", "_local")
 
     column = propose_binding_with_agent(
         "revenue_amount",
@@ -104,6 +104,7 @@ def test_agent_skips_the_llm_entirely_on_an_exact_schema_cache_hit(
         data_source,
         fact_table.physical_ref,
         pack_slug="some-pack",
+        tenant_id="_local",
     )
 
     assert column == "revenue"

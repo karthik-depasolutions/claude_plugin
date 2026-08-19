@@ -50,6 +50,23 @@ def _traces_db_path() -> Path:
     return _memory_dir() / "reasoning_traces.sqlite"
 
 
+def value_shape_of(col: ColumnProfile) -> str:
+    """A coarse, non-identifying description of a column's *values* (e.g.
+    "numeric, 4-figure, no negatives"), derived deterministically from its
+    profile. Used for few-shot prompts instead of the verbatim column name -
+    a same-tenant example should still never hand a raw column name to the
+    LLM prompt, because the prompt (and its traces) outlive the schema."""
+    role = col.guessed_role.value
+    if isinstance(col.min_value, (int, float)) and isinstance(col.max_value, (int, float)):
+        try:
+            width = len(str(abs(int(col.max_value))))
+        except (ValueError, OverflowError):
+            width = 0
+        sign = "no negatives" if col.min_value >= 0 else "can be negative"
+        return f"{role}, {width}-figure, {sign}"
+    return role
+
+
 def schema_fingerprint(table_cols: list[ColumnProfile], extra: str = "") -> str:
     """A stable identity for "this exact fact table shape" - same column
     names and dtypes, in a canonical (sorted) order so column order doesn't
@@ -75,78 +92,145 @@ class CachedDecision:
     confidence: float
     reasoning: str
     schema_fingerprint: str
+    value_shape: str = ""
+
+
+def _ensure_schema(con: sqlite3.Connection) -> None:
+    """Create (or upgrade) the `binding_decisions` table. Runs inside
+    `_connect` on every open so an on-disk DB created by an older build
+    transparently gains the tenant/value_shape columns (a column name on one
+    customer's schema must never be reused on another's, and - since the
+    migration is a plain ALTER TABLE - existing rows land in `_local`,
+    i.e. treated as single-tenant history)."""
+    con.execute(
+        """
+        CREATE TABLE IF NOT EXISTS binding_decisions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tenant_id TEXT NOT NULL DEFAULT '_local',
+            pack_slug TEXT NOT NULL,
+            role TEXT NOT NULL,
+            schema_fingerprint TEXT NOT NULL,
+            column_name TEXT,
+            confidence REAL NOT NULL,
+            reasoning TEXT NOT NULL,
+            value_shape TEXT NOT NULL DEFAULT '',
+            created_at TEXT NOT NULL
+        )
+        """
+    )
+    cols = {row[1] for row in con.execute("PRAGMA table_info(binding_decisions)")}
+    if "tenant_id" not in cols:
+        con.execute("ALTER TABLE binding_decisions ADD COLUMN tenant_id TEXT NOT NULL DEFAULT '_local'")
+    if "value_shape" not in cols:
+        con.execute("ALTER TABLE binding_decisions ADD COLUMN value_shape TEXT NOT NULL DEFAULT ''")
+    index = con.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'index' AND name = 'idx_binding_decisions_lookup'"
+    ).fetchone()
+    if index is None or "tenant_id" not in (index[0] or ""):
+        con.execute("DROP INDEX IF EXISTS idx_binding_decisions_lookup")
+        con.execute(
+            "CREATE INDEX idx_binding_decisions_lookup "
+            "ON binding_decisions (tenant_id, pack_slug, role, schema_fingerprint)"
+        )
 
 
 @contextmanager
 def _connect():
     con = sqlite3.connect(_decisions_db_path())
     try:
-        con.execute(
-            """
-            CREATE TABLE IF NOT EXISTS binding_decisions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                pack_slug TEXT NOT NULL,
-                role TEXT NOT NULL,
-                schema_fingerprint TEXT NOT NULL,
-                column_name TEXT,
-                confidence REAL NOT NULL,
-                reasoning TEXT NOT NULL,
-                created_at TEXT NOT NULL
-            )
-            """
-        )
-        con.execute(
-            "CREATE INDEX IF NOT EXISTS idx_binding_decisions_lookup "
-            "ON binding_decisions (pack_slug, role, schema_fingerprint)"
-        )
+        _ensure_schema(con)
         yield con
         con.commit()
     finally:
         con.close()
 
 
-def get_exact_decision(pack_slug: str, role: str, fingerprint: str) -> CachedDecision | None:
+def get_exact_decision(
+    pack_slug: str, role: str, fingerprint: str, tenant_id: str
+) -> CachedDecision | None:
     """A fast path, not a guess: only returns a result when this exact
-    (pack, role, schema shape) combination was already resolved before -
-    e.g. resuming a paused run or re-running the same upload. The caller
-    still re-validates the column against the live column list."""
+    (tenant, pack, role, schema shape) combination was already resolved
+    before - e.g. resuming a paused run or re-running the same upload. The
+    caller still re-validates the column against the live column list."""
     with _connect() as con:
         row = con.execute(
-            "SELECT column_name, confidence, reasoning FROM binding_decisions "
-            "WHERE pack_slug = ? AND role = ? AND schema_fingerprint = ? "
+            "SELECT column_name, confidence, reasoning, value_shape FROM binding_decisions "
+            "WHERE tenant_id = ? AND pack_slug = ? AND role = ? AND schema_fingerprint = ? "
             "ORDER BY id DESC LIMIT 1",
-            (pack_slug, role, fingerprint),
+            (tenant_id, pack_slug, role, fingerprint),
         ).fetchone()
     if row is None:
         return None
-    return CachedDecision(column=row[0], confidence=row[1], reasoning=row[2], schema_fingerprint=fingerprint)
+    return CachedDecision(
+        column=row[0], confidence=row[1], reasoning=row[2], schema_fingerprint=fingerprint, value_shape=row[3] or ""
+    )
 
 
 def recent_examples(
-    pack_slug: str, role: str, *, exclude_fingerprint: str, limit: int = EXAMPLES_PER_ROLE
+    pack_slug: str,
+    role: str,
+    *,
+    tenant_id: str,
+    exclude_fingerprint: str,
+    limit: int = EXAMPLES_PER_ROLE,
+    allow_cross_tenant: bool = False,
 ) -> list[CachedDecision]:
-    """Past *successful* decisions for this role on other customers' schemas
-    - shown to the agent as reference examples ("here's how this concept
-    tends to get resolved"), never as an answer to copy verbatim."""
+    """Past *successful* decisions for this role on *this tenant's own*
+    schemas - shown to the agent as reference examples ("here's how this
+    concept tends to get resolved"), never as an answer to copy verbatim.
+    Cross-tenant rows are never returned unless `allow_cross_tenant` is
+    explicitly set True (nothing in the codebase does today)."""
+    clauses = [
+        "pack_slug = ?",
+        "role = ?",
+        "schema_fingerprint != ?",
+        "column_name IS NOT NULL",
+    ]
+    params: list[object] = [pack_slug, role, exclude_fingerprint]
+    if not allow_cross_tenant:
+        clauses.append("tenant_id = ?")
+        params.append(tenant_id)
+    params.append(limit)
     with _connect() as con:
         rows = con.execute(
-            "SELECT column_name, confidence, reasoning, schema_fingerprint FROM binding_decisions "
-            "WHERE pack_slug = ? AND role = ? AND schema_fingerprint != ? AND column_name IS NOT NULL "
+            "SELECT column_name, confidence, reasoning, schema_fingerprint, value_shape "
+            f"FROM binding_decisions WHERE {' AND '.join(clauses)} "
             "ORDER BY id DESC LIMIT ?",
-            (pack_slug, role, exclude_fingerprint, limit),
+            params,
         ).fetchall()
-    return [CachedDecision(column=r[0], confidence=r[1], reasoning=r[2], schema_fingerprint=r[3]) for r in rows]
+    return [
+        CachedDecision(column=r[0], confidence=r[1], reasoning=r[2], schema_fingerprint=r[3], value_shape=r[4] or "")
+        for r in rows
+    ]
 
 
 def record_decision(
-    pack_slug: str, role: str, fingerprint: str, column: str | None, confidence: float, reasoning: str
+    pack_slug: str,
+    role: str,
+    fingerprint: str,
+    column: str | None,
+    confidence: float,
+    reasoning: str,
+    tenant_id: str,
+    value_shape: str = "",
 ) -> None:
     with _connect() as con:
         con.execute(
             "INSERT INTO binding_decisions "
-            "(pack_slug, role, schema_fingerprint, column_name, confidence, reasoning, created_at) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (pack_slug, role, fingerprint, column, confidence, reasoning, datetime.now(UTC).isoformat()),
+            "(tenant_id, pack_slug, role, schema_fingerprint, column_name, confidence, reasoning, "
+            "value_shape, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (
+                tenant_id,
+                pack_slug,
+                role,
+                fingerprint,
+                column,
+                confidence,
+                reasoning,
+                value_shape,
+                datetime.now(UTC).isoformat(),
+            ),
         )
 
 
@@ -187,4 +271,5 @@ __all__ = [
     "recent_examples",
     "schema_fingerprint",
     "trace_checkpointer",
+    "value_shape_of",
 ]

@@ -87,6 +87,7 @@ def _resolve_columns(
     fact_table_physical_ref: str | None = None,
     use_agent: bool = False,
     notes: list[dict] | None = None,
+    tenant_id: str = "_local",
 ) -> tuple[list[ColumnBinding], list[str]]:
     bindings: list[ColumnBinding] = []
     unresolved: list[str] = []
@@ -158,6 +159,7 @@ def _resolve_columns(
                 source,
                 fact_table_physical_ref,
                 pack_slug=pack.slug,
+                tenant_id=tenant_id,
                 # User context must invalidate a cached decision (memory.py's
                 # schema_fingerprint folds extra into the signature), so the
                 # agent never reuses a decision made without these notes.
@@ -222,6 +224,7 @@ def resolve_bindings(
     *,
     use_agent: bool = False,
     data_context: dict | None = None,
+    tenant_id: str = "_local",
 ) -> SchemaBindings:
     overrides = overrides or {}
     fact_table_name = pick_fact_table(profile, pack)
@@ -241,6 +244,7 @@ def resolve_bindings(
         fact_table_physical_ref=fact_table.physical_ref,
         use_agent=use_agent,
         notes=notes,
+        tenant_id=tenant_id,
     )
 
     value_sets = _resolve_value_sets(pack, fact_table.physical_ref, columns, profile)

@@ -199,6 +199,7 @@ def _run_pipeline_inner(
         binding_overrides,
         use_agent=use_agent,
         data_context=data_context,
+        tenant_id=record.tenant_id,
     )
     record.log(
         RunStage.BIND,

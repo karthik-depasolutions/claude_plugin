@@ -48,12 +48,14 @@ async def start_run(
     use_llm: bool,
     use_agent: bool = False,
     label: str | None = None,
+    tenant_id: str = "_local",
 ) -> registry.RunContext:
     record = RunRecord(
         run_id=run_id,
         source_path=source_path,
         output_dir=output_dir,
         industry_override=industry_override,
+        tenant_id=tenant_id,
         label=label,
     )
     record.on_event(lambda event: _log_event(run_id, event))

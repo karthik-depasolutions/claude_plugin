@@ -24,6 +24,7 @@ for later audit - never read back into a decision.
 from __future__ import annotations
 
 import os
+import re
 import uuid
 from typing import Any
 
@@ -57,18 +58,26 @@ represent this concept - inventing a plausible-looking name is a hard failure, w
 saying null."""
 
 
+def _name_tokens(column: str) -> list[str]:
+    """The column name split into its constituent word tokens (snake_case,
+    camelCase, kebab-case, spaces) - used in few-shot examples instead of
+    the verbatim name, so a prompt/trace never carries another customer's
+    exact column identifier."""
+    return [w for w in re.split(r"[^a-z0-9]+", column.lower()) if w]
+
+
 def _examples_block(examples: list[memory.CachedDecision]) -> str:
     if not examples:
         return ""
     lines = "\n".join(
-        f'- On a different customer\'s schema, this concept was resolved to a column named '
-        f'{ex.column!r} because: {ex.reasoning}'
+        f"- A previous schema resolved this concept to a column whose name contained "
+        f"{_name_tokens(ex.column)!r} and whose values looked like: {ex.value_shape}"
         for ex in examples
     )
     return (
-        "\nFor reference, here's how this same concept was resolved on OTHER customers' "
-        "schemas (different column names - never assume this customer's column is named the "
-        f"same, only use these as reasoning examples):\n{lines}\n"
+        "\nFor reference, here's how this same concept was resolved on other schemas "
+        "(different column names - never assume this customer's column is named the same, "
+        f"only use these as reasoning examples):\n{lines}\n"
     )
 
 
@@ -80,12 +89,17 @@ def propose_binding_with_agent(
     fact_table_physical_ref: str,
     *,
     pack_slug: str = "unknown-pack",
+    tenant_id: str,
     model_name: str | None = None,
     context_extra: str = "",
 ) -> str | None:
     """Returns the chosen column name, or `None` if the agent found nothing
     that fits (or failed for any reason - a broken agent should degrade to
-    "unresolved", the same outcome as the tiers before it, never raise)."""
+    "unresolved", the same outcome as the tiers before it, never raise).
+
+    `tenant_id` scopes every memory read/write to this customer: the exact-
+    decision cache and few-shot examples never touch another tenant's rows
+    (see memory.py), so Customer B's agent never sees Customer A's columns."""
     valid_names = {c.name for c in table_cols}
     # `context_extra` (data-review answers, when supplied) is folded into
     # the fingerprint so a cached decision is invalidated by new user
@@ -93,7 +107,7 @@ def propose_binding_with_agent(
     # answer before the user's notes ever reached the prompt.
     fingerprint = memory.schema_fingerprint(table_cols, extra=context_extra)
 
-    cached = memory.get_exact_decision(pack_slug, role, fingerprint)
+    cached = memory.get_exact_decision(pack_slug, role, fingerprint, tenant_id)
     if cached is not None:
         return cached.column if cached.column in valid_names else None
 
@@ -124,7 +138,9 @@ def propose_binding_with_agent(
             google_api_key=os.environ.get("GEMINI_API_KEY"),
             temperature=0.1,
         )
-        examples = memory.recent_examples(pack_slug, role, exclude_fingerprint=fingerprint)
+        examples = memory.recent_examples(
+            pack_slug, role, tenant_id=tenant_id, exclude_fingerprint=fingerprint
+        )
         system_prompt = _SYSTEM_PROMPT_TEMPLATE.format(
             role=role, description=description, examples_block=_examples_block(examples)
         )
@@ -140,11 +156,17 @@ def propose_binding_with_agent(
     column = captured.get("column")
     confidence = captured.get("confidence", 0.0) or 0.0
     reasoning = captured.get("reasoning", "") or ""
+    value_shape = ""
+    if column and column in valid_names:
+        chosen = next(c for c in table_cols if c.name == column)
+        value_shape = memory.value_shape_of(chosen)
     if not column or column not in valid_names:
-        memory.record_decision(pack_slug, role, fingerprint, None, confidence, reasoning)
+        memory.record_decision(pack_slug, role, fingerprint, None, confidence, reasoning, tenant_id)
         return None
 
-    memory.record_decision(pack_slug, role, fingerprint, column, confidence, reasoning)
+    memory.record_decision(
+        pack_slug, role, fingerprint, column, confidence, reasoning, tenant_id, value_shape=value_shape
+    )
     return column
 
 

@@ -33,6 +33,11 @@ class RunRecord(BaseModel):
     source_path: str
     industry_override: str | None = None
     output_dir: str
+    tenant_id: str = "_local"
+    """The authenticated principal owning this run (email in apps/api; the
+    CLI is single-tenant and stays `_local`). Scopes agent-memory reads and
+    writes so one customer's binding decisions never leak into another's
+    prompts or cache lookups (see forge_core.agentic.memory)."""
     label: str | None = None
     """Optional human-chosen project/business name (e.g. "Sparda Music
     Academy") - feeds the packaged plugin's displayName, its on-disk/repo
