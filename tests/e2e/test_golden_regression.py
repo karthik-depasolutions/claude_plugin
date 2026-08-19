@@ -39,7 +39,7 @@ def test_bookings_dataset_still_produces_a_fully_valid_plugin(bookings_csv: Path
     assert result.status == RunStatus.SUCCEEDED, result.error
 
     compile_event = next(e for e in result.events if e.stage.value == "compile_kpis" and "skipped" in e.data)
-    assert compile_event.data["skipped"] == []
+    assert compile_event.data["skipped"] == {}
 
     validate_event = next(e for e in reversed(result.events) if e.stage.value == "validate")
     report = validate_event.data["report"]

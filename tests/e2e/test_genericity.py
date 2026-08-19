@@ -42,7 +42,7 @@ def test_generator_produces_a_valid_plugin_for_an_unseen_shape(
     assert bind_event.data["unresolved_roles"] == []
 
     compile_event = next(e for e in result.events if e.stage.value == "compile_kpis" and "skipped" in e.data)
-    assert compile_event.data["skipped"] == [], "every KPI must compute for the acceptance criterion to hold"
+    assert compile_event.data["skipped"] == {}, "every KPI must compute for the acceptance criterion to hold"
 
     validate_event = next(e for e in reversed(result.events) if e.stage.value == "validate")
     report = validate_event.data["report"]
