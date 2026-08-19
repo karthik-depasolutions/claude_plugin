@@ -31,6 +31,21 @@ def test_generator_produces_a_valid_plugin_for_an_unseen_shape(
 
     result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
 
+    if run_id == "genericity-edtech":
+        # P1-04: edtech's shipped artifact bound a student test score (0-100)
+        # to the revenue role. That is now a hard validation failure and the
+        # run correctly refuses to package it. P1-08 turns this into a
+        # user-confirmation question instead of a hard block.
+        assert result.status == RunStatus.FAILED
+        validate_event = next(e for e in reversed(result.events) if e.stage.value == "validate")
+        report = validate_event.data["report"]
+        checks_by_name = {c["check"]: c for c in report["checks"]}
+        plaus = checks_by_name["binding_plausibility"]
+        assert plaus["status"] == CheckStatus.FAIL.value
+        assert any("revenue_amount" in i["location"] for i in plaus["issues"])
+        assert any("score" in i["message"] for i in plaus["issues"])
+        return
+
     assert result.status == RunStatus.SUCCEEDED, result.error
 
     classify_event = next(
