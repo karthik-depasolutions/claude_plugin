@@ -13,21 +13,27 @@ from typing import Any
 import duckdb
 
 from mis_mcp_runtime.config import CompiledKpiConfig
+from mis_mcp_runtime.engine.assertions import AssertionPolicyError, evaluate_assertion
 from mis_mcp_runtime.engine.rows import to_json_rows
 from mis_mcp_runtime.security.limits import QueryTimeoutError, run_with_timeout
 
 _QUERY_RETRY_ATTEMPTS = 3
 _QUERY_RETRY_BASE_DELAY_S = 1.5
 
-_SAFE_BUILTINS = {"abs": abs, "min": min, "max": max, "round": round, "len": len}
-
 
 def _check_assertions(assertions: list[str], row: dict[str, Any]) -> list[dict[str, Any]]:
     results = []
     for expr in assertions:
         try:
-            passed = bool(eval(expr, {"__builtins__": _SAFE_BUILTINS}, row))  # noqa: S307
-            results.append({"assertion": expr, "passed": passed})
+            results.append({"assertion": expr, "passed": bool(evaluate_assertion(expr, row))})
+        except AssertionPolicyError as exc:
+            results.append(
+                {
+                    "assertion": expr,
+                    "passed": False,
+                    "error": f"rejected by assertion policy: {exc}",
+                }
+            )
         except Exception as exc:  # noqa: BLE001 - report, never crash the tool call
             results.append({"assertion": expr, "passed": False, "error": str(exc)})
     return results

@@ -6,7 +6,7 @@ per customer.
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class VocabularyEntry(BaseModel):
@@ -57,6 +57,17 @@ class CanonicalKpi(BaseModel):
     optional: bool = Field(
         default=False, description="If true, absence of required roles is a warn, not a fail."
     )
+
+    @field_validator("assertions")
+    @classmethod
+    def _assertions_are_safe(cls, v: list[str]) -> list[str]:
+        # Imported lazily: forge_core.validation pulls in the whole harness
+        # (generation -> models), which would be a module-load cycle here.
+        from forge_core.validation.assertion_policy import validate_assertion
+
+        for expr in v:
+            validate_assertion(expr)
+        return v
 
 
 class Guardrails(BaseModel):
