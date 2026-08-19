@@ -110,7 +110,21 @@ def _run_pipeline_inner(
     packs = load_all_packs(packs_root)
 
     log_progress(RunStage.PROFILE, "Profiling schema")
-    profile = build_schema_profile(data_source, profiling_provider, use_agent=use_agent, packs=packs)
+    profile = build_schema_profile(
+        data_source,
+        profiling_provider,
+        use_agent=use_agent,
+        packs=packs,
+        # Agent LLM spend is otherwise invisible to record.events (the two
+        # agents call ChatGoogleGenerativeAI directly, not through the
+        # cassette-wrapped provider) - surface one StageEvent per invocation.
+        on_agent_stats=lambda stats: record.log(
+            RunStage.PROFILE,
+            "Data-understanding agent",
+            agent="data_understanding",
+            **stats,
+        ),
+    )
     log_progress(RunStage.PROFILE, "Profile complete", columns=len(profile.structural.columns))
 
     # Computed once and reused on every resume - see RunRecord.data_review's
@@ -200,6 +214,12 @@ def _run_pipeline_inner(
         use_agent=use_agent,
         data_context=data_context,
         tenant_id=record.tenant_id,
+        on_agent_stats=lambda stats: record.log(
+            RunStage.BIND,
+            "Binding agent invocation",
+            agent="binding",
+            **stats,
+        ),
     )
     record.log(
         RunStage.BIND,

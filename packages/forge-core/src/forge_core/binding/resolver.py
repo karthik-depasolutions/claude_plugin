@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import re
 from datetime import UTC, datetime
+from typing import Callable
 
 from forge_core.binding.scorer import MIN_BIND_CONFIDENCE, best_candidate
 from forge_core.llm.provider import LLMProvider
@@ -88,6 +89,7 @@ def _resolve_columns(
     use_agent: bool = False,
     notes: list[dict] | None = None,
     tenant_id: str = "_local",
+    on_agent_stats: Callable[[dict], None] | None = None,
 ) -> tuple[list[ColumnBinding], list[str]]:
     bindings: list[ColumnBinding] = []
     unresolved: list[str] = []
@@ -164,6 +166,7 @@ def _resolve_columns(
                 # schema_fingerprint folds extra into the signature), so the
                 # agent never reuses a decision made without these notes.
                 context_extra=json.dumps(notes or [], sort_keys=True),
+                on_stats=on_agent_stats,
             )
             if agent_proposed and agent_proposed in valid_names:
                 bindings.append(
@@ -225,6 +228,7 @@ def resolve_bindings(
     use_agent: bool = False,
     data_context: dict | None = None,
     tenant_id: str = "_local",
+    on_agent_stats: Callable[[dict], None] | None = None,
 ) -> SchemaBindings:
     overrides = overrides or {}
     fact_table_name = pick_fact_table(profile, pack)
@@ -245,6 +249,7 @@ def resolve_bindings(
         use_agent=use_agent,
         notes=notes,
         tenant_id=tenant_id,
+        on_agent_stats=on_agent_stats,
     )
 
     value_sets = _resolve_value_sets(pack, fact_table.physical_ref, columns, profile)

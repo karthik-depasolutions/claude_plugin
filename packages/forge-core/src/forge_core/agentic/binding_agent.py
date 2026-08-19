@@ -26,10 +26,11 @@ from __future__ import annotations
 import os
 import re
 import uuid
-from typing import Any
+from typing import Any, Callable
 
 from forge_core.agentic import memory
 from forge_core.agentic.tools import build_binding_tools
+from forge_core.llm.provider import AgentCallRecorder
 from forge_core.models.datasource import DataSource
 from forge_core.models.schema_profile import ColumnProfile
 
@@ -92,6 +93,7 @@ def propose_binding_with_agent(
     tenant_id: str,
     model_name: str | None = None,
     context_extra: str = "",
+    on_stats: Callable[[dict], None] | None = None,
 ) -> str | None:
     """Returns the chosen column name, or `None` if the agent found nothing
     that fits (or failed for any reason - a broken agent should degrade to
@@ -99,7 +101,12 @@ def propose_binding_with_agent(
 
     `tenant_id` scopes every memory read/write to this customer: the exact-
     decision cache and few-shot examples never touch another tenant's rows
-    (see memory.py), so Customer B's agent never sees Customer A's columns."""
+    (see memory.py), so Customer B's agent never sees Customer A's columns.
+
+    `on_stats`, when given, receives this single invocation's token/step/tool
+    accounting (see `AgentCallRecorder.summary`) even when the agent fails -
+    the orchestrator turns it into a StageEvent so agent LLM spend is visible
+    in run telemetry instead of being an unexplained latency gap."""
     valid_names = {c.name for c in table_cols}
     # `context_extra` (data-review answers, when supplied) is folded into
     # the fingerprint so a cached decision is invalidated by new user
@@ -124,6 +131,7 @@ def propose_binding_with_agent(
         return "Recorded."
 
     thread_id = f"{pack_slug}:{role}:{fingerprint}:{uuid.uuid4().hex[:8]}"
+    recorder = AgentCallRecorder()
     try:
         from langchain.agents import create_agent
         from langchain_core.tools import StructuredTool
@@ -148,10 +156,19 @@ def propose_binding_with_agent(
             agent = create_agent(model=model, tools=tools, system_prompt=system_prompt, checkpointer=checkpointer)
             agent.invoke(
                 {"messages": [{"role": "user", "content": f"Bind the concept {role!r} now."}]},
-                config={"recursion_limit": MAX_AGENT_STEPS, "configurable": {"thread_id": thread_id}},
+                config={
+                    "recursion_limit": MAX_AGENT_STEPS,
+                    "configurable": {"thread_id": thread_id},
+                    "callbacks": [recorder],
+                },
             )
     except Exception:  # noqa: BLE001 - any agent/tool/network failure degrades to "unresolved"
+        if on_stats is not None:
+            on_stats(recorder.summary())
         return None
+
+    if on_stats is not None:
+        on_stats(recorder.summary())
 
     column = captured.get("column")
     confidence = captured.get("confidence", 0.0) or 0.0

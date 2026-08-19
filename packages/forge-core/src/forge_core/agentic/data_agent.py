@@ -23,9 +23,10 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any
+from typing import Any, Callable
 
 from forge_core.agentic.tools import build_data_understanding_tools
+from forge_core.llm.provider import AgentCallRecorder
 from forge_core.models.datasource import DataSource
 from forge_core.models.industry_pack import IndustryPack
 from forge_core.models.schema_profile import ColumnSemantic, IndustryGuess, StructuralProfile
@@ -75,10 +76,14 @@ def run_data_understanding_agent(
     packs: list[IndustryPack],
     *,
     model_name: str | None = None,
+    on_stats: Callable[[dict], None] | None = None,
 ) -> tuple[list[ColumnSemantic], IndustryGuess | None]:
     """Returns (column_semantics, suggested_industry). Never raises - any
     agent/tool/network failure degrades to ([], None), the same outcome as
-    not having a semantic profile at all."""
+    not having a semantic profile at all.
+
+    `on_stats`, when given, receives this single invocation's token/step/tool
+    accounting (see `AgentCallRecorder.summary`) even when the agent fails."""
     valid_columns = {(c.table, c.name) for c in structural.columns}
     valid_slugs = {p.slug for p in packs}
 
@@ -105,6 +110,7 @@ def run_data_understanding_agent(
         industry_guess.update(pack_slug_guess=pack_slug_guess, confidence=confidence, reasoning=reasoning)
         return "Recorded."
 
+    recorder = AgentCallRecorder()
     try:
         from langchain.agents import create_agent
         from langchain_core.tools import StructuredTool
@@ -130,10 +136,15 @@ def run_data_understanding_agent(
         agent = create_agent(model=model, tools=tools, system_prompt=system_prompt)
         agent.invoke(
             {"messages": [{"role": "user", "content": "Understand this data now."}]},
-            config={"recursion_limit": MAX_AGENT_STEPS},
+            config={"recursion_limit": MAX_AGENT_STEPS, "callbacks": [recorder]},
         )
     except Exception:  # noqa: BLE001 - any agent/tool/network failure degrades to "no semantic profile"
+        if on_stats is not None:
+            on_stats(recorder.summary())
         return [], None
+
+    if on_stats is not None:
+        on_stats(recorder.summary())
 
     guess = None
     slug = industry_guess.get("pack_slug_guess")

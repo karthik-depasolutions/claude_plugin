@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Callable
+
 from forge_core.llm.provider import LLMProvider
 from forge_core.models.datasource import DataSource
 from forge_core.models.industry_pack import IndustryPack
@@ -33,10 +35,18 @@ def build_schema_profile(
     *,
     use_agent: bool = False,
     packs: list[IndustryPack] | None = None,
+    on_agent_stats: Callable[[dict], None] | None = None,
 ) -> SchemaProfile:
     structural = build_structural_only(data_source)
     semantic = (
-        run_semantic_profile(data_source, structural, provider, use_agent=use_agent, packs=packs)
+        run_semantic_profile(
+            data_source,
+            structural,
+            provider,
+            use_agent=use_agent,
+            packs=packs,
+            on_agent_stats=on_agent_stats,
+        )
         if provider
         else None
     )

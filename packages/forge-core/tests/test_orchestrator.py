@@ -178,6 +178,116 @@ def test_nonempty_answers_thread_notes_with_provider(dirty_leads_csv: Path, tmp_
     assert any(n["answer"] == "age buckets are campaign targets" for n in notes)
 
 
+def test_agent_call_recorder_accumulates_usage_from_llm_result():
+    from langchain_core.messages import AIMessage
+    from langchain_core.outputs import ChatGeneration, LLMResult
+
+    from forge_core.llm.provider import AgentCallRecorder
+
+    recorder = AgentCallRecorder()
+    recorder.on_llm_start({}, ["prompt 1"])
+    recorder.on_llm_start({}, ["prompt 2"])
+    recorder.on_tool_start({}, "tool input")
+
+    def _gen(usage):
+        return ChatGeneration(message=AIMessage(content="ok", usage_metadata=usage))
+
+    recorder.on_llm_end(
+        LLMResult(
+            generations=[
+                [_gen({"input_tokens": 10, "output_tokens": 5, "total_tokens": 15,
+                       "output_token_details": {"reasoning": 2}})],
+                [_gen({"input_tokens": 7, "output_tokens": 3, "total_tokens": 10,
+                       "output_token_details": {"reasoning": 1}})],
+            ]
+        )
+    )
+
+    summary = recorder.summary()
+    assert summary["steps"] == 2
+    assert summary["tool_calls"] == 1
+    assert summary["input_tokens"] == 17
+    assert summary["output_tokens"] == 8
+    assert summary["thinking_tokens"] == 3
+    assert summary["wall_seconds"] >= 0
+
+
+def test_binding_agent_emits_stats_via_on_stats_even_on_failure(bookings_csv: Path, tmp_path: Path, monkeypatch):
+    """The per-invocation token accounting must reach the caller even when the
+    agent itself throws (a broken agent degrades to "unresolved" but its cost
+    telemetry must not be silently lost)."""
+    from forge_core.agentic import memory, propose_binding_with_agent
+    from forge_core.ingestion.registry import ingest
+    from forge_core.profiling import build_structural_only
+
+    import forge_core.agentic.binding_agent as binding_module
+
+    monkeypatch.setenv("FORGE_AGENT_MEMORY_DIR", str(tmp_path / "agent_memory"))
+    csv_path = tmp_path / "revenue_region.csv"
+    csv_path.write_text("revenue,region\n100,north\n200,south\n", encoding="utf-8")
+    data_source = ingest(csv_path)
+    structural = build_structural_only(data_source)
+    table_cols = structural.columns_for(data_source.tables[0].name)
+    fact_table = data_source.table(data_source.tables[0].name)
+
+    captured: list[dict] = []
+
+    def _boom(*args, **kwargs):
+        raise RuntimeError("simulated agent failure")
+
+    monkeypatch.setattr(binding_module, "memory", memory)  # keep the real memory module
+    monkeypatch.setattr(memory, "recent_examples", lambda *a, **k: [])
+    # Force failure inside the try (after the cache lookup) by breaking the
+    # checkpointer acquisition that wraps the agent invoke.
+    monkeypatch.setattr(memory, "trace_checkpointer", _boom)
+
+    result = propose_binding_with_agent(
+        "revenue_amount",
+        "total revenue",
+        table_cols,
+        data_source,
+        fact_table.physical_ref,
+        pack_slug="some-pack",
+        tenant_id="_local",
+        on_stats=captured.append,
+    )
+
+    assert result is None
+    assert len(captured) == 1
+    assert captured[0]["steps"] >= 0
+    assert captured[0]["tool_calls"] >= 0
+
+
+def test_use_agent_records_data_agent_stats_event(bookings_csv: Path, tmp_path: Path, monkeypatch):
+    """use_agent=True must surface one StageEvent per data-understanding agent
+    invocation with the recorder's accounting, so agent LLM spend shows up in
+    record.events rather than as an unexplained latency gap."""
+    import forge_core.agentic.data_agent as data_agent_module
+    import forge_core.orchestrator as orch
+
+    def _stub_agent(data_source, structural, packs, *, on_stats=None, **kwargs):
+        if on_stats is not None:
+            on_stats({"steps": 2, "tool_calls": 1, "input_tokens": 17, "output_tokens": 8,
+                      "thinking_tokens": 3, "wall_seconds": 0.5})
+        return [], None
+
+    monkeypatch.setattr(data_agent_module, "run_data_understanding_agent", _stub_agent)
+    monkeypatch.setattr(orch, "classify", _auto_accept)
+
+    record = _new_record(bookings_csv, tmp_path)
+    result = run_pipeline(
+        record,
+        profiling_provider=_QuestionProvider(),
+        use_agent=True,
+    )
+
+    stats_events = [e for e in result.events if e.data.get("agent") == "data_understanding"]
+    assert stats_events, result.events
+    assert stats_events[0].stage.value == "profile"
+    assert set(stats_events[0].data) == {"agent", "steps", "tool_calls", "input_tokens",
+                                         "output_tokens", "thinking_tokens", "wall_seconds"}
+
+
 def test_default_packs_root_exists():
     assert DEFAULT_PACKS_ROOT.is_dir()
     assert (DEFAULT_PACKS_ROOT / "healthcare-diagnostics" / "pack.json").is_file()

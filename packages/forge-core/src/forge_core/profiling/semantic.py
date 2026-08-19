@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import os
+from typing import Callable
 
 from forge_core.llm.provider import LLMProvider
 from forge_core.models.datasource import DataSource
@@ -100,6 +101,7 @@ def run_semantic_profile(
     *,
     use_agent: bool = False,
     packs: list[IndustryPack] | None = None,
+    on_agent_stats: Callable[[dict], None] | None = None,
 ) -> SemanticProfile:
     """`use_agent=True` (with `packs` available) routes through
     `agentic.data_agent`'s tool-using agent instead of this single-shot
@@ -111,7 +113,9 @@ def run_semantic_profile(
     if use_agent and packs:
         from forge_core.agentic.data_agent import run_data_understanding_agent
 
-        column_semantics, suggested_industry = run_data_understanding_agent(data_source, structural, packs)
+        column_semantics, suggested_industry = run_data_understanding_agent(
+            data_source, structural, packs, on_stats=on_agent_stats
+        )
         return SemanticProfile(
             column_semantics=column_semantics,
             suggested_industry=suggested_industry,
