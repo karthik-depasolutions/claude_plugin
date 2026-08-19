@@ -103,6 +103,63 @@ def test_run_safe_query_rejects_denied_column(bookings_config_dir: Path):
     assert "error" in result
 
 
+def test_run_safe_query_rejects_denied_column_in_where(bookings_config_dir: Path):
+    config, con = _load(bookings_config_dir)
+    fact_ref = config.data_source.tables[0].physical_ref
+    result = run_safe_query(
+        config, con, f"SELECT COUNT(*) AS n FROM {fact_ref} WHERE \"customer_name\" LIKE 'A%'"
+    )
+    assert "error" in result
+    assert "PiiPolicyError" in result.get("error_type", "")
+
+
+def test_run_safe_query_rejects_denied_column_in_group_by(bookings_config_dir: Path):
+    config, con = _load(bookings_config_dir)
+    fact_ref = config.data_source.tables[0].physical_ref
+    result = run_safe_query(config, con, f"SELECT COUNT(*) AS n FROM {fact_ref} GROUP BY \"phone\"")
+    assert "error" in result
+
+
+def test_run_safe_query_rejects_denied_column_in_order_by(bookings_config_dir: Path):
+    config, con = _load(bookings_config_dir)
+    fact_ref = config.data_source.tables[0].physical_ref
+    result = run_safe_query(
+        config, con, f'SELECT "booking_id" FROM {fact_ref} ORDER BY "customer_name"'
+    )
+    assert "error" in result
+
+
+def test_run_safe_query_rejects_denied_column_in_having(bookings_config_dir: Path):
+    config, con = _load(bookings_config_dir)
+    fact_ref = config.data_source.tables[0].physical_ref
+    result = run_safe_query(
+        config, con, f'SELECT COUNT(*) AS n FROM {fact_ref} GROUP BY "booking_id" HAVING COUNT("phone") > 1'
+    )
+    assert "error" in result
+
+
+def test_run_safe_query_rejects_denied_column_in_cte(bookings_config_dir: Path):
+    config, con = _load(bookings_config_dir)
+    fact_ref = config.data_source.tables[0].physical_ref
+    result = run_safe_query(
+        config,
+        con,
+        f'WITH recent AS (SELECT * FROM {fact_ref} WHERE "phone" IS NOT NULL) '
+        f'SELECT COUNT(*) AS n FROM recent',
+    )
+    assert "error" in result
+
+
+def test_run_safe_query_allows_legitimate_queries(bookings_config_dir: Path):
+    config, con = _load(bookings_config_dir)
+    fact_ref = config.data_source.tables[0].physical_ref
+    result = run_safe_query(
+        config, con, f'SELECT "status", COUNT(*) AS n FROM {fact_ref} GROUP BY "status"'
+    )
+    assert "error" not in result
+    assert result["row_count"] >= 1
+
+
 def test_run_safe_query_rejects_disallowed_table(bookings_config_dir: Path):
     config, con = _load(bookings_config_dir)
     result = run_safe_query(config, con, 'SELECT "x" FROM some_other_table')
