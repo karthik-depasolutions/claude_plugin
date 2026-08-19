@@ -55,7 +55,7 @@ def test_healthy_plugin_passes_every_runnable_check(bookings_csv: Path):
     assert {c.check for c in report.checks} == set(CHECK_NAMES)
     for name in ("plugin_spec", "cli_validate", "mcp_smoke", "self_critique"):
         assert report.check(name).status == CheckStatus.SKIPPED
-    for name in ("fact_check", "sql_safety", "dry_run", "pii_scan"):
+    for name in ("fact_check", "sql_safety", "binding_plausibility", "dry_run", "pii_scan"):
         result = report.check(name)
         assert result.status == CheckStatus.PASS, f"{name}: {result.issues}"
     # SKIPPED checks (no packaged plugin dir / no LLM provider yet) don't fail the run.

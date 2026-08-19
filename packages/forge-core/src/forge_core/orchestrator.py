@@ -259,7 +259,7 @@ def _run_pipeline_inner(
     )
     record.log(RunStage.PACKAGE, f"Packaged to {plugin_dir}", plugin_dir=str(plugin_dir))
 
-    record.log(RunStage.VALIDATE, "Running validation harness (8 checks)")
+    record.log(RunStage.VALIDATE, "Running validation harness (9 checks)")
     report = run_harness(
         pack=pack,
         profile=profile,

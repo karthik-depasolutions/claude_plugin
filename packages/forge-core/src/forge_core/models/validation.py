@@ -1,6 +1,6 @@
 """Validation harness contracts — Stage 5 output. See
 forge_core.validation.harness for the check implementations and
-docs/architecture.md §5 for why each of the eight checks exists.
+docs/architecture.md §5 for why each of the nine checks exists.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ from forge_core.models.common import CheckStatus
 CHECK_NAMES = (
     "fact_check",
     "sql_safety",
+    "binding_plausibility",
     "dry_run",
     "pii_scan",
     "plugin_spec",

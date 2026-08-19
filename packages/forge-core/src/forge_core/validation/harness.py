@@ -1,11 +1,11 @@
-"""Stage 6 - the validation harness. Runs all eight checks described in
+"""Stage 6 - the validation harness. Runs all nine checks described in
 plan §5 and gates packaging on `fail`.
 
-Checks 5-7 (`plugin_spec`, `cli_validate`, `mcp_smoke`) need an
+Checks 5-8 (`plugin_spec`, `cli_validate`, `mcp_smoke`) need an
 already-packaged plugin directory / config directory - before M9 exists (or
 when called mid-pipeline, pre-packaging) they report `skipped` rather than
 being silently omitted, so a `ValidationReport` always accounts for all
-eight checks by name.
+nine checks by name.
 """
 
 from __future__ import annotations
@@ -26,6 +26,7 @@ from forge_core.validation.dry_run import check_dry_run
 from forge_core.validation.facts import check_facts
 from forge_core.validation.mcp_smoke import check_mcp_smoke
 from forge_core.validation.pii import check_pii
+from forge_core.validation.plausibility import check_binding_plausibility
 from forge_core.validation.plugin_spec import check_plugin_spec
 from forge_core.validation.self_critique import check_self_critique
 from forge_core.validation.sql_safety import check_sql_safety
@@ -79,6 +80,7 @@ def run_harness(
     checks: list[ValidationCheckResult] = [
         _run(check_facts, pack, bindings, profile, kpi_defs.skipped),
         _run(check_sql_safety, kpi_defs, bindings),
+        _run(check_binding_plausibility, bindings, profile),
         _run(check_dry_run, kpi_defs, profile.source),
         _run(check_pii, kpi_defs, bindings, _pii_scan_texts(generated)),
         _run(check_plugin_spec, plugin_dir),
