@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from forge_core.llm.provider import LLMProvider
 from forge_core.models.datasource import DataSource
+from forge_core.models.industry_pack import IndustryPack
 from forge_core.models.schema_profile import SchemaProfile, StructuralProfile
 from forge_core.profiling.grain import infer_grains
 from forge_core.profiling.relationships import detect_relationships
@@ -29,9 +30,16 @@ def build_structural_only(data_source: DataSource) -> StructuralProfile:
 def build_schema_profile(
     data_source: DataSource,
     provider: LLMProvider | None = None,
+    *,
+    use_agent: bool = False,
+    packs: list[IndustryPack] | None = None,
 ) -> SchemaProfile:
     structural = build_structural_only(data_source)
-    semantic = run_semantic_profile(data_source, structural, provider) if provider else None
+    semantic = (
+        run_semantic_profile(data_source, structural, provider, use_agent=use_agent, packs=packs)
+        if provider
+        else None
+    )
     return SchemaProfile(
         data_source_id=data_source.id, structural=structural, semantic=semantic, source=data_source
     )

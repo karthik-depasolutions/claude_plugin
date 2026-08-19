@@ -1,7 +1,7 @@
 [project]
 name = "forge-core"
 version = "0.1.0"
-description = "MIS Plugin Forge — core generator engine: ingestion, profiling, classification, binding, KPI compilation, generation, validation, packaging, publishing"
+description = "Data2plugin — core generator engine: ingestion, profiling, classification, binding, KPI compilation, generation, validation, packaging, publishing"
 requires-python = ">=3.11"
 dependencies = [
     "pydantic>=2.9.0",

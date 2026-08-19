@@ -59,6 +59,7 @@ async def start_run(
     record.on_event(lambda event: _log_event(run_id, event))
     ctx = registry.RunContext(record=record)
     ctx.use_agent = use_agent
+    ctx.use_llm = use_llm
     registry.put(run_id, ctx)
     await _persist(ctx)
     logger.info("[%s] started - source=%s industry=%s use_llm=%s", run_id, source_path, industry_override, use_llm)
@@ -66,8 +67,12 @@ async def start_run(
     return ctx
 
 
-async def resume_run(ctx: registry.RunContext, *, use_llm: bool) -> None:
-    asyncio.create_task(_execute(ctx, use_llm=use_llm))  # noqa: RUF006
+async def resume_run(ctx: registry.RunContext) -> None:
+    # `use_llm` is a run-level choice persisted on the context at start -
+    # resuming must not silently flip an LLM-free run into an LLM one
+    # (previously hardcoded `use_llm=True` here, which made a `--no-llm`
+    # run acquire LLM-written prose on resume).
+    asyncio.create_task(_execute(ctx, use_llm=ctx.use_llm))  # noqa: RUF006
 
 
 async def _execute(ctx: registry.RunContext, *, use_llm: bool) -> None:

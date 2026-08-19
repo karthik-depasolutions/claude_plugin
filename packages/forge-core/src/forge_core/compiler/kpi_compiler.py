@@ -7,6 +7,7 @@ docs/architecture.md §2 for why that boundary matters.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Literal
 
 import sqlglot
 from sqlglot.expressions import Select
@@ -34,7 +35,9 @@ def _roles_available(kpi: CanonicalKpi, bindings: SchemaBindings) -> bool:
     return all(role in resolved_roles for role in _all_required_roles(kpi))
 
 
-def compile_kpi(kpi: CanonicalKpi, bindings: SchemaBindings) -> CompiledKpi:
+def compile_kpi(
+    kpi: CanonicalKpi, bindings: SchemaBindings, *, source: Literal["pack", "agent_proposed"] = "pack"
+) -> CompiledKpi:
     if not _roles_available(kpi, bindings):
         missing = [r for r in _all_required_roles(kpi) if r not in {c.role for c in bindings.columns}]
         raise KpiCompileError(f"KPI {kpi.id!r} requires unresolved role(s): {missing}")
@@ -65,18 +68,19 @@ def compile_kpi(kpi: CanonicalKpi, bindings: SchemaBindings) -> CompiledKpi:
         assertions=kpi.assertions,
         result_columns=result_columns,
         source_kpi_id=kpi.id,
+        source=source,
     )
 
 
 def compile_all(pack: IndustryPack, bindings: SchemaBindings) -> KpiDefsFile:
     compiled: list[CompiledKpi] = []
-    skipped: list[str] = []
+    skipped: dict[str, str] = {}
 
     for kpi in pack.kpis:
         try:
             compiled.append(compile_kpi(kpi, bindings))
-        except KpiCompileError:
-            skipped.append(kpi.id)
+        except KpiCompileError as exc:
+            skipped[kpi.id] = str(exc)
 
     return KpiDefsFile(
         pack_slug=pack.slug,

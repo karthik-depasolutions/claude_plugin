@@ -5,6 +5,7 @@ from pathlib import Path
 from forge_core.ingestion.registry import ingest
 from forge_core.llm.provider import LLMError
 from forge_core.models.quality import QualityFinding, ValueCount
+from forge_core.models.schema_profile import ColumnSemantic, SemanticProfile
 from forge_core.profiling import build_structural_only
 from forge_core.profiling.quality import (
     GENERAL_NOTES_ID,
@@ -205,3 +206,72 @@ def test_build_data_review_end_to_end_with_no_provider(dirty_leads_csv: Path):
 
     assert review.findings
     assert review.questions == []
+
+
+def test_low_confidence_column_semantics_becomes_a_finding(dirty_leads_csv: Path):
+    """A low-confidence ColumnSemantic - from either the single-shot profiler
+    or the data-understanding agent - surfaces as an `unclear_meaning`
+    finding through the exact same path a deterministic anomaly does."""
+    ds = ingest(dirty_leads_csv)
+    structural = build_structural_only(ds)
+    semantic = SemanticProfile(
+        column_semantics=[
+            ColumnSemantic(
+                table="dirty_leads", column="user_sentiment", proposed_meaning="unclear", confidence=0.2
+            )
+        ]
+    )
+    con = open_session(ds)
+    try:
+        review = build_data_review(ds, structural, con, provider=None, semantic=semantic)
+    finally:
+        con.close()
+
+    unclear = [f for f in review.findings if f.code == "unclear_meaning"]
+    assert len(unclear) == 1
+    assert unclear[0].id == "unclear_meaning:dirty_leads.user_sentiment"
+    assert unclear[0].table == "dirty_leads"
+    assert unclear[0].column == "user_sentiment"
+    assert "unclear" in unclear[0].summary
+
+
+def test_high_confidence_column_semantics_produces_no_finding(dirty_leads_csv: Path):
+    ds = ingest(dirty_leads_csv)
+    structural = build_structural_only(ds)
+    semantic = SemanticProfile(
+        column_semantics=[
+            ColumnSemantic(
+                table="dirty_leads", column="user_sentiment", proposed_meaning="clearly obvious", confidence=0.95
+            )
+        ]
+    )
+    con = open_session(ds)
+    try:
+        review = build_data_review(ds, structural, con, provider=None, semantic=semantic)
+    finally:
+        con.close()
+
+    assert not [f for f in review.findings if f.code == "unclear_meaning"]
+
+
+def test_unclear_meaning_findings_merge_and_stay_severity_sorted(dirty_leads_csv: Path):
+    """Findings from the deterministic checks and from low-confidence
+    semantics land in one combined, still-sorted list - not two lists."""
+    ds = ingest(dirty_leads_csv)
+    structural = build_structural_only(ds)
+    semantic = SemanticProfile(
+        column_semantics=[
+            ColumnSemantic(table="dirty_leads", column="gender", proposed_meaning="?", confidence=0.1)
+        ]
+    )
+    con = open_session(ds)
+    try:
+        with_semantic = build_data_review(ds, structural, con, provider=None, semantic=semantic)
+        without_semantic = build_data_review(ds, structural, con, provider=None, semantic=None)
+    finally:
+        con.close()
+
+    assert len(with_semantic.findings) == len(without_semantic.findings) + 1
+    severities = [f.severity for f in with_semantic.findings]
+    ranks = {"high": 0, "medium": 1, "low": 2}
+    assert [ranks[s] for s in severities] == sorted(ranks[s] for s in severities)

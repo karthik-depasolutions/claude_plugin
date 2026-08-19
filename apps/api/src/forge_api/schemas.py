@@ -47,8 +47,31 @@ class RunDetail(RunRecord):
     consumers have a stable response contract even if that changes)."""
 
 
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class UserPublic(BaseModel):
+    email: str
+
+
 class ConfirmIndustryRequest(BaseModel):
     industry: str = Field(..., description="Pack slug chosen from the classify stage's ranked_matches.")
+
+
+class ReviewRequest(BaseModel):
+    industry: str | None = Field(
+        None,
+        description="Pack slug chosen from the classify stage's ranked_matches. Optional - a run "
+        "paused only on data-quality questions can resume without picking an industry.",
+    )
+    answers: dict[str, str] = Field(
+        default_factory=dict,
+        description="question id -> answer for the data-quality review's DataQuestions. "
+        "Empty dict = reviewed, nothing supplied - which is what tells the orchestrator "
+        "not to re-pause on needs_answers.",
+    )
 
 
 class BindingOverridesRequest(BaseModel):

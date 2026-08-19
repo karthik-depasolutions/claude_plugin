@@ -50,14 +50,22 @@ def _traces_db_path() -> Path:
     return _memory_dir() / "reasoning_traces.sqlite"
 
 
-def schema_fingerprint(table_cols: list[ColumnProfile]) -> str:
+def schema_fingerprint(table_cols: list[ColumnProfile], extra: str = "") -> str:
     """A stable identity for "this exact fact table shape" - same column
     names and dtypes, in a canonical (sorted) order so column order doesn't
     matter. Two different customers with coincidentally identical schemas
     would share a fingerprint, which is fine: an exact-match cache hit only
     ever returns a column name, which the caller re-validates against *that*
-    customer's real columns before trusting it either way."""
+    customer's real columns before trusting it either way.
+
+    `extra` folds caller-supplied context (e.g. data-review answers) into
+    the fingerprint so a cached decision is invalidated when the user has
+    told us something new about the data. The `if extra:` guard is what
+    keeps every *existing* cache row valid: a call with no extra produces
+    byte-identical fingerprints to before this parameter existed."""
     signature = "|".join(sorted(f"{c.name}:{c.dtype}" for c in table_cols))
+    if extra:
+        signature += f"||extra:{extra}"
     return hashlib.sha256(signature.encode("utf-8")).hexdigest()[:16]
 
 

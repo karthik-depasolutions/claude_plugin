@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-  Starts the MIS Plugin Forge API and web wizard for local testing.
+  Starts the Data2plugin API and web wizard for local testing.
 
 .DESCRIPTION
   Opens two new PowerShell windows: one running the FastAPI service

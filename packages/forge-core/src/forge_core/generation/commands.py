@@ -8,6 +8,7 @@ from forge_core.llm.provider import LLMError, LLMProvider
 from forge_core.models.industry_pack import IndustryPack
 from forge_core.models.kpi import KpiDefsFile
 from forge_core.models.plugin_spec import CommandFrontmatter
+from forge_core.models.quality import render_data_context
 
 _FALLBACK_INTRO = "Generate a {title} using the pre-validated KPIs bundled with this plugin."
 
@@ -27,12 +28,20 @@ def _generate_intro(recipe: Recipe, pack: IndustryPack, provider: LLMProvider | 
 
 
 def generate_command(
-    recipe: Recipe, pack: IndustryPack, provider: LLMProvider | None = None
+    recipe: Recipe,
+    pack: IndustryPack,
+    provider: LLMProvider | None = None,
+    data_context: dict | None = None,
 ) -> tuple[str, CommandFrontmatter, str]:
-    """Return (command_name, frontmatter, body) for `commands/<name>.md`."""
+    """Return (command_name, frontmatter, body) for `commands/<name>.md`.
+
+    `data_context` is appended to the body only when non-empty - a no-context
+    run's prompt AND output stay byte-identical (LLM cassettes keep hitting)."""
     intro = _generate_intro(recipe, pack, provider)
     steps_md = "\n".join(f"{i}. {s}" for i, s in enumerate(recipe.steps, start=1))
-    body = f"{intro}\n\n{steps_md}\n"
+    context_block = render_data_context(data_context)
+    context_section = f"\n\nContext from the business owner:\n{context_block}" if context_block else ""
+    body = f"{intro}\n\n{steps_md}\n{context_section}\n"
     frontmatter = CommandFrontmatter(
         description=f"{recipe.title}: run every available KPI and summarize the results.",
         allowed_tools=[mcp_tool_ref(t) for t in TOOL_NAMES],
@@ -41,6 +50,9 @@ def generate_command(
 
 
 def generate_commands(
-    pack: IndustryPack, kpi_defs: KpiDefsFile, provider: LLMProvider | None = None
+    pack: IndustryPack,
+    kpi_defs: KpiDefsFile,
+    provider: LLMProvider | None = None,
+    data_context: dict | None = None,
 ) -> list[tuple[str, CommandFrontmatter, str]]:
-    return [generate_command(r, pack, provider) for r in build_recipes(pack, kpi_defs)]
+    return [generate_command(r, pack, provider, data_context) for r in build_recipes(pack, kpi_defs)]

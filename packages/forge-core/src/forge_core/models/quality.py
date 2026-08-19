@@ -82,4 +82,32 @@ class DataReview(BaseModel):
         return {"notes": notes, "findings": findings}
 
 
-__all__ = ["DataQuestion", "DataReview", "QualityFinding", "ValueCount"]
+def render_data_context(context: dict[str, Any] | None, *, cap: int = 2000) -> str:
+    """Render a `to_context()` payload into a compact markdown block for
+    prompt injection / SessionStart hooks. Empty context (or empty notes and
+    findings) renders to "" so callers can append only when non-empty - a
+    no-context prompt stays byte-identical to before this feature existed.
+
+    `cap` bounds the block for the SessionStart hook, which is injected into
+    *every* session and has no length limit enforced anywhere today."""
+    if not context:
+        return ""
+    lines: list[str] = []
+    notes = context.get("notes") or []
+    findings = context.get("findings") or []
+    if notes:
+        lines.append("## What the business owner told us")
+        for note in notes:
+            lines.append(f"- Q: {note['question']}  A: {note['answer']}")
+    if findings:
+        lines.append("## Known data-quality findings")
+        for finding in findings:
+            location = f"{finding['table']}.{finding['column']}"
+            lines.append(f"- [{finding['severity']}] {location}: {finding['summary']}")
+    text = "\n".join(lines)
+    if cap and len(text) > cap:
+        return text[:cap]
+    return text
+
+
+__all__ = ["DataQuestion", "DataReview", "QualityFinding", "ValueCount", "render_data_context"]

@@ -1,20 +1,21 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  confirmIndustry,
   createRunFromPath,
   createRunFromUpload,
   downloadUrl,
   listPacks,
   setBindingOverrides,
+  submitReview,
 } from "../lib/api";
 import { useRunStream } from "../hooks/useRunStream";
 import StageTimeline from "../components/StageTimeline";
 import ValidationReportView from "../components/ValidationReportView";
 import BindingEditor from "../components/BindingEditor";
+import DataReviewPanel from "../components/DataReviewPanel";
 import PublishPanel from "../components/PublishPanel";
 import WarehouseCredentialsPanel from "../components/WarehouseCredentialsPanel";
-import type { RankedMatch } from "../lib/types";
+import type { IndustryGuess, RankedMatch } from "../lib/types";
 
 export default function Wizard() {
   const [runId, setRunId] = useState<string | null>(null);
@@ -179,10 +180,13 @@ function RunProgress({
   const [busy, setBusy] = useState(false);
 
   // The classify stage logs 3 events ("Classifying industry" -> "Top match:
-  // ..." -> "Awaiting confirmation"); only the middle one carries
-  // ranked_matches, so grab that one specifically rather than the first
-  // classify event (which would leave the confirm UI with no options).
+  // ..." -> "Awaiting customer input"); ranked_matches rides the middle one,
+  // and the merged pause's needs_industry/needs_answers flags ride the last.
   const classifyEvent = [...events].reverse().find((e) => e.stage === "classify" && e.data.ranked_matches);
+  const pauseEvent = [...events].reverse().find(
+    (e) => e.stage === "classify" && (e.data.needs_industry || e.data.needs_answers)
+  );
+  const reviewEvent = [...events].reverse().find((e) => e.stage === "profile" && e.data.review);
   const bindEvent = [...events].reverse().find((e) => e.stage === "bind");
   const validateEvent = [...events].reverse().find((e) => e.stage === "validate");
   const packageEvent = [...events].reverse().find((e) => e.stage === "package" && e.data.plugin_dir);
@@ -194,11 +198,13 @@ function RunProgress({
   const pluginName = pluginDirPath?.split(/[\\/]/).filter(Boolean).pop();
   const canEditBindings =
     unresolvedRoles.length > 0 && (status === "succeeded" || status === "failed" || status === "needs_input");
+  const needsAnswers = pauseEvent?.data.needs_answers ?? false;
+  const needsIndustry = pauseEvent?.data.needs_industry ?? false;
 
-  async function handleConfirmIndustry(slug: string) {
+  async function handleReviewSubmit(answers: Record<string, string>, industry?: string) {
     setBusy(true);
     try {
-      await confirmIndustry(runId, slug);
+      await submitReview(runId, { industry, answers });
       onResumed();
     } finally {
       setBusy(false);
@@ -226,10 +232,14 @@ function RunProgress({
         <StageTimeline events={events} status={status} currentStage={currentStage} />
       </div>
 
-      {status === "needs_input" && classifyEvent && (
-        <IndustryConfirm
-          matches={classifyEvent.data.ranked_matches ?? []}
-          onConfirm={handleConfirmIndustry}
+      {status === "needs_input" && pauseEvent && (
+        <DataReviewPanel
+          review={reviewEvent?.data.review ?? { generated_at: "", findings: [], questions: [], skipped_tables: [] }}
+          needsAnswers={needsAnswers}
+          needsIndustry={needsIndustry}
+          matches={(classifyEvent?.data.ranked_matches ?? []) as RankedMatch[]}
+          industryGuess={classifyEvent?.data.suggested_industry as IndustryGuess | undefined}
+          onSubmit={handleReviewSubmit}
           submitting={busy}
         />
       )}
@@ -258,110 +268,6 @@ function RunProgress({
           <PublishPanel runId={runId} defaultRepoName={pluginName} />
         </div>
       )}
-    </div>
-  );
-}
-
-function IndustryConfirm({
-  matches,
-  onConfirm,
-  submitting,
-}: {
-  matches: RankedMatch[];
-  onConfirm: (slug: string) => void;
-  submitting: boolean;
-}) {
-  if (matches.length === 0) {
-    return (
-      <p className="rounded border border-amber-800/50 bg-amber-950/20 p-3 text-sm text-amber-300">
-        Waiting on the classify stage's ranked matches to arrive…
-      </p>
-    );
-  }
-
-  // Mirrors forge_core.classification.matcher.AUTO_ACCEPT_THRESHOLD - this
-  // screen only ever renders when the top match was *below* that, so every
-  // option here is a low-confidence guess, not a real detection. The top
-  // one being listed first (by confidence) doesn't mean it's a good fit -
-  // e.g. a B2B sales-pipeline CSV scores "finance" and "retail-ecommerce"
-  // almost identically at ~35%, and neither one's KPI assumptions actually
-  // match deal-stage values like "Won"/"Lost". Flag that plainly, and
-  // point at generic-analytics (no rigid value-set assumptions to mismatch
-  // against) as the safe choice when nothing here is a confident, clear
-  // description of the data.
-  const allLowConfidence = matches.every((m) => m.confidence < 0.45);
-  const hasGenericFallback = matches.some((m) => m.pack_slug === "generic-analytics");
-  // When every match is a low-confidence guess, the highest-scoring one is
-  // *not* a reliable "top pick" - e.g. a sales-pipeline CSV scores "finance"
-  // and "retail-ecommerce" almost identically at ~35%, and both would fail
-  // validation on deal-stage value mismatches. Users were consistently
-  // clicking the first "Use this" button out of habit/position, landing on
-  // finance every time despite the warning text above the list. Promoting
-  // generic-analytics to the first, visually distinct slot fixes that -
-  // the safe option is now what a reflexive first click lands on.
-  const promoteGeneric = allLowConfidence && hasGenericFallback;
-  const orderedMatches = promoteGeneric
-    ? [
-        matches.find((m) => m.pack_slug === "generic-analytics")!,
-        ...matches.filter((m) => m.pack_slug !== "generic-analytics"),
-      ]
-    : matches;
-
-  return (
-    <div className="space-y-3 rounded border border-sky-800/50 bg-sky-950/20 p-4">
-      <p className="text-sm text-sky-300">
-        Industry classification was ambiguous. Pick the best match to continue:
-      </p>
-      {allLowConfidence && (
-        <p className="rounded border border-amber-800/50 bg-amber-950/20 p-2 text-xs text-amber-300">
-          Every match below is under 45% confidence — these are rough guesses from column names and
-          entity hints, not confident detections.
-          {hasGenericFallback &&
-            " generic-analytics is listed first and recommended below because it has no industry-specific value assumptions (like transaction status wording) that can silently fail validation. Only pick a specialized pack if its \"Matched on\" signals genuinely describe your data."}
-        </p>
-      )}
-      <ul className="space-y-2">
-        {orderedMatches.map((match) => {
-          const isSafeFallback = promoteGeneric && match.pack_slug === "generic-analytics";
-          return (
-            <li
-              key={match.pack_slug}
-              className={
-                "flex items-center justify-between gap-3 rounded p-2 text-sm" +
-                (isSafeFallback ? " border border-emerald-700/60 bg-emerald-950/20" : "")
-              }
-            >
-              <div className="min-w-0">
-                <div>
-                  {match.pack_slug}{" "}
-                  <span className="text-slate-500">({Math.round(match.confidence * 100)}% confidence)</span>
-                  {isSafeFallback && (
-                    <span className="ml-2 rounded bg-emerald-900/50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-300">
-                      recommended · safe fallback
-                    </span>
-                  )}
-                </div>
-                {match.matched_signals.length > 0 && (
-                  <div className="truncate text-xs text-slate-500">
-                    Matched on: {match.matched_signals.join(", ")}
-                  </div>
-                )}
-              </div>
-              <button
-                type="button"
-                disabled={submitting}
-                onClick={() => onConfirm(match.pack_slug)}
-                className={
-                  "shrink-0 rounded px-3 py-1 text-xs font-medium disabled:opacity-40" +
-                  (isSafeFallback ? " bg-emerald-600 text-white" : " border border-slate-700 text-slate-300")
-                }
-              >
-                Use this
-              </button>
-            </li>
-          );
-        })}
-      </ul>
     </div>
   );
 }

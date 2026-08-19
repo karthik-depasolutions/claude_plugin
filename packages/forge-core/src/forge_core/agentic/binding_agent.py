@@ -81,12 +81,17 @@ def propose_binding_with_agent(
     *,
     pack_slug: str = "unknown-pack",
     model_name: str | None = None,
+    context_extra: str = "",
 ) -> str | None:
     """Returns the chosen column name, or `None` if the agent found nothing
     that fits (or failed for any reason - a broken agent should degrade to
     "unresolved", the same outcome as the tiers before it, never raise)."""
     valid_names = {c.name for c in table_cols}
-    fingerprint = memory.schema_fingerprint(table_cols)
+    # `context_extra` (data-review answers, when supplied) is folded into
+    # the fingerprint so a cached decision is invalidated by new user
+    # context - otherwise the cache short-circuit below would return a stale
+    # answer before the user's notes ever reached the prompt.
+    fingerprint = memory.schema_fingerprint(table_cols, extra=context_extra)
 
     cached = memory.get_exact_decision(pack_slug, role, fingerprint)
     if cached is not None:

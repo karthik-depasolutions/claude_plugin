@@ -14,7 +14,7 @@ export default function LandingNav() {
     <header className="sticky top-0 z-30 border-b border-line/80 bg-ink/80 backdrop-blur-md">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link to="/" className="font-display text-sm font-semibold tracking-tight text-paper">
-          MIS Plugin Forge
+          Data2plugin
         </Link>
 
         <div className="hidden items-center gap-8 sm:flex">

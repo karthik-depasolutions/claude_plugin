@@ -1,4 +1,4 @@
-# MIS Plugin Forge — Project Plan
+# Data2plugin — Project Plan
 
 *Written as if presenting this before a single line of code exists: the problem, the proposed approach, the phased plan, the risks, and how to walk a manager through it.*
 

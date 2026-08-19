@@ -1,3 +1,7 @@
+export interface CurrentUser {
+  email: string;
+}
+
 export type RunStatus = "pending" | "running" | "needs_input" | "succeeded" | "failed" | "cancelled";
 
 export type RunStage =
@@ -53,6 +57,15 @@ export interface RankedMatch {
   matched_signals: string[];
 }
 
+/** The data-understanding agent's read of the data (use_agent=True only) -
+ * advisory, shown next to the deterministic ranked matches, never used to
+ * auto-select a pack. */
+export interface IndustryGuess {
+  pack_slug_guess: string | null;
+  confidence: number;
+  reasoning: string;
+}
+
 export interface PackSummary {
   slug: string;
   name: string;
@@ -97,4 +110,35 @@ export interface PublishGithubResponse {
 export interface WarehouseCredentialsResponse {
   connection_string: string;
   env_var_name: string;
+}
+
+export type FindingSeverity = "high" | "medium" | "low";
+
+export interface ValueCount {
+  value: string;
+  count: number;
+  percent: number;
+}
+
+export interface QualityFinding {
+  id: string;
+  code: string;
+  severity: FindingSeverity;
+  table: string;
+  column: string;
+  summary: string;
+  top_values: ValueCount[];
+}
+
+export interface DataQuestion {
+  id: string;
+  question: string;
+  context: string;
+}
+
+export interface DataReview {
+  generated_at: string;
+  findings: QualityFinding[];
+  questions: DataQuestion[];
+  skipped_tables: string[];
 }

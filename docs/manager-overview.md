@@ -1,4 +1,4 @@
-# MIS Plugin Forge — Project Overview for Management
+# Data2plugin — Project Overview for Management
 
 *A plain-language explanation of what we built, why we built it this way, and how it works — with diagrams.*
 
@@ -30,7 +30,7 @@ flowchart LR
         A[Client's own company data<br/>revenue / sales / customers<br/>CSV / Excel / SQLite / Postgres]
     end
 
-    subgraph "MIS Plugin Forge (the generator)"
+    subgraph "Data2plugin (the generator)"
         B[Web Wizard /<br/>CLI /<br/>API]
         C[6-Stage<br/>Generation Pipeline]
         D[(Industry Packs<br/>knowledge base)]

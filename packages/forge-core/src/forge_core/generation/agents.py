@@ -12,6 +12,7 @@ from forge_core.llm.provider import LLMError, LLMProvider
 from forge_core.models.industry_pack import IndustryPack
 from forge_core.models.kpi import KpiDefsFile
 from forge_core.models.plugin_spec import AgentFrontmatter
+from forge_core.models.quality import render_data_context
 
 _FALLBACK_PROMPT_TEMPLATE = (
     "You are a senior {name} business analyst. Always ground answers in the data reachable "
@@ -49,10 +50,20 @@ def _generate_system_prompt(
 
 
 def generate_agent(
-    pack: IndustryPack, kpi_defs: KpiDefsFile, provider: LLMProvider | None = None
+    pack: IndustryPack,
+    kpi_defs: KpiDefsFile,
+    provider: LLMProvider | None = None,
+    data_context: dict | None = None,
 ) -> tuple[AgentFrontmatter, str]:
-    """Return (frontmatter, body) for `agents/<name>.md`."""
+    """Return (frontmatter, body) for `agents/<name>.md`.
+
+    `data_context` is appended to the system prompt only when non-empty, so a
+    no-context run's prompt AND output stay byte-identical (LLM cassettes
+    keep hitting - the data never reaches the LLM call itself)."""
     body = _generate_system_prompt(pack, kpi_defs, provider)
+    context_block = render_data_context(data_context)
+    if context_block:
+        body += f"\n\nContext from the business owner about this data:\n{context_block}"
     frontmatter = AgentFrontmatter(
         name=agent_name(pack),
         description=f"Deep-dive {pack.name} business analysis grounded in real KPI data.",

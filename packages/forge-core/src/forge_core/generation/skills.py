@@ -14,6 +14,7 @@ from forge_core.llm.provider import LLMError, LLMProvider
 from forge_core.models.industry_pack import IndustryPack
 from forge_core.models.kpi import KpiDefsFile
 from forge_core.models.plugin_spec import SkillFrontmatter
+from forge_core.models.quality import render_data_context
 
 _FALLBACK_INTRO_TEMPLATE = (
     "Use this skill when the user asks questions about {name} data - revenue, volumes, "
@@ -28,14 +29,14 @@ def skill_name(pack: IndustryPack) -> str:
 
 def _kpi_catalog_markdown(kpi_defs: KpiDefsFile) -> str:
     lines = [
-        f"- `{kpi.id}` - **{kpi.label}**: {kpi.description} (unit: {kpi.unit})" for kpi in kpi_defs.kpis
+        f"- `{kpi.id}` - **{kpi.label}**{' (AI-suggested)' if kpi.source == 'agent_proposed' else ''}: "
+        f"{kpi.description} (unit: {kpi.unit})"
+        for kpi in kpi_defs.kpis
     ]
     if kpi_defs.skipped:
         lines.append("")
-        lines.append(
-            "Not available for this data source (required data was missing): "
-            + ", ".join(f"`{k}`" for k in kpi_defs.skipped)
-        )
+        lines.append("Not available for this data source:")
+        lines.extend(f"- `{kpi_id}`: {reason}" for kpi_id, reason in kpi_defs.skipped.items())
     return "\n".join(lines)
 
 
@@ -56,14 +57,24 @@ def _generate_intro(pack: IndustryPack, provider: LLMProvider | None) -> str:
 
 
 def generate_skill(
-    pack: IndustryPack, kpi_defs: KpiDefsFile, provider: LLMProvider | None = None
+    pack: IndustryPack,
+    kpi_defs: KpiDefsFile,
+    provider: LLMProvider | None = None,
+    data_context: dict | None = None,
 ) -> tuple[SkillFrontmatter, str]:
-    """Return (frontmatter, body) for `skills/<name>/SKILL.md`."""
+    """Return (frontmatter, body) for `skills/<name>/SKILL.md`.
+
+    `data_context` (DataReview.to_context) is appended to the body ONLY when
+    non-empty - a no-context run produces a byte-identical prompt AND output
+    to before this feature existed, which is what keeps the LLM cassettes
+    hitting on CI."""
     intro = _generate_intro(pack, provider)
     catalog = _kpi_catalog_markdown(kpi_defs)
     guardrail_lines = "\n".join(f"- {note}" for note in pack.guardrails.notes) or (
         "- Never request, display, or infer personally identifiable information."
     )
+    context_block = render_data_context(data_context)
+    context_section = f"\n\n## Context from the business owner\n\n{context_block}" if context_block else ""
     body = (
         f"# {pack.name} Analyst\n\n"
         f"{intro}\n\n"
@@ -77,6 +88,7 @@ def generate_skill(
         "as a read-only SELECT with explicit columns.\n\n"
         "## Guardrails\n\n"
         f"{guardrail_lines}\n"
+        f"{context_section}\n"
     )
     top_kpi_ids = ", ".join(k.id for k in kpi_defs.kpis[:5])
     description = (

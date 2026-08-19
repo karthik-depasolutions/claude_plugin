@@ -17,7 +17,7 @@ from forge_core.models.validation import ValidationCheckResult, ValidationIssue
 
 
 def check_facts(
-    pack: IndustryPack, bindings: SchemaBindings, profile: SchemaProfile, skipped_kpi_ids: list[str]
+    pack: IndustryPack, bindings: SchemaBindings, profile: SchemaProfile, skipped_kpi_ids: dict[str, str]
 ) -> ValidationCheckResult:
     issues: list[ValidationIssue] = []
     valid_columns_by_table = {

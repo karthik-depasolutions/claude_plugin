@@ -29,7 +29,17 @@
       "Bash(powershell -NoProfile -Command \"Stop-Process -Id 29960 -Force -ErrorAction SilentlyContinue\")",
       "Bash(echo \"TS_EXIT=$?\")",
       "Read(//c/Users/Abcom/AppData/Local/Temp/**)",
-      "Bash(rm -f /tmp/dirty_leads_preview.csv \"C:\\\\Users\\\\Abcom\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--claude-plugin-poc\\\\f0473ef4-65ea-4096-ab14-daa4edf11758\\\\scratchpad\\\\sparda_leads_synthetic.csv\")"
+      "Bash(rm -f /tmp/dirty_leads_preview.csv \"C:\\\\Users\\\\Abcom\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\d--claude-plugin-poc\\\\f0473ef4-65ea-4096-ab14-daa4edf11758\\\\scratchpad\\\\sparda_leads_synthetic.csv\")",
+      "Bash(python -c ' *)",
+      "Bash(uv pip *)",
+      "Bash(python -c \"import secrets; print\\(secrets.token_hex\\(32\\)\\)\")",
+      "Bash(uv sync *)",
+      "PowerShell(Get-Process python,python3.13 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-CimInstance Win32_Process -Filter \"ProcessId=37536 or ProcessId=41996 or ProcessId=24788\")",
+      "PowerShell(Stop-Process -Id 37536,41996,24788 -Force -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-Process -Id 37536,41996,24788 -ErrorAction SilentlyContinue)",
+      "Bash(curl -s -o /dev/null -w \"health: %{http_code}\\\\n\" http://127.0.0.1:8421/health)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8421 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Get-Process -Id $_ | Select-Object Id, ProcessName })"
     ],
     "additionalDirectories": [
       "\\tmp"

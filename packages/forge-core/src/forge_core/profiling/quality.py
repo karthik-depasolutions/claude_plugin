@@ -301,6 +301,7 @@ _FALLBACK_QUESTIONS: dict[str, str] = {
     "inconsistent_format": 'Should the different spellings in "{column}" be treated as the same value?',
     "mixed_types": 'What do the numeric-looking values mixed into "{column}" mean?',
     "single_value": 'Is the single value in "{column}" a placeholder, or is it meaningful?',
+    "unclear_meaning": 'What does "{column}" actually represent in your data?',
 }
 
 
@@ -380,6 +381,40 @@ def generate_questions(
     return questions
 
 
+UNCLEAR_MEANING_CONFIDENCE_THRESHOLD = 0.5
+
+
+def _unclear_meaning_findings(semantic: SemanticProfile | None) -> list[QualityFinding]:
+    """Low-confidence `column_semantics` entries - from either the single-shot
+    profiler or the tool-using data-understanding agent (agentic/data_agent.py)
+    - become findings the same way a deterministic anomaly does, so they flow
+    through the exact same question-generation/pause/UI machinery with no
+    changes there. Unlike the other five checks, the "evidence" here is the
+    model's own stated uncertainty, not a query result - a genuinely unclear
+    column getting a low confidence score is the intended, correct outcome
+    (it's what makes this function ask about it), not a modeling failure."""
+    if semantic is None:
+        return []
+    findings: list[QualityFinding] = []
+    for cs in semantic.column_semantics:
+        if cs.confidence >= UNCLEAR_MEANING_CONFIDENCE_THRESHOLD:
+            continue
+        findings.append(
+            QualityFinding(
+                id=f"unclear_meaning:{cs.table}.{cs.column}",
+                code="unclear_meaning",
+                severity=Severity.MEDIUM,
+                table=cs.table,
+                column=cs.column,
+                summary=(
+                    f'Not confident what "{cs.column}" means - best guess: '
+                    f'"{cs.proposed_meaning}" ({cs.confidence:.0%} confidence).'
+                ),
+            )
+        )
+    return findings
+
+
 def build_data_review(
     data_source: DataSource,
     structural: StructuralProfile,
@@ -388,9 +423,18 @@ def build_data_review(
     provider: LLMProvider | None = None,
     semantic: SemanticProfile | None = None,
 ) -> DataReview:
+    """Findings always; questions only when a provider is given. The
+    orchestrator passes provider=None when the caller has already declared it
+    won't ask (e.g. the CLI's default, or `--no-llm`) - a findings-only
+    review still prints on every run, it just never pauses or pays for
+    question generation nobody will read answers to. `generate_questions`
+    itself still degrades a *failing* provider (LLMError) to the
+    deterministic per-code templates."""
     findings, skipped_tables = analyze_quality(data_source, structural, con)
+    findings.extend(_unclear_meaning_findings(semantic))
+    findings.sort(key=lambda f: (_SEVERITY_RANK[f.severity], f.code, f.table, f.column))
     hints = [flag.issue for flag in semantic.data_quality_flags] if semantic else []
-    questions = generate_questions(findings, provider, hints)
+    questions = generate_questions(findings, provider, hints) if provider is not None else []
     return DataReview(
         generated_at=datetime.now(UTC).isoformat(),
         findings=findings,

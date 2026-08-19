@@ -19,6 +19,10 @@ class RunContext:
     # binding overrides) since it's a run-level choice, not something the
     # caller re-supplies each time it drives the state machine forward.
     use_agent: bool = False
+    # Also carried across resume: a run started with --no-llm / use_llm=false
+    # must stay LLM-free when it resumes, or it silently acquires LLM-written
+    # prose on the second pass through the pipeline (see pipeline_runner).
+    use_llm: bool = True
     # Set only when this run's data was loaded into the client warehouse
     # (forge_core.ingestion.warehouse). Intentionally in-memory only, never
     # part of `record` - it must never reach the `runs` table, a log line, or

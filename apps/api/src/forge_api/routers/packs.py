@@ -3,13 +3,14 @@ show what the classifier is choosing between."""
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from forge_core.classification import load_all_packs
 from forge_core.orchestrator import DEFAULT_PACKS_ROOT
 
+from forge_api.routers.auth import get_current_user
 from forge_api.schemas import PackSummary
 
-router = APIRouter(prefix="/packs", tags=["packs"])
+router = APIRouter(prefix="/packs", tags=["packs"], dependencies=[Depends(get_current_user)])
 
 
 @router.get("", response_model=list[PackSummary])

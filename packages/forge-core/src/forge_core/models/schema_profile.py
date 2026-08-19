@@ -98,6 +98,20 @@ class DataQualityFlag(BaseModel):
     columns: list[str] = Field(default_factory=list)
 
 
+class IndustryGuess(BaseModel):
+    """An LLM's read of which industry pack fits this data, grounded in real
+    column names/values rather than the deterministic classifier's
+    name/structure-only signals (see classification/matcher.py). Purely
+    advisory — shown alongside the deterministic ranked matches during the
+    industry pause, never used to auto-select a pack."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    pack_slug_guess: str | None = None
+    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str
+
+
 class SemanticProfile(BaseModel):
     """Layer 2 — LLM-proposed. Every field here is a *claim*, not a fact."""
 
@@ -107,6 +121,7 @@ class SemanticProfile(BaseModel):
     candidate_insights: list[CandidateInsight] = Field(default_factory=list)
     data_quality_flags: list[DataQualityFlag] = Field(default_factory=list)
     likely_central_entities: list[str] = Field(default_factory=list)
+    suggested_industry: IndustryGuess | None = None
     model_used: str | None = None
     raw_response: dict[str, Any] | None = Field(
         default=None, description="Unmodified LLM JSON, kept for audit/debugging."

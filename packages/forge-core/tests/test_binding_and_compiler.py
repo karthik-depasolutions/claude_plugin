@@ -32,7 +32,7 @@ def test_bookings_binds_and_compiles_all_kpis(bookings_csv: Path):
     assert "customer_name" in bindings.denied_columns
 
     kpi_defs = compile_all(pack, bindings)
-    assert kpi_defs.skipped == []
+    assert kpi_defs.skipped == {}
     assert len(kpi_defs.kpis) == len(pack.kpis)
 
     con = open_session(profile.source)

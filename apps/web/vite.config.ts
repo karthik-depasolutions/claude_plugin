@@ -24,6 +24,7 @@ export default defineConfig({
       "/runs": { target: API_TARGET, changeOrigin: true },
       "/packs": { target: API_TARGET, changeOrigin: true },
       "/health": { target: API_TARGET, changeOrigin: true },
+      "/auth": { target: API_TARGET, changeOrigin: true },
     },
   },
 });

@@ -41,7 +41,7 @@ jobs:
           git clone "https://github.com/$FORGE_MARKETPLACE_REPO" marketplace-checkout
           uv run forge publish marketplace \
             generated/release/healthcare-diagnostics-mis-plugin marketplace-checkout \
-            --marketplace-name mis-plugins --owner-name "MIS Plugin Forge" --push
+            --marketplace-name mis-plugins --owner-name "Data2plugin" --push
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

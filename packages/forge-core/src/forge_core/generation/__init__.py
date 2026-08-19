@@ -59,12 +59,17 @@ def generate_plugin_content(
     kpi_defs: KpiDefsFile,
     source: DataSource,
     provider: LLMProvider | None = None,
+    data_context: dict | None = None,
 ) -> GeneratedPlugin:
-    skill_fm, skill_body = generate_skill(pack, kpi_defs, provider)
-    agent_fm, agent_body = generate_agent(pack, kpi_defs, provider)
+    """Produce every plugin component. `data_context` (the DataReview
+    to_context payload) is threaded to skills/agents/commands/hooks - each
+    consumer appends it to its output ONLY when non-empty, so a no-context
+    run stays byte-identical and the LLM cassettes keep hitting."""
+    skill_fm, skill_body = generate_skill(pack, kpi_defs, provider, data_context)
+    agent_fm, agent_body = generate_agent(pack, kpi_defs, provider, data_context)
     commands = [
         GeneratedCommand(name=name, frontmatter=fm, body=body)
-        for name, fm, body in generate_commands(pack, kpi_defs, provider)
+        for name, fm, body in generate_commands(pack, kpi_defs, provider, data_context)
     ]
 
     return GeneratedPlugin(
@@ -75,7 +80,7 @@ def generate_plugin_content(
         agent_frontmatter=agent_fm,
         agent_body=agent_body,
         commands=commands,
-        hooks=generate_hooks(pack),
+        hooks=generate_hooks(pack, data_context),
         dashboard_html=generate_dashboard(pack.name, kpi_defs, source),
     )
 

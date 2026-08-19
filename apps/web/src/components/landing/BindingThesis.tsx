@@ -47,8 +47,9 @@ export default function BindingThesis() {
             ))}
           </ul>
           <p className="mt-4 font-mono text-xs text-muted">
-            resolved by <span className="text-paper">binding/scorer.py</span> — token overlap + type
-            compatibility, never guessed by an LLM.
+            resolved deterministically first — token overlap + type compatibility. An LLM proposes a
+            match only when nothing else can, and even then it can&rsquo;t invent a column: every
+            proposal is checked against your real schema before anything is trusted.
           </p>
         </div>
       </div>

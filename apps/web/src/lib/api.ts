@@ -1,4 +1,5 @@
 import type {
+  CurrentUser,
   PackSummary,
   PublishGithubResponse,
   RunDetail,
@@ -12,6 +13,14 @@ import type {
 // In production this is baked in at build time (see docker-compose.yml).
 const BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 
+// `credentials: "include"` on every call - the login session travels as an
+// HttpOnly cookie (see forge_api.security), and the dev server's API origin
+// (:8000) differs from the web origin (:5173), so the browser won't attach
+// it unless asked.
+function apiFetch(path: string, init?: RequestInit): Promise<Response> {
+  return fetch(`${BASE}${path}`, { ...init, credentials: "include" });
+}
+
 async function asJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const body = await response.text().catch(() => "");
@@ -20,15 +29,31 @@ async function asJson<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+export function login(email: string, password: string): Promise<CurrentUser> {
+  return apiFetch(`/auth/login`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  }).then((r) => asJson(r));
+}
+
+export async function logout(): Promise<void> {
+  await apiFetch(`/auth/logout`, { method: "POST" });
+}
+
+export function getCurrentUser(): Promise<CurrentUser> {
+  return apiFetch(`/auth/me`).then((r) => asJson(r));
+}
+
 export function listPacks(): Promise<PackSummary[]> {
-  return fetch(`${BASE}/packs`).then((r) => asJson(r));
+  return apiFetch(`/packs`).then((r) => asJson(r));
 }
 
 export function createRunFromPath(
   sourcePath: string,
   opts: { industry?: string; useLlm: boolean; label?: string }
 ): Promise<RunSummary> {
-  return fetch(`${BASE}/runs`, {
+  return apiFetch(`/runs`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -49,23 +74,37 @@ export function createRunFromUpload(
   if (opts.label) params.set("label", opts.label);
   const form = new FormData();
   for (const file of files) form.append("files", file);
-  return fetch(`${BASE}/runs/upload?${params}`, { method: "POST", body: form }).then((r) => asJson(r));
+  return apiFetch(`/runs/upload?${params}`, { method: "POST", body: form }).then((r) => asJson(r));
 }
 
 export function getRun(runId: string): Promise<RunDetail> {
-  return fetch(`${BASE}/runs/${runId}`).then((r) => asJson(r));
+  return apiFetch(`/runs/${runId}`).then((r) => asJson(r));
 }
 
 export function confirmIndustry(runId: string, industry: string): Promise<RunSummary> {
-  return fetch(`${BASE}/runs/${runId}/confirm-industry`, {
+  return apiFetch(`/runs/${runId}/confirm-industry`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ industry }),
   }).then((r) => asJson(r));
 }
 
+export function submitReview(
+  runId: string,
+  body: { industry?: string; answers: Record<string, string> }
+): Promise<RunSummary> {
+  return apiFetch(`/runs/${runId}/review`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      industry: body.industry ?? null,
+      answers: body.answers,
+    }),
+  }).then((r) => asJson(r));
+}
+
 export function setBindingOverrides(runId: string, overrides: Record<string, string>): Promise<RunSummary> {
-  return fetch(`${BASE}/runs/${runId}/bindings`, {
+  return apiFetch(`/runs/${runId}/bindings`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ overrides }),
@@ -73,7 +112,7 @@ export function setBindingOverrides(runId: string, overrides: Record<string, str
 }
 
 export function getReport(runId: string): Promise<ValidationReport> {
-  return fetch(`${BASE}/runs/${runId}/report`).then((r) => asJson(r));
+  return apiFetch(`/runs/${runId}/report`).then((r) => asJson(r));
 }
 
 export function downloadUrl(runId: string): string {
@@ -84,7 +123,7 @@ export function publishToGithub(
   runId: string,
   opts: { repoName?: string; owner?: string; private: boolean }
 ): Promise<PublishGithubResponse> {
-  return fetch(`${BASE}/runs/${runId}/publish/github`, {
+  return apiFetch(`/runs/${runId}/publish/github`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
@@ -99,15 +138,21 @@ export function publishToGithub(
  * warehouse - a plain 404 (no such run ever had one) is treated as "nothing
  * to show" rather than an error, since most runs won't have this. */
 export async function getWarehouseCredentials(runId: string): Promise<WarehouseCredentialsResponse | null> {
-  const response = await fetch(`${BASE}/runs/${runId}/warehouse-credentials`);
+  const response = await apiFetch(`/runs/${runId}/warehouse-credentials`);
   if (response.status === 404) return null;
   return asJson(response);
 }
 
 type SsePayload = StageEvent | { final: true; status: string };
 
-export function streamRunEvents(runId: string, onMessage: (payload: SsePayload) => void): () => void {
-  const source = new EventSource(`${BASE}/runs/${runId}/events`);
+export function streamRunEvents(
+  runId: string,
+  onMessage: (payload: SsePayload) => void,
+  after = 0,
+): () => void {
+  // EventSource has no fetch-style `init` - `withCredentials` is its own
+  // equivalent of `credentials: "include"` for the session cookie.
+  const source = new EventSource(`${BASE}/runs/${runId}/events?after=${after}`, { withCredentials: true });
   source.onmessage = (event) => {
     const payload = JSON.parse(event.data) as SsePayload;
     onMessage(payload);

@@ -42,6 +42,16 @@
           "description": "The CanonicalKpi.id this was compiled from.",
           "title": "Source Kpi Id",
           "type": "string"
+        },
+        "source": {
+          "default": "pack",
+          "description": "'pack' = hand-authored in the industry pack. 'agent_proposed' = proposed by compiler.kpi_proposer for this customer's data specifically, then compiled/validated through the exact same gate as every pack KPI - never a different trust boundary.",
+          "enum": [
+            "pack",
+            "agent_proposed"
+          ],
+          "title": "Source",
+          "type": "string"
         }
       },
       "required": [
@@ -75,12 +85,12 @@
       "type": "array"
     },
     "skipped": {
-      "description": "KPI ids that could not be compiled because required roles were unresolved.",
-      "items": {
+      "additionalProperties": {
         "type": "string"
       },
+      "description": "KPI id -> reason it could not be compiled (unresolved roles, invalid SQL, etc).",
       "title": "Skipped",
-      "type": "array"
+      "type": "object"
     }
   },
   "required": [

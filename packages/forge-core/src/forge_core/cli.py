@@ -6,6 +6,7 @@ real time, then prints the full chronological event log once it finishes.
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
@@ -68,7 +69,7 @@ def _render_checklist(record: RunRecord) -> Table:
     return table
 
 
-app = typer.Typer(help="MIS Plugin Forge - generate a Claude Code plugin from MIS data.")
+app = typer.Typer(help="Data2plugin - generate a Claude Code plugin from MIS data.")
 packs_app = typer.Typer(help="Inspect and validate industry packs.")
 publish_app = typer.Typer(help="Publish an already-packaged plugin (see `forge run`'s package stage output).")
 app.add_typer(packs_app, name="packs")
@@ -114,6 +115,18 @@ def run(
         help="Optional project/business name (e.g. 'Sparda Music Academy') - personalizes the "
         "plugin's displayName and on-disk/repo name instead of the generic '<pack>-mis-plugin'.",
     ),
+    review: bool = typer.Option(
+        False,
+        "--review/--no-review",
+        help="Pause after profiling to review data-quality findings and answer LLM-generated "
+        "questions (default off: findings are computed and printed, never paused over).",
+    ),
+    answers: Path | None = typer.Option(
+        None,
+        "--answers",
+        help="Path to a JSON file mapping data-review question ids to answers, from a previous "
+        "--review run - runs straight through with those answers threaded into the plugin.",
+    ),
 ) -> None:
     """Run the full pipeline end-to-end against SOURCE."""
     # SOURCE is a plain `str`, not `Path`, so Typer never mangles a
@@ -123,12 +136,23 @@ def run(
     # credential in this process's env instead of ever writing it to disk.
     run_id = default_run_id(source)
     source_for_run = prepare_source_for_persistence(source)
+    # One expression drives the whole pause/answer matrix - see the plan:
+    # (default) data_answers={} -> findings computed & printed, no LLM
+    # question call, never pauses. --review -> data_answers=None -> questions
+    # generated, pauses, prints report, exit 2. --answers f.json -> the dict
+    # -> runs straight through with answers threaded.
+    data_answers: dict[str, str] | None = (
+        # utf-8-sig: Windows editors (Notepad, PowerShell) often write a BOM
+        # when saving a user-authored answers file.
+        json.loads(answers.read_text(encoding="utf-8-sig")) if answers else (None if review else {})
+    )
     record = RunRecord(
         run_id=run_id,
         source_path=source_for_run,
         output_dir=str(output_dir.resolve()),
         industry_override=pack,
         label=label,
+        data_answers=data_answers,
     )
 
     profiling_provider = get_provider(role="profiling") if use_llm else None
@@ -157,10 +181,46 @@ def run(
         console.print(f"  [dim]{stamp}[/] [cyan]{event.stage.value:>14}[/] {event.message}")
 
     if result.status == RunStatus.NEEDS_INPUT:
-        console.print(
-            "[yellow]Needs input:[/] industry classification was ambiguous. "
-            "Re-run with --pack <slug> once you've picked one from the classify event above."
+        pause_event = next(
+            (e for e in reversed(result.events) if e.stage == RunStage.CLASSIFY and "needs_answers" in e.data),
+            None,
         )
+        # Fall back to "assume industry" (the pre-merged-pause behaviour) if
+        # the pause event is ever missing - never silently print nothing.
+        needs_industry = pause_event.data["needs_industry"] if pause_event else True
+        needs_answers = pause_event.data["needs_answers"] if pause_event else False
+
+        if needs_answers:
+            review_event = next(
+                (e for e in reversed(result.events) if e.stage == RunStage.PROFILE and "review" in e.data), None
+            )
+            review = review_event.data["review"] if review_event else {}
+            findings = review.get("findings", [])
+            if findings:
+                console.print("[yellow]Data-quality review:[/]")
+            for finding in findings:
+                console.print(
+                    f"  [{finding['severity']}] {finding['table']}."
+                    f"{finding['column']}: {finding['summary']}"
+                )
+            for question in review.get("questions", []):
+                console.print(f"  [bold]?[/] {question['question']}")
+            if review.get("questions"):
+                console.print(
+                    "  [dim]Answer keys (use in --answers <file.json>):[/]"
+                )
+                for question in review.get("questions", []):
+                    console.print(f"  [dim]  {question['id']}[/]")
+
+        if needs_industry:
+            console.print(
+                "[yellow]Needs input:[/] industry classification was ambiguous. "
+                "Re-run with --pack <slug> once you've picked one from the classify event above."
+            )
+        if needs_answers:
+            console.print(
+                "[yellow]Needs input:[/] answer the questions above via --answers <file.json> next run."
+            )
         raise typer.Exit(code=2)
     if result.status == RunStatus.FAILED:
         console.print(f"[bold red]Run failed:[/] {result.error}")

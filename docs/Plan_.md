@@ -1,4 +1,4 @@
-# MIS Plugin Forge — Project Plan
+# Data2plugin — Project Plan
 
 *A self-contained explanation of the problem, our proposed approach, how it will work, the phased plan to build it, and how to think about the risks — for a non-technical read-through.*
 
@@ -30,7 +30,7 @@ flowchart LR
         A[Client's own company data<br/>revenue / sales / customers<br/>CSV / Excel / SQLite / Postgres]
     end
 
-    subgraph "MIS Plugin Forge (the generator)"
+    subgraph "Data2plugin (the generator)"
         B[Web Wizard /<br/>CLI /<br/>API]
         C[Generation Pipeline]
         D[(Industry Packs<br/>knowledge base)]

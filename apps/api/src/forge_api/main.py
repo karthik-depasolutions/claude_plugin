@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from forge_api.config import get_settings
 from forge_api.db import init_db
 from forge_api.hosted_mcp import HostedMCPGateway, build_mcp_starlette
-from forge_api.routers import packs, runs
+from forge_api.routers import auth, packs, runs
 
 
 def create_app() -> FastAPI:
@@ -28,13 +28,15 @@ def create_app() -> FastAPI:
         async with mcp_inner.router.lifespan_context(mcp_inner):
             yield
 
-    app = FastAPI(title="MIS Plugin Forge API", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Data2plugin API", version="0.1.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=get_settings().cors_origins,
+        allow_credentials=True,  # the login session travels as a cookie
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.include_router(auth.router)
     app.include_router(runs.router)
     app.include_router(packs.router)
     app.mount("/mcp", HostedMCPGateway(mcp_inner))

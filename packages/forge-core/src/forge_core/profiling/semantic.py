@@ -10,9 +10,11 @@ column values are redacted before anything leaves the process.
 from __future__ import annotations
 
 import json
+import os
 
 from forge_core.llm.provider import LLMProvider
 from forge_core.models.datasource import DataSource
+from forge_core.models.industry_pack import IndustryPack
 from forge_core.models.schema_profile import SemanticProfile, StructuralProfile
 
 MAX_SAMPLE_ROWS_PER_TABLE = 3
@@ -95,7 +97,27 @@ def run_semantic_profile(
     data_source: DataSource,
     structural: StructuralProfile,
     provider: LLMProvider,
+    *,
+    use_agent: bool = False,
+    packs: list[IndustryPack] | None = None,
 ) -> SemanticProfile:
+    """`use_agent=True` (with `packs` available) routes through
+    `agentic.data_agent`'s tool-using agent instead of this single-shot
+    call - it can preview real column values and search unfamiliar business
+    terms before committing to a column meaning or industry guess, at the
+    cost of more LLM calls. `use_agent=False` (the default) keeps this cheap
+    single call; `packs` being empty/None also falls back to it, since the
+    agent needs real candidate industries to ground a guess in."""
+    if use_agent and packs:
+        from forge_core.agentic.data_agent import run_data_understanding_agent
+
+        column_semantics, suggested_industry = run_data_understanding_agent(data_source, structural, packs)
+        return SemanticProfile(
+            column_semantics=column_semantics,
+            suggested_industry=suggested_industry,
+            model_used=os.environ.get("FORGE_LLM_AGENT_MODEL", "gemini-2.5-flash"),
+        )
+
     prompt = _PROMPT_TEMPLATE.format(
         redacted=REDACTED,
         structural=json.dumps(_compact_structural(structural), indent=2, default=str),

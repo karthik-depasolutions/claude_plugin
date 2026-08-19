@@ -29,3 +29,14 @@ class RunORM(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
     )
+
+
+class UserORM(Base):
+    """Admin-provisioned accounts - see scripts/create_user.py. Email is the
+    natural key; there's no separate id column since nothing else needs one."""
+
+    __tablename__ = "users"
+
+    email: Mapped[str] = mapped_column(String(255), primary_key=True)
+    password_hash: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))

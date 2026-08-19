@@ -14,6 +14,7 @@ Resolution order per canonical role:
 
 from __future__ import annotations
 
+import json
 import re
 from datetime import UTC, datetime
 
@@ -64,6 +65,17 @@ def pick_fact_table(profile: SchemaProfile, pack: IndustryPack) -> str:
     return best_table
 
 
+def _notes_block(notes: list[dict]) -> str:
+    """The data-review answers, rendered as a short block appended to every
+    role's description so both the single-shot proposer and the agent see
+    what the business owner told us before they decide a binding. Empty
+    notes render to "" so a no-context run stays byte-identical to before."""
+    if not notes:
+        return ""
+    lines = "\n".join(f'- "{n["question"]}" -> "{n["answer"]}"' for n in notes if n.get("answer"))
+    return f"\n\nContext the business owner gave about this data:\n{lines}"
+
+
 def _resolve_columns(
     fact_table: str,
     table_cols: list[ColumnProfile],
@@ -74,25 +86,36 @@ def _resolve_columns(
     source: DataSource | None = None,
     fact_table_physical_ref: str | None = None,
     use_agent: bool = False,
+    notes: list[dict] | None = None,
 ) -> tuple[list[ColumnBinding], list[str]]:
     bindings: list[ColumnBinding] = []
     unresolved: list[str] = []
     valid_names = {c.name for c in table_cols}
+    notes_block = _notes_block(notes or [])
 
     for role, description in pack.canonical_roles.items():
-        if role in overrides and overrides[role] in valid_names:
-            bindings.append(
-                ColumnBinding(
-                    role=role,
-                    table_alias="fact",
-                    physical=overrides[role],
-                    confidence=1.0,
-                    evidence="human override",
-                    source="human_override",
+        if role in overrides:
+            # The documented override form is "table.column" (see
+            # schemas.py's BindingOverridesRequest) - but the fact table is
+            # always the one being bound, so the table qualifier is dropped
+            # and only the column name is matched against the fact table's
+            # real columns. Previously only the bare name ever matched, so
+            # the documented "table.column" form silently did nothing.
+            wanted = overrides[role].split(".")[-1]
+            if wanted in valid_names:
+                bindings.append(
+                    ColumnBinding(
+                        role=role,
+                        table_alias="fact",
+                        physical=wanted,
+                        confidence=1.0,
+                        evidence="human override",
+                        source="human_override",
+                    )
                 )
-            )
-            continue
+                continue
 
+        hinted_description = f"{description}{notes_block}"
         hints = tuple(pack.role_hints.get(role, ()))
         candidate = best_candidate(role, table_cols, hints)
         if candidate and candidate.confidence >= MIN_BIND_CONFIDENCE:
@@ -111,7 +134,7 @@ def _resolve_columns(
         if provider is not None:
             from forge_core.binding.llm_proposer import propose_binding
 
-            proposed = propose_binding(role, description, table_cols, provider)
+            proposed = propose_binding(role, hinted_description, table_cols, provider)
             if proposed and proposed in valid_names:
                 bindings.append(
                     ColumnBinding(
@@ -129,7 +152,16 @@ def _resolve_columns(
             from forge_core.agentic import propose_binding_with_agent
 
             agent_proposed = propose_binding_with_agent(
-                role, description, table_cols, source, fact_table_physical_ref, pack_slug=pack.slug
+                role,
+                hinted_description,
+                table_cols,
+                source,
+                fact_table_physical_ref,
+                pack_slug=pack.slug,
+                # User context must invalidate a cached decision (memory.py's
+                # schema_fingerprint folds extra into the signature), so the
+                # agent never reuses a decision made without these notes.
+                context_extra=json.dumps(notes or [], sort_keys=True),
             )
             if agent_proposed and agent_proposed in valid_names:
                 bindings.append(
@@ -189,6 +221,7 @@ def resolve_bindings(
     overrides: dict[str, str] | None = None,
     *,
     use_agent: bool = False,
+    data_context: dict | None = None,
 ) -> SchemaBindings:
     overrides = overrides or {}
     fact_table_name = pick_fact_table(profile, pack)
@@ -196,6 +229,7 @@ def resolve_bindings(
     table_cols = [c for c in profile.structural.columns if c.table == fact_table_name]
     denied_columns = sorted(c.name for c in table_cols if _is_denied(c, pack))
     bindable_cols = [c for c in table_cols if not _is_denied(c, pack)]
+    notes = (data_context or {}).get("notes") or []
 
     columns, unresolved = _resolve_columns(
         fact_table_name,
@@ -206,6 +240,7 @@ def resolve_bindings(
         source=profile.source,
         fact_table_physical_ref=fact_table.physical_ref,
         use_agent=use_agent,
+        notes=notes,
     )
 
     value_sets = _resolve_value_sets(pack, fact_table.physical_ref, columns, profile)

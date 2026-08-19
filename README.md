@@ -1,4 +1,4 @@
-# MIS Plugin Forge
+# Data2plugin
 
 **A system that generates Claude Code / Claude Desktop plugins from a customer's MIS data source — not a single plugin.**
 

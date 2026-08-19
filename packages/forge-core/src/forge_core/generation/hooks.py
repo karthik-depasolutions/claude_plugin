@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from forge_core.models.industry_pack import IndustryPack
 from forge_core.models.plugin_spec import HookHandler, HookMatcherGroup, HooksFile
+from forge_core.models.quality import render_data_context
 
 _DEFAULT_NOTES = [
     "Never display or infer personally identifiable information.",
@@ -16,12 +17,20 @@ _DEFAULT_NOTES = [
 ]
 
 
-def generate_hooks(pack: IndustryPack) -> HooksFile:
+def generate_hooks(pack: IndustryPack, data_context: dict | None = None) -> HooksFile:
     """A SessionStart reminder that surfaces the pack's guardrails as context,
-    without executing any customer- or LLM-controlled command."""
+    without executing any customer- or LLM-controlled command.
+
+    `data_context` (the DataReview.to_context payload) is appended as a
+    "what the business owner told us" block, capped at 2000 chars since it
+    is injected into *every* session. `args` stays None per the validator's
+    requirement."""
     notes = pack.guardrails.notes or _DEFAULT_NOTES
     reminder = f"You are working with {pack.name} MIS data. Guardrails for this session:\n" + "\n".join(
         f"- {n}" for n in notes
     )
+    context_block = render_data_context(data_context)
+    if context_block:
+        reminder += f"\n\n{context_block}"
     handler = HookHandler(type="prompt", prompt=reminder)
     return HooksFile(hooks={"SessionStart": [HookMatcherGroup(matcher="*", hooks=[handler])]})

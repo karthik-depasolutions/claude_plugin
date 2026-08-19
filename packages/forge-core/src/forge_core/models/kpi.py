@@ -9,6 +9,8 @@ using a specific customer's SchemaBindings. This is what gets written to
 
 from __future__ import annotations
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -23,6 +25,12 @@ class CompiledKpi(BaseModel):
     assertions: list[str] = Field(default_factory=list)
     result_columns: list[str] = Field(default_factory=list)
     source_kpi_id: str = Field(description="The CanonicalKpi.id this was compiled from.")
+    source: Literal["pack", "agent_proposed"] = Field(
+        default="pack",
+        description="'pack' = hand-authored in the industry pack. 'agent_proposed' = proposed by "
+        "compiler.kpi_proposer for this customer's data specifically, then compiled/validated "
+        "through the exact same gate as every pack KPI - never a different trust boundary.",
+    )
 
 
 class KpiDefsFile(BaseModel):
@@ -33,9 +41,9 @@ class KpiDefsFile(BaseModel):
     pack_slug: str
     generated_at: str
     kpis: list[CompiledKpi]
-    skipped: list[str] = Field(
-        default_factory=list,
-        description="KPI ids that could not be compiled because required roles were unresolved.",
+    skipped: dict[str, str] = Field(
+        default_factory=dict,
+        description="KPI id -> reason it could not be compiled (unresolved roles, invalid SQL, etc).",
     )
 
     def get(self, kpi_id: str) -> CompiledKpi | None:

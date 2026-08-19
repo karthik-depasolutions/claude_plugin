@@ -181,7 +181,9 @@ def test_self_critique_drops_false_positive_about_skipped_kpi_ids(bookings_csv: 
     id just because the message names no tool and only quotes skipped ids."""
     _, pack, _, kpi_defs, generated = _pipeline(bookings_csv, "generic-analytics")
     tampered_defs = kpi_defs.model_copy(deep=True)
-    tampered_defs.skipped = ["average_measure", "sum_measure", "trend_by_month"]
+    tampered_defs.skipped = {
+        "average_measure": "test", "sum_measure": "test", "trend_by_month": "test"
+    }
     provider = _StubCritiqueProvider(
         [
             {

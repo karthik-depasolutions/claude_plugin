@@ -308,6 +308,40 @@
       "title": "DataSource",
       "type": "object"
     },
+    "IndustryGuess": {
+      "additionalProperties": false,
+      "description": "An LLM's read of which industry pack fits this data, grounded in real\ncolumn names/values rather than the deterministic classifier's\nname/structure-only signals (see classification/matcher.py). Purely\nadvisory \u2014 shown alongside the deterministic ranked matches during the\nindustry pause, never used to auto-select a pack.",
+      "properties": {
+        "pack_slug_guess": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pack Slug Guess"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "reasoning": {
+          "title": "Reasoning",
+          "type": "string"
+        }
+      },
+      "required": [
+        "confidence",
+        "reasoning"
+      ],
+      "title": "IndustryGuess",
+      "type": "object"
+    },
     "RawColumn": {
       "additionalProperties": false,
       "properties": {
@@ -405,6 +439,17 @@
           },
           "title": "Likely Central Entities",
           "type": "array"
+        },
+        "suggested_industry": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/IndustryGuess"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "model_used": {
           "anyOf": [

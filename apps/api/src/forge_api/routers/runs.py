@@ -14,7 +14,7 @@ import zipfile
 from pathlib import Path
 from typing import IO, Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
 from forge_core.ingestion.registry import prepare_source_for_persistence
 from forge_core.ingestion.warehouse import deprovision_client_schema, provision_client_schema
@@ -29,18 +29,20 @@ from forge_api import pipeline_runner, registry
 from forge_api.config import get_settings
 from forge_api.db import get_session
 from forge_api.models_orm import RunORM
+from forge_api.routers.auth import get_current_user
 from forge_api.schemas import (
     BindingOverridesRequest,
     ConfirmIndustryRequest,
     CreateRunFromPathRequest,
     PublishGithubRequest,
     PublishGithubResponse,
+    ReviewRequest,
     RunDetail,
     RunSummary,
     WarehouseCredentialsResponse,
 )
 
-router = APIRouter(prefix="/runs", tags=["runs"])
+router = APIRouter(prefix="/runs", tags=["runs"], dependencies=[Depends(get_current_user)])
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
@@ -242,11 +244,15 @@ async def get_run(run_id: str, session: SessionDep) -> RunDetail:
 
 
 @router.get("/{run_id}/events")
-async def stream_run_events(run_id: str, session: SessionDep) -> StreamingResponse:
+async def stream_run_events(
+    run_id: str,
+    after: int = Query(0, ge=0),
+    session: SessionDep = None,
+) -> StreamingResponse:
     await _load_record(run_id, session)  # 404s early if the run truly doesn't exist
 
     async def gen() -> Any:
-        sent = 0
+        sent = after
         while True:
             ctx = registry.get(run_id)
             if ctx is None:
@@ -270,12 +276,33 @@ async def stream_run_events(run_id: str, session: SessionDep) -> StreamingRespon
     return StreamingResponse(gen(), media_type="text/event-stream")
 
 
+@router.post("/{run_id}/review", response_model=RunSummary)
+async def submit_review(run_id: str, body: ReviewRequest, session: SessionDep) -> RunSummary:
+    """Resolves a NEEDS_INPUT run paused on data-quality questions (and/or an
+    ambiguous industry match) in one call: sets `industry_override` if given,
+    records `data_answers`, then resumes. `answers={}` is meaningful - it
+    means "reviewed, nothing supplied" and is what stops the pause re-firing,
+    exactly like `industry_override` does for classification."""
+    ctx = await _require_live_context(run_id, session)
+    _require_status(ctx.record, RunStatus.NEEDS_INPUT)
+    if body.industry is not None:
+        ctx.record.industry_override = body.industry
+    ctx.record.data_answers = body.answers
+    await pipeline_runner.resume_run(ctx)
+    return _summary(ctx.record)
+
+
 @router.post("/{run_id}/confirm-industry", response_model=RunSummary)
 async def confirm_industry(run_id: str, body: ConfirmIndustryRequest, session: SessionDep) -> RunSummary:
+    """Thin alias for `POST /review` that only supplies an industry - kept as
+    the documented contract for the wizard's industry picker. Delegates with
+    `answers={}` (or preserves an existing dict) so that resuming here can
+    never immediately re-pause on `needs_answers`."""
     ctx = await _require_live_context(run_id, session)
     _require_status(ctx.record, RunStatus.NEEDS_INPUT)
     ctx.record.industry_override = body.industry
-    await pipeline_runner.resume_run(ctx, use_llm=True)
+    ctx.record.data_answers = ctx.record.data_answers or {}
+    await pipeline_runner.resume_run(ctx)
     return _summary(ctx.record)
 
 
@@ -287,7 +314,7 @@ async def set_binding_overrides(
     if ctx.record.status not in (RunStatus.NEEDS_INPUT, RunStatus.SUCCEEDED, RunStatus.FAILED):
         raise HTTPException(409, f"Cannot set binding overrides while run is {ctx.record.status.value}.")
     ctx.binding_overrides.update(body.overrides)
-    await pipeline_runner.resume_run(ctx, use_llm=True)
+    await pipeline_runner.resume_run(ctx)
     return _summary(ctx.record)
 
 

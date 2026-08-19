@@ -17,7 +17,7 @@ const PHASES: { stages: string; title: string; body: string }[] = [
   {
     stages: "validate → package",
     title: "Nothing ships unchecked",
-    body: "Eight checks have to pass — including the same claude CLI validator a human install would hit — before the plugin is considered done, not just generated.",
+    body: "Eight checks run — including the same claude CLI validator a human install would hit. A hard failure keeps the plugin on disk for inspection; it doesn't reach an install command.",
   },
 ];
 

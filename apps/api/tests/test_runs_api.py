@@ -25,6 +25,17 @@ async def _wait_for_terminal(client: AsyncClient, run_id: str, timeout: float = 
     raise TimeoutError(f"run {run_id} did not reach a terminal state in {timeout}s")
 
 
+async def _wait_until_not_paused(client: AsyncClient, run_id: str, timeout: float = 30.0) -> None:
+    loop = asyncio.get_event_loop()
+    deadline = loop.time() + timeout
+    while loop.time() < deadline:
+        data = (await client.get(f"/runs/{run_id}")).json()
+        if data["status"] != "needs_input":
+            return
+        await asyncio.sleep(0.2)
+    raise TimeoutError(f"run {run_id} did not leave needs_input in {timeout}s")
+
+
 async def test_create_run_from_path_rejects_missing_source(client: AsyncClient):
     response = await client.post("/runs", json={"source_path": "does/not/exist.csv", "use_llm": False})
     assert response.status_code == 404
@@ -52,6 +63,74 @@ async def test_full_run_lifecycle_succeeds_and_is_downloadable(client: AsyncClie
     confirm_url = f"/runs/{run_id}/confirm-industry"
     confirm_after_success = await client.post(confirm_url, json={"industry": "finance"})
     assert confirm_after_success.status_code == 409
+
+
+async def test_review_pause_and_resume_via_post_review(client: AsyncClient, monkeypatch):
+    """The merged pause: with review questions present, a run pauses on
+    needs_answers; POST /review (answers, no industry) resumes it; the
+    answers are persisted and the run completes. build_data_review is
+    stubbed to inject a question without an LLM."""
+    from datetime import UTC, datetime
+
+    import forge_core.orchestrator as orch
+    from forge_core.models.quality import DataQuestion
+
+    real_build_data_review = orch.build_data_review
+
+    def _with_question(data_source, structural, con, *, provider=None, semantic=None):
+        review = real_build_data_review(data_source, structural, con, provider=None, semantic=semantic)
+        review.questions = [
+            DataQuestion(
+                id="dominant_value:bookings.status",
+                question="What does the dominant status value mean?",
+                context="80% of rows are 'confirmed'.",
+            )
+        ]
+        review.generated_at = datetime.now(UTC).isoformat()
+        return review
+
+    monkeypatch.setattr(orch, "build_data_review", _with_question)
+
+    create_response = await client.post(
+        "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
+    )
+    assert create_response.status_code == 201
+    run_id = create_response.json()["run_id"]
+
+    paused = await _wait_for_terminal(client, run_id)
+    assert paused["status"] == "needs_input", paused
+
+    detail = await client.get(f"/runs/{run_id}")
+    pause_event = next(e for e in detail.json()["events"] if e["data"].get("needs_answers") is not None)
+    assert pause_event["data"]["needs_answers"] is True
+    assert pause_event["data"]["needs_industry"] is False
+    assert "data_context" not in pause_event  # data_review lives on RunDetail, not the pause event
+
+    review_response = await client.post(
+        f"/runs/{run_id}/review",
+        json={"industry": None, "answers": {"dominant_value:bookings.status": "confirmed means booked"}},
+    )
+    assert review_response.status_code == 200, review_response.text
+
+    # The resume task flips the status off needs_input asynchronously; wait
+    # for the run to actually be re-scheduled before polling for terminal.
+    await _wait_until_not_paused(client, run_id)
+
+    final = await _wait_for_terminal(client, run_id)
+    assert final["status"] == "succeeded", final
+
+    detail = await client.get(f"/runs/{run_id}")
+    assert detail.json()["data_answers"]["dominant_value:bookings.status"] == "confirmed means booked"
+
+    # A resume must not re-report the pre-pause stages: the timeline stays
+    # continuous (no re-ingest / re-classify "step 1" flash) - the resume
+    # re-executes them but only appends post-pause events.
+    events = detail.json()["events"]
+    ingest_messages = [e["message"] for e in events if e["stage"] == "ingest"]
+    assert sum(1 for m in ingest_messages if m.startswith("Ingesting")) == 1, events
+    stages = [e["stage"] for e in events]
+    first_bind = stages.index("bind")
+    assert "ingest" not in stages[first_bind:], events
 
 
 async def test_upload_accepts_multiple_csv_files_as_one_multi_table_run(client: AsyncClient):
@@ -310,3 +389,28 @@ async def test_sse_stream_replays_events_for_a_finished_run(client: AsyncClient)
     body = "".join(chunks)
     assert "compile_kpis" in body
     assert '"final": true' in body
+
+
+async def test_sse_after_slices_events_for_a_resumed_client(client: AsyncClient):
+    """A client that resubscribes after a pause passes `?after=N` so the
+    already-seen events (ingest/profile/classify/pause) are not replayed -
+    this is what stops a resumed run looking like it started over."""
+    create_response = await client.post(
+        "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
+    )
+    run_id = create_response.json()["run_id"]
+    await _wait_for_terminal(client, run_id)
+
+    detail = await client.get(f"/runs/{run_id}")
+    events = detail.json()["events"]
+    assert events, "first pass must have produced events"
+
+    async with client.stream("GET", f"/runs/{run_id}/events?after={len(events)}") as response:
+        assert response.status_code == 200
+        chunks = [chunk async for chunk in response.aiter_text()]
+    body = "".join(chunks)
+    # with after=N there is nothing new to send - the stream closes
+    # immediately with only the final marker and no replayed events.
+    assert '"final": true' in body
+    assert '"stage":"ingest"' not in body
+    assert "compile_kpis" not in body

@@ -23,6 +23,7 @@ services:
       FORGE_DATABASE_URL: postgresql+psycopg://forge:forge@postgres:5432/forge
       FORGE_RUNS_DIR: /data/runs
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      FORGE_JWT_SECRET: ${FORGE_JWT_SECRET:-}
     ports:
       # Host-side 8420, not 8000 - avoids silently colliding with another
       # project's container already bound to the common default.

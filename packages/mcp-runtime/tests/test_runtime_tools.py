@@ -33,6 +33,27 @@ def test_describe_schema_excludes_row_data(bookings_config_dir: Path):
     assert "tables" in result
     assert "denied_columns" in result
     assert "phone" in result["denied_columns"]
+    # Back-compat: a schema_summary.json written before data_context existed
+    # must yield {} (a missing key raises) - hosted_mcp runs the current
+    # runtime against already-on-disk plugin configs.
+    assert result["data_context"] == {}
+
+
+def test_describe_schema_surfaces_data_context(bookings_config_dir: Path):
+    import json
+
+    summary_path = bookings_config_dir / "schema_summary.json"
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    summary["data_context"] = {
+        "notes": ["80% of bookings have status 'confirmed' - treated as committed revenue."],
+        "findings": [{"code": "dominant_value", "column": "status", "detail": "80% of rows share one value"}],
+    }
+    summary_path.write_text(json.dumps(summary), encoding="utf-8")
+
+    config, _ = _load(bookings_config_dir)
+    result = describe_schema(config)
+    assert result["data_context"]["notes"] == summary["data_context"]["notes"]
+    assert result["data_context"]["findings"][0]["code"] == "dominant_value"
 
 
 def test_get_data_profile_excludes_denied_columns(bookings_config_dir: Path):

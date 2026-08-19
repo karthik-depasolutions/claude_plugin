@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./generated/forge.db"
     runs_dir: Path = Path("./generated/runs")
     api_cors_origins: str = "http://localhost:5173"
+    # Signs login session tokens (see security.py). Accounts are
+    # admin-provisioned via scripts/create_user.py - there is no signup route.
+    jwt_secret: str | None = None
     # Public origin Claude Desktop uses to reach hosted MCP (HTTPS in prod;
     # a tunnel URL for local demos). Required for GitHub publish.
     public_base_url: str | None = None

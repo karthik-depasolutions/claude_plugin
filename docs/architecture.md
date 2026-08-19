@@ -1,6 +1,6 @@
 # Architecture
 
-MIS Plugin Forge is a **generator platform**: given a customer's MIS data
+Data2plugin is a **generator platform**: given a customer's MIS data
 source, it produces a complete, installable Claude Code plugin scoped to
 that customer's schema and industry. It never hand-codes a plugin for one
 customer — every customer-specific artifact is produced by the same pipeline
