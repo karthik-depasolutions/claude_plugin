@@ -195,6 +195,37 @@ def test_zip_plugin_round_trips(bookings_csv: Path, tmp_path: Path):
     assert ".claude-plugin/plugin.json" in [n.replace("\\", "/") for n in names]
 
 
+def test_denied_columns_absent_from_advertised_schema_across_every_table(tmp_path: Path):
+    """P1-03: a PII column on a *non-fact* table must appear in neither
+    config/data_source.json nor config/schema_summary.json — the advertised
+    schema Claude sees must match the data that actually ships."""
+    profile, pack, bindings, kpi_defs, generated = _pipeline(
+        Path(__file__).resolve().parents[3] / "fixtures" / "datasets" / "edtech.sqlite", "edtech"
+    )
+    spec = build_plugin_spec(pack, profile, bindings, kpi_defs, generated)
+    plugin_dir = tmp_path / spec.manifest.name
+    write_plugin(spec, plugin_dir, source=profile.source, profile=profile, pack=pack)
+
+    data_source = json.loads((plugin_dir / "config" / "data_source.json").read_text(encoding="utf-8"))
+    schema_summary = json.loads((plugin_dir / "config" / "schema_summary.json").read_text(encoding="utf-8"))
+
+    advertised = {
+        t["name"]: set(t["columns"]) for t in data_source["tables"]
+    }
+    summary = {t["name"]: set(t["columns"]) for t in schema_summary["tables"]}
+
+    # `students` is a dimension table, not the bound fact table — the bindings
+    # denied_columns list (fact-scoped) is empty for it, but the PII columns
+    # must still be filtered everywhere, or their NAMES leak in a plugin whose
+    # pii_scan passed while their values were physically deleted.
+    assert "email" not in advertised["students"]
+    assert "full_name" not in advertised["students"]
+    assert "email" not in summary["students"]
+    assert "full_name" not in summary["students"]
+    assert "course_name" not in advertised["courses"]
+    assert "course_name" not in summary["courses"]
+
+
 def test_versioning_bump():
     assert bump("0.1.0", "patch") == "0.1.1"
     assert bump("0.1.0", "minor") == "0.2.0"

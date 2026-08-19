@@ -28,22 +28,11 @@ from forge_core.models.common import SourceKind
 from forge_core.models.datasource import DataSource
 from forge_core.models.industry_pack import IndustryPack
 from forge_core.models.schema_profile import SchemaProfile
+from forge_core.packaging.denial import compute_denied_columns
 from forge_core.runtime_session import open_session
 
 _TEXT_EXTENSIONS = {".csv", ".tsv", ".json", ".ndjson", ".jsonl", ".parquet"}
 _EXCEL_EXTENSIONS = {".xlsx", ".xls"}
-
-
-def denied_columns_by_table(profile: SchemaProfile, pack: IndustryPack) -> dict[str, set[str]]:
-    """Every column, across *all* tables (not just the fact table `resolve_
-    bindings` binds KPIs against), that the pack's guardrails say must never
-    be exposed: likely PII by profiling heuristics, or a structural role
-    category the pack denies outright (e.g. `free_text`, `email`, `phone`)."""
-    denied: dict[str, set[str]] = {}
-    for col in profile.structural.columns:
-        if col.is_likely_pii or col.guessed_role.value in pack.guardrails.denied_role_categories:
-            denied.setdefault(col.table, set()).add(col.name)
-    return denied
 
 
 def _exclude_clause(columns: set[str]) -> str:
@@ -54,7 +43,11 @@ def _exclude_clause(columns: set[str]) -> str:
 
 
 def write_redacted_data_files(
-    source: DataSource, profile: SchemaProfile, pack: IndustryPack, output_dir: Path
+    source: DataSource,
+    profile: SchemaProfile,
+    pack: IndustryPack,
+    output_dir: Path,
+    denied_by_table: dict[str, set[str]] | None = None,
 ) -> None:
     """Writes every table under `<output_dir>/data/`, redacted per `pack`'s
     guardrails. Replaces a plain file copy - callers should use this instead
@@ -69,7 +62,8 @@ def write_redacted_data_files(
         return
     data_dir = output_dir / "data"
     data_dir.mkdir(parents=True, exist_ok=True)
-    denied_by_table = denied_columns_by_table(profile, pack)
+    if denied_by_table is None:
+        denied_by_table = compute_denied_columns(profile, pack)
 
     con = open_session(source)
     try:
@@ -136,3 +130,7 @@ def _write_redacted_sqlite(
 
 
 __all__ = ["denied_columns_by_table", "write_redacted_data_files"]
+
+# Back-compat alias: the single implementation now lives in
+# packaging/denial.compute_denied_columns. Keep the old name importable.
+denied_columns_by_table = compute_denied_columns

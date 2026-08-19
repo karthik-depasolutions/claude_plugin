@@ -81,8 +81,13 @@ def _config_files(
     bindings: SchemaBindings,
     kpi_defs: KpiDefsFile,
     data_context: dict | None = None,
+    denied_by_table: dict[str, set[str]] | None = None,
 ) -> list[GeneratedFile]:
     source = profile.source
+    if denied_by_table is None:
+        from forge_core.packaging.denial import compute_denied_columns
+
+        denied_by_table = compute_denied_columns(profile, pack)
     data_source_json = {
         "kind": source.kind.value,
         "connection": {
@@ -90,20 +95,29 @@ def _config_files(
             "read_only": source.connection.read_only,
         },
         "tables": [
-            {"name": t.name, "physical_ref": t.physical_ref, "columns": [c.name for c in t.columns]}
+            {
+                "name": t.name,
+                "physical_ref": t.physical_ref,
+                "columns": [
+                    c.name for c in t.columns if c.name not in denied_by_table.get(t.name, set())
+                ],
+            }
             for t in source.tables
         ],
     }
-    denied = set(bindings.denied_columns)
     column_profiles = _column_profiles_by_table(profile)
     schema_summary_json = {
         "pack_slug": kpi_defs.pack_slug,
         "tables": [
             {
                 "name": t.name,
-                "columns": [c.name for c in t.columns],
+                "columns": [
+                    c.name for c in t.columns if c.name not in denied_by_table.get(t.name, set())
+                ],
                 "column_profiles": [
-                    p for p in column_profiles.get(t.name, []) if p["column"] not in denied
+                    p
+                    for p in column_profiles.get(t.name, [])
+                    if p["column"] not in denied_by_table.get(t.name, set())
                 ],
             }
             for t in source.tables
@@ -117,13 +131,14 @@ def _config_files(
     # data_context carries the review findings/answers into the shipped
     # plugin (describe_schema surfaces them to the assistant). This is the
     # *second* PII gate on those findings - the analyzer's own gate ran at
-    # PROFILE, before BIND existed, so re-filter against denied_columns here
-    # before anything value-level ships to the customer.
+    # PROFILE, before BIND existed, so re-filter against the same denied
+    # column set (all tables) here before anything value-level ships.
+    denied_all = {c for cols in denied_by_table.values() for c in cols}
     if data_context:
         denied_findings = [
             f
             for f in (data_context.get("findings") or [])
-            if f.get("column") not in denied
+            if f.get("column") not in denied_all
         ]
         schema_summary_json["data_context"] = {
             "notes": data_context.get("notes") or [],
@@ -261,6 +276,7 @@ def build_plugin_spec(
     version: str = INITIAL_VERSION,
     author: Author | None = None,
     data_context: dict | None = None,
+    denied_by_table: dict[str, set[str]] | None = None,
 ) -> PluginSpec:
     """Build the complete in-memory plugin. Every path here is a
     conventional directory (`skills/`, `agents/`, `commands/`,
@@ -322,7 +338,7 @@ def build_plugin_spec(
                 content=render_frontmatter(command.frontmatter.to_frontmatter_dict(), command.body),
             )
         )
-    files.extend(_config_files(pack, profile, bindings, kpi_defs, data_context))
+    files.extend(_config_files(pack, profile, bindings, kpi_defs, data_context, denied_by_table))
 
     return PluginSpec(
         manifest=manifest,
@@ -340,6 +356,7 @@ def write_plugin(
     source: DataSource | None = None,
     profile: SchemaProfile | None = None,
     pack: IndustryPack | None = None,
+    denied_by_table: dict[str, set[str]] | None = None,
     bundle_mcp_runtime: bool = True,
 ) -> Path:
     """Serialize a `PluginSpec` to disk as BOM-less UTF-8, write the source
@@ -375,7 +392,7 @@ def write_plugin(
                 "(PII, or any role category the pack's guardrails deny) can be redacted before "
                 "the data ships inside the plugin - see forge_core.packaging.redaction."
             )
-        write_redacted_data_files(source, profile, pack, output_dir)
+        write_redacted_data_files(source, profile, pack, output_dir, denied_by_table)
 
     if bundle_mcp_runtime:
         bundle_runtime(output_dir)

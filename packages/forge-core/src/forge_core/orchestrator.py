@@ -32,6 +32,7 @@ from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.quality import DataReview
 from forge_core.models.run import RunRecord
 from forge_core.packaging import build_plugin_spec, write_plugin
+from forge_core.packaging.denial import compute_denied_columns
 from forge_core.profiling import build_schema_profile
 from forge_core.profiling.quality import build_data_review
 from forge_core.runtime_session import open_session
@@ -236,6 +237,7 @@ def _run_pipeline_inner(
     record.log(RunStage.GENERATE, "Generation complete", commands=[c.name for c in generated.commands])
 
     record.log(RunStage.PACKAGE, "Packaging plugin")
+    denied_by_table = compute_denied_columns(profile, pack)
     spec = build_plugin_spec(
         pack,
         profile,
@@ -244,9 +246,17 @@ def _run_pipeline_inner(
         generated,
         customer_label=record.label,
         data_context=data_context,
+        denied_by_table=denied_by_table,
     )
     plugin_dir = Path(record.output_dir) / spec.manifest.name
-    write_plugin(spec, plugin_dir, source=data_source, profile=profile, pack=pack)
+    write_plugin(
+        spec,
+        plugin_dir,
+        source=data_source,
+        profile=profile,
+        pack=pack,
+        denied_by_table=denied_by_table,
+    )
     record.log(RunStage.PACKAGE, f"Packaged to {plugin_dir}", plugin_dir=str(plugin_dir))
 
     record.log(RunStage.VALIDATE, "Running validation harness (8 checks)")
