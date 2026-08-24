@@ -1,0 +1,3920 @@
+Directory structure:
+└── dlt-hub-boring-semantic-layer-demo/
+    ├── README.md
+    ├── compose.yaml
+    ├── constants.py
+    ├── mypy.ini
+    ├── open_image.py
+    ├── pipeline.py
+    ├── pyproject.toml
+    ├── run_ngrok.sh
+    ├── transformation.py
+    ├── clickhouse/
+    │   └── clickhouse-open-access.xml
+    ├── downstream_apps/
+    │   ├── chat.py
+    │   ├── kpi_explorer.py
+    │   ├── materializer.py
+    │   ├── mcp_server.py
+    │   ├── notebook.ipynb
+    │   ├── panel.py
+    │   ├── streamlit_runner.py
+    │   └── api/
+    │       ├── models.py
+    │       ├── server.py
+    │       └── test_client.py
+    ├── sakila-db-mod/
+    │   └── a-sakila-schema.sql
+    ├── semantics/
+    │   ├── columns.py
+    │   ├── graph_generator.py
+    │   ├── llm.py
+    │   ├── llm_response.py
+    │   ├── model.py
+    │   ├── model_llm.py
+    │   ├── prompt.txt
+    │   ├── query_builder.py
+    │   └── table_references.py
+    ├── sources/
+    │   ├── rental.py
+    │   └── sources.py
+    └── .dlt/
+        ├── config.toml
+        ├── secrets.example.toml
+        └── .workspace
+
+================================================
+FILE: README.md
+================================================
+# BSL: A Boring Semantic Layer for the Sakila Dataset
+
+This repository showcases a complete, end-to-end **semantic layer built on top of the Sakila database**—the classic sample movie-rental dataset—using **dlt** and the **Boring Semantic Layer** libraries. The goal is to provide a **simple, easy-to-follow** example of how to build a semantic layer and reuse it across multiple downstream applications.
+
+With a semantic layer in place, every downstream consumer—APIs, Streamlit apps, chatbots, ER-diagram generators, materializers, and more—can access the same unified data model using intuitive concepts like **dimensions**, **measures**, and **filters**.
+
+This project demonstrates how to:
+
+- Load and normalize source data using **dlt**
+- Enrich tables and columns with semantic metadata
+- Transform and prepare data for analysis
+- Auto-generate a semantic model using an LLM
+- Build a fully operational semantic layer (dimensions, measures, joins)
+- Reuse that layer across multiple downstream applications, including:
+  - A Streamlit data explorer  
+  - A FastAPI query interface  
+  - A chatbot  
+  - An ER-diagram generator  
+  - A materializer for creating derived tables in your warehouse
+
+---
+
+# 📦 Project Structure
+
+```
+bsl/
+│
+├── pipeline.py                # Full ETL + semantic inference pipeline
+├── transformation.py          # Custom transformations (remove PII, time columns)
+├── semantics/                 # Semantic modeling components
+│   ├── llm.py                 # Generates semantic_model.json with OpenAI
+│   ├── model_llm.py           # Builds BSL semantic model using LLM metadata
+│   ├── model.py               # Alternative semantic model (non‑LLM) <-- do not use
+│   ├── graph_generator.py     # Renders ERD from semantic model
+│   ├── query_builder.py       # Turns API requests → ibis queries
+│   └── table_references.py    # Manual table relationships
+│
+├── sakila-mod/                # Necessary files to build db in docker container
+│
+├── sources/                   # Data extraction from Sakila DB
+│   ├── sources.py
+│   └── rental.py
+│
+├── downstream_apps/
+│ ├── kpi_explorer.py # Streamlit semantic explorer UI
+│ ├── materializer.py # Materializes semantic queries into warehouse tables
+│ ├── chatbot.py # MCP-based semantic chatbot server
+│ └── api/
+│   ├── models.py # Pydantic models for API requests/responses
+│   ├── server.py # FastAPI semantic query server
+│   └── test_client.py # Simple client script to test the API endpoints
+│
+└── open_image.py              # Helper to open PNG diagrams safely
+```
+
+---
+
+# 🚀 Quick Start
+
+## 1. Install dependencies
+```bash
+uv sync
+```
+
+You will need docker.
+
+---
+
+## 2. Configuration
+
+```bash
+cp .dlt/secrets.example.toml .dlt/secrets.toml
+```
+Fill in your OpenAI api key.
+You dont need to configure any database credentials, that is already done in compose.yaml and the default values.
+
+Regarding pipeline name, dataset name and destination type, you can find them in constants.py.
+I have tested this in duckdb, clickhouse and snowflake destinations.
+
+---
+
+# 💾 Running the pipeline
+
+The entrypoint is:
+
+```bash
+uv run python pipeline.py
+```
+
+### Available flags
+| Flag | Meaning |
+|------|---------|
+| `--nested-rental`| Loads a deeply nested version of rentals <-- do not use | 
+| `--transform` `-t` | Runs custom transformations (PII removal, date handling) |
+| `--infer-schema` `-i` | Uses OpenAI to infer a semantic model + generate ERD |
+
+### Example with full flow:
+```bash
+uv run python pipeline.py -t -i 
+```
+
+This will:
+1. Load all data into DuckDB
+2. Apply transformations
+3. Infer semantic model with LLM
+4. Generate `semantic_model.json`
+5. Render an ER diagram (`diagram.png`)
+6. Let you choose to apply the model
+
+---
+
+# 🧠 How the semantic model works
+
+There are two options for building the semantic layer:
+
+### ✅ **LLM‑Generated Semantic Model** (Recommended and default unless you change code)
+Files involved:
+- `semantics/llm.py`
+- `semantics/model_llm.py`
+- `semantics/semantic_model.json`
+
+This mode:
+1. Reads the loaded dlt schema which contains database metadata (if present) and column hints (if present)
+2. Sends metadata to OpenAI
+3. Receives back structured semantic metadata
+4. Builds a full semantic model compatible with Boring Semantic Layer
+
+### 📝 **Manual / Schema‑Annotation Semantic Model** (do not use)
+Files involved:
+- `semantics/model.py`
+- `semantics/columns.py`
+- manual `x-annotation-...` hints
+
+This mode derives semantics purely from schema annotations.
+
+---
+
+# 🛠 Transformations
+
+`transformation.py` contains reusable transformations:
+- **PII removal** using `x-annotation-pii`
+- **Time intelligence** columns (year, rental_date, return_date)
+- Filtering of internal customers
+
+These transformations run when `--transform` is passed.
+
+They can also be run standalone:
+```bash
+uv run python transformation.py
+```
+
+---
+
+# 📊 Streamlit Semantic Explorer
+
+Launch the UI:
+```bash
+uv run python -m streamlit run downstream_apps/kpi_explorer.py
+```
+
+You can:
+- Select dimensions & measures
+- Add filters
+- Run queries through the semantic layer
+- Materialize results back into the dlt destination
+
+---
+
+# 🌐 Semantic API (FastAPI)
+Start the API server:
+```bash
+uv run uvicorn downstream_apps.api.server:app --reload
+```
+
+Endpoints:
+- `GET /dimensions`
+- `GET /measures`
+- `POST /query` (returns JSON or parquet)
+
+Docs in localhost:8000/docs. Or whatever your host:port/docs
+
+---
+
+# 🤖 Chatbot (MCP Semantic Server)
+
+```bash
+uv run python -m downstream_apps.chatbot
+```
+
+This exposes the semantic model via the MCP protocol so it can be used in LLM chat environments.
+
+---
+
+# 📈 ER Diagram Generation
+
+When running with `--infer-schema`, the pipeline:
+- Generates `semantic_model.json`
+- Builds `semantic_model.er`
+- Renders a PNG ER diagram at `diagram.png`
+
+To generate manually:
+```bash
+uv run python -m semantics.graph_generator
+```
+
+---
+
+# 📦 Materializing Semantic Queries
+
+Any semantic query can be written back into the destination database.
+This interface is not great, this should generally happen from the streamlit report.
+
+Example:
+```bash
+uv run python bsl/downstream_apps/materializer.py -t my_table
+```
+
+This executes:
+```python
+def materialize(pipeline, semantic_model, table_name):
+    @dlt.resource(name=table_name, write_disposition="replace")
+    def create():
+        yield semantic_model.execute()
+    pipeline.run(create())
+```
+
+---
+
+# 🧪 Testing the API
+
+Use the test client:
+```bash
+uv run python -m downstream_apps.api.test_client
+```
+
+It will:
+1. Fetch dimensions
+2. Fetch measures
+3. Build a random query
+4. Execute it
+5. Print sample output
+
+---
+
+# 🧹 Utility Scripts
+
+### Open PNG with fallback:
+`open_image.safe_open_image(path)` safely opens diagrams across macOS, Windows, Linux.
+
+---
+
+
+
+================================================
+FILE: compose.yaml
+================================================
+services:
+  db:
+    container_name: mysql_sakila_db
+    image: mysql:8
+    restart: on-failure
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: sakila
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sakila-db-mod:/docker-entrypoint-initdb.d
+    ports:
+      - "3306:3306"
+
+  clickhouse:
+    container_name: clickhouse
+    image: clickhouse/clickhouse-server:latest
+    restart: always
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./clickhouse/clickhouse-open-access.xml:/etc/clickhouse-server/users.d/open.xml
+
+  metabase:
+    container_name: metabase
+    image: metabase/metabase:latest
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      MB_JETTY_PORT: 3000
+      MB_DB_FILE: /metabase-data/metabase.db
+    volumes:
+      - metabase_data:/metabase-data
+
+volumes:
+  mysql_data:
+  clickhouse_data:
+  metabase_data:
+
+
+
+================================================
+FILE: constants.py
+================================================
+PIPELINE_NAME = "sakila"
+DATASET_NAME = "sakila_data"
+DESTINATION = "duckdb"
+
+
+
+================================================
+FILE: mypy.ini
+================================================
+[mypy]
+explicit_package_bases = True
+
+
+[mypy-boring_semantic_layer.*]
+ignore_missing_imports = True
+
+[mypy-ibis.*]
+ignore_missing_imports = True
+
+[mypy-toon.*]
+ignore_missing_imports = True
+
+
+
+================================================
+FILE: open_image.py
+================================================
+from pathlib import Path
+import os
+import subprocess
+import webbrowser
+import sys
+
+
+def safe_open_image(path: Path) -> None:
+    """Open a file using the system default viewer, with graceful fallback."""
+
+    if not path.exists():
+        print(f"File does not exist: {path}")
+        return
+
+    if path.suffix != ".png":
+        print(f"Refusing to open file: {path}")
+        print("Only .png images are allowed.")
+        return
+
+    try:
+        if sys.platform.startswith("darwin"):  # macOS
+            result = subprocess.call(["open", path])
+            if result != 0:
+                raise RuntimeError("macOS 'open' failed")
+
+        elif os.name == "nt":  # Windows
+            os.startfile(path)  # type: ignore[attr-defined]
+
+        elif os.name == "posix":  # Linux/BSD
+            result = subprocess.call(["xdg-open", path])
+            if result != 0:
+                raise RuntimeError("xdg-open failed")
+
+        else:
+            raise RuntimeError("Unsupported platform")
+
+        return
+
+    except Exception as e:
+        print(f"Could not open using system viewer: {e}")
+        print("Falling back to opening in browser…")
+        uri = path.resolve().as_uri()
+        webbrowser.open(uri)
+
+
+
+================================================
+FILE: pipeline.py
+================================================
+from constants import PIPELINE_NAME, DATASET_NAME, DESTINATION
+from open_image import safe_open_image
+from semantics.graph_generator import generate
+from semantics.llm import load_or_generate_semantic_model
+from semantics.model_llm import create_semantic_model_llm
+from sources.sources import get_sources
+from transformation import transform
+import argparse
+import dlt
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--nested-rental", action="store_true", default=False)
+    parser.add_argument("--infer-schema", "-i", action="store_true", default=False)
+    parser.add_argument("--transform", "-t", action="store_true", default=False)
+
+    args = parser.parse_args()
+
+    pipeline = dlt.pipeline(
+        pipeline_name=PIPELINE_NAME,
+        destination=DESTINATION,
+        dataset_name=DATASET_NAME,
+    )
+
+    sources = get_sources(args.nested_rental)
+
+    info = pipeline.run(
+        sources,
+        write_disposition="replace",
+        refresh="drop_sources",
+    )
+
+    print(info)
+
+    if args.transform:
+        result = transform(pipeline)
+
+    if args.infer_schema:
+        tables_loaded = ", ".join(
+            [
+                table
+                for table in pipeline.default_schema.tables.keys()
+                if not table.startswith("_dlt")
+            ]
+        )
+
+        default_context = (
+            "This is data from a video rental business. "
+            "I want to analyse my customers based on their join time and have general "
+            "analytics about the rentals, especially also time based, like average duration."
+        )
+
+        print("\nInferring schema with an LLM…")
+        print(
+            "Please add some context to understand the business case and requirements."
+        )
+        print("The tables loaded are:")
+        print(f"{tables_loaded}\n")
+        print("Default context:")
+        print(f"  {default_context}\n")
+
+        user_input = input(
+            "Enter new context or press ENTER to accept the default:\n> "
+        ).strip()
+
+        additional_context = user_input if user_input else default_context
+
+        print("Generating schema...\n")
+        semantic_model = load_or_generate_semantic_model(
+            pipeline,
+            additional_context,
+        )
+
+        diagram_path_png = generate(semantic_model)
+        print(f"Schema generated successfully at {diagram_path_png}\n")
+        safe_open_image(diagram_path_png)
+
+        reply = input("Do you want to apply the shown schema and generate the semantic model? [Y/n]: ").strip().lower()
+        yolo_mode = reply in ("", "y", "yes")
+
+        if yolo_mode:
+            semantic_model = create_semantic_model_llm(pipeline)
+
+            print("\nThe semantic model generated is:")
+            print(semantic_model.dimensions)
+            print(semantic_model.measures)
+
+    exit(0)
+
+
+
+================================================
+FILE: pyproject.toml
+================================================
+[project]
+name = "bsl"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "boring-semantic-layer>=0.2.0",
+    "dlt[duckdb,workspace]",
+    "dlthub>=0.18.0",
+    "eralchemy>=1.6.0",
+    "fastapi[standard]>=0.121.3",
+    "geoalchemy2>=0.18.0",
+    "graphviz>=0.21",
+    "ipykernel>=7.1.0",
+    "matplotlib>=3.8.7",
+    "notebook>=7.5.0",
+    "numpy>=2.3.4",
+    "openai>=2.8.0",
+    "pandas>=2.3.3",
+    "pandas-stubs>=2.3.2.250926",
+    "panel>=1.8.4",
+    "plotly>=6.5.0",
+    "pyarrow>=22.0.0",
+    "pyarrow-hotfix>=0.7",
+    "pyarrow-stubs>=20.0.0.20251107",
+    "pydbml>=1.2.1",
+    "pymysql>=1.1.2",
+    "python-toon>=0.1.3",
+    "requests>=2.32.5",
+    "sqlglot>=25.4,<28",
+    "streamlit>=1.50.0",
+    "types-requests>=2.32.4.20250913",
+    "watchdog>=6.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "enlighten>=1.14.1",
+    "mypy>=1.18.2",
+    "ruff>=0.14.4",
+]
+
+[tool.ruff]
+extend-exclude = ["*.ipynb"]
+
+[tool.uv.sources]
+dlt = { path = "../official_repos/dlt" }
+
+
+
+================================================
+FILE: run_ngrok.sh
+================================================
+#!/bin/bash
+
+ngrok http 9000
+
+
+
+================================================
+FILE: transformation.py
+================================================
+from constants import PIPELINE_NAME
+from typing import Any
+import argparse
+import dlt
+
+
+def remove_pii(ibis_table, schema):
+    pii_columns = [
+        name for name, col_schema in schema.items()
+        if col_schema.get("x-annotation-pii")
+    ]
+
+    for column_name, column_schema in schema.items():
+        if column_schema.get("x-annotation-pii"):
+            pii_columns.append(column_name)
+    
+    cols_to_drop = [ibis_table[col] for col in pii_columns]
+    
+    return ibis_table.drop(cols_to_drop)
+
+
+@dlt.hub.transformation(
+    name="dim_customer", write_disposition="replace", primary_key="customer_id"
+)
+def dim_customer(dataset: dlt.Dataset) -> Any:
+    table_name = "dim_customer" if "dim_customer" in dataset.tables else "customer"
+    customer = dataset.table(table_name)
+    customer_ibis = customer.to_ibis()
+
+    anonymized = remove_pii(customer_ibis, customer.schema["columns"])
+
+    INTERNAL_CUSTOMER_IDS = [1, 2]
+
+    yield anonymized.filter(~anonymized.customer_id.isin(INTERNAL_CUSTOMER_IDS))
+
+
+@dlt.hub.transformation(
+    name="fact_rental",
+    write_disposition="replace",
+    primary_key="rental_id",
+    columns={
+        "rental_date": {"data_type": "date"},
+        "return_date": {"data_type": "date"},
+        "year": {"data_type": "bigint"},
+    },
+)
+def fact_rental(dataset: dlt.Dataset) -> Any:
+    rental = dataset.table("rental").to_ibis()
+
+    yield (
+        rental
+        # add time intelligence columns
+        .mutate(
+            rental_date=rental.rental_date.date(),
+            return_date=rental.return_date.date(),
+            year=rental.rental_date.year(),
+        )
+    )
+
+
+def transform(pipeline: dlt.Pipeline) -> int:
+    dataset = pipeline.dataset()
+
+    pipeline.run(
+        [
+            dim_customer(dataset),
+            fact_rental(dataset),
+        ],
+    )
+
+    print("Transformations applied correctly.")
+    return 0
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-p", "--pipeline", required=False, type=str)
+
+    args = parser.parse_args()
+
+    pipeline = dlt.attach(
+        pipeline_name=args.pipeline if args.pipeline else PIPELINE_NAME,
+    )
+
+    exit(transform(pipeline))
+
+
+
+================================================
+FILE: clickhouse/clickhouse-open-access.xml
+================================================
+<clickhouse>
+  <users>
+    <default>
+      <networks>
+        <ip>::/0</ip>
+      </networks>
+    </default>
+  </users>
+</clickhouse>
+
+
+
+================================================
+FILE: downstream_apps/chat.py
+================================================
+import streamlit as st
+import requests
+from openai import OpenAI
+import dlt
+import subprocess
+import time
+import atexit
+import os
+
+
+from downstream_apps.mcp_server import  MCP_SERVER_URL
+
+
+OPENAI_MCP_SERVER_URL = "https://ellis-peptic-brigitte.ngrok-free.dev/mcp"
+
+def is_server_up():
+    try:
+        requests.get(MCP_SERVER_URL, timeout=2)
+        return True
+    except Exception:
+        return False
+
+def ensure_mcp_running():
+    if is_server_up():
+        return
+
+    cmd = ["python", "-m", "downstream_apps.mcp_server"]
+    proc = subprocess.Popen(
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        env=os.environ.copy()
+    )
+    st.session_state["_mcp_process"] = proc
+
+    for _ in range(20):
+        if is_server_up():
+            print("✓ MCP server running")
+            return
+        time.sleep(0.5)
+
+    output = proc.stdout.read().decode("utf-8", errors="replace")
+    st.error("MCP server failed to start:\n" + output)
+    raise RuntimeError("MCP server failed to start")
+
+
+def cleanup():
+    proc = st.session_state.get("_mcp_process")
+    if proc and proc.poll() is None:
+        proc.terminate()
+        try:
+            proc.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+
+atexit.register(cleanup)
+
+
+# ------- BEFORE STREAMLIT UI -------
+ensure_mcp_running()
+
+# -------------------------------
+# CONFIG
+# -------------------------------
+
+openai_api_key: str = dlt.secrets.get("openai_api_key")
+client = OpenAI(api_key=openai_api_key)
+model = "gpt-4.1"
+
+# -------------------------------
+# SESSION STATE
+# -------------------------------
+if "conversation" not in st.session_state:
+    st.session_state.conversation = None
+
+if "chat_messages" not in st.session_state:
+    st.session_state.chat_messages = []   # local UI history
+
+
+# -------------------------------
+# UI
+# -------------------------------
+st.set_page_config(page_title="MCP Chat", page_icon="🤖")
+st.title("🤖 MCP-Powered Chatbot")
+
+# ---- Re-render FULL chat history every run ----
+for msg in st.session_state.chat_messages:
+    st.chat_message(msg["role"]).write(msg["content"])
+
+
+# -------------------------------
+# CHAT INPUT
+# -------------------------------
+user_msg = st.chat_input("Ask a question about your rental data…")
+
+if user_msg:
+
+    # Add user message to local history
+    st.session_state.chat_messages.append({
+        "role": "user",
+        "content": user_msg
+    })
+    st.chat_message("user").write(user_msg)
+
+    # ---------------------------------------
+    # SEND REQUEST TO OPENAI (with MCP)
+    # ---------------------------------------
+    stream = client.responses.create(
+        model=model,
+        input=user_msg,
+        conversation=st.session_state.conversation,
+        tools=[
+            {
+                "type": "mcp",
+                "server_label": "local_rentals",
+                "server_url": OPENAI_MCP_SERVER_URL,
+                "require_approval": "never",
+            }
+        ],
+        stream=True,
+    )
+
+    assistant_box = st.chat_message("assistant")
+    placeholder = assistant_box.empty()
+    full_text = ""
+
+    final_conversation = None
+
+    # STREAMING
+    for event in stream:
+        if event.type == "response.output_text.delta":
+            full_text += event.delta
+            placeholder.write(full_text)
+
+        elif event.type == "response.completed":
+            final_conversation = event.response.conversation
+
+    # Save assistant message in history
+    st.session_state.chat_messages.append({
+        "role": "assistant",
+        "content": full_text
+    })
+
+    # Update conversation memory
+    if final_conversation:
+        st.session_state.conversation = final_conversation
+
+
+
+================================================
+FILE: downstream_apps/kpi_explorer.py
+================================================
+"""
+Semantic Model Explorer - WITH MATERIALIZE SUPPORT
+"""
+
+import streamlit as st
+import dlt
+import pandas as pd
+
+from constants import PIPELINE_NAME
+from downstream_apps.api.models import QueryRequest, FilterCondition
+from semantics.model_llm import create_semantic_model_llm
+from semantics.query_builder import build_semantic_query
+from downstream_apps.materializer import materialize as materialize_fn
+
+
+# -------------------------------------------------------
+# Load Semantic Model
+# -------------------------------------------------------
+
+pipeline = dlt.attach(pipeline_name=PIPELINE_NAME)
+
+@st.cache_resource
+def load_model():
+    return create_semantic_model_llm(pipeline)
+
+model = load_model()
+
+
+# -------------------------------------------------------
+# Page Config
+# -------------------------------------------------------
+
+st.set_page_config(
+    page_title="Semantic Model Explorer",
+    layout="wide",
+)
+
+st.title("📊 Semantic Model Explorer")
+
+
+# -------------------------------------------------------
+# Session State Initialization
+# -------------------------------------------------------
+
+if "results" not in st.session_state:
+    st.session_state.results = None
+
+if "semantic_query" not in st.session_state:
+    st.session_state.semantic_query = None  # <— store query object for materializing
+
+if "dirty" not in st.session_state:
+    st.session_state.dirty = False
+
+
+def mark_dirty():
+    st.session_state.dirty = True
+
+
+# -------------------------------------------------------
+# Dimensions + Measures Selection
+# -------------------------------------------------------
+
+left_col, right_col = st.columns([2.5, 1])
+
+DIMENSIONS = model.get_dimensions()
+dimension_names = list(DIMENSIONS.keys())
+
+MEASURES = model.get_measures()
+measure_names = list(MEASURES.keys())
+
+
+# -------------------------------------------------------
+# Dimensions Selector
+# -------------------------------------------------------
+
+with left_col:
+    st.subheader("Dimensions (Group By)")
+
+    selected_dimensions = st.multiselect(
+        "Select Dimensions",
+        options=dimension_names,
+        default=[],
+        key="selected_dimensions",
+        on_change=mark_dirty,
+    )
+
+    st.write("#### Selected Dimensions")
+    for dim in selected_dimensions:
+        st.write(f"- `{dim}`")
+
+
+# -------------------------------------------------------
+# Measures Selector
+# -------------------------------------------------------
+
+with left_col:
+    st.subheader("Measures")
+
+    selected_measures = st.multiselect(
+        "Select Measures",
+        options=measure_names,
+        default=[],
+        key="selected_measures",
+        on_change=mark_dirty,
+    )
+
+
+# -------------------------------------------------------
+# Filters Panel
+# -------------------------------------------------------
+
+with right_col:
+    st.subheader("Filters")
+    st.caption("Add conditions to filter the data")
+
+    if "filters" not in st.session_state:
+        st.session_state.filters = []
+
+    if st.button("➕ Add Filter", on_click=mark_dirty):
+        st.session_state.filters.append(
+            {"field": None, "op": "=", "value": "", "id": len(st.session_state.filters)}
+        )
+
+    active_filters = []
+    remove_idx = None
+
+    def operator_list(field: str):
+        if "date" in field.lower():
+            return ["=", "!=", ">", ">=", "<", "<="]
+        return ["=", "!=", ">", ">=", "<", "<=", "contains"]
+
+    for idx, flt in enumerate(st.session_state.filters):
+        with st.expander(f"Filter #{idx+1}", expanded=True):
+
+            field = st.selectbox(
+                "Field",
+                dimension_names,
+                key=f"field_{idx}",
+                index=(dimension_names.index(flt["field"])
+                       if flt["field"] in dimension_names else 0),
+                on_change=mark_dirty,
+            )
+
+            ops = operator_list(field)
+            op = st.selectbox(
+                "Operator",
+                ops,
+                key=f"op_{idx}",
+                index=(ops.index(flt["op"]) if flt["op"] in ops else 0),
+                on_change=mark_dirty,
+            )
+
+            value = st.text_input(
+                "Value",
+                key=f"value_{idx}",
+                value=flt.get("value", ""),
+                on_change=mark_dirty,
+            )
+
+            if st.button("🗑 Remove", key=f"remove_{idx}", on_click=mark_dirty):
+                remove_idx = idx
+
+            flt["field"] = field
+            flt["op"] = op
+            flt["value"] = value
+            active_filters.append(flt)
+
+    if remove_idx is not None:
+        st.session_state.filters.pop(remove_idx)
+
+
+# -------------------------------------------------------
+# Run Query + Materialize UI
+# -------------------------------------------------------
+
+run_btn_label = "Run Query"
+if st.session_state.dirty:
+    run_btn_label = "🔄 Run Query (changes pending)"
+    run_btn_style = "background-color:#f39c12; color:white; font-weight:600;"
+else:
+    run_btn_style = "background-color:#27ae60; color:white; font-weight:600;"
+
+
+with left_col:
+    # --- RUN QUERY BUTTON ---
+    c1, c2 = st.columns([1, 1])
+
+    with c1:
+        run_query = st.button(
+            run_btn_label,
+            key="run_query_button",
+            help="Run the semantic query",
+        )
+
+    with c2:
+        # --- MATERIALIZE TO DLT BUTTON ---
+        table_name = st.text_input(
+            "Table name for materialization:",
+            placeholder="my_table_name",
+            key="materialize_table_name"
+        ).strip()
+
+        can_materialize = (
+            st.session_state.results is not None
+            and len(table_name) > 0
+        )
+
+        materialize_button = st.button(
+            "📦 Materialize to destination",
+            disabled=not can_materialize,
+        )
+
+    # Button style
+    st.markdown(
+        f"""
+        <style>
+        div.stButton > button:first-child {{
+            {run_btn_style}
+            border-radius:6px;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# -------------------------------------------------------
+# Execute Query
+# -------------------------------------------------------
+
+if run_query:
+    if not selected_measures:
+        st.error("Please select at least one measure.")
+    else:
+        filter_conditions = [
+            FilterCondition(field=f["field"], op=f["op"], value=f["value"])
+            for f in active_filters
+            if f["field"] and f["value"]
+        ]
+
+        query_request = QueryRequest(
+            dimensions=selected_dimensions or None,
+            measures=selected_measures,
+            filters=filter_conditions or None,
+        )
+
+        semantic_query = build_semantic_query(model, query_request)
+        df = semantic_query.execute()
+
+        st.session_state.semantic_query = semantic_query
+        st.session_state.results = df
+        st.session_state.dirty = False
+
+
+# -------------------------------------------------------
+# MATERIALIZE QUERY
+# -------------------------------------------------------
+
+
+if materialize_button:
+    if st.session_state.semantic_query is None:
+        st.error("No query available to materialize.")
+    else:
+        with st.spinner("📦 Materializing into dlt…"):
+            try:
+                materialize_fn(
+                    pipeline,
+                    st.session_state.semantic_query,
+                    table_name
+                )
+                st.success(f"✓ Successfully materialized into table: `{table_name}`")
+
+            except Exception as e:
+                st.error(f"Materialization failed: {e}")
+
+
+# -------------------------------------------------------
+# Display Results
+# -------------------------------------------------------
+
+if st.session_state.results is not None:
+    left_col.write("### Results")
+    left_col.dataframe(st.session_state.results)
+
+
+
+================================================
+FILE: downstream_apps/materializer.py
+================================================
+from constants import PIPELINE_NAME
+from semantics.model_llm import create_semantic_model_llm
+from boring_semantic_layer import SemanticModel
+import argparse
+import dlt
+
+
+def materialize(
+    pipeline: dlt.Pipeline,
+    semantic_model: SemanticModel,
+    table_name: str,
+) -> int:
+
+    @dlt.resource(name=table_name, write_disposition="replace")
+    def create():
+        yield semantic_model.execute()
+
+    pipeline.run(
+        create(),
+    )
+
+    return 0
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-p", "--pipeline", required=False, type=str)
+    parser.add_argument("-t", "--table-name", required=False, type=str)
+
+    args = parser.parse_args()
+
+    pipeline = dlt.attach(
+        pipeline_name=args.pipeline if args.pipeline else PIPELINE_NAME,
+    )
+
+    model = create_semantic_model_llm(pipeline)
+
+    query = (
+        model
+            .group_by("dim_film__title")
+            .aggregate("total_rentals", "unique_customers")
+    )
+
+    table_name = "test"
+
+    materialize(
+        pipeline,
+        query,
+        args.table_name if args.table_name else table_name,
+    )
+
+
+
+================================================
+FILE: downstream_apps/mcp_server.py
+================================================
+import argparse
+
+from constants import PIPELINE_NAME
+from semantics.model_llm import create_semantic_model_llm
+from boring_semantic_layer.mcp import MCPSemanticModel
+import dlt
+
+MCP_SERVER_HOST = "0.0.0.0"
+MCP_SERVER_PORT = 9000
+MCP_SERVER_URL = f"http://{MCP_SERVER_HOST}:{MCP_SERVER_PORT}"
+
+def run_mcp_server(
+    host: str,
+    port: int,
+    pipeline_name: str
+):
+    pipeline = dlt.attach(
+        pipeline_name=pipeline_name,
+    )
+
+    model = create_semantic_model_llm(pipeline)
+
+    mcp_server = MCPSemanticModel(
+        models={"rentals": model},
+        name="Rental Server"
+    )
+
+    mcp_server.run(
+        transport="streamable-http",
+        **{
+            "host": host,
+            "port": port,
+        }
+    )
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    
+    parser.add_argument("-h", "--host", default=MCP_SERVER_HOST, type=str)
+    parser.add_argument("-p", "--port", default=MCP_SERVER_PORT, type=int)
+    
+    args = parser.parse_args()
+    
+    run_mcp_server(args.host, args.port, PIPELINE_NAME)
+
+
+
+================================================
+FILE: downstream_apps/notebook.ipynb
+================================================
+# Jupyter notebook converted to Python script.
+
+"""
+# Import the semantic model with the existing relationships, measures and dimensions
+"""
+
+import sys, os
+PROJECT_ROOT = os.path.abspath(os.path.join(os.getcwd(), ".."))
+sys.path.insert(0, PROJECT_ROOT)
+
+from semantics.model_llm import create_semantic_model_llm
+from constants import PIPELINE_NAME
+import dlt
+
+pipeline = dlt.attach(pipeline_name=PIPELINE_NAME)
+
+model = create_semantic_model_llm(pipeline)
+
+print(f"The model dimensions are {model.dimensions}")
+print(f"The model measures are {model.measures}")
+
+
+"""
+# Exploratory analysis to see columns, types and statistics about values
+"""
+
+df = model.execute()
+df.describe().T
+
+"""
+# Explore missing values
+"""
+
+df.isna().sum().sort_values(ascending=False)
+
+"""
+# Plot rentals per date over time
+"""
+
+import matplotlib.pyplot as plt
+
+# Daily rentals
+daily_rentals = df.groupby('fact_rental__rental_date').size()
+
+daily_rentals.plot(figsize=(12,4), title='Daily Rentals Over Time')
+plt.xlabel("Date")
+plt.ylabel("Rentals")
+plt.grid()
+plt.show()
+
+"""
+# Remove outlier for better visualization
+"""
+
+# Daily rentals
+max_date = df['fact_rental__rental_date'].max()
+
+daily_rentals_clean = (
+    df[df['fact_rental__rental_date'] != max_date]
+      .groupby('fact_rental__rental_date')
+      .size()
+)
+
+daily_rentals_clean.plot(figsize=(12,4), title='Daily Rentals Over Time')
+plt.xlabel("Date")
+plt.ylabel("Rentals")
+plt.grid()
+plt.show()
+
+"""
+# Top 10 films in a bar plot
+"""
+
+top_films = df.groupby('dim_film__title').size().sort_values(ascending=False).head(10)
+
+top_films.plot(kind='barh', title='Top 10 Most Rented Films', figsize=(8,5))
+plt.xlabel("Rentals")
+plt.ylabel("Film")
+plt.gca().invert_yaxis()
+plt.show()
+
+
+"""
+# Top countries bar plot
+"""
+
+rentals_by_country = df.groupby('dim_country__via__dim_customer__country').size().sort_values(ascending=False)
+
+rentals_by_country.head(20).plot(kind='bar', figsize=(12,4), title='Top Countries by Rentals')
+plt.ylabel("Rentals")
+plt.xticks(rotation=45)
+plt.show()
+
+
+
+
+================================================
+FILE: downstream_apps/panel.py
+================================================
+import os
+from typing import Tuple, List
+import panel as pn
+import pandas as pd
+import dlt
+
+from constants import PIPELINE_NAME
+from semantics.model_llm import create_semantic_model_llm
+from semantics.query_builder import build_semantic_query
+from downstream_apps.api.models import QueryRequest, FilterCondition
+from downstream_apps.materializer import materialize as materialize_fn
+
+pn.extension(
+    "tabulator",
+    design="fast",
+    theme="dark",
+    sizing_mode="stretch_width",
+)
+
+
+pipeline = dlt.attach(pipeline_name=PIPELINE_NAME)
+model = create_semantic_model_llm(pipeline)
+
+dimensions = list(model.get_dimensions().keys())
+measures = list(model.get_measures().keys())
+
+# -------------------------
+# SELECTORS (NO TITLES)
+# -------------------------
+
+# Force chips one per row using CSS
+pn.extension(raw_css=["""
+.bk-MultiChoice .bk-chips {flex-wrap: wrap !important;}
+.bk-MultiChoice .bk-chip {width: 100% !important; margin-bottom: 4px;}
+"""])
+
+dim_selector = pn.widgets.MultiChoice(
+    options=dimensions,
+    placeholder="Select dimensions...",
+)
+
+measure_selector = pn.widgets.MultiChoice(
+    options=measures,
+    placeholder="Select measures...",
+)
+
+# -------------------------
+# FILTERS
+# -------------------------
+
+filters: List[Tuple]= []
+filters_area = pn.Column()
+
+def operator_list(field):
+    if "date" in field.lower():
+        return ["=", "!=", ">", ">=", "<", "<="]
+    return ["=", "!=", ">", ">=", "<", "<=", "contains"]
+
+def add_filter(event=None):
+    field = pn.widgets.Select(options=dimensions)
+    op = pn.widgets.Select(options=operator_list(dimensions[0]))
+    val = pn.widgets.TextInput(placeholder="Value...")
+    remove_btn = pn.widgets.Button(name="Remove", button_type="danger")
+
+    card = pn.Card(field, op, val, remove_btn,
+                   title=f"Filter {len(filters)+1}", collapsed=False)
+
+    filters.append((field, op, val, card))
+    filters_area.append(card)
+
+    def update_ops(ev):
+        op.options = operator_list(field.value)
+    field.param.watch(update_ops, "value")
+
+    def remove(ev):
+        filters.remove((field, op, val, card))
+        filters_area.remove(card)
+    remove_btn.param.watch(lambda *_: remove(None), "clicks")
+
+
+add_filter_btn = pn.widgets.Button(name="➕ Add Filter", button_type="primary")
+add_filter_btn.param.watch(lambda *_: add_filter(), "clicks")
+
+# -------------------------
+# RESULTS TABLE
+# -------------------------
+
+results_table = pn.pane.DataFrame(height=800, sizing_mode="stretch_width")
+query_holder = {"query": None}
+
+run_btn = pn.widgets.Button(
+    name="Run Query",
+    button_type="success",
+)
+
+# -------------------------
+# QUERY EXECUTION
+# -------------------------
+
+def run_query(event=None):
+    if not measure_selector.value:
+        results_table.object = pd.DataFrame({"error": ["Select at least one measure"]})
+        return
+
+    filter_conditions = [
+        FilterCondition(field=f.value, op=o.value, value=v.value)
+        for (f, o, v, card) in filters
+        if f.value and v.value
+    ]
+
+    req = QueryRequest(
+        dimensions=dim_selector.value or None,
+        measures=measure_selector.value,
+        filters=filter_conditions or None,
+    )
+
+    q = build_semantic_query(model, req)
+    df = q.execute()
+
+    query_holder["query"] = q
+    results_table.object = df
+
+run_btn.param.watch(lambda *_: run_query(), "clicks")
+
+# -------------------------
+# MATERIALIZE
+# -------------------------
+
+tbl_name = pn.widgets.TextInput(placeholder="my_table_name")
+materialize_btn = pn.widgets.Button(
+    name="📦 Materialize",
+    button_type="warning",
+)
+
+def do_materialize(event=None):
+    q = query_holder["query"]
+    if q is None or not tbl_name.value.strip():
+        return
+    materialize_fn(pipeline, q, tbl_name.value.strip())
+
+materialize_btn.param.watch(lambda *_: do_materialize(), "clicks")
+
+materialize_row = pn.Row(
+    tbl_name,
+    materialize_btn,
+)
+
+# -------------------------
+# SIDEBAR (LEFT COLUMN)
+# -------------------------
+
+left_sidebar = pn.Column(
+    pn.pane.HTML("<h3>Dimensions</h3>"),
+    dim_selector,
+    pn.pane.HTML("<h3>Measures</h3>"),
+    measure_selector,
+    pn.layout.Divider(),
+    pn.pane.HTML("<h3>Filters</h3>"),
+    add_filter_btn,
+    filters_area,
+    pn.layout.Divider(),
+    run_btn,
+    materialize_row,
+    width=350,                      # ← FIXED WIDTH
+)
+
+# -------------------------
+# RIGHT COLUMN (DATA)
+# -------------------------
+
+right_area = pn.Column(
+    results_table,
+    sizing_mode="stretch_both",
+)
+
+header = pn.Row(
+    pn.pane.HTML(
+        "<h1 style='margin:0; padding:10px 0; text-align:center; width:100%;'>KPI Explorer</h1>"
+    ),
+    sizing_mode="stretch_width",
+)
+
+layout = pn.Column(
+    header,
+    pn.Row(
+        left_sidebar,
+        right_area,
+        sizing_mode="stretch_both",
+    ),
+    sizing_mode="stretch_both",
+)
+
+# -------------------------
+# SERVE
+# -------------------------
+
+def main():
+    port = int(os.getenv("PORT", "50050"))
+    pn.serve(
+        {"/": layout},
+        port=port,
+        address="0.0.0.0",
+        show=False,
+        threaded=True,
+        websocket_origin="*",
+    )
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: downstream_apps/streamlit_runner.py
+================================================
+import os
+import sys
+import streamlit.web.cli as stcli
+
+ROOT = os.path.dirname(os.path.dirname(__file__))
+sys.path.insert(0, ROOT)
+
+APP_PATH = os.path.join(os.path.dirname(__file__), "kpi_explorer.py")
+
+def main():
+    port = os.getenv("PORT", "50050")
+
+    sys.argv = [
+        "streamlit",
+        "run",
+        APP_PATH,
+        f"--server.port={port}",
+        "--server.address=0.0.0.0",
+    ]
+    sys.exit(stcli.main())
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: downstream_apps/api/models.py
+================================================
+from pydantic import BaseModel, Field
+from typing import List, Optional, Any
+
+
+class JsonDataResponse(BaseModel):
+    data: Any
+
+
+class FilterCondition(BaseModel):
+    """A single filter condition."""
+    field: str = Field(..., examples=["dim_country"])
+    op: str = Field(..., examples=["="])
+    value: str = Field(..., examples=["France"])
+
+
+class QueryRequest(BaseModel):
+    """Semantic query request."""
+    dimensions: Optional[List[str]] = Field(
+        default=None,
+        description="A list of dimension names to group by.",
+        examples=["dim_country", "dim_staff__gender"]
+    )
+    measures: List[str] = Field(
+        ...,
+        description="A list of measure names to aggregate.",
+        examples=["rentals_count"]
+    )
+    filters: Optional[List[FilterCondition]] = Field(
+        default=None,
+        description="A list of filter conditions."
+    )
+
+    model_config = {
+        "json_schema_extra": {
+            "example": {
+                "dimensions": [
+                    "dim_customer__create_date",
+                    "dim_country__via__dim_customer__country"
+                ],
+                "measures": [
+                    "rentals_count",
+                    "unique_customers"
+                ],
+                "filters": [
+                    {
+                        "field": "dim_film__title",
+                        "op": "contains",
+                        "value": "A"
+                    },
+                    {
+                        "field": "dim_customer__active",
+                        "op": "=",
+                        "value": "active"
+                    }
+                ]
+            }
+        }
+    }
+
+
+
+================================================
+FILE: downstream_apps/api/server.py
+================================================
+from fastapi import FastAPI, Header, Response
+from constants import PIPELINE_NAME
+from downstream_apps.api.models import QueryRequest, JsonDataResponse
+from semantics.model_llm import create_semantic_model_llm
+from semantics.query_builder import build_semantic_query
+import dlt
+import io
+import pyarrow as pa
+import pandas as pd
+
+
+pipeline = dlt.attach(
+    pipeline_name=PIPELINE_NAME,
+)
+
+model = create_semantic_model_llm(pipeline)
+
+dims = model.get_dimensions()
+meas = model.get_measures()
+
+app = FastAPI()
+
+
+@app.get(
+    "/dimensions",
+    response_model=JsonDataResponse,
+    summary="List all dimensions",
+    description="Returns all dimension names with descriptions.",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": {
+                            "dim_country": "Country name",
+                            "dim_staff__gender": "Gender of staff"
+                        }
+                    }
+                }
+            }
+        }
+    }
+)
+def get_dimensions():
+    return JsonDataResponse(data={k: v.description for k, v in dims.items()})
+
+
+@app.get(
+    "/measures",
+    response_model=JsonDataResponse,
+    summary="List all measures",
+    description="Returns all measure names with descriptions.",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": {
+                        "data": {
+                            "avg_salary": "Average salary",
+                            "total_revenue": "Total revenue"
+                        }
+                    }
+                }
+            }
+        }
+    }
+)
+def get_measures():
+    return JsonDataResponse(data={k: v.description for k, v in meas.items()})
+
+
+@app.post(
+    "/query",
+    summary="Run a semantic query",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "example": [{"dim_country": "France", "avg_salary": 55000}]
+                },
+                "application/parquet": {
+                    "schema": {
+                        "type": "string",
+                        "format": "binary"
+                    }
+                },
+            },
+            "description": "JSON or Parquet results depending on the Accept header."
+        }
+    }
+)
+def run_query(
+    query_request: QueryRequest,
+    accept: str | None = Header(None)
+):
+    query = build_semantic_query(
+        model,
+        query_request,
+    )
+
+    df: pd.DataFrame = query.execute()
+
+    parquet = accept and "application/parquet" in accept
+
+    if parquet:
+        buffer = io.BytesIO()
+        table = pa.Table.from_pandas(df)
+        pa.parquet.write_table(table, buffer)
+
+        return Response(
+            content=buffer.getvalue(),
+            media_type="application/parquet",
+            headers={"Content-Disposition": "attachment; filename=data.parquet"}
+        )
+    
+    return JsonDataResponse(data=df.to_dict(orient="records"))
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "downstream_apps.api.server:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )
+
+
+
+
+================================================
+FILE: downstream_apps/api/test_client.py
+================================================
+import requests
+import random
+
+API_URL = "http://localhost:8000"
+
+
+def pretty(title):
+    print("\n" + "=" * 60)
+    print(title.upper())
+    print("=" * 60)
+
+
+def main():
+    # ---------------------------------------------------------
+    # 1. List dimensions
+    # ---------------------------------------------------------
+    pretty("Fetching dimensions")
+    dims_resp = requests.get(f"{API_URL}/dimensions")
+    dims_resp.raise_for_status()
+    dimensions = dims_resp.json()["data"]
+
+    print(f"Found {len(dimensions)} dimensions.")
+    for k, v in list(dimensions.items())[:10]:
+        print(f"  {k}: {v}")
+
+    # ---------------------------------------------------------
+    # 2. List measures
+    # ---------------------------------------------------------
+    pretty("Fetching measures")
+    meas_resp = requests.get(f"{API_URL}/measures")
+    meas_resp.raise_for_status()
+    measures = meas_resp.json()["data"]
+
+    print(f"Found {len(measures)} measures.")
+    for k, v in measures.items():
+        print(f"  {k}: {v}")
+
+    # ---------------------------------------------------------
+    # 3. Pick 3 random dimensions
+    # ---------------------------------------------------------
+    selected_dimensions = random.sample(list(dimensions.keys()), 3)
+
+    pretty("Randomly selected dimensions")
+    for d in selected_dimensions:
+        print("  " + d)
+
+    # ---------------------------------------------------------
+    # 4. Filters:
+    #    - film title contains 'A'
+    #    - customer active = 1
+    # ---------------------------------------------------------
+
+    filters = [
+        {
+            "field": "dim_film__title",
+            "op": "contains",
+            "value": "A"
+        },
+    ]
+
+    # ---------------------------------------------------------
+    # 5. Build query request
+    # ---------------------------------------------------------
+
+    payload = {
+        "dimensions": selected_dimensions,
+        "measures": list(measures.keys()),
+        "filters": filters
+    }
+
+    resp = requests.post(f"{API_URL}/query", json=payload)
+    resp.raise_for_status()
+
+    result = resp.json()["data"]
+
+    pretty("Query result")
+    print(f"Rows returned: {len(result)}")
+    for row in result[:5]:
+        print(row)
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: sakila-db-mod/a-sakila-schema.sql
+================================================
+-- Sakila Sample Database Schema
+-- Version 1.5
+
+-- Copyright (c) 2006, 2025, Oracle and/or its affiliates.
+
+-- Redistribution and use in source and binary forms, with or without
+-- modification, are permitted provided that the following conditions are
+-- met:
+
+-- * Redistributions of source code must retain the above copyright notice,
+--   this list of conditions and the following disclaimer.
+-- * Redistributions in binary form must reproduce the above copyright
+--   notice, this list of conditions and the following disclaimer in the
+--   documentation and/or other materials provided with the distribution.
+-- * Neither the name of Oracle nor the names of its contributors may be used
+--   to endorse or promote products derived from this software without
+--   specific prior written permission.
+
+-- THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+-- IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+-- THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+-- PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+-- CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+-- EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+-- PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+-- PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+-- LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+-- NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+-- SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+SET NAMES utf8mb4;
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL';
+
+DROP SCHEMA IF EXISTS sakila;
+CREATE SCHEMA sakila;
+USE sakila;
+
+--
+-- Table structure for table `actor`
+--
+
+CREATE TABLE actor (
+  actor_id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  first_name VARCHAR(45) NOT NULL,
+  last_name VARCHAR(45) NOT NULL,
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (actor_id),
+  KEY idx_actor_last_name (last_name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `address`
+--
+
+CREATE TABLE address (
+  address_id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  address VARCHAR(50) NOT NULL,
+  address2 VARCHAR(50) DEFAULT NULL,
+  district VARCHAR(20) NOT NULL,
+  city_id SMALLINT UNSIGNED NOT NULL,
+  postal_code VARCHAR(10) DEFAULT NULL,
+  phone VARCHAR(20) NOT NULL,
+  -- Add GEOMETRY column for MySQL 5.7.5 and higher
+  -- Also include SRID attribute for MySQL 8.0.3 and higher
+  /*!50705 location GEOMETRY */ /*!80003 SRID 0 */ /*!50705 NOT NULL,*/
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (address_id),
+  KEY idx_fk_city_id (city_id),
+  /*!50705 SPATIAL KEY `idx_location` (location),*/
+  CONSTRAINT `fk_address_city` FOREIGN KEY (city_id) REFERENCES city (city_id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `category`
+--
+
+CREATE TABLE category (
+  category_id TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name VARCHAR(25) NOT NULL,
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (category_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `city`
+--
+
+CREATE TABLE city (
+  city_id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  city VARCHAR(50) NOT NULL,
+  country_id SMALLINT UNSIGNED NOT NULL,
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (city_id),
+  KEY idx_fk_country_id (country_id),
+  CONSTRAINT `fk_city_country` FOREIGN KEY (country_id) REFERENCES country (country_id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `country`
+--
+
+CREATE TABLE country (
+  country_id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  country VARCHAR(50) NOT NULL,
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (country_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `customer`
+--
+
+CREATE TABLE customer (
+  customer_id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  store_id TINYINT UNSIGNED NOT NULL,
+  first_name VARCHAR(45) NOT NULL,
+  last_name VARCHAR(45) NOT NULL,
+  email VARCHAR(50) DEFAULT NULL,
+  address_id SMALLINT UNSIGNED NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  create_date DATETIME NOT NULL,
+  last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (customer_id),
+  KEY idx_fk_store_id (store_id),
+  KEY idx_fk_address_id (address_id),
+  KEY idx_last_name (last_name),
+  CONSTRAINT fk_customer_address FOREIGN KEY (address_id) REFERENCES address (address_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_customer_store FOREIGN KEY (store_id) REFERENCES store (store_id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `film`
+--
+
+CREATE TABLE film (
+  film_id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  title VARCHAR(128) NOT NULL,
+  description TEXT DEFAULT NULL,
+  release_year YEAR DEFAULT NULL,
+  language_id TINYINT UNSIGNED NOT NULL,
+  original_language_id TINYINT UNSIGNED DEFAULT NULL,
+  rental_duration TINYINT UNSIGNED NOT NULL DEFAULT 3,
+  rental_rate DECIMAL(4,2) NOT NULL DEFAULT 4.99,
+  length SMALLINT UNSIGNED DEFAULT NULL,
+  replacement_cost DECIMAL(5,2) NOT NULL DEFAULT 19.99,
+  rating ENUM('G','PG','PG-13','R','NC-17') DEFAULT 'G',
+  special_features SET('Trailers','Commentaries','Deleted Scenes','Behind the Scenes') DEFAULT NULL,
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (film_id),
+  KEY idx_title (title),
+  KEY idx_fk_language_id (language_id),
+  KEY idx_fk_original_language_id (original_language_id),
+  CONSTRAINT fk_film_language FOREIGN KEY (language_id) REFERENCES language (language_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_film_language_original FOREIGN KEY (original_language_id) REFERENCES language (language_id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `film_actor`
+--
+
+CREATE TABLE film_actor (
+  actor_id SMALLINT UNSIGNED NOT NULL,
+  film_id SMALLINT UNSIGNED NOT NULL,
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (actor_id,film_id),
+  KEY idx_fk_film_id (`film_id`),
+  CONSTRAINT fk_film_actor_actor FOREIGN KEY (actor_id) REFERENCES actor (actor_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_film_actor_film FOREIGN KEY (film_id) REFERENCES film (film_id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `film_category`
+--
+
+CREATE TABLE film_category (
+  film_id SMALLINT UNSIGNED NOT NULL,
+  category_id TINYINT UNSIGNED NOT NULL,
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (film_id, category_id),
+  CONSTRAINT fk_film_category_film FOREIGN KEY (film_id) REFERENCES film (film_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_film_category_category FOREIGN KEY (category_id) REFERENCES category (category_id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `film_text`
+-- 
+-- InnoDB added FULLTEXT support in 5.6.10. If you use an
+-- earlier version, then consider upgrading (recommended) or 
+-- changing InnoDB to MyISAM as the film_text engine
+--
+
+-- Use InnoDB for film_text as of 5.6.10, MyISAM prior to 5.6.10.
+SET @old_default_storage_engine = @@default_storage_engine;
+SET @@default_storage_engine = 'MyISAM';
+/*!50610 SET @@default_storage_engine = 'InnoDB'*/;
+
+CREATE TABLE film_text (
+  film_id SMALLINT UNSIGNED NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  description TEXT,
+  PRIMARY KEY  (film_id),
+  FULLTEXT KEY idx_title_description (title,description)
+) DEFAULT CHARSET=utf8mb4;
+
+SET @@default_storage_engine = @old_default_storage_engine;
+
+--
+-- Triggers for loading film_text from film
+--
+
+DELIMITER ;;
+CREATE TRIGGER `ins_film` AFTER INSERT ON `film` FOR EACH ROW BEGIN
+    INSERT INTO film_text (film_id, title, description)
+        VALUES (new.film_id, new.title, new.description);
+  END;;
+
+
+CREATE TRIGGER `upd_film` AFTER UPDATE ON `film` FOR EACH ROW BEGIN
+    IF (old.title != new.title) OR (old.description != new.description) OR (old.film_id != new.film_id)
+    THEN
+        UPDATE film_text
+            SET title=new.title,
+                description=new.description,
+                film_id=new.film_id
+        WHERE film_id=old.film_id;
+    END IF;
+  END;;
+
+
+CREATE TRIGGER `del_film` AFTER DELETE ON `film` FOR EACH ROW BEGIN
+    DELETE FROM film_text WHERE film_id = old.film_id;
+  END;;
+
+DELIMITER ;
+
+--
+-- Table structure for table `inventory`
+--
+
+CREATE TABLE inventory (
+  inventory_id MEDIUMINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  film_id SMALLINT UNSIGNED NOT NULL,
+  store_id TINYINT UNSIGNED NOT NULL,
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (inventory_id),
+  KEY idx_fk_film_id (film_id),
+  KEY idx_store_id_film_id (store_id,film_id),
+  CONSTRAINT fk_inventory_store FOREIGN KEY (store_id) REFERENCES store (store_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_inventory_film FOREIGN KEY (film_id) REFERENCES film (film_id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `language`
+--
+
+CREATE TABLE language (
+  language_id TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  name CHAR(20) NOT NULL,
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (language_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `payment`
+--
+
+CREATE TABLE payment (
+  payment_id SMALLINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  customer_id SMALLINT UNSIGNED NOT NULL,
+  staff_id TINYINT UNSIGNED NOT NULL,
+  rental_id INT DEFAULT NULL,
+  amount DECIMAL(5,2) NOT NULL,
+  payment_date DATETIME NOT NULL,
+  last_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (payment_id),
+  KEY idx_fk_staff_id (staff_id),
+  KEY idx_fk_customer_id (customer_id),
+  CONSTRAINT fk_payment_rental FOREIGN KEY (rental_id) REFERENCES rental (rental_id) ON DELETE SET NULL ON UPDATE CASCADE,
+  CONSTRAINT fk_payment_customer FOREIGN KEY (customer_id) REFERENCES customer (customer_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_payment_staff FOREIGN KEY (staff_id) REFERENCES staff (staff_id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+--
+-- Table structure for table `rental`
+--
+
+CREATE TABLE rental (
+  rental_id INT NOT NULL AUTO_INCREMENT,
+  rental_date DATETIME NOT NULL,
+  inventory_id MEDIUMINT UNSIGNED NOT NULL,
+  customer_id SMALLINT UNSIGNED NOT NULL,
+  return_date DATETIME DEFAULT NULL,
+  staff_id TINYINT UNSIGNED NOT NULL,
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (rental_id),
+  UNIQUE KEY  (rental_date,inventory_id,customer_id),
+  KEY idx_fk_inventory_id (inventory_id),
+  KEY idx_fk_customer_id (customer_id),
+  KEY idx_fk_staff_id (staff_id),
+  CONSTRAINT fk_rental_staff FOREIGN KEY (staff_id) REFERENCES staff (staff_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_rental_inventory FOREIGN KEY (inventory_id) REFERENCES inventory (inventory_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_rental_customer FOREIGN KEY (customer_id) REFERENCES customer (customer_id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `staff`
+--
+
+CREATE TABLE staff (
+  staff_id TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  first_name VARCHAR(45) NOT NULL,
+  last_name VARCHAR(45) NOT NULL,
+  address_id SMALLINT UNSIGNED NOT NULL,
+  picture BLOB DEFAULT NULL,
+  email VARCHAR(50) DEFAULT NULL,
+  store_id TINYINT UNSIGNED NOT NULL,
+  active BOOLEAN NOT NULL DEFAULT TRUE,
+  username VARCHAR(16) NOT NULL,
+  password VARCHAR(40) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (staff_id),
+  KEY idx_fk_store_id (store_id),
+  KEY idx_fk_address_id (address_id),
+  CONSTRAINT fk_staff_store FOREIGN KEY (store_id) REFERENCES store (store_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_staff_address FOREIGN KEY (address_id) REFERENCES address (address_id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- Table structure for table `store`
+--
+
+CREATE TABLE store (
+  store_id TINYINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  manager_staff_id TINYINT UNSIGNED NOT NULL,
+  address_id SMALLINT UNSIGNED NOT NULL,
+  last_update TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY  (store_id),
+  UNIQUE KEY idx_unique_manager (manager_staff_id),
+  KEY idx_fk_address_id (address_id),
+  CONSTRAINT fk_store_staff FOREIGN KEY (manager_staff_id) REFERENCES staff (staff_id) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT fk_store_address FOREIGN KEY (address_id) REFERENCES address (address_id) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+--
+-- View structure for view `customer_list`
+--
+
+CREATE VIEW customer_list
+AS
+SELECT cu.customer_id AS ID, CONCAT(cu.first_name, _utf8mb4' ', cu.last_name) AS name, a.address AS address, a.postal_code AS `zip code`,
+	a.phone AS phone, city.city AS city, country.country AS country, IF(cu.active, _utf8mb4'active',_utf8mb4'') AS notes, cu.store_id AS SID
+FROM customer AS cu JOIN address AS a ON cu.address_id = a.address_id JOIN city ON a.city_id = city.city_id
+	JOIN country ON city.country_id = country.country_id;
+
+--
+-- View structure for view `film_list`
+--
+
+CREATE VIEW film_list
+AS
+SELECT film.film_id AS FID, film.title AS title, film.description AS description, category.name AS category, film.rental_rate AS price,
+	film.length AS length, film.rating AS rating, GROUP_CONCAT(CONCAT(actor.first_name, _utf8mb4' ', actor.last_name) SEPARATOR ', ') AS actors
+FROM film LEFT JOIN film_category ON film_category.film_id = film.film_id
+LEFT JOIN category ON category.category_id = film_category.category_id LEFT
+JOIN film_actor ON film.film_id = film_actor.film_id LEFT JOIN actor ON
+  film_actor.actor_id = actor.actor_id
+GROUP BY film.film_id, category.name;
+
+--
+-- View structure for view `nicer_but_slower_film_list`
+--
+
+CREATE VIEW nicer_but_slower_film_list
+AS
+SELECT film.film_id AS FID, film.title AS title, film.description AS description, category.name AS category, film.rental_rate AS price,
+	film.length AS length, film.rating AS rating, GROUP_CONCAT(CONCAT(CONCAT(UCASE(SUBSTR(actor.first_name,1,1)),
+	LCASE(SUBSTR(actor.first_name,2,LENGTH(actor.first_name))),_utf8mb4' ',CONCAT(UCASE(SUBSTR(actor.last_name,1,1)),
+	LCASE(SUBSTR(actor.last_name,2,LENGTH(actor.last_name)))))) SEPARATOR ', ') AS actors
+FROM film LEFT JOIN film_category ON film_category.film_id = film.film_id
+LEFT JOIN category ON category.category_id = film_category.category_id LEFT
+JOIN film_actor ON film.film_id = film_actor.film_id LEFT JOIN actor ON
+  film_actor.actor_id = actor.actor_id
+GROUP BY film.film_id, category.name;
+
+--
+-- View structure for view `staff_list`
+--
+
+CREATE VIEW staff_list
+AS
+SELECT s.staff_id AS ID, CONCAT(s.first_name, _utf8mb4' ', s.last_name) AS name, a.address AS address, a.postal_code AS `zip code`, a.phone AS phone,
+	city.city AS city, country.country AS country, s.store_id AS SID
+FROM staff AS s JOIN address AS a ON s.address_id = a.address_id JOIN city ON a.city_id = city.city_id
+	JOIN country ON city.country_id = country.country_id;
+
+--
+-- View structure for view `sales_by_store`
+--
+
+CREATE VIEW sales_by_store
+AS
+SELECT
+CONCAT(c.city, _utf8mb4',', cy.country) AS store
+, CONCAT(m.first_name, _utf8mb4' ', m.last_name) AS manager
+, SUM(p.amount) AS total_sales
+FROM payment AS p
+INNER JOIN rental AS r ON p.rental_id = r.rental_id
+INNER JOIN inventory AS i ON r.inventory_id = i.inventory_id
+INNER JOIN store AS s ON i.store_id = s.store_id
+INNER JOIN address AS a ON s.address_id = a.address_id
+INNER JOIN city AS c ON a.city_id = c.city_id
+INNER JOIN country AS cy ON c.country_id = cy.country_id
+INNER JOIN staff AS m ON s.manager_staff_id = m.staff_id
+GROUP BY s.store_id
+ORDER BY cy.country, c.city;
+
+--
+-- View structure for view `sales_by_film_category`
+--
+-- Note that total sales will add up to >100% because
+-- some titles belong to more than 1 category
+--
+
+CREATE VIEW sales_by_film_category
+AS
+SELECT
+c.name AS category
+, SUM(p.amount) AS total_sales
+FROM payment AS p
+INNER JOIN rental AS r ON p.rental_id = r.rental_id
+INNER JOIN inventory AS i ON r.inventory_id = i.inventory_id
+INNER JOIN film AS f ON i.film_id = f.film_id
+INNER JOIN film_category AS fc ON f.film_id = fc.film_id
+INNER JOIN category AS c ON fc.category_id = c.category_id
+GROUP BY c.name
+ORDER BY total_sales DESC;
+
+--
+-- View structure for view `actor_info`
+--
+
+CREATE DEFINER=CURRENT_USER SQL SECURITY INVOKER VIEW actor_info
+AS
+SELECT
+a.actor_id,
+a.first_name,
+a.last_name,
+GROUP_CONCAT(DISTINCT CONCAT(c.name, ': ',
+		(SELECT GROUP_CONCAT(f.title ORDER BY f.title SEPARATOR ', ')
+                    FROM sakila.film f
+                    INNER JOIN sakila.film_category fc
+                      ON f.film_id = fc.film_id
+                    INNER JOIN sakila.film_actor fa
+                      ON f.film_id = fa.film_id
+                    WHERE fc.category_id = c.category_id
+                    AND fa.actor_id = a.actor_id
+                 )
+             )
+             ORDER BY c.name SEPARATOR '; ')
+AS film_info
+FROM sakila.actor a
+LEFT JOIN sakila.film_actor fa
+  ON a.actor_id = fa.actor_id
+LEFT JOIN sakila.film_category fc
+  ON fa.film_id = fc.film_id
+LEFT JOIN sakila.category c
+  ON fc.category_id = c.category_id
+GROUP BY a.actor_id, a.first_name, a.last_name;
+
+--
+-- Procedure structure for procedure `rewards_report`
+--
+
+DELIMITER //
+
+CREATE PROCEDURE rewards_report (
+    IN min_monthly_purchases TINYINT UNSIGNED
+    , IN min_dollar_amount_purchased DECIMAL(10,2)
+    , OUT count_rewardees INT
+)
+LANGUAGE SQL
+NOT DETERMINISTIC
+READS SQL DATA
+SQL SECURITY DEFINER
+COMMENT 'Provides a customizable report on best customers'
+proc: BEGIN
+
+    DECLARE last_month_start DATE;
+    DECLARE last_month_end DATE;
+
+    /* Some sanity checks... */
+    IF min_monthly_purchases = 0 THEN
+        SELECT 'Minimum monthly purchases parameter must be > 0';
+        LEAVE proc;
+    END IF;
+    IF min_dollar_amount_purchased = 0.00 THEN
+        SELECT 'Minimum monthly dollar amount purchased parameter must be > $0.00';
+        LEAVE proc;
+    END IF;
+
+    /* Determine start and end time periods */
+    SET last_month_start = DATE_SUB(CURRENT_DATE(), INTERVAL 1 MONTH);
+    SET last_month_start = STR_TO_DATE(CONCAT(YEAR(last_month_start),'-',MONTH(last_month_start),'-01'),'%Y-%m-%d');
+    SET last_month_end = LAST_DAY(last_month_start);
+
+    /*
+        Create a temporary storage area for
+        Customer IDs.
+    */
+    CREATE TEMPORARY TABLE tmpCustomer (customer_id SMALLINT UNSIGNED NOT NULL PRIMARY KEY);
+
+    /*
+        Find all customers meeting the
+        monthly purchase requirements
+    */
+    INSERT INTO tmpCustomer (customer_id)
+    SELECT p.customer_id
+    FROM payment AS p
+    WHERE DATE(p.payment_date) BETWEEN last_month_start AND last_month_end
+    GROUP BY customer_id
+    HAVING SUM(p.amount) > min_dollar_amount_purchased
+    AND COUNT(customer_id) > min_monthly_purchases;
+
+    /* Populate OUT parameter with count of found customers */
+    SELECT COUNT(*) FROM tmpCustomer INTO count_rewardees;
+
+    /*
+        Output ALL customer information of matching rewardees.
+        Customize output as needed.
+    */
+    SELECT c.*
+    FROM tmpCustomer AS t
+    INNER JOIN customer AS c ON t.customer_id = c.customer_id;
+
+    /* Clean up */
+    DROP TABLE tmpCustomer;
+END //
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE FUNCTION get_customer_balance(p_customer_id INT, p_effective_date DATETIME) RETURNS DECIMAL(5,2)
+    DETERMINISTIC
+    READS SQL DATA
+BEGIN
+
+       #OK, WE NEED TO CALCULATE THE CURRENT BALANCE GIVEN A CUSTOMER_ID AND A DATE
+       #THAT WE WANT THE BALANCE TO BE EFFECTIVE FOR. THE BALANCE IS:
+       #   1) RENTAL FEES FOR ALL PREVIOUS RENTALS
+       #   2) ONE DOLLAR FOR EVERY DAY THE PREVIOUS RENTALS ARE OVERDUE
+       #   3) IF A FILM IS MORE THAN RENTAL_DURATION * 2 OVERDUE, CHARGE THE REPLACEMENT_COST
+       #   4) SUBTRACT ALL PAYMENTS MADE BEFORE THE DATE SPECIFIED
+
+  DECLARE v_rentfees DECIMAL(5,2); #FEES PAID TO RENT THE VIDEOS INITIALLY
+  DECLARE v_overfees INTEGER;      #LATE FEES FOR PRIOR RENTALS
+  DECLARE v_payments DECIMAL(5,2); #SUM OF PAYMENTS MADE PREVIOUSLY
+
+  SELECT IFNULL(SUM(film.rental_rate),0) INTO v_rentfees
+    FROM film, inventory, rental
+    WHERE film.film_id = inventory.film_id
+      AND inventory.inventory_id = rental.inventory_id
+      AND rental.rental_date <= p_effective_date
+      AND rental.customer_id = p_customer_id;
+
+  SELECT IFNULL(SUM(IF((TO_DAYS(rental.return_date) - TO_DAYS(rental.rental_date)) > film.rental_duration,
+        ((TO_DAYS(rental.return_date) - TO_DAYS(rental.rental_date)) - film.rental_duration),0)),0) INTO v_overfees
+    FROM rental, inventory, film
+    WHERE film.film_id = inventory.film_id
+      AND inventory.inventory_id = rental.inventory_id
+      AND rental.rental_date <= p_effective_date
+      AND rental.customer_id = p_customer_id;
+
+
+  SELECT IFNULL(SUM(payment.amount),0) INTO v_payments
+    FROM payment
+
+    WHERE payment.payment_date <= p_effective_date
+    AND payment.customer_id = p_customer_id;
+
+  RETURN v_rentfees + v_overfees - v_payments;
+END $$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE PROCEDURE film_in_stock(IN p_film_id INT, IN p_store_id INT, OUT p_film_count INT)
+READS SQL DATA
+BEGIN
+     SELECT inventory_id
+     FROM inventory
+     WHERE film_id = p_film_id
+     AND store_id = p_store_id
+     AND inventory_in_stock(inventory_id);
+
+     SELECT COUNT(*)
+     FROM inventory
+     WHERE film_id = p_film_id
+     AND store_id = p_store_id
+     AND inventory_in_stock(inventory_id)
+     INTO p_film_count;
+END $$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE PROCEDURE film_not_in_stock(IN p_film_id INT, IN p_store_id INT, OUT p_film_count INT)
+READS SQL DATA
+BEGIN
+     SELECT inventory_id
+     FROM inventory
+     WHERE film_id = p_film_id
+     AND store_id = p_store_id
+     AND NOT inventory_in_stock(inventory_id);
+
+     SELECT COUNT(*)
+     FROM inventory
+     WHERE film_id = p_film_id
+     AND store_id = p_store_id
+     AND NOT inventory_in_stock(inventory_id)
+     INTO p_film_count;
+END $$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE FUNCTION inventory_held_by_customer(p_inventory_id INT) RETURNS INT
+READS SQL DATA
+BEGIN
+  DECLARE v_customer_id INT;
+  DECLARE EXIT HANDLER FOR NOT FOUND RETURN NULL;
+
+  SELECT customer_id INTO v_customer_id
+  FROM rental
+  WHERE return_date IS NULL
+  AND inventory_id = p_inventory_id;
+
+  RETURN v_customer_id;
+END $$
+
+DELIMITER ;
+
+DELIMITER $$
+
+CREATE FUNCTION inventory_in_stock(p_inventory_id INT) RETURNS BOOLEAN
+READS SQL DATA
+BEGIN
+    DECLARE v_rentals INT;
+    DECLARE v_out     INT;
+
+    #AN ITEM IS IN-STOCK IF THERE ARE EITHER NO ROWS IN THE rental TABLE
+    #FOR THE ITEM OR ALL ROWS HAVE return_date POPULATED
+
+    SELECT COUNT(*) INTO v_rentals
+    FROM rental
+    WHERE inventory_id = p_inventory_id;
+
+    IF v_rentals = 0 THEN
+      RETURN TRUE;
+    END IF;
+
+    SELECT COUNT(rental_id) INTO v_out
+    FROM inventory LEFT JOIN rental USING(inventory_id)
+    WHERE inventory.inventory_id = p_inventory_id
+    AND rental.return_date IS NULL;
+
+    IF v_out > 0 THEN
+      RETURN FALSE;
+    ELSE
+      RETURN TRUE;
+    END IF;
+END $$
+
+DELIMITER ;
+
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+-- -----------------------------------------------------
+-- Customer Rentals Collapsed View
+-- -----------------------------------------------------
+
+CREATE OR REPLACE VIEW customer_rentals AS
+SELECT
+    c.customer_id,
+    JSON_ARRAYAGG(
+        JSON_OBJECT(
+            'rental_id', r.rental_id,
+            'rental_date', r.return_date,
+            'return_date', r.return_date,
+            'inventory_id', r.inventory_id,
+            'staff_id', r.staff_id
+        )
+    ) AS rentals
+FROM rental r
+JOIN customer c ON r.customer_id = c.customer_id
+GROUP BY c.customer_id;
+
+
+
+
+================================================
+FILE: semantics/columns.py
+================================================
+from dlt.common.schema.typing import TTableSchemaColumns
+from typing import Literal, get_args, TypedDict, Any, List, Dict
+
+
+ColumnSemanticType = Literal["dimension", "filter", "measure"]
+
+
+class ColumnSemanticData(TypedDict):
+    header: str
+    column_semantic_data: List[Any]
+
+
+TableSemanticData = Dict[ColumnSemanticType, ColumnSemanticData]
+
+
+def extract_semantic_column_data(
+    table_column_schema: TTableSchemaColumns,
+) -> TableSemanticData:
+    table_semantic_data: TableSemanticData = {
+        key: {"header": f"x-annotation-{key}", "column_semantic_data": []}
+        for key in get_args(ColumnSemanticType)
+    }
+
+    for column_name, column_schema in table_column_schema.items():
+        for semantic_type, semantic_type_data in table_semantic_data.items():
+            header = semantic_type_data["header"]
+            if header not in column_schema:
+                continue
+
+            if semantic_type == "measure":
+                column_semantic_data = {
+                    column_name: column_schema[header]  # type: ignore
+                }
+                table_semantic_data[semantic_type]["column_semantic_data"].append(
+                    column_semantic_data
+                )
+            else:
+                # this gets dimensions and filters
+                table_semantic_data[semantic_type]["column_semantic_data"].append(
+                    column_name
+                )
+
+    return table_semantic_data
+
+
+
+================================================
+FILE: semantics/graph_generator.py
+================================================
+[Binary file]
+
+
+================================================
+FILE: semantics/llm.py
+================================================
+from pathlib import Path
+from constants import PIPELINE_NAME
+from semantics.llm_response import SemanticModelsWrapper
+from toon import encode
+import dlt
+from openai import OpenAI
+
+
+CURRENT_DIR = Path(__file__).resolve().parent
+PROMPT_FILE = CURRENT_DIR / "prompt.txt"
+RESPONSE_MODEL_FILE = CURRENT_DIR / "semantic_model.json"
+
+
+def load_or_generate_semantic_model(
+    pipeline: dlt.Pipeline,
+    additional_context: str = "",
+) -> SemanticModelsWrapper:
+    """
+    If semantic_model.json exists → load it.
+    Otherwise run OpenAI and save the parsed semantic model.
+    """
+
+    excluding_dlt_tables = {
+        name: info
+        for name, info in pipeline.default_schema.tables.items()
+        if not name.startswith("_dlt")
+    }
+
+    schema_meta = encode(excluding_dlt_tables)
+
+    with PROMPT_FILE.open("r") as f:
+        prompt = f.read()
+
+    if additional_context:
+        additional_context = "\nSome additional context for understanding the business or analysis requirements:\n"
+
+    prompt = prompt.replace("{additional_context}", additional_context)
+
+    openai_api_key: str = dlt.secrets.get("openai_api_key")
+    client = OpenAI(api_key=openai_api_key)
+
+    # if not RESPONSE_MODEL_FILE.exists():
+    response = client.responses.parse(
+        model="gpt-5-mini",
+        instructions=prompt,
+        input=schema_meta,
+        text_format=SemanticModelsWrapper,
+    )
+
+    semantic_model = response.output_parsed
+
+    if semantic_model is None:
+        raise ValueError(
+            "OpenAI did not return a valid SemanticModelsWrapper. Check the prompt or model output."
+        )
+
+    with RESPONSE_MODEL_FILE.open("w") as f:
+        f.write(semantic_model.model_dump_json(indent=2))
+
+    # else:
+    #     import json
+    #
+    #     with RESPONSE_MODEL_FILE.open("r") as f:
+    #         data = json.load(f)
+    #
+    #     semantic_model = SemanticModelsWrapper(**data)
+
+    return semantic_model
+
+
+if __name__ == "__main__":
+    pipeline = dlt.attach(pipeline_name=PIPELINE_NAME)
+
+    load_or_generate_semantic_model(pipeline)
+
+    exit(0)
+
+
+
+================================================
+FILE: semantics/llm_response.py
+================================================
+from typing import List, Optional, Literal
+from dlthub.dbt_generator.types import TableReference
+from dlt.common.schema.typing import TTableReference, TReferenceCardinality
+from pydantic import BaseModel, Field
+
+
+IbisAgg = Literal[
+    "sum",
+    "mean",
+    "min",
+    "max",
+    "count",
+    "nunique",
+    "std",
+    "var",
+    "median",
+]
+
+
+class MeasureCandidate(BaseModel):
+    measure_name: str
+    description: Optional[str] = Field(description="Very brief applied description of the meaning of the measure if not obvious.")
+    source_column: str
+    aggregation: IbisAgg
+    ibis_filter_expr: Optional[str] = Field(
+        None,
+        description=(
+            "Ibis lambda expression returning a boolean filter. "
+            "Example: \"lambda t: t.status == 'active'\""
+        ),
+    )
+
+
+class Reference(BaseModel):
+    referenced_table: str
+    fk_columns: List[str]
+    pk_columns: List[str]
+    cardinatlity: TReferenceCardinality
+
+    def as_table_reference(self) -> TTableReference:
+        return TTableReference(
+            cardinality=self.cardinatlity,
+            referenced_table=self.referenced_table,
+            columns=self.fk_columns,
+            referenced_columns=self.pk_columns,
+        )
+
+
+class FactTable(BaseModel):
+    table_name: str
+    source_table: str
+    primary_key: str
+    measure_candidates: List[MeasureCandidate]
+    references: Optional[List[Reference]] = None
+
+
+class DimensionCandidate(BaseModel):
+    dimension_name: str
+    description: Optional[str] = Field(description="Very brief applied description of the meaning of the dimension if not obvious.")
+    source_column: str
+    ibis_bucketing_expr: Optional[str] = Field(
+        None,
+        description=(
+            "Ibis lambda expression that takes t (the dimension source table) "
+            "and returns a derived column expression for bucketing. "
+            "Only for dimensions where it makes sense bucketing to group values, not for the ones with very high cardinality.  "
+            'Must be of the form: "lambda t: <expression>".'
+        ),
+    )
+
+
+class Dimension(BaseModel):
+    table_name: str
+    source_table: str
+    primary_key: str
+    dimension_candidates: List[DimensionCandidate]
+    references: Optional[List[Reference]] = None
+
+
+class SemanticModel(BaseModel):
+    model_name: str
+    fact_table: FactTable
+    dimensions: List[Dimension]
+
+
+class SemanticModelsWrapper(BaseModel):
+    semantic_models: List[SemanticModel]
+
+
+
+================================================
+FILE: semantics/model.py
+================================================
+from constants import PIPELINE_NAME
+from semantics.columns import TableSemanticData, extract_semantic_column_data
+from semantics.table_references import get_semantic_table_references
+from boring_semantic_layer import to_semantic_table, SemanticModel
+from dlthub.dbt_generator.utils import table_reference_adapter
+from dlthub.dbt_generator.types import TableReference
+from typing import List, Dict
+import argparse
+import dlt
+
+
+def _prefix_columns(table, table_name: str):
+    rename_map = {
+        f"{table_name}__{col}": col
+        for col in table.columns
+        if col not in ("_dlt_id", "_dlt_load_id")
+    }
+    return table.rename(**rename_map)
+
+
+def _build_dimension_measure_bsl_kwargs(
+    table_name: str,
+    table_semantic_data: TableSemanticData,
+):
+    dimension_kwargs = {
+        col: (lambda t, c=f"{table_name}__{col}": t[c])
+        for col in table_semantic_data["dimension"]["column_semantic_data"]
+    }
+
+    measure_kwargs = {
+        f"{col}_{agg}": (
+            lambda t, col=f"{table_name}__{col}", agg=agg: getattr(t[col], agg)()
+        )
+        for item in table_semantic_data["measure"]["column_semantic_data"]
+        for col, agg in item.items()
+    }
+
+    return dimension_kwargs, measure_kwargs
+
+
+def _build_join_lambda(left_table_name, right_table_name, left_cols, right_cols):
+    if len(left_cols) != len(right_cols):
+        raise ValueError("Join columns mismatch")
+
+    def _join(left, right):
+        cond = None
+        for lc, rc in zip(left_cols, right_cols):
+            left_col = f"{left_table_name}__{lc}"
+            right_col = f"{right_table_name}__{rc}"
+            c = getattr(left, left_col) == getattr(right, right_col)
+            cond = c if cond is None else (cond & c)
+        return cond
+
+    return _join
+
+
+def _recursive_semantic_join(
+    semantic_table_references,
+    semantic_table_references_copy,
+    semantic_model,
+    semantic_model_base,
+    referencing_table,
+) -> SemanticModel:
+    references = semantic_table_references_copy[referencing_table]
+
+    if not references or len(references) == 0:
+        return semantic_model
+
+    del semantic_table_references_copy[referencing_table]
+
+    for reference in references:
+        referenced_table = reference["referenced_table"]
+        if referenced_table not in semantic_model_base:
+            raise RuntimeError(f"Referenced table '{referenced_table}' was not loaded")
+
+        on_clause = _build_join_lambda(
+            referencing_table,
+            reference["referenced_table"],
+            reference["columns"],
+            reference["referenced_columns"],
+        )
+
+        semantic_model = semantic_model.join(
+            semantic_model_base[referenced_table],
+            on=on_clause,
+            how="left",
+        )
+
+        semantic_model = _recursive_semantic_join(
+            semantic_table_references,
+            semantic_table_references_copy,
+            semantic_model,
+            semantic_model_base,
+            referenced_table,
+        )
+
+    return semantic_model
+
+
+def _build_semantic_relationships(
+    semantic_model_base: Dict[str, SemanticModel],
+    semantic_table_references: Dict[str, List[TableReference]],
+) -> SemanticModel:
+    for referencing_table in semantic_table_references.keys():
+        if referencing_table.startswith("fact_"):
+            root = referencing_table
+            break
+
+    semantic_model = semantic_model_base[root]
+
+    import copy
+
+    semantic_table_references_copy = copy.deepcopy(semantic_table_references)
+
+    semantic_model = _recursive_semantic_join(
+        semantic_table_references,
+        semantic_table_references_copy,
+        semantic_model,
+        semantic_model_base,
+        root,
+    )
+
+    return semantic_model
+
+
+def create_semantic_model(
+    pipeline: dlt.Pipeline,
+) -> SemanticModel:
+    semantic_table_references = get_semantic_table_references()
+
+    default_schema_tables = pipeline.default_schema.tables
+
+    for referencing_table, reference_details in semantic_table_references.items():
+        # Materialize the references in the schema
+        table_reference_adapter(
+            pipeline, referencing_table, references=reference_details
+        )
+
+    # this base model will only have the dimensions and metrics per table, without relationships
+    semantic_model_base: Dict[str, SemanticModel] = {}
+
+    for table_name in default_schema_tables.keys():
+        if not table_name.startswith("dim_") and not table_name.startswith("fact_"):
+            continue
+
+        table_semantic_data = extract_semantic_column_data(
+            pipeline.default_schema.get_table_columns(table_name)
+        )
+
+        dimension_kwargs, measure_kwargs = _build_dimension_measure_bsl_kwargs(
+            table_name, table_semantic_data
+        )
+
+        table = (
+            pipeline.dataset()
+            .table(table_name)
+            .to_ibis()
+            .drop(["_dlt_id", "_dlt_load_id"])
+        )
+        table = _prefix_columns(table, table_name)
+
+        st = (
+            to_semantic_table(table)
+            .with_dimensions(**dimension_kwargs)
+            .with_measures(**measure_kwargs)
+        )
+
+        semantic_model_base[table_name] = st
+
+    return _build_semantic_relationships(
+        semantic_model_base,
+        semantic_table_references,
+    )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-p", "--pipeline", required=False, type=str)
+
+    args = parser.parse_args()
+
+    pipeline = dlt.attach(
+        pipeline_name=args.pipeline if args.pipeline else PIPELINE_NAME,
+    )
+
+    semantic_model = create_semantic_model(pipeline)
+
+    print(semantic_model.as_table())
+
+
+
+================================================
+FILE: semantics/model_llm.py
+================================================
+from constants import PIPELINE_NAME
+from semantics.graph_generator import MODEL_FILE
+from semantics.llm_response import SemanticModelsWrapper, FactTable, Dimension as DimTable
+from boring_semantic_layer import to_semantic_table, SemanticModel, Dimension, Measure
+from pathlib import Path
+from dlthub.dbt_generator.utils import table_reference_adapter
+from dlthub.dbt_generator.types import TableReference
+from typing import List, Dict
+import argparse
+import dlt
+import re
+
+
+def _prefix_columns(table, table_name: str):
+    rename_map = {
+        f"{table_name}__{col}": col
+        for col in table.columns
+        if col not in ("_dlt_id", "_dlt_load_id")
+    }
+    return table.rename(**rename_map)
+
+
+def rewrite_expr_to_alias(expr: str, alias: str) -> str:
+    # 1. replace t.col with t["alias__col"]
+    pattern = r"t\.([A-Za-z_][A-Za-z0-9_]*)"
+
+    def repl(match):
+        col = match.group(1)
+        return f't["{alias}__{col}"]'
+
+    rewritten = re.sub(pattern, repl, expr)
+
+    # 2. normalize null-check functions
+    rewritten = (
+        rewritten
+        .replace(".isnotnull()", ".notnull()")
+        .replace(".is_null()", ".isnull()")
+        .replace(".is_not_null()", ".notnull()")
+    )
+
+    return rewritten
+
+
+def build_alias_map(semantic_json_model):
+    """
+    Returns:
+        alias_by_path: dict keyed by (table_name, path_tuple)
+        Each value is a unique alias following these rules:
+          - Fact table keeps its name
+          - Tables with a single parent keep their name
+          - Tables with >1 parents get name__via__parent
+          - Downstream tables inherit the bifurcation prefix
+    """
+
+    from collections import defaultdict, deque
+
+    root = semantic_json_model.fact_table.table_name
+
+    # ----------------------------------------------------
+    # 1. Build graph of parents
+    # ----------------------------------------------------
+    parents = defaultdict(set)
+    graph = defaultdict(list)
+
+    # BFS to gather graph structure
+    q = deque([(semantic_json_model.fact_table, root)])
+
+    while q:
+        block, parent_name = q.popleft()
+        table_name = block.table_name
+
+        if block != semantic_json_model.fact_table:
+            parents[table_name].add(parent_name)
+
+        for ref in block.references or []:
+            child = next(
+                d for d in semantic_json_model.dimensions
+                if d.table_name == ref.referenced_table
+                or d.source_table == ref.referenced_table
+            )
+
+            graph[table_name].append(child.table_name)
+            q.append((child, table_name))
+
+    # ----------------------------------------------------
+    # 2. Second BFS: assign aliases with inherited bifurcation
+    # ----------------------------------------------------
+    alias_by_path = {}
+    q = deque([(semantic_json_model.fact_table, (), None, None)])
+
+    alias_by_path[(root, ())] = root
+
+    while q:
+        block, path, parent, inherited_bifurcation = q.popleft()
+        table_name = block.table_name
+
+        # Determine if this table bifurcates
+        is_bifurcation = len(parents[table_name]) > 1
+
+        # Determine this node's bifurcation tag
+        if inherited_bifurcation is not None:
+            bifurcation_tag = inherited_bifurcation
+        elif is_bifurcation and parent is not None:
+            bifurcation_tag = parent
+        else:
+            bifurcation_tag = None
+
+        # Build alias
+        if bifurcation_tag is None:
+            alias = table_name
+        else:
+            alias = f"{table_name}__via__{bifurcation_tag}"
+
+        alias_by_path[(table_name, path)] = alias
+
+        # Explore children
+        for child_name in graph[table_name]:
+            child_block = next(
+                d for d in semantic_json_model.dimensions if d.table_name == child_name
+            )
+            child_path = path + (table_name,)
+            q.append((child_block, child_path, table_name, bifurcation_tag))
+
+    path_by_alias = {alias: path for (_, path), alias in alias_by_path.items()}
+
+    return alias_by_path, path_by_alias
+
+
+def _build_dimension_measure_bsl_kwargs_for_alias(dataset_table, table_block, alias):
+    prefix = alias + "__"  # for column names only
+
+    dimension_kwargs = {}
+    measure_kwargs = {}
+
+    # dimensions
+    if hasattr(table_block, "dimension_candidates"):
+        for dim in table_block.dimension_candidates:
+            if dim.source_column not in dataset_table.columns:
+                continue
+
+            col = dim.source_column
+            full_col = prefix + col
+
+            dim_name = f"{alias}__{col}"
+
+            if dim.ibis_bucketing_expr:
+                expr_str = rewrite_expr_to_alias(dim.ibis_bucketing_expr, alias)
+                bucket_expr = eval(expr_str)
+
+                dimension_kwargs[dim_name] = Dimension(
+                    expr=lambda t, bl=bucket_expr: bl(t),
+                    description=dim.description,
+                )
+
+            else:
+                # Simple column dimension
+                dimension_kwargs[dim_name] = Dimension(
+                    expr=lambda t, fc=full_col: t[fc],
+                    description=dim.description,
+                )
+
+    # measures stay global — do not namespace them
+    if hasattr(table_block, "measure_candidates"):
+        for mc in table_block.measure_candidates:
+            col = mc.source_column
+            full_col = prefix + col
+            agg = mc.aggregation
+
+            if mc.ibis_filter_expr:
+                expr_str = rewrite_expr_to_alias(mc.ibis_filter_expr, alias)
+                filt = eval(expr_str)
+
+                def _measure(t, fc=full_col, agg=agg, filt=filt):
+                    col = t[fc]
+                    func = getattr(col, agg)
+
+                    # IMPORTANT: use the Ibis filtered agg API
+                    return func(where=filt(t))
+
+                measure_kwargs[mc.measure_name] = Measure(
+                    expr=_measure,
+                    description=mc.description,
+                )
+
+            # Simple aggregated measure
+            else:
+                measure_kwargs[mc.measure_name] = Measure(
+                    expr=lambda t, fc=full_col, agg=agg: getattr(t[fc], agg)(),
+                    description=mc.description,
+                )
+
+    return dimension_kwargs, measure_kwargs
+
+
+def _build_join_lambda(left_alias, right_alias, left_cols, right_cols):
+    def _join(left, right):
+        cond = None
+        for lc, rc in zip(left_cols, right_cols):
+            left_col = f"{left_alias}__{lc}"
+            right_col = f"{right_alias}__{rc}"
+            c = getattr(left, left_col) == getattr(right, right_col)
+            cond = c if cond is None else (cond & c)
+        return cond
+
+    return _join
+
+
+def _recursive_semantic_join(
+    semantic_table_references,
+    visited,
+    semantic_model,
+    semantic_model_base,
+    referencing_alias,
+    alias_map,
+    path_map,
+) -> SemanticModel:
+    if referencing_alias in visited:
+        return semantic_model
+
+    visited.add(referencing_alias)
+
+    referencing_table = referencing_alias.split("__via__")[0]
+
+    references = semantic_table_references.get(referencing_table, [])
+
+    for reference in references:
+        referenced_table = reference["referenced_table"]
+
+        # Retrieve full path for this edge
+        full_path = path_map[referencing_alias] + (referencing_table,)
+
+        # Resolve child alias using path
+        referenced_alias = alias_map.get((referenced_table, full_path))
+
+        if referenced_alias is None:
+            raise RuntimeError(
+                f"Alias lookup failed for {referenced_table} with path {full_path}"
+            )
+
+        if referenced_alias not in semantic_model_base:
+            raise RuntimeError(f"Alias '{referenced_alias}' missing in model base")
+
+        on_clause = _build_join_lambda(
+            referencing_alias,
+            referenced_alias,
+            reference["columns"],
+            reference["referenced_columns"],
+        )
+
+        semantic_model = semantic_model.join(
+            semantic_model_base[referenced_alias],
+            on=on_clause,
+            how="left",
+        )
+
+        semantic_model = _recursive_semantic_join(
+            semantic_table_references,
+            visited,
+            semantic_model,
+            semantic_model_base,
+            referenced_alias,
+            alias_map,
+            path_map,
+        )
+
+    return semantic_model
+
+
+def _build_semantic_relationships(
+    semantic_model_base,
+    semantic_table_references,
+    alias_map,
+    path_map,
+):
+    root_alias = alias_map[(list(alias_map.keys())[0][0], ())]
+
+    visited = set()
+
+    root_model = semantic_model_base[root_alias]
+
+    return _recursive_semantic_join(
+        semantic_table_references,
+        visited,
+        root_model,
+        semantic_model_base,
+        root_alias,
+        alias_map,
+        path_map,
+    )
+
+
+def create_semantic_model_llm(
+    pipeline: dlt.Pipeline,
+) -> SemanticModel:
+    semantic_json_model = SemanticModelsWrapper.model_validate_json(
+        Path(MODEL_FILE).read_text()
+    ).semantic_models[0]
+
+    semantic_table_references: Dict[str, List[TableReference]] = {}
+
+    fact_tbl = semantic_json_model.fact_table
+    semantic_table_references[fact_tbl.table_name] = [
+        ref.as_table_reference() for ref in (fact_tbl.references or [])
+    ]
+
+    for dim in semantic_json_model.dimensions or []:
+        semantic_table_references[dim.table_name] = [
+            ref.as_table_reference() for ref in (dim.references or [])
+        ]
+
+    # Materialize the references into the schema
+    for table_name, refs in semantic_table_references.items():
+        table_reference_adapter(
+            pipeline,
+            table_name,
+            references=refs,
+        )
+
+    # this base model will only have the dimensions and metrics per table, without relationships
+    semantic_model_base: Dict[str, SemanticModel] = {}
+    alias_map, path_map = build_alias_map(semantic_json_model)
+
+    for (original_name, _), semantic_name in alias_map.items():
+        table_block: FactTable | DimTable
+        if original_name == semantic_json_model.fact_table.table_name:
+            table_block = semantic_json_model.fact_table
+        else:
+            table_block = next(
+                dim
+                for dim in semantic_json_model.dimensions
+                if dim.table_name == original_name
+            )
+
+        physical_table_name = table_block.source_table
+        dataset_table = pipeline.dataset().table(physical_table_name)
+
+        # build dimension & measure kwargs
+        dimension_kwargs, measure_kwargs = (
+            _build_dimension_measure_bsl_kwargs_for_alias(
+                dataset_table,
+                table_block,
+                semantic_name,
+            )
+        )
+
+        table = (
+            dataset_table
+            .to_ibis()
+            .drop(["_dlt_id", "_dlt_load_id"])
+        )
+        table = _prefix_columns(table, semantic_name)
+
+        semantic_model_base[semantic_name] = (
+            to_semantic_table(table)
+            .with_dimensions(**dimension_kwargs)
+            .with_measures(**measure_kwargs)
+        )
+
+    return _build_semantic_relationships(
+        semantic_model_base, semantic_table_references, alias_map, path_map
+    )
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("-p", "--pipeline", required=False, type=str)
+
+    args = parser.parse_args()
+
+    pipeline = dlt.attach(
+        pipeline_name=args.pipeline if args.pipeline else PIPELINE_NAME,
+    )
+
+    semantic_model = create_semantic_model_llm(
+        pipeline,
+    )
+
+    print("\nThe semantic model generated is:")
+    print(semantic_model.dimensions)
+    print(semantic_model.measures)
+
+    exit(0)
+
+
+
+
+================================================
+FILE: semantics/prompt.txt
+================================================
+You are an expert data engineer and data modeler. I will give you the schema imported from a relational database including table names, column names, data types and nullability of columns. Your task is to create one or more semantic data models. Each semantic model must contain exactly one fact table, but it may contain any number of dimension tables.
+
+Do NOT restrict the design to a pure 1-level star schema. Snowflake structures where dimensions reference other dimensions are allowed and encouraged. Tables that cannot be organized into such a structure should be excluded.
+If two equivalent tables exist, prefer always the one prefixed with "dim_" or "fact_" for the names of the tables and references between tables.
+
+Ibis Expression Rules:
+-When generating Ibis expressions (for bucketing or filtering), expressions must be Python lambda expressions of the form: "lambda t: <ibis_expr>".
+-Column references must use t.<column_name>.
+-Expressions must use the Ibis Python API.
+-Filter expressions must return a boolean.
+-Bucketing expressions must return a derived column.
+Examples:
+"lambda t: t.created_at.year()"
+"lambda t: (t.age > 30).ifelse('senior', 'junior')"
+"lambda t: t.status == 'active'"
+
+Relationship Rules:
+-Record relationships from foreign key columns to primary key columns. From fact table to the dimension table(s) and from dimension table(s) to other dimension table(s) for the snowflake diagram case.
+-Each relationship must appear only once.
+
+Semantic Model Requirements:
+For dimension tables, include:
+--Raw descriptive columns such as customer name, company name, category, type, etc.
+--Derived or bucketed dimension attributes created using Ibis expressions. For example: transforming timestamps such as created_at into categories like new vs old, year, month, quarter, etc.
+Do not include numeric IDs like primary and/or foreign keys as dimensions since they are not informative. Names are informative.
+
+For the fact table, include:
+-Meaningful numeric aggregations.
+
+Output Rules:
+You must output a JSON object that conforms exactly to the provided Pydantic schema. Use only the allowed field names. Do not invent or add additional fields. All Ibis expressions must be strings. The top-level output object must be a SemanticModelsWrapper containing a list of SemanticModel objects. Use snake case only for all field names. Use the prefix "dim_" for all dimenion tables and the prefix "fact_" for the fact table.
+
+{additional_information}
+
+Here is the schema information:
+{schema_here}
+
+
+
+
+
+================================================
+FILE: semantics/query_builder.py
+================================================
+from downstream_apps.api.models import QueryRequest
+from boring_semantic_layer import SemanticModel
+import ibis
+
+
+def build_single_filter(dim_obj, op: str, value: str):
+    """Return an ibis predicate based on the semantic model dimension."""
+    def _filter(t):
+        col = dim_obj.expr(t)
+        col_type = col.type()
+
+        # ------------------------------
+        # TYPE CAST BASED ON IBIS TYPE
+        # ------------------------------
+        if col_type.is_string():
+            cast_value = str(value)
+            target_col = col.fill_null("")
+        elif col_type.is_boolean():
+            if isinstance(value, str):
+                cast_value = value.lower() in ("1", "true", "yes", "t")
+            target_col = col
+        elif col_type.is_integer():
+            cast_value = int(value)
+            target_col = col
+        elif col_type.is_floating():
+            cast_value = float(value)
+            target_col = col
+        elif col_type.is_timestamp():
+            cast_value = ibis.literal(value).cast(col_type)
+            target_col = col
+        elif col_type.is_date():
+            cast_value = ibis.literal(value).cast(col_type)
+            target_col = col
+        else:
+            cast_value = str(value)
+            target_col = col.fill_null("")
+
+        # ------------------------------
+        # OPERATORS
+        # ------------------------------
+        ops = {
+            "=": target_col == cast_value,
+            "!=": target_col != cast_value,
+            ">": target_col > cast_value,
+            ">=": target_col >= cast_value,
+            "<": target_col < cast_value,
+            "<=": target_col <= cast_value,
+        }
+
+        if op == "contains":
+            return target_col.contains(cast_value)
+
+        if op in ops:
+            return ops[op]
+
+        raise ValueError(f"Unsupported operator: {op}")
+
+    return _filter
+
+
+def build_semantic_query(
+    model,
+    query_request: QueryRequest,
+) -> SemanticModel:
+    """
+    Construct a semantic model query object with:
+    - filters applied
+    - custom group_by
+    - measures applied
+
+    Returns the *query object*, not executed.
+    """
+    query = model
+    dimensions = query_request.dimensions
+    measures = query_request.measures
+    filters = query_request.filters
+
+    DIMENSIONS = model.get_dimensions()
+
+    # ------------------------------
+    # Apply filters
+    # ------------------------------
+    if filters:
+        for f in filters:
+            dim_obj = DIMENSIONS[f.field]
+            flambda = build_single_filter(
+                dim_obj,
+                f.op,
+                f.value
+            )
+            query = query.filter(flambda)
+
+    # ------------------------------
+    # Aggregations
+    # ------------------------------
+    if measures:
+        if dimensions:
+            query = query.group_by(*dimensions).aggregate(*measures)
+        else:
+            query = query.aggregate(*measures)
+
+    return query
+
+
+
+================================================
+FILE: semantics/table_references.py
+================================================
+#                                  dim_country
+#                                        ↑
+#                                        |
+#                                  dim_city
+#                                        ↑
+#                                        |
+#                                  dim_address
+#                                        ↑
+#                                        |
+#                                  dim_customer
+#                                        ↑
+#                                        |
+# dim_staff ←───────────────────── fact_rental ───────→  dim_inventory ───────→   dim_film
+
+from typing import Dict, List
+from dlthub.dbt_generator.types import TableReference
+
+TableReferences = Dict[str, List[TableReference]]
+
+
+def get_semantic_table_references() -> TableReferences:
+    """Return semantic table relationships for dbt_generator."""
+    return {
+        # --------------------
+        # FACT TABLE (Only one fact table supported with current implementation)
+        # --------------------
+        "fact_rental": [
+            TableReference(
+                referenced_table="dim_customer",
+                columns=["customer_id"],
+                referenced_columns=["customer_id"],
+            ),
+            TableReference(
+                referenced_table="dim_inventory",
+                columns=["inventory_id"],
+                referenced_columns=["inventory_id"],
+            ),
+            TableReference(
+                referenced_table="dim_staff",
+                columns=["staff_id"],
+                referenced_columns=["staff_id"],
+            ),
+        ],
+        # --------------------
+        # DIMENSIONS
+        # --------------------
+        "dim_inventory": [
+            TableReference(
+                referenced_table="dim_film",
+                columns=["film_id"],
+                referenced_columns=["film_id"],
+            ),
+        ],
+        "dim_customer": [
+            TableReference(
+                referenced_table="dim_address",
+                columns=["address_id"],
+                referenced_columns=["address_id"],
+            ),
+        ],
+        "dim_address": [
+            TableReference(
+                referenced_table="dim_city",
+                columns=["city_id"],
+                referenced_columns=["city_id"],
+            ),
+        ],
+        "dim_city": [
+            TableReference(
+                referenced_table="dim_country",
+                columns=["country_id"],
+                referenced_columns=["country_id"],
+            ),
+        ],
+        # No outbound relationships
+        "dim_country": [],
+        "dim_film": [],
+        "dim_staff": [],
+    }
+
+
+
+================================================
+FILE: sources/rental.py
+================================================
+from dlt.extract import DltResource
+from dlt.sources.sql_database import sql_table
+from sqlalchemy import create_engine, text, URL
+import dlt
+
+
+def get_rental_table_with_hints(nested_rental: bool = False) -> DltResource:
+    if not nested_rental:
+        rental = sql_table(
+            table="rental",
+            primary_key="rental_id",
+            resolve_foreign_keys=True,
+        )
+        return rental.apply_hints(
+            columns={
+                "rental_id": {"x-annotation-measure": "count"},  # type: ignore
+                "customer_id": {"x-annotation-measure": "nunique"},  # type: ignore
+            }
+        )
+
+    @dlt.resource(
+        name="customer_rental",
+        primary_key="customer_id",
+        nested_hints={
+            "rentals": dlt.mark.make_nested_hints(
+                primary_key="rental_id",
+                write_disposition="replace",
+                columns={
+                    "rental_id": {"x-annotation-measure": "count"},  # type: ignore
+                    "customer_id": {"x-annotation-measure": "nunique"},  # type: ignore
+                },
+            )
+        },
+        resolve_foreign_keys=True,
+    )
+    def customer_rental(credentials=dlt.secrets.value):
+        import json
+
+        url = URL.create(**credentials)
+        engine = create_engine(url)
+
+        with engine.connect() as conn:
+            rows = conn.execute(text("SELECT * FROM customer_rentals")).mappings()
+
+            for row in rows:
+                row = dict(row)
+                row["rentals"] = json.loads(row["rentals"])
+                yield row
+
+    def _pushdown_customer_id(row):
+        id_ = row["customer_id"]
+        for rental in row["rentals"]:
+            rental["customer_id"] = id_
+        return row
+
+    return customer_rental.add_map(_pushdown_customer_id)
+
+
+
+================================================
+FILE: sources/sources.py
+================================================
+from dlt.extract import DltResource
+from dlt.sources.sql_database import sql_table, remove_nullability_adapter
+from sources.rental import get_rental_table_with_hints
+from geoalchemy2 import Geometry
+from sqlalchemy import cast, String, Integer, func
+from sqlalchemy.dialects import mysql
+from typing import List
+
+
+def sakila_type_adapter(sa_type):
+    # MySQL YEAR → integer
+    if isinstance(sa_type, mysql.YEAR):
+        return Integer()
+
+    # MySQL ENUM → string
+    if isinstance(sa_type, mysql.ENUM):
+        return String()
+
+    return None
+
+
+def sakila_query_adapter(select, table, *args, **kwargs):
+    new_columns = []
+
+    for col in select.selected_columns:
+        # ---- Handle MySQL SET → TEXT (dlt does not support sets)
+        if hasattr(col.type, "values"):
+            new_columns.append(cast(col, String()).label(col.name))
+            continue
+
+        # ---- Handle Geometry POINT → lat/long numeric columns (dlt does not support point/geometry...)
+        if isinstance(col.type, Geometry):
+            # ST_X = longitude, ST_Y = latitude
+            new_columns.append(func.ST_X(col).label(col.name + "_lng"))
+            new_columns.append(func.ST_Y(col).label(col.name + "_lat"))
+            continue
+
+        new_columns.append(col)
+
+    return select.with_only_columns(*new_columns)
+
+
+def get_sources(nested_rental: bool = False) -> List[DltResource]:
+    rental_with_hints = get_rental_table_with_hints(nested_rental)
+
+    customer = sql_table(
+        table="customer",
+        primary_key="customer_id",
+        resolve_foreign_keys=True,
+    )
+
+    customer.apply_hints(
+        columns={
+            "first_name": {  # type: ignore
+                "x-annotation-pii": True,
+            },
+            "last_name": {  # type: ignore
+                "x-annotation-pii": True,
+            },
+            "email": {  # type: ignore
+                "x-annotation-pii": True,
+            },
+            "active": {  # type: ignore
+                "x-annotation-dimension": True,
+                "x-annotation-filter": True,
+            },
+        }
+    )
+
+    inventory = sql_table(
+        table="inventory",
+        primary_key="inventory_id",
+        resolve_foreign_keys=True,
+    ).with_name("dim_inventory")
+
+    inventory.apply_hints(
+        columns={
+            "film_id": {  # type: ignore
+                "x-annotation-dimension": True,
+                "x-annotation-filter": True,
+            },
+            "store_id": {  # type: ignore
+                "x-annotation-dimension": True,
+                "x-annotation-filter": True,
+            },
+        }
+    )
+
+    staff = sql_table(
+        table="staff",
+        primary_key="staff_id",
+        resolve_foreign_keys=True,
+    ).with_name("dim_staff")
+
+    staff.apply_hints(
+        columns={
+            "first_name": {  # type: ignore
+                "x-annotation-pii": True,
+            },
+            "last_name": {  # type: ignore
+                "x-annotation-pii": True,
+            },
+            "email": {  # type: ignore
+                "x-annotation-pii": True,
+            },
+            "active": {  # type: ignore
+                "x-annotation-dimension": True,
+                "x-annotation-filter": True,
+            },
+        }
+    )
+
+    address = sql_table(
+        table="address",
+        primary_key="address_id",
+        table_adapter_callback=remove_nullability_adapter,
+        query_adapter_callback=sakila_query_adapter,
+        type_adapter_callback=sakila_type_adapter,
+        resolve_foreign_keys=True,
+        excluded_columns=["location"],
+    ).with_name("dim_address")
+
+    address.apply_hints(
+        columns={
+            "district": {  # type: ignore
+                "x-annotation-dimension": True,
+                "x-annotation-filter": True,
+            },
+        },
+    )
+
+    city = sql_table(
+        table="city",
+        primary_key="city_id",
+        resolve_foreign_keys=True,
+    ).with_name("dim_city")
+
+    city.apply_hints(
+        columns={
+            "city": {  # type: ignore
+                "x-annotation-dimension": True,
+                "x-annotation-filter": True,
+            },
+        }
+    )
+
+    country = sql_table(
+        table="country",
+        primary_key="country_id",
+        resolve_foreign_keys=True,
+    ).with_name("dim_country")
+
+    country.apply_hints(
+        columns={
+            "country": {  # type: ignore
+                "x-annotation-dimension": True,
+                "x-annotation-filter": True,
+            },
+        }
+    )
+
+    film = sql_table(
+        table="film",
+        primary_key="film_id",
+        query_adapter_callback=sakila_query_adapter,
+        type_adapter_callback=sakila_type_adapter,
+        excluded_columns=["original_language_id"],
+        resolve_foreign_keys=True,
+    ).with_name("dim_film")
+
+    film.apply_hints(
+        columns={
+            "title": {  # type: ignore
+                "x-annotation-dimension": True,
+                "x-annotation-filter": True,
+            },
+            "release_year": {  # type: ignore
+                "x-annotation-dimension": True,
+                "x-annotation-filter": True,
+            },
+            "special_features": {"data_type": "text"},
+        }
+    )
+
+    return [
+        inventory,
+        customer,
+        staff,
+        rental_with_hints,
+        address,
+        city,
+        country,
+        film,
+    ]
+
+
+
+================================================
+FILE: .dlt/config.toml
+================================================
+[runtime]
+log_level="WARNING"  # the system log level of dlt
+# use the dlthub_telemetry setting to enable/disable anonymous usage data reporting, see https://dlthub.com/docs/reference/telemetry
+dlthub_telemetry = true
+workspace_id = "24dd1023-6c9f-45cd-809d-e23c4615878d"
+
+
+
+================================================
+FILE: .dlt/secrets.example.toml
+================================================
+openai_api_key = "here your api key"
+
+[sources.sql_database.credentials]
+drivername = "mysql+pymysql"
+database = "sakila"
+password = "secret"
+username = "root"
+host = "localhost"
+port = 3306
+
+
+================================================
+FILE: .dlt/.workspace
+================================================
+[Empty file]
+

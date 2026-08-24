@@ -80,6 +80,16 @@ class BindingOverridesRequest(BaseModel):
     )
 
 
+class BindingConfirmationRequest(BaseModel):
+    confirmations: dict[str, str] = Field(
+        default_factory=dict,
+        description="canonical_role -> the physical column name to confirm, chosen from that "
+        "role's BindingQuestion.physical or one of its .alternatives. Empty dict = reviewed, "
+        "every gated binding declined - which is what stops the pause re-firing, exactly like "
+        "ReviewRequest.answers={} does for data-quality questions.",
+    )
+
+
 class PackSummary(BaseModel):
     slug: str
     name: str

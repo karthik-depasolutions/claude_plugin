@@ -31,6 +31,7 @@ from forge_api.db import get_session
 from forge_api.models_orm import RunORM, UserORM
 from forge_api.routers.auth import get_current_user
 from forge_api.schemas import (
+    BindingConfirmationRequest,
     BindingOverridesRequest,
     ConfirmIndustryRequest,
     CreateRunFromPathRequest,
@@ -307,6 +308,20 @@ async def confirm_industry(run_id: str, body: ConfirmIndustryRequest, session: S
     _require_status(ctx.record, RunStatus.NEEDS_INPUT)
     ctx.record.industry_override = body.industry
     ctx.record.data_answers = ctx.record.data_answers or {}
+    await pipeline_runner.resume_run(ctx)
+    return _summary(ctx.record)
+
+
+@router.post("/{run_id}/confirm-bindings", response_model=RunSummary)
+async def confirm_bindings(run_id: str, body: BindingConfirmationRequest, session: SessionDep) -> RunSummary:
+    """Resolves a NEEDS_INPUT run paused on P1-08's binding gate
+    (`record.binding_questions`). `confirmations={}` is meaningful - it
+    declines every gated binding (the dependent KPIs land in .skipped with a
+    reason) and is what stops the pause re-firing, exactly like
+    `ReviewRequest.answers={}` does for data-quality questions."""
+    ctx = await _require_live_context(run_id, session)
+    _require_status(ctx.record, RunStatus.NEEDS_INPUT)
+    ctx.record.binding_confirmations = body.confirmations
     await pipeline_runner.resume_run(ctx)
     return _summary(ctx.record)
 

@@ -19,15 +19,17 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
-from forge_core.binding import resolve_bindings
+from forge_core.binding import gate_bindings, resolve_bindings
 from forge_core.classification import classify, load_all_packs, load_pack
 from forge_core.compiler import compile_all
 from forge_core.compiler.kpi_compiler import KpiCompileError, compile_kpi
 from forge_core.compiler.kpi_proposer import propose_kpis
+from forge_core.compiler.metric_generator import generate_metrics
 from forge_core.generation import generate_plugin_content
 from forge_core.ingestion.postgres import redact as redact_connection_string
 from forge_core.ingestion.registry import ingest
 from forge_core.llm.provider import LLMProvider
+from forge_core.models.bindings import SchemaBindings
 from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.quality import DataReview
 from forge_core.models.run import RunRecord
@@ -40,6 +42,45 @@ from forge_core.validation import run_harness
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_PACKS_ROOT = REPO_ROOT / "industry-packs"
+
+
+def _apply_binding_confirmations(
+    bindings: SchemaBindings, confirmations: dict[str, str], gated_roles: set[str]
+) -> SchemaBindings:
+    """Applies P1-08's binding-gate answers. Only touches roles that were
+    actually gated this run (recomputed fresh from gate_bindings, same as
+    what the pause showed) - every other binding passes through untouched.
+    A gated role answered with its proposed column or one of its listed
+    alternatives becomes a human_override at full confidence. Anything
+    else - an explicit decline, or simply no answer for that role - is
+    treated as declined: the binding is dropped and the role becomes
+    unresolved, so dependent KPIs land in .skipped with a clear reason
+    instead of shipping the unconfirmed guess. Silence is not consent for
+    a binding this risky."""
+    new_columns = []
+    new_unresolved = list(bindings.unresolved_roles)
+    for binding in bindings.columns:
+        if binding.role not in gated_roles:
+            new_columns.append(binding)
+            continue
+        answer = confirmations.get(binding.role, "")
+        valid_choices = {binding.physical, *(name for name, _ in binding.alternatives)}
+        if answer and answer in valid_choices:
+            new_columns.append(
+                binding.model_copy(
+                    update={
+                        "physical": answer,
+                        "confidence": 1.0,
+                        "evidence": "human-confirmed via binding gate",
+                        "source": "human_override",
+                        "needs_confirmation": False,
+                        "alternatives": [],
+                    }
+                )
+            )
+        else:
+            new_unresolved.append(binding.role)
+    return bindings.model_copy(update={"columns": new_columns, "unresolved_roles": new_unresolved})
 
 
 def run_pipeline(
@@ -228,8 +269,23 @@ def _run_pipeline_inner(
         agent_bound_roles=[c.role for c in bindings.columns if c.source == "agent_proposed"],
     )
 
-    record.log(RunStage.COMPILE_KPIS, "Compiling KPIs")
     kpi_defs = compile_all(pack, bindings)
+    binding_questions = gate_bindings(bindings, pack, kpi_defs)
+    if binding_questions:
+        if record.binding_confirmations is None:
+            record.status = RunStatus.NEEDS_INPUT
+            record.binding_questions = binding_questions
+            record.log(
+                RunStage.BIND,
+                "Awaiting binding confirmation",
+                questions=[q.model_dump() for q in binding_questions],
+            )
+            return
+        gated_roles = {q.role for q in binding_questions}
+        bindings = _apply_binding_confirmations(bindings, record.binding_confirmations, gated_roles)
+        kpi_defs = compile_all(pack, bindings)  # recompile: confirmations may unlock or drop KPIs
+
+    record.log(RunStage.COMPILE_KPIS, "Compiling KPIs")
 
     # Optional (use_agent=True): a few extra, customer-specific KPI
     # candidates on top of the pack's own hand-authored catalog. Every
@@ -259,6 +315,11 @@ def _run_pipeline_inner(
 
     record.log(RunStage.PACKAGE, "Packaging plugin")
     denied_by_table = compute_denied_columns(profile, pack)
+    # P2-07: parameterized metrics, generated deterministically from the
+    # same fact table binding resolved the frozen KPIs against - a distinct
+    # capability layer, not a replacement for kpi_defs.json.
+    denied_flat = {name for cols in denied_by_table.values() for name in cols}
+    metric_defs = generate_metrics(bindings.table("fact").grain, profile.structural, denied_flat)
     spec = build_plugin_spec(
         pack,
         profile,
@@ -268,6 +329,7 @@ def _run_pipeline_inner(
         customer_label=record.label,
         data_context=data_context,
         denied_by_table=denied_by_table,
+        metric_defs=metric_defs,
     )
     plugin_dir = Path(record.output_dir) / spec.manifest.name
     write_plugin(

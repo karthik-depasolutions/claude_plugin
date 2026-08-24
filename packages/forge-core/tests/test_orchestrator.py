@@ -56,10 +56,23 @@ def _pause_flags(record: RunRecord) -> dict:
     return record.events[-1].data
 
 
+def _run_confirming_all_bindings(record: RunRecord, **kwargs) -> RunRecord:
+    """Runs the pipeline; if P1-08's binding gate pauses it, accepts every
+    proposed binding as-is (the resolver's own top pick) and resumes. Most
+    of these tests aren't about the binding gate itself - they exercise it
+    like any other real caller would when it has nothing more informed to
+    say than "yes, that's right"."""
+    result = run_pipeline(record, **kwargs)
+    if result.status == RunStatus.NEEDS_INPUT and result.binding_questions:
+        result.binding_confirmations = {q.role: q.physical for q in result.binding_questions}
+        result = run_pipeline(record, **kwargs)
+    return result
+
+
 def test_pipeline_succeeds_end_to_end_for_a_well_matched_dataset(bookings_csv: Path, tmp_path: Path):
     record = _new_record(bookings_csv, tmp_path)
 
-    result = run_pipeline(record)
+    result = _run_confirming_all_bindings(record)
 
     assert result.status == RunStatus.SUCCEEDED, result.error
     stages = [e.stage.value for e in result.events]
@@ -96,7 +109,7 @@ def test_pipeline_resumes_after_industry_override(bookings_csv: Path, tmp_path: 
     assert record.status == RunStatus.NEEDS_INPUT
 
     record.industry_override = "generic-analytics"
-    result = run_pipeline(record)
+    result = _run_confirming_all_bindings(record)
 
     assert result.status == RunStatus.SUCCEEDED, result.error
 
@@ -130,7 +143,7 @@ def test_pipeline_resumes_after_data_review_answers(dirty_leads_csv: Path, tmp_p
     assert record.status == RunStatus.NEEDS_INPUT
 
     record.data_answers = {}
-    result = run_pipeline(record, profiling_provider=_QuestionProvider())
+    result = _run_confirming_all_bindings(record, profiling_provider=_QuestionProvider())
 
     assert result.status == RunStatus.SUCCEEDED, result.error
 
@@ -143,7 +156,7 @@ def test_pipeline_does_not_pause_without_a_question_provider(dirty_leads_csv: Pa
     monkeypatch.setattr(orch, "classify", _auto_accept)
     record = _new_record(dirty_leads_csv, tmp_path)
 
-    result = run_pipeline(record)
+    result = _run_confirming_all_bindings(record)
 
     assert result.status == RunStatus.SUCCEEDED, result.error
     review_event = next(e for e in result.events if "review" in e.data)
@@ -166,7 +179,7 @@ def test_nonempty_answers_thread_notes_with_provider(dirty_leads_csv: Path, tmp_
         "mixed_types:dirty_leads.age_group": "age buckets are campaign targets",
     }
 
-    result = run_pipeline(record, profiling_provider=_QuestionProvider())
+    result = _run_confirming_all_bindings(record, profiling_provider=_QuestionProvider())
 
     assert result.status == RunStatus.SUCCEEDED, result.error
     plugin_dir = next(tmp_path.iterdir())
@@ -288,6 +301,58 @@ def test_use_agent_records_data_agent_stats_event(bookings_csv: Path, tmp_path: 
                                          "output_tokens", "thinking_tokens", "wall_seconds"}
 
 
+def test_binding_gate_decline_skips_dependent_kpis_with_a_reason(edtech_sqlite: Path, tmp_path: Path):
+    """Declining a gated binding (an explicit "no", or simply omitting it
+    from binding_confirmations) must not block the whole run - the role
+    becomes unresolved and every KPI that needs it lands in .skipped with a
+    readable reason, exactly like an unresolved role from any other cause."""
+    record = _new_record(edtech_sqlite, tmp_path)
+    result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+
+    assert result.status == RunStatus.NEEDS_INPUT
+    gated_roles = {q.role for q in result.binding_questions}
+    assert gated_roles == {"transaction_status", "transaction_date"}
+
+    result.binding_confirmations = {}  # decline everything
+    result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+
+    compile_event = next(e for e in result.events if e.stage.value == "compile_kpis" and "skipped" in e.data)
+    assert "completion_rate" in compile_event.data["skipped"]
+    assert "dropout_rate" in compile_event.data["skipped"]
+    assert "transaction_status" in compile_event.data["skipped"]["completion_rate"]
+    # total_enrollments needs neither declined role, so it still compiles.
+    assert "total_enrollments" not in compile_event.data["skipped"]
+
+
+def test_binding_confirmations_empty_dict_does_not_refire_the_pause(edtech_sqlite: Path, tmp_path: Path):
+    """{} means "asked, declined" - not "not yet asked". A second run with
+    the same empty dict must not pause again, mirroring how data_answers={}
+    already behaves."""
+    record = _new_record(edtech_sqlite, tmp_path)
+    run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+    assert record.status == RunStatus.NEEDS_INPUT
+
+    record.binding_confirmations = {}
+    result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+
+    assert result.status != RunStatus.NEEDS_INPUT
+
+
+def test_resume_does_not_reask_a_confirmed_binding(edtech_sqlite: Path, tmp_path: Path):
+    """Once binding_confirmations is populated, a later re-run (e.g. the API
+    polling an already-finished run) must not re-enter NEEDS_INPUT."""
+    record = _new_record(edtech_sqlite, tmp_path)
+    first = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+    assert first.status == RunStatus.NEEDS_INPUT
+
+    record.binding_confirmations = {q.role: q.physical for q in first.binding_questions}
+    second = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+    assert second.status != RunStatus.NEEDS_INPUT
+
+    third = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+    assert third.status != RunStatus.NEEDS_INPUT
+
+
 def test_default_packs_root_exists():
     assert DEFAULT_PACKS_ROOT.is_dir()
     assert (DEFAULT_PACKS_ROOT / "healthcare-diagnostics" / "pack.json").is_file()
@@ -383,7 +448,7 @@ def test_use_agent_proposed_kpis_compile_or_skip_with_a_reason(bookings_csv: Pat
 
     record = _new_record(bookings_csv, tmp_path)
     record.data_answers = {}  # declares "reviewed, nothing supplied" - skips the review pause
-    result = run_pipeline(
+    result = _run_confirming_all_bindings(
         record,
         profiling_provider=_QuestionProvider(),
         generation_provider=_QuestionProvider(),

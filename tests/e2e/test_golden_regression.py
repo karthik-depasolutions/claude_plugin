@@ -36,6 +36,18 @@ def test_bookings_dataset_still_produces_a_fully_valid_plugin(bookings_csv: Path
 
     result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
 
+    # P1-08: every one of this pack's bindings sits in the 0.45-0.62
+    # confidence band (see review P0.2 - "Healthcare example is better but
+    # not safe") - none clear MIN_CONFIDENCE_RESOLVED on name evidence
+    # alone, so the run correctly pauses to confirm them rather than
+    # shipping silently. This is the gate working as designed, not a
+    # regression - confirm each proposed binding (the resolver's own top
+    # pick, which is in fact correct here) and resume.
+    assert result.status == RunStatus.NEEDS_INPUT, result.error
+    assert result.binding_questions
+    result.binding_confirmations = {q.role: q.physical for q in result.binding_questions}
+    result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+
     assert result.status == RunStatus.SUCCEEDED, result.error
 
     compile_event = next(e for e in result.events if e.stage.value == "compile_kpis" and "skipped" in e.data)

@@ -1,0 +1,87 @@
+# Golden questions for fixtures/datasets/bookings.csv, generated against the
+# healthcare-diagnostics pack. Ground truth computed by executing the real
+# compiled config/kpi_defs.json SQL for this fixture (see the session's own
+# verification, not hand-guessed) - not by re-deriving it independently at
+# eval time (a deliberate simplification for a static fixture that never
+# changes; see runner.py's module docstring).
+
+- id: bookings_001
+  question: "What was our total revenue?"
+  category: single_table
+  expects:
+    behavior: numeric
+    tool: get_kpi
+    ground_truth: 28082
+    tolerance: 1
+
+- id: bookings_002
+  question: "What percentage of bookings were cancelled?"
+  category: single_table
+  expects:
+    behavior: numeric
+    tool: get_kpi
+    ground_truth: 10.0
+    tolerance: 0.5
+
+- id: bookings_003
+  question: "What's our repeat customer rate?"
+  category: single_table
+  expects:
+    behavior: numeric
+    tool: get_kpi
+    ground_truth: 40.0
+    tolerance: 0.5
+
+- id: bookings_004
+  question: "Which city generated the most revenue?"
+  category: single_table
+  expects:
+    behavior: categorical
+    tool: get_kpi
+    ground_truth: "Mumbai"
+
+- id: bookings_005
+  question: "How much revenue did we make in February 2026?"
+  category: temporal
+  expects:
+    behavior: numeric
+    tool: get_kpi
+    ground_truth: 11792
+    tolerance: 1
+
+- id: bookings_006
+  question: "What was our revenue from online ad campaigns?"
+  category: negative
+  expects:
+    behavior: refuse_or_clarify
+    reason: >
+      No ad-campaign or marketing-channel concept exists anywhere in this
+      dataset - there is no column or KPI it could come from. Reporting any
+      number here would be a fabrication, not a partial-credit answer.
+
+- id: bookings_007
+  question: "How many subscription renewals did we have last year?"
+  category: negative
+  expects:
+    behavior: refuse_or_clarify
+    reason: >
+      This dataset is one-off diagnostic bookings, not a subscription
+      product - there is no renewal concept to count.
+
+- id: bookings_008
+  question: "Show me the enrollment trend over the last 5 years."
+  category: robustness
+  expects:
+    behavior: refuse_or_clarify
+    reason: >
+      Wrong vocabulary ("enrollment" is an edtech concept, this is a
+      bookings dataset) and the data only spans about 3 months
+      (2026-01-05 to 2026-03-20) - a 5-year trend cannot be shown either way.
+
+- id: bookings_009
+  question: "Which lab partner and product combination made the most money?"
+  category: ambiguous
+  expects:
+    behavior: categorical
+    tool: get_kpi
+    ground_truth: "MetroPath Labs"

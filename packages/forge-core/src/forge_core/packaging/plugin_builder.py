@@ -83,6 +83,7 @@ def _config_files(
     kpi_defs: KpiDefsFile,
     data_context: dict | None = None,
     denied_by_table: dict[str, set[str]] | None = None,
+    metric_defs: list | None = None,
 ) -> list[GeneratedFile]:
     source = profile.source
     if denied_by_table is None:
@@ -151,7 +152,7 @@ def _config_files(
             "findings": denied_findings,
         }
 
-    return [
+    files = [
         GeneratedFile(
             relative_path="config/data_source.json",
             content=json.dumps(data_source_json, indent=2),
@@ -171,6 +172,19 @@ def _config_files(
             is_json=True,
         ),
     ]
+    # P2-07: only written when there's something to ship - a single-measure
+    # or measure-free source has nothing query_metric could answer, and the
+    # runtime already treats a missing file as "no metrics" (config.py).
+    if metric_defs:
+        metrics_json = {"metrics": [m.model_dump(mode="json") for m in metric_defs]}
+        files.append(
+            GeneratedFile(
+                relative_path="config/metric_defs.json",
+                content=json.dumps(metrics_json, indent=2),
+                is_json=True,
+            )
+        )
+    return files
 
 
 def _mcp_config(*, inject_source_db_url: bool = False) -> McpConfig:
@@ -283,6 +297,7 @@ def build_plugin_spec(
     author: Author | None = None,
     data_context: dict | None = None,
     denied_by_table: dict[str, set[str]] | None = None,
+    metric_defs: list | None = None,
 ) -> PluginSpec:
     """Build the complete in-memory plugin. Every path here is a
     conventional directory (`skills/`, `agents/`, `commands/`,
@@ -344,7 +359,9 @@ def build_plugin_spec(
                 content=render_frontmatter(command.frontmatter.to_frontmatter_dict(), command.body),
             )
         )
-    files.extend(_config_files(pack, profile, bindings, kpi_defs, data_context, denied_by_table))
+    files.extend(
+        _config_files(pack, profile, bindings, kpi_defs, data_context, denied_by_table, metric_defs)
+    )
     if generated.hooks is not None:
         # The SessionStart command handler in hooks.json runs this script;
         # it must ship alongside or the hook has nothing to execute.

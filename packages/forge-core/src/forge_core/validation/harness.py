@@ -81,7 +81,7 @@ def run_harness(
     checks: list[ValidationCheckResult] = [
         _run(check_facts, pack, bindings, profile, kpi_defs.skipped),
         _run(check_sql_safety, kpi_defs, bindings),
-        _run(check_binding_plausibility, bindings, profile),
+        _run(check_binding_plausibility, bindings, profile, pack, provider),
         _run(check_dry_run, kpi_defs, profile.source),
         _run(check_pii, kpi_defs, bindings, _pii_scan_texts(generated)),
         _run(check_plugin_spec, plugin_dir),

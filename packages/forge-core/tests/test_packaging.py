@@ -222,8 +222,13 @@ def test_denied_columns_absent_from_advertised_schema_across_every_table(tmp_pat
     assert "full_name" not in advertised["students"]
     assert "email" not in summary["students"]
     assert "full_name" not in summary["students"]
-    assert "course_name" not in advertised["courses"]
-    assert "course_name" not in summary["courses"]
+
+    # P2-02: course_name is not PII — it's a 4-row dimension table's own
+    # label column, grain-aware-reclassified to CATEGORICAL rather than
+    # FREE_TEXT — and compute_denied_columns no longer deletes on a role
+    # guess alone. It must survive and be advertised (review P1.2's fix).
+    assert "course_name" in advertised["courses"]
+    assert "course_name" in summary["courses"]
 
 
 def test_versioning_bump():

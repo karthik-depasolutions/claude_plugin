@@ -19,12 +19,24 @@ from forge_core.models.schema_profile import SchemaProfile
 
 def compute_denied_columns(profile: SchemaProfile, pack: IndustryPack) -> dict[str, set[str]]:
     """Every column, across *every* table, that must not appear in the shipped
-    plugin — in data, in config, or in any advertised schema. A column is
-    denied when profiling flagged it as likely PII, or its guessed structural
-    role is in the pack's denied role categories."""
+    plugin — in data, in config, in any advertised schema, or in a live
+    query (this feeds `SchemaBindings.denied_columns`, the runtime's own
+    query-time guard). Denial here means *irreversible physical deletion* —
+    it must therefore require an explicit high-confidence PII signal, never
+    a role guess (P2-02).
+
+    `pack.guardrails.denied_role_categories` (e.g. "free_text") still governs
+    a *different* question — whether a column is eligible to be bound to a
+    canonical role at all (see `binding/resolver.py::_is_denied`) — but a
+    column being the wrong *kind* for a KPI role is not the same claim as it
+    being PII, and conflating the two is exactly what deleted
+    `courses.course_name` (4 distinct values on a 4-row table, correctly
+    NOT free text, but caught by a cardinality heuristic that guessed wrong
+    - see review P1.2). A wrong role guess should exclude a column from
+    projection or binding at most; only PII should destroy data."""
     denied: dict[str, set[str]] = {}
     for col in profile.structural.columns:
-        if col.is_likely_pii or col.guessed_role.value in pack.guardrails.denied_role_categories:
+        if col.is_likely_pii:
             denied.setdefault(col.table, set()).add(col.name)
     return denied
 

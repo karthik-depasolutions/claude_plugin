@@ -14,7 +14,9 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from forge_core.models.common import ColumnRole
+from forge_core.models.data_map import DataMap
 from forge_core.models.datasource import DataSource
+from forge_core.models.entity_graph import EntityGraph
 
 
 class ColumnProfile(BaseModel):
@@ -65,6 +67,18 @@ class StructuralProfile(BaseModel):
     columns: list[ColumnProfile]
     relationships: list[RelationshipCandidate] = Field(default_factory=list)
     grains: list[TableGrain] = Field(default_factory=list)
+    entity_graph: EntityGraph | None = Field(
+        default=None,
+        description="P2-01 — entities classified fact/dimension/bridge, edges verified by real "
+        "cardinality/overlap queries. None only for a single-table source, where there is "
+        "nothing to graph.",
+    )
+    data_map: DataMap | None = Field(
+        default=None,
+        description="P2-03 — the agent's grounding context: percentiles, format fingerprints, "
+        "top values (PII-redacted), and which columns are ambiguous. None only when profiling "
+        "ran without a live connection.",
+    )
 
     def columns_for(self, table: str) -> list[ColumnProfile]:
         return [c for c in self.columns if c.table == table]

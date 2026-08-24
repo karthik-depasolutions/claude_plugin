@@ -10,10 +10,17 @@ TOOL_NAMES = [
     "get_data_profile",
     "list_kpis",
     "get_kpi",
+    "list_metrics",
+    "query_metric",
     "run_safe_query",
     "search_records",
     "render_chart",
 ]
+"""P2-07: query_metric/list_metrics are additive, transitional tools -
+get_kpi/list_kpis stay exactly as they are (kept "for one release" per the
+plan) rather than being merged/removed in the same change that adds the
+new capability. Reduces this back toward a fixed 7-tool surface once
+get_kpi/list_kpis are actually retired; not done in this pass."""
 
 
 def mcp_tool_ref(tool: str) -> str:

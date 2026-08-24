@@ -22,6 +22,8 @@ from mis_mcp_runtime.tools.describe_schema import describe_schema as _describe_s
 from mis_mcp_runtime.tools.get_data_profile import get_data_profile as _get_data_profile
 from mis_mcp_runtime.tools.get_kpi import get_kpi as _get_kpi
 from mis_mcp_runtime.tools.get_kpi import list_kpis as _list_kpis
+from mis_mcp_runtime.tools.query_metric import list_metrics as _list_metrics
+from mis_mcp_runtime.tools.query_metric import query_metric as _query_metric
 from mis_mcp_runtime.tools.render_chart import chart_payload as _chart_payload
 from mis_mcp_runtime.tools.render_chart import markdown_table as _markdown_table
 from mis_mcp_runtime.tools.run_safe_query import run_safe_query as _run_safe_query
@@ -137,6 +139,35 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
             config, con = resolve()
             return _get_kpi(config, con, kpi_id)
         except Exception as exc:  # noqa: BLE001 - never crash the MCP session over one KPI
+            return {"error": str(exc)}
+
+    @mcp.tool()
+    def list_metrics() -> dict[str, Any]:
+        """List every parameterized metric available via query_metric, with
+        the dimensions and time grains each one can be sliced by. Prefer
+        this + query_metric over get_kpi when you need a metric broken down
+        by a dimension or time period - get_kpi only ever returns one frozen
+        total."""
+        config, _ = resolve()
+        return _list_metrics(config)
+
+    @mcp.tool()
+    def query_metric(
+        metric_id: str,
+        group_by: str | None = None,
+        time_grain: str | None = None,
+        filters: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Compute a named business metric (see list_metrics for available
+        ids, valid dimensions, and valid time grains), optionally grouped by
+        one dimension and/or bucketed by a time grain, with optional
+        exact-match filters. Call list_metrics first to see what's valid for
+        a given metric_id - an unknown dimension or grain is rejected with
+        the valid options named."""
+        try:
+            config, con = resolve()
+            return _query_metric(config, con, metric_id, group_by, time_grain, filters)
+        except Exception as exc:  # noqa: BLE001 - never crash the MCP session over one metric
             return {"error": str(exc)}
 
     @mcp.tool()

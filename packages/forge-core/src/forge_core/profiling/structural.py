@@ -11,7 +11,7 @@ import duckdb
 
 from forge_core.models.common import ColumnRole
 from forge_core.models.datasource import DataSource, TableDescriptor
-from forge_core.models.schema_profile import ColumnProfile, StructuralProfile
+from forge_core.models.schema_profile import ColumnProfile, StructuralProfile, TableGrain
 
 _NAME_PATTERNS: list[tuple[re.Pattern[str], ColumnRole]] = [
     (re.compile(r"email"), ColumnRole.EMAIL),
@@ -124,6 +124,45 @@ def _profile_column(
         is_likely_identifier=role == ColumnRole.IDENTIFIER,
         is_likely_pii=_is_likely_pii(col_name, role),
     )
+
+
+def reclassify_dimension_labels(
+    data_source: DataSource, columns: list[ColumnProfile], grains: list[TableGrain]
+) -> list[ColumnProfile]:
+    """P2-02, grain-aware second pass over FREE_TEXT columns only - runs
+    after grain inference, since it needs grains that depend on the columns
+    it's revising. `_guess_role`'s `row_count // 2` rule is exactly inverted
+    for a dimension table: every genuine dimension label has
+    cardinality == row_count BY DESIGN (one row per distinct thing), which
+    is precisely what made `courses.course_name` (4/4 rows) fail the old
+    test and get destroyed (review P1.2). This is deliberately just a
+    reclassification of FREE_TEXT -> CATEGORICAL, never the reverse -
+    nothing here can make a column MORE likely to be denied."""
+    grain_by_table = {g.table: g for g in grains}
+    row_count_by_table = {t.name: t.row_count for t in data_source.tables}
+    updated: list[ColumnProfile] = []
+    for col in columns:
+        # Never promote a PII-shaped column - low cardinality (a small
+        # customer roster) is not what makes a personal-name column a
+        # legitimate dimension to group by. Denial already keys off
+        # is_likely_pii independently of guessed_role, so this guard is
+        # about keeping the role label itself honest, not a safety fix.
+        if col.guessed_role != ColumnRole.FREE_TEXT or col.is_likely_pii:
+            updated.append(col)
+            continue
+
+        row_count = row_count_by_table.get(col.table, 0)
+        grain = grain_by_table.get(col.table)
+        is_dimension_shaped = grain is not None and grain.confidence >= 0.8 and len(grain.grain_columns) == 1
+        avg_length = (
+            sum(len(v) for v in col.sample_values) / len(col.sample_values) if col.sample_values else 0.0
+        )
+
+        promote = (is_dimension_shaped and col.cardinality == row_count and avg_length < 60) or (
+            row_count > 0 and col.cardinality <= max(2, min(50, int(row_count**0.5) * 3))
+        )
+        updated.append(col.model_copy(update={"guessed_role": ColumnRole.CATEGORICAL}) if promote else col)
+    return updated
 
 
 def build_structural_profile(data_source: DataSource, con: duckdb.DuckDBPyConnection) -> StructuralProfile:

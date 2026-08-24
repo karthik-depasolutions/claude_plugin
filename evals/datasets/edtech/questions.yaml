@@ -1,0 +1,92 @@
+# Golden questions for fixtures/datasets/edtech.sqlite, generated against
+# the edtech pack under --no-llm (deterministic) generation. Two things this
+# fixture is deliberately built to probe:
+#
+# 1. edtech_004 is the exact P0.2 "revenue trap" from the architecture
+#    review: score->revenue_amount binds at low confidence but no KPI
+#    references it, so P1-08 never gates it and P1-04's plausibility check
+#    fails the run - no total_revenue KPI ever ships. The correct answer is
+#    a refusal, not sum(score) reported as money.
+# 2. edtech_006/007 are P2-01's target, not yet built: course_id/subject
+#    live on a different table than enrollments, which is the only bound
+#    table today (see architecture review P1.1). A correct system qualifies
+#    or declines rather than guessing off the wrong grain - it should not
+#    be expected to resolve course NAMES yet.
+
+- id: edtech_001
+  question: "What's the average score across all enrollments?"
+  category: single_table
+  expects:
+    behavior: numeric
+    tool: get_kpi
+    ground_truth: 83.72
+    tolerance: 0.5
+
+- id: edtech_002
+  question: "How many total enrollments do we have?"
+  category: single_table
+  expects:
+    behavior: numeric
+    tool: get_kpi
+    ground_truth: 10
+    tolerance: 0
+
+- id: edtech_003
+  question: "What's our dropout rate?"
+  category: single_table
+  expects:
+    behavior: numeric
+    tool: get_kpi
+    ground_truth: 10.0
+    tolerance: 0.5
+
+- id: edtech_004
+  question: "What was our total revenue last quarter?"
+  category: negative
+  expects:
+    behavior: refuse_or_clarify
+    reason: >
+      No revenue data exists in this dataset - the only numeric candidate
+      ("score", a 0-100 test score) failed the binding plausibility check
+      specifically because it looks nothing like money, so no revenue KPI
+      was ever compiled. Reporting sum(score) as revenue would be the exact
+      CRITICAL failure this whole check exists to prevent.
+
+- id: edtech_005
+  question: "How many students paid for a premium subscription?"
+  category: negative
+  expects:
+    behavior: refuse_or_clarify
+    reason: "No payment or subscription concept exists in this dataset at all."
+
+- id: edtech_006
+  question: "Which course has the most enrollments?"
+  category: multi_table
+  expects:
+    behavior: qualify_answer
+    reason: >
+      course_id/course_name live on the courses table, which is not
+      reachable by any tool today (P2-01, not yet built) - only enrollments
+      is bound. A correct answer names the winning course_id (104 or 101,
+      tied at 3 enrollments each) while being honest that it can't resolve
+      the human-readable course name yet, rather than inventing one.
+
+- id: edtech_007
+  question: "What subject has the most enrollments?"
+  category: multi_table
+  expects:
+    behavior: qualify_answer
+    reason: >
+      "subject" lives on the courses table, unreachable from the only bound
+      table (enrollments) - this is P1.1's exact bug (join graph computed,
+      never consumed). The correct behavior is declining or clarifying,
+      not guessing a subject name that was never actually queried.
+
+- id: edtech_008
+  question: "How many enrollments happened in September 2023?"
+  category: temporal
+  expects:
+    behavior: numeric
+    tool: get_kpi
+    ground_truth: 4
+    tolerance: 0

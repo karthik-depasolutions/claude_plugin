@@ -32,10 +32,23 @@ def test_generator_produces_a_valid_plugin_for_an_unseen_shape(
     result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
 
     if run_id == "genericity-edtech":
-        # P1-04: edtech's shipped artifact bound a student test score (0-100)
-        # to the revenue role. That is now a hard validation failure and the
-        # run correctly refuses to package it. P1-08 turns this into a
-        # user-confirmation question instead of a hard block.
+        # P1-08: only transaction_status and transaction_date are gated here
+        # - revenue_amount also binds to "score" at low confidence, but no
+        # edtech KPI references {{revenue_amount}} today, so gate_bindings
+        # correctly never asks about a binding nothing depends on (asking
+        # regardless would be a gate people click through). Confirm the two
+        # that KPIs actually need and resume.
+        assert result.status == RunStatus.NEEDS_INPUT, result.error
+        gated_roles = {q.role for q in result.binding_questions}
+        assert gated_roles == {"transaction_status", "transaction_date"}
+        result.binding_confirmations = {q.role: q.physical for q in result.binding_questions}
+        result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+
+        # P1-04: the still-unconfirmed score->revenue_amount binding is
+        # caught independently by the plausibility check, which evaluates
+        # every bound role regardless of current KPI usage - a student test
+        # score bound to the role for money. That is a hard validation
+        # failure and the run correctly refuses to package it.
         assert result.status == RunStatus.FAILED
         validate_event = next(e for e in reversed(result.events) if e.stage.value == "validate")
         report = validate_event.data["report"]
@@ -45,6 +58,13 @@ def test_generator_produces_a_valid_plugin_for_an_unseen_shape(
         assert any("revenue_amount" in i["location"] for i in plaus["issues"])
         assert any("score" in i["message"] for i in plaus["issues"])
         return
+
+    # P1-08: any other low-confidence-but-correct binding a KPI depends on
+    # pauses for confirmation too - confirm the resolver's own top pick and
+    # resume, same as a caller with nothing more informed to add.
+    if result.status == RunStatus.NEEDS_INPUT and result.binding_questions:
+        result.binding_confirmations = {q.role: q.physical for q in result.binding_questions}
+        result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
 
     assert result.status == RunStatus.SUCCEEDED, result.error
 

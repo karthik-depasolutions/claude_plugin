@@ -113,3 +113,14 @@ def best_candidate(
     if not scored:
         return None
     return max(scored, key=lambda s: s.confidence)
+
+
+def top_candidates(
+    role_name: str, candidates: list[ColumnProfile], hints: tuple[str, ...] = (), n: int = 3
+) -> list[ScoredCandidate]:
+    """Ranked candidates, best first - the runner-ups behind `best_candidate`
+    become a binding's `alternatives` when it needs human confirmation
+    (see binding/resolver.py, binding/gate.py)."""
+    scored = [score_column_for_role(role_name, c, hints) for c in candidates]
+    scored.sort(key=lambda s: s.confidence, reverse=True)
+    return scored[:n]

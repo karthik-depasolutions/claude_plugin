@@ -15,7 +15,13 @@ class AllowlistError(ValueError):
 
 def check_tables_allowed(statement: exp.Expression, allowed_tables: list[str]) -> None:
     allowed_normalized = {_normalize(t) for t in allowed_tables}
-    referenced = {_normalize(t.sql(dialect="duckdb")) for t in statement.find_all(exp.Table)}
+    # exp.Table.name is the bare table identifier; t.sql() renders the whole
+    # table reference including "AS alias" when the query aliases it (e.g.
+    # a JOIN), which never matched anything in allowed_tables and rejected
+    # every aliased multi-table query outright - latent until P2-01 made a
+    # second table reachable at all, since a single-table query never
+    # needed an alias to begin with.
+    referenced = {_normalize(t.name) for t in statement.find_all(exp.Table)}
 
     disallowed = referenced - allowed_normalized
     if disallowed:

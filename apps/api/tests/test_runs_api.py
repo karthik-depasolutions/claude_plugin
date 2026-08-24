@@ -36,6 +36,26 @@ async def _wait_until_not_paused(client: AsyncClient, run_id: str, timeout: floa
     raise TimeoutError(f"run {run_id} did not leave needs_input in {timeout}s")
 
 
+async def _wait_for_success(client: AsyncClient, run_id: str, timeout: float = 90.0) -> dict:
+    """Waits for a terminal state; if P1-08's binding gate paused the run
+    (most fixtures used here have at least one binding whose name-overlap
+    confidence never clears MIN_CONFIDENCE_RESOLVED - see the resolver's own
+    module docstring), confirms every proposed binding as-is - the
+    resolver's own top pick - and waits again. Most of these tests aren't
+    about the binding gate itself, just a real caller with nothing more
+    informed to say than "yes, that's right"."""
+    final = await _wait_for_terminal(client, run_id, timeout)
+    if final["status"] == "needs_input" and final.get("binding_questions"):
+        confirmations = {q["role"]: q["physical"] for q in final["binding_questions"]}
+        response = await client.post(
+            f"/runs/{run_id}/confirm-bindings", json={"confirmations": confirmations}
+        )
+        assert response.status_code == 200, response.text
+        await _wait_until_not_paused(client, run_id, timeout)
+        final = await _wait_for_terminal(client, run_id, timeout)
+    return final
+
+
 async def test_create_run_from_path_rejects_missing_source(client: AsyncClient):
     response = await client.post("/runs", json={"source_path": "does/not/exist.csv", "use_llm": False})
     assert response.status_code == 404
@@ -48,7 +68,7 @@ async def test_full_run_lifecycle_succeeds_and_is_downloadable(client: AsyncClie
     assert create_response.status_code == 201
     run_id = create_response.json()["run_id"]
 
-    final = await _wait_for_terminal(client, run_id)
+    final = await _wait_for_success(client, run_id)
     assert final["status"] == "succeeded", final
 
     report = await client.get(f"/runs/{run_id}/report")
@@ -116,7 +136,7 @@ async def test_review_pause_and_resume_via_post_review(client: AsyncClient, monk
     # for the run to actually be re-scheduled before polling for terminal.
     await _wait_until_not_paused(client, run_id)
 
-    final = await _wait_for_terminal(client, run_id)
+    final = await _wait_for_success(client, run_id)
     assert final["status"] == "succeeded", final
 
     detail = await client.get(f"/runs/{run_id}")
@@ -141,7 +161,7 @@ async def test_upload_accepts_multiple_csv_files_as_one_multi_table_run(client: 
     assert create_response.status_code == 201
     run_id = create_response.json()["run_id"]
 
-    final = await _wait_for_terminal(client, run_id)
+    final = await _wait_for_success(client, run_id)
     assert final["status"] == "succeeded", final
 
 
@@ -157,7 +177,7 @@ async def test_upload_accepts_a_zip_of_csv_files(client: AsyncClient):
     assert create_response.status_code == 201
     run_id = create_response.json()["run_id"]
 
-    final = await _wait_for_terminal(client, run_id)
+    final = await _wait_for_success(client, run_id)
     assert final["status"] == "succeeded", final
 
 
@@ -267,7 +287,7 @@ async def test_publish_to_github_requires_a_configured_token(client: AsyncClient
         "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
     )
     run_id = create_response.json()["run_id"]
-    await _wait_for_terminal(client, run_id)
+    await _wait_for_success(client, run_id)
 
     response = await client.post(f"/runs/{run_id}/publish/github", json={})
     assert response.status_code == 400
@@ -282,7 +302,7 @@ async def test_publish_to_github_requires_a_public_base_url(client: AsyncClient,
         "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
     )
     run_id = create_response.json()["run_id"]
-    await _wait_for_terminal(client, run_id)
+    await _wait_for_success(client, run_id)
 
     response = await client.post(f"/runs/{run_id}/publish/github", json={})
     assert response.status_code == 400
@@ -319,7 +339,7 @@ async def test_publish_to_github_creates_a_repo_and_returns_install_commands(
         "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
     )
     run_id = create_response.json()["run_id"]
-    final = await _wait_for_terminal(client, run_id)
+    final = await _wait_for_success(client, run_id)
     assert final["status"] == "succeeded", final
 
     response = await client.post(
@@ -347,7 +367,7 @@ async def test_hosted_mcp_rejects_a_bad_token_and_serves_tools_with_a_good_one(
         "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
     )
     run_id = create_response.json()["run_id"]
-    final = await _wait_for_terminal(client, run_id)
+    final = await _wait_for_success(client, run_id)
     assert final["status"] == "succeeded", final
 
     bad = await client.post(f"/mcp/{run_id}/not-the-token")
@@ -381,7 +401,7 @@ async def test_sse_stream_replays_events_for_a_finished_run(client: AsyncClient)
         "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
     )
     run_id = create_response.json()["run_id"]
-    await _wait_for_terminal(client, run_id)
+    await _wait_for_success(client, run_id)
 
     async with client.stream("GET", f"/runs/{run_id}/events") as response:
         assert response.status_code == 200

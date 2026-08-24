@@ -11,6 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
+from forge_core.models.bindings import BindingQuestion
 from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.quality import DataReview
 
@@ -53,6 +54,19 @@ class RunRecord(BaseModel):
     resumed). {} = asked, caller supplied no answers (or opted out) - this
     distinction, not just truthiness, is what stops the pause from re-firing
     on resume, mirroring how `industry_override` already works above."""
+    binding_questions: list[BindingQuestion] = Field(default_factory=list)
+    """Set by binding/gate.py when at least one low-confidence binding a
+    shipped KPI depends on needs confirming - empty otherwise, including
+    after they're answered (the answers themselves live in
+    binding_confirmations; this list is just "what was asked")."""
+    binding_confirmations: dict[str, str] | None = None
+    """role -> confirmed physical column name. Same three-state convention
+    as data_answers: None = never asked (or asked, not yet resumed). {} =
+    asked, caller declined every question - every gated role becomes
+    unresolved rather than shipping the unconfirmed guess. A role present in
+    `binding_questions` but absent here is also treated as declined (see
+    orchestrator._apply_binding_confirmations) - silence is not consent for
+    a binding this risky."""
     events: list[StageEvent] = Field(default_factory=list)
     error: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

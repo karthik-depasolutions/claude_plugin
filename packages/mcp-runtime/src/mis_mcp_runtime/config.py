@@ -61,12 +61,43 @@ class CompiledKpiConfig:
 
 
 @dataclass(frozen=True)
+class JoinEdgeConfig:
+    from_table: str
+    from_column: str
+    to_table: str
+    to_column: str
+
+
+@dataclass(frozen=True)
+class DimensionConfig:
+    field_id: str
+    table: str
+    physical: str
+    join_path: list[JoinEdgeConfig]
+
+
+@dataclass(frozen=True)
+class MetricConfig:
+    id: str
+    label: str
+    description: str
+    base_entity: str
+    measure_column: str
+    aggregation: str
+    unit: str
+    allowed_dimensions: list[DimensionConfig]
+    allowed_time_grains: list[str]
+    time_column: str | None = None
+
+
+@dataclass(frozen=True)
 class RuntimeConfig:
     config_dir: Path
     data_dir: Path
     data_source: DataSourceConfig
     bindings: BindingsConfig
     kpis: list[CompiledKpiConfig]
+    metrics: list[MetricConfig]
     schema_summary: dict
     max_query_rows: int
     query_timeout_seconds: int
@@ -103,6 +134,11 @@ def load_runtime_config(
     kpis_raw = _read_json(config_dir / "kpi_defs.json")
     summary_path = config_dir / "schema_summary.json"
     schema_summary = _read_json(summary_path) if summary_path.exists() else {}
+    # Optional (P2-07): older generated plugins have no metric_defs.json at
+    # all - an empty metrics list, not a hard failure, keeps them running
+    # unchanged on this newer runtime.
+    metrics_path = config_dir / "metric_defs.json"
+    metrics_raw = _read_json(metrics_path) if metrics_path.exists() else {}
 
     try:
         tables = [
@@ -142,6 +178,36 @@ def load_runtime_config(
             )
             for k in kpis_raw.get("kpis", [])
         ]
+
+        metrics = [
+            MetricConfig(
+                id=m["id"],
+                label=m["label"],
+                description=m["description"],
+                base_entity=m["base_entity"],
+                measure_column=m["measure_column"],
+                aggregation=m["aggregation"],
+                unit=m["unit"],
+                allowed_dimensions=[
+                    DimensionConfig(
+                        field_id=d["field_id"],
+                        table=d["table"],
+                        physical=d["physical"],
+                        join_path=[
+                            JoinEdgeConfig(
+                                from_table=e["from_table"], from_column=e["from_column"],
+                                to_table=e["to_table"], to_column=e["to_column"],
+                            )
+                            for e in d.get("join_path", [])
+                        ],
+                    )
+                    for d in m.get("allowed_dimensions", [])
+                ],
+                allowed_time_grains=m.get("allowed_time_grains", []),
+                time_column=m.get("time_column"),
+            )
+            for m in metrics_raw.get("metrics", [])
+        ]
     except KeyError as exc:
         raise ConfigError(f"Config file missing required field: {exc}") from exc
 
@@ -153,6 +219,7 @@ def load_runtime_config(
         data_source=data_source,
         bindings=bindings,
         kpis=kpis,
+        metrics=metrics,
         schema_summary=schema_summary,
         max_query_rows=int(guardrails.get("max_query_rows", 200)),
         query_timeout_seconds=int(guardrails.get("query_timeout_seconds", 10)),

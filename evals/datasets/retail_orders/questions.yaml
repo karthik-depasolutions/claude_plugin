@@ -1,0 +1,79 @@
+# Golden questions for fixtures/datasets/retail_orders/ (orders, customers,
+# order_items), generated against the retail-ecommerce pack. Ground truth
+# from the real compiled config/kpi_defs.json SQL for this fixture. Only
+# `orders` is bound as the fact table today - order_items (line-item level
+# product data) is unreachable, same P1.1 limitation as edtech's courses
+# table, probed by retail_006 below.
+
+- id: retail_001
+  question: "What was our total revenue?"
+  category: single_table
+  expects:
+    behavior: numeric
+    tool: get_kpi
+    ground_truth: 46184.5
+    tolerance: 1
+
+- id: retail_002
+  question: "What's our average order value?"
+  category: single_table
+  expects:
+    behavior: numeric
+    tool: get_kpi
+    ground_truth: 2886.53
+    tolerance: 1
+
+- id: retail_003
+  question: "What percentage of orders were cancelled?"
+  category: single_table
+  expects:
+    behavior: numeric
+    tool: get_kpi
+    ground_truth: 10.0
+    tolerance: 0.5
+
+- id: retail_004
+  question: "What's our return rate?"
+  category: single_table
+  expects:
+    behavior: numeric
+    tool: get_kpi
+    ground_truth: 10.0
+    tolerance: 0.5
+
+- id: retail_005
+  question: "Which city generated the most revenue?"
+  category: single_table
+  expects:
+    behavior: categorical
+    tool: get_kpi
+    ground_truth: "Bengaluru"
+
+- id: retail_006
+  question: "Which product sells the most?"
+  category: multi_table
+  expects:
+    behavior: qualify_answer
+    reason: >
+      Product-level data lives in order_items, a table not bound or
+      reachable by any tool today - only orders is bound. A correct answer
+      declines or clarifies rather than inventing a product name it never
+      queried.
+
+- id: retail_007
+  question: "What was our total refund amount?"
+  category: negative
+  expects:
+    behavior: refuse_or_clarify
+    reason: >
+      There is no refund-amount column or KPI - only a count of orders
+      whose status is "returned". Reporting a rupee figure here would be
+      fabricated.
+
+- id: retail_008
+  question: "Which payment channel do most customers use?"
+  category: single_table
+  expects:
+    behavior: categorical
+    tool: get_kpi
+    ground_truth: "card"

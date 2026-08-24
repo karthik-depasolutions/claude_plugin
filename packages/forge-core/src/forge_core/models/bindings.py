@@ -32,6 +32,19 @@ class ColumnBinding(BaseModel):
         default="deterministic",
         description="'deterministic' | 'llm_proposed' | 'agent_proposed' | 'human_override'.",
     )
+    needs_confirmation: bool = Field(
+        default=False,
+        description="True when no resolution tier reached MIN_CONFIDENCE_RESOLVED - the best "
+        "candidate found still shipped (so a KPI that doesn't need it never blocks on it), but "
+        "binding/gate.py routes it to a human question if a shipped KPI actually depends on it. "
+        "Never true for source='human_override' - a confirmed binding is never re-asked.",
+    )
+    alternatives: list[tuple[str, float]] = Field(
+        default_factory=list,
+        description="Runner-up (physical_column, confidence) pairs from the deterministic scorer, "
+        "shown alongside the top pick when needs_confirmation - lets a human pick a different "
+        "column instead of only confirming or rejecting the guess.",
+    )
 
 
 class ValueSetBinding(BaseModel):
@@ -80,3 +93,22 @@ class SchemaBindings(BaseModel):
             if v.name == name:
                 return v
         return None
+
+
+class BindingQuestion(BaseModel):
+    """One low-confidence binding a shipped KPI actually depends on - the
+    output of binding/gate.py. Mirrors DataQuestion's id scheme
+    (models/quality.py) so the pause-handling convention stays uniform: the
+    caller answers by role in RunRecord.binding_confirmations, keyed the
+    same way `data_answers` is keyed by DataQuestion.id."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(description="'binding:{role}' - stable across resumes.")
+    role: str
+    physical: str
+    confidence: float
+    evidence: str
+    alternatives: list[tuple[str, float]] = Field(default_factory=list)
+    kpis_affected: list[str] = Field(default_factory=list)
+    question: str
