@@ -95,11 +95,21 @@ def build_entity_graph(
     # Bridge reclassification: a table with >=2 outbound FKs and no
     # confident single-column PK of its own is the many-to-many join shape
     # - both its outbound edges (and their reverse) represent N:N traversal,
-    # not the standard N:1 a plain FK implies.
+    # not the standard N:1 a plain FK implies. A composite key (e.g.
+    # student_id+course_id) can itself have HIGH grain confidence - that's
+    # the classic bridge-table shape, not evidence against it - so the test
+    # must be "no confident SINGLE-column PK", not "low grain confidence".
+    # Checking confidence alone let a clean two-column-key bridge table
+    # (grain confidence 0.85, two columns) slip through and win the fact
+    # slot on outbound-edge-count instead.
+    def _has_confident_single_column_pk(table: str) -> bool:
+        grain = _grain_for(grains, table)
+        return grain.confidence >= 0.8 and len(grain.grain_columns) == 1
+
     bridge_tables = {
         table
         for table, parents in outbound_by_table.items()
-        if len(parents) >= 2 and _grain_for(grains, table).confidence < 0.8
+        if len(parents) >= 2 and not _has_confident_single_column_pk(table)
     }
     for i, edge in enumerate(edges):
         if edge.from_table in bridge_tables:
@@ -127,7 +137,7 @@ def build_entity_graph(
     for table in data_source.tables:
         table_cols = [c for c in columns if c.table == table.name]
         grain = _grain_for(grains, table.name)
-        has_single_pk = grain.confidence >= 0.8 and len(grain.grain_columns) == 1
+        has_single_pk = _has_confident_single_column_pk(table.name)
 
         role: EntityRole
         if table.name in bridge_tables:

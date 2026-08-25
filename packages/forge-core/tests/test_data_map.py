@@ -35,13 +35,19 @@ def test_edtech_verified_joins_appear_in_the_map():
     assert ("enrollments", "students") in pairs
 
 
-def test_bookings_currency_column_gets_a_currency_fingerprint_and_is_not_ambiguous(bookings_csv: Path):
+def test_bookings_amount_column_is_ambiguous_without_a_name_based_currency_guess(bookings_csv: Path):
+    """amount_inr has no currency symbol in its raw values (BIGINT column,
+    values like 699/1799/2999) - a bare numeric column is exactly the
+    "score bound to revenue_amount" shape, so it must stay ambiguous and
+    route to the agent rather than being resolved by the name "amount"
+    (Tier S/A triage - see docs/adr; this fingerprint used to be name-
+    derived via a since-removed _CURRENCY_NAME_HINTS regex)."""
     ds = ingest(bookings_csv)
     structural = build_structural_only(ds)
     dm = structural.data_map
     amount = next(c for e in dm.entities for c in e.columns if c.name == "amount_inr")
-    assert amount.format_fingerprint == "currency"
-    assert amount.ambiguous is False
+    assert amount.format_fingerprint is None
+    assert amount.ambiguous is True
 
 
 def test_pii_columns_never_populate_top_values(bookings_csv: Path):

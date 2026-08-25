@@ -1,7 +1,7 @@
 {
   "id": "enrollments_by_course",
   "label": "Enrollments by Course",
-  "description": "Enrollment count grouped by course.",
+  "description": "Enrollment count grouped by the internal course ID (not the course name) - this frozen KPI's SQL template can only reference canonical roles bound on the fact table, so it can't express a joined, human-readable label generically across customers. Prefer query_metric/list_metrics for a course-name breakdown, which resolves real per-customer joins (P2-07).",
   "formula_plain_english": "count(*) grouped by course_ref",
   "grain": "transaction",
   "requires": { "measures": [], "dimensions": ["course_ref"] },

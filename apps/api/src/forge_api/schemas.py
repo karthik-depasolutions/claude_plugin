@@ -21,10 +21,10 @@ class CreateRunFromPathRequest(BaseModel):
     industry: str | None = Field(None, description="Force a pack slug, skipping auto-classification.")
     use_llm: bool = Field(True, description="Use Gemini for semantic profiling, generation, and critique.")
     use_agent: bool = Field(
-        False,
+        True,
         description="Use a tool-using LangChain agent (schema inspection, live data preview, "
-        "web search) to resolve schema roles the deterministic scorer and single-shot LLM "
-        "proposer both fail on, instead of leaving them unresolved.",
+        "web search) to ground every column's meaning in real values - the default for a real "
+        "run. False is the deterministic-only path, kept for offline/CI use.",
     )
     label: str | None = Field(
         None,

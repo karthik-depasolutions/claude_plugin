@@ -88,7 +88,7 @@ async def create_run_from_upload(
     user: Annotated[UserORM, Depends(get_current_user)],
     industry: str | None = None,
     use_llm: bool = True,
-    use_agent: bool = False,
+    use_agent: bool = True,
     label: str | None = None,
 ) -> RunSummary:
     """Accepts one or more files - multiple CSVs (or a mix of CSV/Excel/JSON/

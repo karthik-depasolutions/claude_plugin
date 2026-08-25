@@ -54,6 +54,10 @@ class RunRecord(BaseModel):
     resumed). {} = asked, caller supplied no answers (or opted out) - this
     distinction, not just truthiness, is what stops the pause from re-firing
     on resume, mirroring how `industry_override` already works above."""
+    data_understanding: dict[str, Any] | None = None
+    """U1 — DataUnderstanding artifact (serialized DataUnderstanding model).
+    Computed deterministically every run after PROFILE; never blocks the run.
+    Stored as dict for persistence (Pydantic model -> model_dump)."""
     binding_questions: list[BindingQuestion] = Field(default_factory=list)
     """Set by binding/gate.py when at least one low-confidence binding a
     shipped KPI depends on needs confirming - empty otherwise, including

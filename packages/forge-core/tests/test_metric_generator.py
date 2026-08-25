@@ -7,11 +7,31 @@ import duckdb
 from forge_core.compiler.metric_compiler import MetricCompileError, render_metric_query
 from forge_core.compiler.metric_generator import generate_metrics
 from forge_core.ingestion.registry import ingest
+from forge_core.models.claims import ColumnClaim
 from forge_core.models.metrics import AggOp, FilterOp, FilterSpec
 from forge_core.profiling import build_structural_only
 from forge_core.runtime_session import open_session
 
 DATASETS_ROOT = Path(__file__).resolve().parents[3] / "fixtures" / "datasets"
+
+
+def _sum_claim(table: str, column: str, unit: str = "INR") -> dict[str, ColumnClaim]:
+    """A minimal, gate-shaped ColumnClaim granting SUM - additivity is a
+    semantic property now (Part 1/2), never a shape, so any test wanting a
+    SUM metric must supply one explicitly rather than relying on a
+    guessed_role == CURRENCY name match that no longer exists."""
+    return {
+        f"{table}.{column}": ColumnClaim(
+            table=table,
+            column=column,
+            meaning=f"total {column}",
+            kind="measure",
+            unit=unit,
+            valid_aggregations=[AggOp.SUM, AggOp.MEAN, AggOp.MIN, AggOp.MAX],
+            confidence=0.95,
+            evidence=["test-supplied claim"],
+        )
+    }
 
 
 def test_edtech_generates_measure_and_dimension_metrics():
@@ -60,7 +80,9 @@ def test_single_table_source_still_generates_metrics(bookings_csv: Path):
     ds = ingest(bookings_csv)
     structural = build_structural_only(ds)
     assert structural.entity_graph is None
-    metrics = generate_metrics("bookings", structural, denied_columns=set())
+    metrics = generate_metrics(
+        "bookings", structural, denied_columns=set(), claims=_sum_claim("bookings", "amount_inr")
+    )
     assert metrics
     total_revenue = next(m for m in metrics if m.measure_column == "amount_inr" and m.aggregation == AggOp.SUM)
     assert total_revenue.allowed_dimensions
@@ -76,7 +98,12 @@ def _physical_ref_for(ds) -> dict[str, str]:
 def test_render_and_execute_a_simple_metric_matches_real_data(bookings_csv: Path):
     ds = ingest(bookings_csv)
     structural = build_structural_only(ds)
-    metrics = generate_metrics("bookings", structural, denied_columns={"customer_name", "phone"})
+    metrics = generate_metrics(
+        "bookings",
+        structural,
+        denied_columns={"customer_name", "phone"},
+        claims=_sum_claim("bookings", "amount_inr"),
+    )
     total_revenue = next(m for m in metrics if m.measure_column == "amount_inr" and m.aggregation == AggOp.SUM)
 
     query = render_metric_query(total_revenue, _physical_ref_for(ds))

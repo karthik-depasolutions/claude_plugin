@@ -169,6 +169,44 @@ def test_sample_rows_caps_the_limit():
     assert len(rows.rows) <= 15  # MAX_SAMPLE_ROWS, never the raw requested limit
 
 
+def test_sample_rows_where_contains_finds_a_real_literal():
+    """The within-a-table 'grep' capability - a literal the agent doesn't
+    know the exact column for, resolved by search rather than a guess."""
+    toolkit = _toolkit_for(DATASETS_ROOT / "edtech.sqlite")
+    rows = _sample_rows(
+        toolkit, "enrollments", ["enrollment_id", "status"], limit=20, where_contains="dropped"
+    )
+    assert rows.rows
+    assert all(r["status"] == "dropped" for r in rows.rows)
+
+
+def test_sample_rows_where_contains_is_case_insensitive():
+    toolkit = _toolkit_for(DATASETS_ROOT / "edtech.sqlite")
+    rows = _sample_rows(
+        toolkit, "enrollments", ["enrollment_id", "status"], limit=20, where_contains="DROPPED"
+    )
+    assert rows.rows
+
+
+def test_sample_rows_where_contains_no_match_returns_empty_not_an_error():
+    toolkit = _toolkit_for(DATASETS_ROOT / "edtech.sqlite")
+    rows = _sample_rows(
+        toolkit, "enrollments", ["enrollment_id", "status"], limit=20, where_contains="nonexistent_literal_xyz"
+    )
+    assert rows.rows == []
+
+
+def test_sample_rows_where_contains_never_interpolates_the_literal_into_sql():
+    toolkit = _toolkit_for(DATASETS_ROOT / "edtech.sqlite")
+    injection = "x'; DROP TABLE enrollments; --"
+    rows = _sample_rows(
+        toolkit, "enrollments", ["enrollment_id", "status"], limit=5, where_contains=injection
+    )
+    assert rows.rows == []  # no match, and no exception - table still queryable after
+    sanity = _sample_rows(toolkit, "enrollments", ["enrollment_id"], limit=1)
+    assert sanity.rows
+
+
 # --- LangChain wrapper surface ----------------------------------------------------
 
 

@@ -347,27 +347,26 @@ def _propose_agent_claims_for_weak_roles(
     tenant_id: str,
     on_agent_stats: Callable[[dict], None] | None,
 ) -> dict[str, tuple[str, ColumnClaim]]:
-    """A cheap, deterministic-only pre-pass (no LLM cost) to find which
-    roles the scorer alone can't confidently resolve, so the P2-05 agent is
-    only ever asked about those - never about roles that would resolve
-    deterministically anyway. Roles already satisfied by a human override
-    are excluded too; an override always wins regardless of what the agent
-    might say."""
-    weak_roles: dict[str, str] = {}
-    for role, description in pack.canonical_roles.items():
-        if role in overrides:
-            continue
-        hints = tuple(pack.role_hints.get(role, ()))
-        ranked = top_candidates(role, bindable_cols, hints, n=1)
-        if not ranked or ranked[0].confidence < MIN_CONFIDENCE_RESOLVED:
-            weak_roles[role] = description
-    if not weak_roles:
+    """The agent is asked about EVERY unoverridden role, not just the ones
+    the deterministic scorer scored weakly - a confidently-WRONG name match
+    (e.g. `score` vs `revenue_amount` scoring high on token overlap alone)
+    used to keep the agent from ever seeing that role at all, which is
+    exactly backwards: those are the cases that most need real value
+    evidence, not fewer. The scorer's ranking still matters - it's threaded
+    into the agent's prompt as evidence to verify or refute, not as a
+    pre-filter deciding what the agent is allowed to look at. Roles already
+    satisfied by a human override are excluded; an override always wins
+    regardless of what the agent might say."""
+    roles_to_ask: dict[str, str] = {
+        role: description for role, description in pack.canonical_roles.items() if role not in overrides
+    }
+    if not roles_to_ask:
         return {}
 
     from forge_core.agentic.data_understanding_agent import propose_bindings_with_agent
 
     return propose_bindings_with_agent(
-        weak_roles,
+        roles_to_ask,
         bindable_cols,
         profile.structural.data_map,
         profile.source,
@@ -389,6 +388,7 @@ def resolve_bindings(
     data_context: dict | None = None,
     tenant_id: str = "_local",
     on_agent_stats: Callable[[dict], None] | None = None,
+    on_agent_claims: Callable[[dict[str, tuple[str, ColumnClaim]]], None] | None = None,
 ) -> SchemaBindings:
     overrides = overrides or {}
     fact_table_name = pick_fact_table(profile, pack)
@@ -418,11 +418,23 @@ def resolve_bindings(
     )
 
     agent_claims: dict[str, tuple[str, ColumnClaim]] = {}
-    if use_agent:
+    # An agent IS an LLM call - use_agent=True with no provider (use_llm=
+    # False upstream) must not silently make one anyway, matching every
+    # other agent gate in orchestrator.py (`use_agent and profiling_
+    # provider is not None`). Without this, a caller's explicit "no LLM"
+    # was silently overridden the moment use_agent's own default became
+    # True for every real run.
+    if use_agent and provider is not None:
         agent_claims = _propose_agent_claims_for_weak_roles(
             profile, pack, bindable_cols, overrides, set(denied_columns),
             tenant_id=tenant_id, on_agent_stats=on_agent_stats,
         )
+        # generate_metrics (P2-07) needs these too, keyed by physical
+        # column rather than canonical role - the ONLY wire from a verified
+        # semantic claim to what actually gets built (see orchestrator.py's
+        # own note on the "dead-end wiring" this closes).
+        if on_agent_claims is not None:
+            on_agent_claims(agent_claims)
 
     columns, unresolved = _resolve_columns(
         fact_table_name,

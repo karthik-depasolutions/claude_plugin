@@ -39,7 +39,14 @@ def _profile_for(source_path: Path) -> SchemaProfile:
 def _pipeline(source_path: Path, pack_slug: str):
     profile = _profile_for(source_path)
     pack = load_pack(PACKS_ROOT / pack_slug)
-    bindings = resolve_bindings(profile, pack)
+    # "location" has zero name-token overlap with its real column "city" -
+    # GEOGRAPHIC is no longer a name-derived role (see structural.py), so it
+    # correctly can't resolve deterministically without the agent or a
+    # human. An explicit override here stands in for "a human confirmed
+    # this", the same way a real run would resolve it, so this test can
+    # still exercise "does a fully-bound plugin pass every check" rather
+    # than re-proving the (separately, already-tested) unresolved-role path.
+    bindings = resolve_bindings(profile, pack, overrides={"location": "city"} if pack_slug == "healthcare-diagnostics" else None)
     kpi_defs = compile_all(pack, bindings)
     generated = generate_plugin_content(pack, kpi_defs, profile.source, provider=None)
     return profile, pack, bindings, kpi_defs, generated

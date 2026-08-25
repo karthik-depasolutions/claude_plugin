@@ -311,7 +311,12 @@ def test_binding_gate_decline_skips_dependent_kpis_with_a_reason(edtech_sqlite: 
 
     assert result.status == RunStatus.NEEDS_INPUT
     gated_roles = {q.role for q in result.binding_questions}
-    assert gated_roles == {"transaction_status", "transaction_date"}
+    # course_ref now also gates deterministically (no agent in this test):
+    # a foreign key on THIS table is no longer auto-classified as this
+    # table's own identifier by name alone (is_likely_identifier is a real
+    # uniqueness fact now), so its confidence genuinely drops below the
+    # gate's threshold - correct, not a regression.
+    assert gated_roles == {"transaction_status", "transaction_date", "course_ref"}
 
     result.binding_confirmations = {}  # decline everything
     result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)

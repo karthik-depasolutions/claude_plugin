@@ -25,8 +25,16 @@ def test_bookings_binds_and_compiles_all_kpis(bookings_csv: Path):
     profile = _profile_for(bookings_csv)
     pack = load_pack(PACKS_ROOT / "healthcare-diagnostics")
 
+    # Deterministic-only (no agent): "location" has zero name-token overlap
+    # with its real column "city" and, since GEOGRAPHIC is no longer a
+    # name-derived role (city|state|country|... used to grant it purely
+    # from the column name - one of the illegitimate heuristics this pass
+    # removes), it correctly can no longer resolve without real semantic
+    # judgment. That's the mandatory agent's job on a real run - verified
+    # live against this exact fixture; here we're testing the deterministic
+    # floor stays honest rather than silently guessing.
     bindings = resolve_bindings(profile, pack)
-    assert bindings.unresolved_roles == []
+    assert bindings.unresolved_roles == ["location"]
     assert bindings.column("revenue_amount") is not None
     assert bindings.column("revenue_amount").physical == "amount_inr"
     # PII columns must never be bindable/projectable.
@@ -34,8 +42,8 @@ def test_bookings_binds_and_compiles_all_kpis(bookings_csv: Path):
     assert "customer_name" in bindings.denied_columns
 
     kpi_defs = compile_all(pack, bindings)
-    assert kpi_defs.skipped == {}
-    assert len(kpi_defs.kpis) == len(pack.kpis)
+    assert set(kpi_defs.skipped) == {"bookings_by_location"}
+    assert len(kpi_defs.kpis) == len(pack.kpis) - 1
 
     con = open_session(profile.source)
     try:
@@ -209,10 +217,17 @@ class _ColumnProposingProvider:
         return ""
 
 
-def test_high_confidence_deterministic_binding_resolves_without_confirmation(edtech_sqlite: Path):
-    """student_ref->student_id and course_ref->course_id both score above
-    MIN_CONFIDENCE_RESOLVED on name+type evidence alone - no confirmation
-    needed, exactly the "clean data runs straight through" case."""
+def test_fk_shaped_roles_need_confirmation_without_the_agent(edtech_sqlite: Path):
+    """student_ref->student_id and course_ref->course_id are foreign keys
+    on THIS table (enrollments), not this table's own unique identifier -
+    `is_likely_identifier` is now a genuine uniqueness fact rather than a
+    `*_id`-name shortcut, so a bare FK column correctly does NOT self-
+    certify as a confident identifier match without either real value
+    evidence (a verified join, which the agent checks) or a human
+    confirming it. Verified live: with the agent on (the default for a
+    real run), both resolve at confidence 1.0, agent-verified - this test
+    covers the deterministic floor staying honest, not silently guessing,
+    when there's no agent to ask."""
     profile = _profile_for(edtech_sqlite)
     pack = load_pack(PACKS_ROOT / "edtech")
 
@@ -221,9 +236,8 @@ def test_high_confidence_deterministic_binding_resolves_without_confirmation(edt
     for role in ("student_ref", "course_ref"):
         binding = bindings.column(role)
         assert binding is not None
-        assert binding.confidence >= 0.70
-        assert binding.needs_confirmation is False
-        assert binding.alternatives == []
+        assert binding.needs_confirmation is True
+        assert binding.confidence < 0.70
 
 
 def test_low_confidence_binding_needs_confirmation_with_alternatives(edtech_sqlite: Path):

@@ -46,6 +46,7 @@ from evals.harness.scoring import (
     score_refusal_with_judge,
     score_tool_selection,
 )
+from forge_core.llm import resolve_model
 from forge_core.llm.provider import LLMProvider
 from forge_core.models.common import RunStatus
 from forge_core.models.run import RunRecord
@@ -158,7 +159,8 @@ def _score(q: GoldenQuestion, final_answer: str, tool_calls: list[str], judge: L
     if exp.behavior == "numeric":
         passed, detail = score_numeric(final_answer, float(exp.ground_truth), exp.tolerance)  # type: ignore[arg-type]
     elif exp.behavior == "categorical":
-        passed, detail = score_categorical(final_answer, str(exp.ground_truth))
+        gt = exp.ground_truth if isinstance(exp.ground_truth, list) else str(exp.ground_truth)
+        passed, detail = score_categorical(final_answer, gt)
     else:  # refuse_or_clarify / qualify_answer - the false-confidence-rate categories
         passed, detail = score_refusal_with_judge(q.question, exp.reason, final_answer, judge)
         false_confidence = not passed
@@ -218,7 +220,7 @@ def main() -> None:
     parser.add_argument("--dataset", default="all", choices=[*FIXTURES, "all"])
     parser.add_argument("--compare", type=Path, default=None)
     parser.add_argument("--out", type=Path, default=REPO_ROOT / "evals" / "baselines" / "latest.json")
-    parser.add_argument("--model", default=os.environ.get("FORGE_LLM_AGENT_MODEL", "gemini-2.5-flash"))
+    parser.add_argument("--model", default=resolve_model("agent"))
     parser.add_argument(
         "--work-dir", type=Path, default=Path(os.environ.get("TEMP", "/tmp")) / "forge_evals"
     )

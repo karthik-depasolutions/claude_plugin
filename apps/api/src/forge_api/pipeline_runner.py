@@ -46,7 +46,7 @@ async def start_run(
     *,
     industry_override: str | None,
     use_llm: bool,
-    use_agent: bool = False,
+    use_agent: bool = True,
     label: str | None = None,
     tenant_id: str = "_local",
 ) -> registry.RunContext:

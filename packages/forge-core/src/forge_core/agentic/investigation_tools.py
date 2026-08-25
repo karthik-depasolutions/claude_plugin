@@ -330,18 +330,33 @@ class Rows(BaseModel):
     rows: list[dict[str, Any]]
 
 
-def _sample_rows(toolkit: _Toolkit, table: str, columns: list[str], limit: int) -> Rows:
+def _sample_rows(
+    toolkit: _Toolkit, table: str, columns: list[str], limit: int, where_contains: str | None = None
+) -> Rows:
+    """`where_contains`, when given, scopes the sample to rows where ANY of
+    `columns` contains that literal substring (case-insensitive) - the
+    within-a-table equivalent of a Grep, for a customer term or code the
+    agent needs to locate but doesn't yet know which column holds. Still
+    just a parameter on the existing tool, not a new one (PHASE_2.md
+    Appendix A #5: capability scales through parameters, never tool count).
+    The literal is always a bound parameter, never interpolated into SQL."""
     for name in columns:
         col = toolkit.column(table, name)
         if col.is_likely_pii:
             raise AllowlistViolation(f"{table}.{name} is PII and cannot be sampled.")
     capped_limit = max(1, min(limit, MAX_SAMPLE_ROWS))
     quoted_cols = ", ".join(f'"{c}"' for c in columns)
+    sql = f'SELECT {quoted_cols} FROM {toolkit.physical_ref[table]}'
+    params: list[Any] = []
+    if where_contains:
+        needle = f"%{where_contains.lower()}%"
+        conditions = " OR ".join(f'LOWER(CAST("{c}" AS VARCHAR)) LIKE ?' for c in columns)
+        sql += f" WHERE {conditions}"
+        params = [needle] * len(columns)
+    sql += f" LIMIT {capped_limit}"
     con = toolkit.connect()
     try:
-        result = con.execute(
-            f"SELECT {quoted_cols} FROM {toolkit.physical_ref[table]} LIMIT {capped_limit}"
-        )
+        result = con.execute(sql, params)
         rows = [dict(zip(columns, row, strict=True)) for row in result.fetchall()]
     finally:
         con.close()
@@ -421,10 +436,14 @@ def build_investigation_tools(
         text."""
         return _safe(_aggregate, table, column, AggOp(op), group_by, where)
 
-    def sample_rows(table: str, columns: list[str], limit: int = 10) -> str:
+    def sample_rows(table: str, columns: list[str], limit: int = 10, where_contains: str | None = None) -> str:
         """Returns up to 15 real rows for the given columns on one table.
-        Refuses any PII-flagged column outright."""
-        return _safe(_sample_rows, table, columns, limit)
+        Refuses any PII-flagged column outright. Pass `where_contains` to
+        search for a literal substring (case-insensitive) across those
+        columns instead of just taking the first rows - e.g. the customer
+        mentioned a code or term and you need to find which column/rows
+        actually contain it."""
+        return _safe(_sample_rows, table, columns, limit, where_contains)
 
     return [
         StructuredTool.from_function(inspect_column),

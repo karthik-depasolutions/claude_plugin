@@ -51,23 +51,31 @@ def query_metric(
         return {"error": str(exc), "error_type": type(exc).__name__}
 
     rows = to_json_rows(df)
-    return {"rows": rows, "row_count": len(rows), "executed_sql": final_sql}
+    result: dict[str, Any] = {"rows": rows, "row_count": len(rows), "executed_sql": final_sql}
+    if metric.prov is not None and metric.prov.confidence < 1.0:
+        # P2-09: a caveat only surfaces when confidence is genuinely below
+        # 1.0 - a plain deterministic metric stays a bare number, exactly
+        # as before, so this never adds noise to the common case.
+        result["confidence"] = metric.prov.confidence
+        result["caveats"] = metric.prov.evidence
+    return result
 
 
 def list_metrics(config: RuntimeConfig) -> dict[str, Any]:
-    return {
-        "metrics": [
-            {
-                "id": m.id,
-                "label": m.label,
-                "description": m.description,
-                "unit": m.unit,
-                "allowed_dimensions": [d.field_id for d in m.allowed_dimensions],
-                "allowed_time_grains": m.allowed_time_grains,
-            }
-            for m in config.metrics
-        ]
-    }
+    def _entry(m: Any) -> dict[str, Any]:
+        entry = {
+            "id": m.id,
+            "label": m.label,
+            "description": m.description,
+            "unit": m.unit,
+            "allowed_dimensions": [d.field_id for d in m.allowed_dimensions],
+            "allowed_time_grains": m.allowed_time_grains,
+        }
+        if m.prov is not None:
+            entry["confidence"] = m.prov.confidence
+        return entry
+
+    return {"metrics": [_entry(m) for m in config.metrics]}
 
 
 __all__ = ["list_metrics", "query_metric"]

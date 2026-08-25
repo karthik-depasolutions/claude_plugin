@@ -75,14 +75,14 @@ function ConnectStep({ onStarted }: { onStarted: (runId: string) => void }) {
             multiple
             accept=".csv,.tsv,.json,.ndjson,.parquet,.xlsx,.xls,.sqlite,.db,.zip"
             onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-            className="block w-full text-sm text-slate-300 file:mr-3 file:rounded file:border-0 file:bg-sky-600 file:px-3 file:py-1.5 file:text-white"
+            className="block w-full text-sm text-paper/80 file:mr-3 file:rounded file:border-0 file:bg-canonical file:px-3 file:py-1.5 file:font-medium file:text-ink file:transition-colors hover:file:bg-canonical/85"
           />
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted">
             Select multiple CSV/Excel/JSON/Parquet files for a multi-table source, or a single{" "}
-            <code>.zip</code> containing them.
+            <code className="rounded bg-line px-1 py-0.5 font-mono text-[11px]">.zip</code> containing them.
           </p>
           {files.length > 0 && (
-            <ul className="text-xs text-slate-400">
+            <ul className="font-mono text-xs text-paper/70">
               {files.map((f) => (
                 <li key={f.name}>{f.name}</li>
               ))}
@@ -94,30 +94,30 @@ function ConnectStep({ onStarted }: { onStarted: (runId: string) => void }) {
           value={path}
           onChange={(e) => setPath(e.target.value)}
           placeholder="/path/to/dataset.csv or a directory of tables"
-          className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+          className="w-full rounded border border-line bg-[#0E121B] px-3 py-2 text-sm text-paper placeholder:text-muted focus:border-canonical focus:outline-none"
         />
       )}
 
-      <label className="block text-sm text-slate-300">
+      <label className="block text-sm text-paper/80">
         Project / business name (optional)
         <input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder="e.g. Sparda Music Academy"
-          className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2"
+          className="mt-1 w-full rounded border border-line bg-[#0E121B] px-3 py-2 text-paper placeholder:text-muted focus:border-canonical focus:outline-none"
         />
-        <span className="mt-1 block text-xs text-slate-500">
+        <span className="mt-1 block text-xs text-muted">
           Names the plugin and (for warehouse-backed uploads) the database schema. Defaults to a
           generic name based on the detected industry if left blank.
         </span>
       </label>
 
-      <label className="block text-sm text-slate-300">
+      <label className="block text-sm text-paper/80">
         Industry (optional - skips auto-classification)
         <select
           value={industry}
           onChange={(e) => setIndustry(e.target.value)}
-          className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2"
+          className="mt-1 w-full rounded border border-line bg-[#0E121B] px-3 py-2 text-paper focus:border-canonical focus:outline-none"
         >
           <option value="">Auto-detect</option>
           {packs?.map((p) => (
@@ -128,18 +128,23 @@ function ConnectStep({ onStarted }: { onStarted: (runId: string) => void }) {
         </select>
       </label>
 
-      <label className="flex items-center gap-2 text-sm text-slate-300">
-        <input type="checkbox" checked={useLlm} onChange={(e) => setUseLlm(e.target.checked)} />
+      <label className="flex items-center gap-2 text-sm text-paper/80">
+        <input
+          type="checkbox"
+          checked={useLlm}
+          onChange={(e) => setUseLlm(e.target.checked)}
+          className="accent-canonical"
+        />
         Use Gemini for semantic profiling, prose generation, and self-critique
       </label>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       <button
         type="button"
         disabled={!canSubmit || submitting}
         onClick={submit}
-        className="rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+        className="rounded bg-physical px-4 py-2 text-sm font-semibold text-ink transition-transform hover:scale-[1.02] disabled:scale-100 disabled:opacity-40"
       >
         {submitting ? "Starting…" : "Generate plugin"}
       </button>
@@ -160,7 +165,9 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded px-3 py-1.5 ${active ? "bg-slate-800 text-white" : "text-slate-400 hover:text-slate-200"}`}
+      className={`rounded px-3 py-1.5 transition-colors ${
+        active ? "bg-canonical/15 text-canonical" : "text-muted hover:text-paper"
+      }`}
     >
       {children}
     </button>
@@ -223,10 +230,10 @@ function RunProgress({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
-        <div className="mb-3 flex items-center justify-between border-b border-slate-800/80 pb-3">
-          <span className="text-xs text-slate-500">
-            Run <span className="font-mono text-slate-400">{runId}</span>
+      <div className="animate-reveal-up rounded-lg border border-line bg-[#0E121B] p-4">
+        <div className="mb-3 flex items-center justify-between border-b border-line pb-3">
+          <span className="text-xs text-muted">
+            Run <span className="font-mono text-paper/70">{runId}</span>
           </span>
         </div>
         <StageTimeline events={events} status={status} currentStage={currentStage} />
@@ -249,7 +256,7 @@ function RunProgress({
       )}
 
       {status === "failed" && (
-        <p className="rounded border border-red-800/50 bg-red-950/20 p-3 text-sm text-red-300">
+        <p className="animate-reveal-up rounded border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
           Run failed. Check the timeline above for the stage that raised the error.
         </p>
       )}
@@ -257,11 +264,11 @@ function RunProgress({
       {validateEvent?.data.report && <ValidationReportView report={validateEvent.data.report} />}
 
       {status === "succeeded" && (
-        <div className="space-y-4">
+        <div className="animate-reveal-up space-y-4">
           <WarehouseCredentialsPanel runId={runId} />
           <a
             href={downloadUrl(runId)}
-            className="inline-block rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
+            className="inline-block rounded bg-physical px-4 py-2 text-sm font-semibold text-ink transition-transform hover:scale-[1.02]"
           >
             Download plugin (.zip)
           </a>

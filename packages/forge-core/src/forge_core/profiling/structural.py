@@ -5,6 +5,7 @@ a possibly multi-table DataSource.
 
 from __future__ import annotations
 
+import os
 import re
 
 import duckdb
@@ -13,19 +14,18 @@ from forge_core.models.common import ColumnRole
 from forge_core.models.datasource import DataSource, TableDescriptor
 from forge_core.models.schema_profile import ColumnProfile, StructuralProfile, TableGrain
 
-_NAME_PATTERNS: list[tuple[re.Pattern[str], ColumnRole]] = [
-    (re.compile(r"email"), ColumnRole.EMAIL),
-    (re.compile(r"phone|mobile|contact_no"), ColumnRole.PHONE),
-    (re.compile(r"^id$|_id$|^uuid$|_uuid$|_key$"), ColumnRole.IDENTIFIER),
-    (re.compile(r"date|_at$|_on$|timestamp"), ColumnRole.DATE),
-    (re.compile(r"amount|price|cost|revenue|fee|salary|total|balance|inr|usd"), ColumnRole.CURRENCY),
-    (re.compile(r"^is_|^has_|_flag$|active$"), ColumnRole.BOOLEAN_FLAG),
-    (re.compile(r"city|state|country|region|pincode|zip|postal|address"), ColumnRole.GEOGRAPHIC),
-]
-# Deliberately NOT matched by name pattern alone: "*_name" columns. Whether a
-# name-like column is a low-cardinality dimension (package_name, lab_partner)
-# or genuine free text (customer_name) depends on cardinality, not the column
-# name — so it's decided by the fallback logic in _guess_role below.
+# Value-shape tests, matched against real sample values or via a real
+# TRY_CAST query - never a column name. A name is evidence to show an
+# agent, never a decision rule (see docs/adr on structural-vs-semantic
+# triage). Deliberately absent from here: currency, geographic, email,
+# phone, "is this a business identifier" by name - none of those are
+# determinable from shape alone (email/phone have no distinctive-enough
+# value shape to test cheaply here without colliding with other formats -
+# `profiling/data_map.py`'s format_fingerprint owns that, with real
+# anchored regexes); identifier is a genuine structural fact computed below
+# (uniqueness + a surrogate-key-shaped type), everything else is an agent
+# claim, gate-verified before anything treats it as real.
+_UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE)
 
 _PERSON_NAME_HINTS = re.compile(
     r"(customer|patient|guardian|contact|user|full|first|last|student|employee|client|"
@@ -41,6 +41,9 @@ _NUMERIC_DUCKDB_TYPES = {
     "TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT", "UTINYINT", "USMALLINT",
     "UINTEGER", "UBIGINT", "FLOAT", "DOUBLE", "DECIMAL", "REAL",
 }
+_INTEGER_DUCKDB_TYPES = {
+    "TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT", "UTINYINT", "USMALLINT", "UINTEGER", "UBIGINT",
+}
 _TEMPORAL_DUCKDB_TYPES = {"DATE", "TIMESTAMP", "TIMESTAMP WITH TIME ZONE", "TIME"}
 _BOOLEAN_DUCKDB_TYPES = {"BOOLEAN"}
 
@@ -49,8 +52,37 @@ def _base_type(dtype: str) -> str:
     return dtype.split("(", maxsplit=1)[0].strip().upper()
 
 
-def _guess_role(name: str, dtype: str, cardinality: int, row_count: int) -> ColumnRole:
-    lower = name.lower()
+def _looks_temporal(con: duckdb.DuckDBPyConnection, ref: str, quoted: str, row_count: int) -> bool:
+    """Many sources (SQLite chief among them) store dates as plain TEXT -
+    dtype alone can't see them. `TRY_CAST` against the real values is the
+    same pattern `validation/plausibility.py`'s mixed_types check already
+    uses for numeric parseability: a query, not a `_at$`/`_on$` name guess,
+    and it can't be fooled by a phone number or a name that happens to
+    contain a hyphen the way a loose value-regex can."""
+    if row_count == 0:
+        return False
+    row = con.execute(
+        f"SELECT COUNT(*) FILTER (WHERE {quoted} IS NOT NULL) AS total, "
+        f"COUNT(*) FILTER (WHERE {quoted} IS NOT NULL AND TRY_CAST({quoted} AS DATE) IS NOT NULL) AS parsed "
+        f"FROM {ref}"
+    ).fetchone()
+    assert row is not None
+    total, parsed = row
+    return total > 0 and total == parsed
+
+
+def _guess_role(
+    con: duckdb.DuckDBPyConnection, ref: str, quoted: str, dtype: str, cardinality: int, row_count: int
+) -> ColumnRole:
+    """Shape and real-value evidence only - no column NAME is ever
+    consulted. `CURRENCY`/`GEOGRAPHIC`/name-derived `IDENTIFIER` are gone:
+    those are semantic claims, not shapes, and are resolved either by a
+    genuine structural fact (uniqueness of a surrogate-key-shaped column,
+    see `_is_structural_identifier` below) or by a gate-verified agent
+    claim (`ColumnClaim`) - never by a substring match on an English
+    column name, which silently fails on non-English data and is what let
+    a column named `total_score` become `CURRENCY` (and therefore
+    summable) purely by coincidence."""
     base = _base_type(dtype)
 
     if base in _BOOLEAN_DUCKDB_TYPES:
@@ -58,16 +90,13 @@ def _guess_role(name: str, dtype: str, cardinality: int, row_count: int) -> Colu
     if base in _TEMPORAL_DUCKDB_TYPES:
         return ColumnRole.DATETIME if "TIMESTAMP" in base or "TIME" in base else ColumnRole.DATE
 
-    for pattern, role in _NAME_PATTERNS:
-        if pattern.search(lower):
-            if role == ColumnRole.CURRENCY and base not in _NUMERIC_DUCKDB_TYPES:
-                continue
-            return role
-
     if base in _NUMERIC_DUCKDB_TYPES:
         if row_count and cardinality <= 2:
             return ColumnRole.BOOLEAN_FLAG
         return ColumnRole.NUMERIC
+
+    if _looks_temporal(con, ref, quoted, row_count):
+        return ColumnRole.DATE
 
     if row_count and cardinality <= max(1, min(30, row_count // 2)):
         return ColumnRole.CATEGORICAL
@@ -75,7 +104,90 @@ def _guess_role(name: str, dtype: str, cardinality: int, row_count: int) -> Colu
     return ColumnRole.FREE_TEXT
 
 
-def _is_likely_pii(name: str, role: ColumnRole) -> bool:
+def _is_structural_identifier(cardinality: int, row_count: int, null_count: int) -> bool:
+    """A complete primary-key test on its own (the same test `grain.py`
+    already uses for PK detection) - real uniqueness, not a `*_id`/`*_key`
+    name suffix, and not restricted to a particular dtype (a business ID
+    like "B1002" is a perfectly legitimate string key). The remaining
+    problem - a small dimension table's genuine label column being just as
+    unique as its real key - is a table-wide tie, not a per-column shape
+    question, so it's resolved by `_demote_tied_identifiers` below using
+    every column of the table at once, not here."""
+    return row_count > 0 and null_count == 0 and cardinality == row_count
+
+
+def _demote_tied_identifiers(columns: list[ColumnProfile]) -> list[ColumnProfile]:
+    """Table-wide second pass, mirroring `reclassify_dimension_labels`'s
+    own pattern (a per-column shape test can't see sibling columns, so
+    disambiguation that needs table-wide context happens as a follow-up
+    pass, not by cramming more state into `_guess_role`). When more than
+    one column in the same table is independently unique - a small
+    dimension table's label column is exactly as unique as its real key,
+    by construction - only one may keep the IDENTIFIER role: prefer an
+    integer or UUID-shaped column (the conventional surrogate-key shape),
+    else the first candidate in physical column order. The rest fall back
+    to whatever `_guess_role` would have assigned had it not tied on
+    uniqueness - never all of them, or a genuine dimension label like
+    `course_name` gets misclassified as a key instead of a group-by column."""
+    by_table: dict[str, list[ColumnProfile]] = {}
+    for col in columns:
+        by_table.setdefault(col.table, []).append(col)
+
+    demote: set[tuple[str, str]] = set()
+    for table_cols in by_table.values():
+        # Only columns actually PROMOTED to IDENTIFIER compete here - a
+        # DATE or BOOLEAN column can be just as unique per row (one date
+        # per order is normal) without that meaning anything about which
+        # column is the table's key; is_likely_identifier alone would
+        # wrongly sweep those up too and clobber an already-correct role.
+        candidates = [c for c in table_cols if c.guessed_role == ColumnRole.IDENTIFIER]
+        if len(candidates) <= 1:
+            continue
+        shaped = [
+            c
+            for c in candidates
+            if _base_type(c.dtype) in _INTEGER_DUCKDB_TYPES
+            or (c.sample_values and all(_UUID_RE.match(v) for v in c.sample_values))
+        ]
+        winner = (shaped or candidates)[0]
+        demote.update((c.table, c.name) for c in candidates if c is not winner)
+
+    if not demote:
+        return columns
+    # A demoted column was unique-per-row - by _guess_role's own cardinality
+    # rule (`cardinality <= row_count // 2`) that's always FREE_TEXT
+    # territory once row_count > 1, so revising the role is just "stop
+    # calling it an identifier". reclassify_dimension_labels (P2-02) still
+    # runs after this and will promote a genuine label back to CATEGORICAL
+    # using grain, exactly as it already does for any other FREE_TEXT column.
+    return [
+        col.model_copy(update={"guessed_role": ColumnRole.FREE_TEXT, "is_likely_identifier": False})
+        if (col.table, col.name) in demote
+        else col
+        for col in columns
+    ]
+
+
+def _is_likely_pii(name: str, role: ColumnRole, sample_values: list[str]) -> bool:
+    """Value-shape PII (email/phone) is a real structural fact - keep it.
+    Everything else (a person's name, an address) has no value-shape
+    signature at all; today's name-substring fallback below is a known,
+    documented gap (specifically because this can't yet be trusted as a
+    final decision on non-English data - closing it properly is an
+    agent-claim + gate problem, not a bigger regex).
+
+    Single gate, per docs/adr: FORGE_ENABLE_PII_PROTECTION defaults to
+    false during testing, so this always returns False and no column is
+    ever denied/redacted - detection logic stays intact underneath (every
+    branch below still runs and is exercised by tests), so turning
+    protection back on before any real customer's data reaches this
+    system is one env var, not a rewrite. This is the single source
+    `ColumnProfile.is_likely_pii` is computed from, so gating here alone
+    covers every downstream consumer (denial, redaction, dimension/measure
+    candidacy, the data map's top-values suppression, ...) without
+    touching each of them individually."""
+    if os.environ.get("FORGE_ENABLE_PII_PROTECTION", "false").strip().lower() not in ("1", "true", "yes"):
+        return False
     if role in (ColumnRole.EMAIL, ColumnRole.PHONE):
         return True
     lower = name.lower()
@@ -95,8 +207,6 @@ def _profile_column(
     null_percent = round((null_count / row_count * 100.0) if row_count else 0.0, 2)
     distinct_ratio = round((cardinality / row_count) if row_count else 0.0, 4)
 
-    role = _guess_role(col_name, dtype, cardinality, row_count)
-
     min_value = max_value = None
     sample_values: list[str] = []
     base = _base_type(dtype)
@@ -110,6 +220,11 @@ def _profile_column(
         ).fetchall()
         sample_values = [str(r[0]) for r in rows]
 
+    role = _guess_role(con, ref, quoted, dtype, cardinality, row_count)
+    is_identifier = _is_structural_identifier(cardinality, row_count, null_count)
+    if is_identifier and role in (ColumnRole.NUMERIC, ColumnRole.CATEGORICAL, ColumnRole.FREE_TEXT):
+        role = ColumnRole.IDENTIFIER
+
     return ColumnProfile(
         table=table.name,
         name=col_name,
@@ -121,8 +236,8 @@ def _profile_column(
         min_value=min_value,
         max_value=max_value,
         sample_values=sample_values,
-        is_likely_identifier=role == ColumnRole.IDENTIFIER,
-        is_likely_pii=_is_likely_pii(col_name, role),
+        is_likely_identifier=is_identifier,
+        is_likely_pii=_is_likely_pii(col_name, role, sample_values),
     )
 
 
@@ -170,4 +285,4 @@ def build_structural_profile(data_source: DataSource, con: duckdb.DuckDBPyConnec
     for table in data_source.tables:
         for col in table.columns:
             columns.append(_profile_column(con, table, col.name, col.raw_dtype, table.row_count))
-    return StructuralProfile(columns=columns)
+    return StructuralProfile(columns=_demote_tied_identifiers(columns))

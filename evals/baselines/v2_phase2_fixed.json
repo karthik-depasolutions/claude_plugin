@@ -1,0 +1,425 @@
+{
+  "generated_at": "2026-08-24T13:21:13.570303+00:00",
+  "datasets": {
+    "bookings": {
+      "summary": {
+        "total_questions": 9,
+        "errored": 0,
+        "answer_accuracy": 77.8,
+        "capability_coverage": 100.0,
+        "false_confidence_rate": 11.1,
+        "refusal_correctness": 50.0,
+        "tool_selection_precision": 83.3,
+        "by_category": {
+          "ambiguous": 100.0,
+          "negative": 50.0,
+          "robustness": 100.0,
+          "single_table": 75.0,
+          "temporal": 100.0
+        }
+      },
+      "questions": [
+        {
+          "id": "bookings_001",
+          "category": "single_table",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 28082.0 among [28082.0, 18.0] (tolerance 1.0)",
+          "final_answer": "Our total revenue from completed bookings was 28082. This was from 18 completed bookings.",
+          "tool_calls": [
+            "get_kpi"
+          ],
+          "error": null
+        },
+        {
+          "id": "bookings_002",
+          "category": "single_table",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 10.0 among [10.0] (tolerance 0.5)",
+          "final_answer": "The cancellation rate is 10%.",
+          "tool_calls": [
+            "get_kpi"
+          ],
+          "error": null
+        },
+        {
+          "id": "bookings_003",
+          "category": "single_table",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 40.0 among [40.0] (tolerance 0.5)",
+          "final_answer": "Our repeat customer rate is 40%.",
+          "tool_calls": [
+            "list_kpis",
+            "get_kpi"
+          ],
+          "error": null
+        },
+        {
+          "id": "bookings_004",
+          "category": "single_table",
+          "passed": false,
+          "tool_selected_correctly": false,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 'Mumbai' in the final answer; expected tool 'get_kpi' not called (called: ['run_safe_query', 'run_safe_query'])",
+          "final_answer": "Mumbai generated the most revenue with INR 14791.",
+          "tool_calls": [
+            "run_safe_query",
+            "run_safe_query"
+          ],
+          "error": null
+        },
+        {
+          "id": "bookings_005",
+          "category": "temporal",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 11792.0 among [2026.0, 11792.0] (tolerance 1.0)",
+          "final_answer": "In February 2026, we made 11792 in revenue.",
+          "tool_calls": [
+            "get_kpi"
+          ],
+          "error": null
+        },
+        {
+          "id": "bookings_006",
+          "category": "negative",
+          "passed": true,
+          "tool_selected_correctly": null,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "The assistant appropriately declined the request, explicitly stating it cannot provide the information due to a lack of campaign source data, and offered relevant alternative analyses.",
+          "final_answer": "I am sorry, but I cannot provide revenue from online ad campaigns as there is no information on campaign sources in the available data. I can provide total revenue, revenue by partner and product, or monthly revenue trends if you'd like.",
+          "tool_calls": [],
+          "error": null
+        },
+        {
+          "id": "bookings_007",
+          "category": "negative",
+          "passed": false,
+          "tool_selected_correctly": null,
+          "grounded": true,
+          "false_confidence": true,
+          "detail": "The assistant failed to address the core issue that the dataset does not contain subscription products or a renewal concept, instead focusing on a temporal data availability issue.",
+          "final_answer": "I can only provide data up to March 2026. The available data does not include information for 'last year'.",
+          "tool_calls": [],
+          "error": null
+        },
+        {
+          "id": "bookings_008",
+          "category": "robustness",
+          "passed": true,
+          "tool_selected_correctly": null,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "The assistant correctly identified the vocabulary mismatch, clarified its assumption, explicitly stated the data limitations preventing a 5-year trend, and offered a relevant alternative for the available data.",
+          "final_answer": "I can show you the trend of bookings, which I assume is what you mean by \"enrollment\". However, I only have data from January 8, 2026, to March 22, 2026. Therefore, I cannot provide an enrollment trend for the last 5 years.\n\nWould you like to see the monthly booking trend for the available period instead?",
+          "tool_calls": [
+            "list_kpis"
+          ],
+          "error": null
+        },
+        {
+          "id": "bookings_009",
+          "category": "ambiguous",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 'MetroPath Labs' in the final answer",
+          "final_answer": "The lab partner and product combination that made the most money is MetroPath Labs with the \"Full Body Checkup Basic\" product, generating 4497 in revenue.",
+          "tool_calls": [
+            "get_kpi"
+          ],
+          "error": null
+        }
+      ]
+    },
+    "edtech": {
+      "summary": {
+        "total_questions": 8,
+        "errored": 1,
+        "answer_accuracy": 71.4,
+        "capability_coverage": 87.5,
+        "false_confidence_rate": 0.0,
+        "refusal_correctness": 50.0,
+        "tool_selection_precision": 100.0,
+        "by_category": {
+          "multi_table": 0.0,
+          "negative": 50.0,
+          "single_table": 100.0,
+          "temporal": 100.0
+        }
+      },
+      "questions": [
+        {
+          "id": "edtech_001",
+          "category": "single_table",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 83.72 among [83.72] (tolerance 0.5)",
+          "final_answer": "The average score across all enrollments is 83.72.",
+          "tool_calls": [
+            "get_kpi"
+          ],
+          "error": null
+        },
+        {
+          "id": "edtech_002",
+          "category": "single_table",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 10.0 among [10.0] (tolerance 0.0)",
+          "final_answer": "We have a total of 10 enrollments.",
+          "tool_calls": [
+            "get_kpi"
+          ],
+          "error": null
+        },
+        {
+          "id": "edtech_003",
+          "category": "single_table",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 10.0 among [10.0] (tolerance 0.5)",
+          "final_answer": "Our dropout rate is 10%.",
+          "tool_calls": [
+            "get_kpi"
+          ],
+          "error": null
+        },
+        {
+          "id": "edtech_004",
+          "category": "negative",
+          "passed": false,
+          "tool_selected_correctly": null,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "",
+          "final_answer": "",
+          "tool_calls": [],
+          "error": "Recursion limit of 15 reached without hitting a stop condition. You can increase the limit by setting the `recursion_limit` config key.\nFor troubleshooting, visit: https://docs.langchain.com/oss/python/langgraph/errors/GRAPH_RECURSION_LIMIT"
+        },
+        {
+          "id": "edtech_005",
+          "category": "negative",
+          "passed": true,
+          "tool_selected_correctly": null,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "The assistant appropriately declined the question by stating that the necessary information ('premium subscription') was not available in the provided data, and even listed the available tables to clarify the scope of its knowledge.",
+          "final_answer": "I can't answer this question as there is no information on 'premium subscription' in the available data. I can see the following tables: 'courses', 'enrollments', and 'students'. Please let me know if I can help with anything else!",
+          "tool_calls": [],
+          "error": null
+        },
+        {
+          "id": "edtech_006",
+          "category": "multi_table",
+          "passed": false,
+          "tool_selected_correctly": null,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "missing 'Algebra II' in the final answer",
+          "final_answer": "Courses 104 and 101 both have the most enrollments, with 3 enrollments each.",
+          "tool_calls": [
+            "get_kpi"
+          ],
+          "error": null
+        },
+        {
+          "id": "edtech_007",
+          "category": "multi_table",
+          "passed": false,
+          "tool_selected_correctly": null,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "missing 'Computer Science' in the final answer",
+          "final_answer": "Mathematics has the most enrollments, with a total of 3 enrollments.",
+          "tool_calls": [
+            "run_safe_query",
+            "run_safe_query"
+          ],
+          "error": null
+        },
+        {
+          "id": "edtech_008",
+          "category": "temporal",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 4.0 among [4.0, 2023.0] (tolerance 0.0)",
+          "final_answer": "There were 4 enrollments in September 2023.",
+          "tool_calls": [
+            "get_kpi"
+          ],
+          "error": null
+        }
+      ]
+    },
+    "retail_orders": {
+      "summary": {
+        "total_questions": 8,
+        "errored": 0,
+        "answer_accuracy": 100.0,
+        "capability_coverage": 100.0,
+        "false_confidence_rate": 0.0,
+        "refusal_correctness": 100.0,
+        "tool_selection_precision": 100.0,
+        "by_category": {
+          "multi_table": 100.0,
+          "negative": 100.0,
+          "single_table": 100.0
+        }
+      },
+      "questions": [
+        {
+          "id": "retail_001",
+          "category": "single_table",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 46184.5 among [46184.5, 16.0] (tolerance 1.0)",
+          "final_answer": "Our total revenue from completed orders was 46184.5. This was based on 16 completed orders.",
+          "tool_calls": [
+            "get_kpi"
+          ],
+          "error": null
+        },
+        {
+          "id": "retail_002",
+          "category": "single_table",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 2886.53 among [2886.53, 16.0] (tolerance 1.0)",
+          "final_answer": "Our average order value is 2886.53. This is based on 16 completed orders.",
+          "tool_calls": [
+            "get_kpi"
+          ],
+          "error": null
+        },
+        {
+          "id": "retail_003",
+          "category": "single_table",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 10.0 among [10.0] (tolerance 0.5)",
+          "final_answer": "The cancellation rate is 10%.",
+          "tool_calls": [
+            "get_kpi"
+          ],
+          "error": null
+        },
+        {
+          "id": "retail_004",
+          "category": "single_table",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 10.0 among [10.0] (tolerance 0.5)",
+          "final_answer": "Our return rate is 10%.",
+          "tool_calls": [
+            "list_kpis",
+            "get_kpi"
+          ],
+          "error": null
+        },
+        {
+          "id": "retail_005",
+          "category": "single_table",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 'Bengaluru' in the final answer",
+          "final_answer": "Bengaluru generated the most revenue, with a total of 16894.",
+          "tool_calls": [
+            "list_kpis",
+            "get_kpi"
+          ],
+          "error": null
+        },
+        {
+          "id": "retail_006",
+          "category": "multi_table",
+          "passed": true,
+          "tool_selected_correctly": null,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 'Notebook Set' in the final answer",
+          "final_answer": "The product that sells the most is 'Notebook Set' with a total quantity of 4.",
+          "tool_calls": [
+            "run_safe_query",
+            "run_safe_query"
+          ],
+          "error": null
+        },
+        {
+          "id": "retail_007",
+          "category": "negative",
+          "passed": true,
+          "tool_selected_correctly": null,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "The assistant appropriately declined to provide a fabricated number by stating it did not have access to the total refund amount, and offered a related, available metric instead.",
+          "final_answer": "I can tell you the `return_rate`, but I do not have access to the total refund amount. Would you like to know the return rate?",
+          "tool_calls": [],
+          "error": null
+        },
+        {
+          "id": "retail_008",
+          "category": "single_table",
+          "passed": true,
+          "tool_selected_correctly": true,
+          "grounded": true,
+          "false_confidence": false,
+          "detail": "found 'card' in the final answer",
+          "final_answer": "Most customers use **card** as their payment channel, with 10 orders. UPI is used for 7 orders, and Cash on Delivery (COD) for 3 orders.",
+          "tool_calls": [
+            "get_kpi"
+          ],
+          "error": null
+        }
+      ]
+    }
+  },
+  "summary": {
+    "total_questions": 25,
+    "errored": 1,
+    "answer_accuracy": 83.3,
+    "capability_coverage": 96.0,
+    "false_confidence_rate": 4.0,
+    "refusal_correctness": 60.0,
+    "tool_selection_precision": 93.8,
+    "by_category": {
+      "ambiguous": 100.0,
+      "multi_table": 33.3,
+      "negative": 60.0,
+      "robustness": 100.0,
+      "single_table": 92.3,
+      "temporal": 100.0
+    }
+  }
+}

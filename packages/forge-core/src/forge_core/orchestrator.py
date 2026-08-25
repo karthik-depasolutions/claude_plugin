@@ -16,6 +16,7 @@ again to continue - clean data with a confident classification never pauses.
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -25,11 +26,13 @@ from forge_core.compiler import compile_all
 from forge_core.compiler.kpi_compiler import KpiCompileError, compile_kpi
 from forge_core.compiler.kpi_proposer import propose_kpis
 from forge_core.compiler.metric_generator import generate_metrics
+from forge_core.compiler.metric_proposer import propose_metrics
 from forge_core.generation import generate_plugin_content
 from forge_core.ingestion.postgres import redact as redact_connection_string
 from forge_core.ingestion.registry import ingest
 from forge_core.llm.provider import LLMProvider
 from forge_core.models.bindings import SchemaBindings
+from forge_core.models.claims import ColumnClaim
 from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.quality import DataReview
 from forge_core.models.run import RunRecord
@@ -39,6 +42,14 @@ from forge_core.profiling import build_schema_profile
 from forge_core.profiling.quality import build_data_review
 from forge_core.runtime_session import open_session
 from forge_core.validation import run_harness
+
+# U1 — DataUnderstanding artifact (deterministic, never blocks pipeline)
+try:
+    from forge_core.models.data_understanding import DomainAssessment  # noqa: F401
+    from forge_core.understanding.builder import build_data_understanding  # noqa: F401
+except Exception:  # pragma: no cover - import guard for partial installs
+    build_data_understanding = None  # type: ignore[assignment]
+    DomainAssessment = None  # type: ignore[assignment]
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
 DEFAULT_PACKS_ROOT = REPO_ROOT / "industry-packs"
@@ -134,6 +145,22 @@ def _run_pipeline_inner(
         if not resumed or stage not in (RunStage.INGEST, RunStage.PROFILE, RunStage.CLASSIFY):
             record.log(stage, message, **data)
 
+    # use_agent is now the default for every real run (CLI/API), but every
+    # LangChain agent construct-and-invoke is wrapped in a bare
+    # `except Exception` (agentic/*.py, understanding/agent.py) so it can
+    # never crash the pipeline - which means a missing API key degrades
+    # silently to zero agent-produced claims, indistinguishable from "the
+    # agent looked and found nothing confident to say". That silence was an
+    # acceptable trade-off when the agent was opt-in; it isn't once it's the
+    # expected path, so it's surfaced here, loudly, once, up front.
+    if use_agent and not os.environ.get("GEMINI_API_KEY"):
+        log_progress(
+            RunStage.PROFILE,
+            "GEMINI_API_KEY is not set - the agentic understanding pass cannot run this time. "
+            "Falling back to deterministic-only resolution; more roles than usual may need "
+            "manual confirmation.",
+        )
+
     log_progress(RunStage.INGEST, f"Ingesting {redact_connection_string(record.source_path)}")
     # Pass the raw string, not Path(record.source_path) - a live-database
     # connection string must reach registry.ingest() unmangled (Path()
@@ -225,6 +252,80 @@ def _run_pipeline_inner(
         suggested_industry=suggested_industry.model_dump() if suggested_industry else None,
     )
 
+    # U1 — build DataUnderstanding (deterministic, never blocks pipeline)
+    if build_data_understanding is not None:
+        try:
+            # DomainAssessment from classification (deterministic matcher is source of truth)
+            top = classification.ranked_matches[0] if classification.ranked_matches else None
+            pack_for_domain = None
+            try:
+                pack_for_domain = load_pack(packs_root / classification.primary_pack_slug) if top else None
+            except Exception:
+                pack_for_domain = None
+            # Collect expected roles for domain assessment
+            expected_roles: list[str] = []
+            if pack_for_domain is not None:
+                try:
+                    expected_roles = [k.canonical_role for k in pack_for_domain.kpis]  # type: ignore[attr-defined]
+                except Exception:
+                    expected_roles = []
+                # Fallback: try role_hints keys
+                if not expected_roles and hasattr(pack_for_domain, "role_hints"):
+                    expected_roles = list(getattr(pack_for_domain, "role_hints", {}).keys())
+            domain_obj = None
+            if DomainAssessment is not None and top is not None:
+                domain_obj = DomainAssessment(
+                    pack_slug=top.slug if hasattr(top, "slug") else classification.primary_pack_slug,
+                    confidence=float(top.confidence) if hasattr(top, "confidence") else 0.0,
+                    matched_roles=[],
+                    unmatched_roles=expected_roles,
+                    evidence=[f"Top match {classification.primary_pack_slug} ({getattr(top, 'confidence', 0):.2f})"],
+                )
+            understanding = build_data_understanding(
+                profile,
+                data_source,
+                data_review=record.data_review,
+                domain=domain_obj,
+                model_name=getattr(profiling_provider, "model", None) if profiling_provider else None,
+            )
+            # U3 — optional agentic enrichment for ambiguous columns (use_agent=True)
+            if use_agent and profiling_provider is not None and understanding.open_questions:
+                try:
+                    from forge_core.understanding.agent import enrich_data_understanding
+
+                    def _on_enrich_stats(stats: dict) -> None:
+                        record.log(RunStage.PROFILE, "Understanding enrichment agent", agent="understanding", **stats)
+
+                    enriched = enrich_data_understanding(
+                        understanding,
+                        profile.structural,
+                        data_source,
+                        model_name=getattr(profiling_provider, "model", None) if profiling_provider else None,
+                        on_stats=_on_enrich_stats,
+                    )
+                    # Only count as enriched if it actually reduced open questions or added business questions
+                    if len(enriched.open_questions) < len(understanding.open_questions) or len(
+                        enriched.business_questions
+                    ) > len(understanding.business_questions):
+                        record.log(
+                            RunStage.PROFILE,
+                            f"Enriched: {len(understanding.open_questions) - len(enriched.open_questions)} columns resolved, +{len(enriched.business_questions) - len(understanding.business_questions)} questions",
+                            enriched_open=len(enriched.open_questions),
+                        )
+                    understanding = enriched
+                except Exception as exc:  # noqa: BLE001 - enrichment never blocks
+                    record.log(RunStage.PROFILE, f"Enrichment skipped: {exc}")
+
+            record.data_understanding = understanding.model_dump(mode="json")
+            record.log(
+                RunStage.PROFILE,
+                f"DataUnderstanding: {len(understanding.columns)} columns, {len(understanding.open_questions)} open questions",
+                fingerprint=understanding.source_fingerprint,
+                open_questions=len(understanding.open_questions),
+            )
+        except Exception as exc:  # noqa: BLE001 - understanding must never block pipeline
+            record.log(RunStage.PROFILE, f"DataUnderstanding unavailable: {exc}")
+
     # One merged pause, never two: a run waits on the user only when there's
     # genuinely something to ask - an ambiguous industry match and/or a
     # data-quality review with questions. Both gates are pure functions of
@@ -247,6 +348,18 @@ def _run_pipeline_inner(
     pack = load_pack(packs_root / pack_slug)
 
     record.log(RunStage.BIND, f"Binding schema to {pack.slug}" + (" (agent-assisted)" if use_agent else ""))
+    # Captured here, keyed "table.column" for generate_metrics (Part 1/2 of
+    # the understanding-agent architecture) - the single wire from a
+    # gate-verified semantic claim to what SUM eligibility, unit, and
+    # provenance a shipped metric actually gets. Every claimed physical
+    # column lives on the fact table by construction (canonical-role
+    # binding is fact-table-scoped, see resolve_bindings' own docstring).
+    column_claims: dict[str, ColumnClaim] = {}
+
+    def _capture_claims(agent_claims: dict[str, tuple[str, ColumnClaim]]) -> None:
+        for _role, (physical_column, claim) in agent_claims.items():
+            column_claims[f"{claim.table}.{physical_column}"] = claim
+
     bindings = resolve_bindings(
         profile,
         pack,
@@ -261,6 +374,7 @@ def _run_pipeline_inner(
             agent="binding",
             **stats,
         ),
+        on_agent_claims=_capture_claims,
     )
     record.log(
         RunStage.BIND,
@@ -310,7 +424,9 @@ def _run_pipeline_inner(
     )
 
     record.log(RunStage.GENERATE, "Generating plugin content")
-    generated = generate_plugin_content(pack, kpi_defs, data_source, generation_provider, data_context)
+    generated = generate_plugin_content(
+        pack, kpi_defs, data_source, generation_provider, data_context, record.data_understanding
+    )
     record.log(RunStage.GENERATE, "Generation complete", commands=[c.name for c in generated.commands])
 
     record.log(RunStage.PACKAGE, "Packaging plugin")
@@ -319,7 +435,32 @@ def _run_pipeline_inner(
     # same fact table binding resolved the frozen KPIs against - a distinct
     # capability layer, not a replacement for kpi_defs.json.
     denied_flat = {name for cols in denied_by_table.values() for name in cols}
-    metric_defs = generate_metrics(bindings.table("fact").grain, profile.structural, denied_flat)
+    fact_table = bindings.table("fact").grain
+    # P2-09: provenance (including the status-ambiguity caveat on currency
+    # totals) is computed inside generate_metrics itself now - it needs
+    # per-metric dimension context that's naturally available there, and
+    # applies uniformly to fact-table and broadcast measures alike (see
+    # metric_generator._provenance_for's docstring).
+    metric_defs = generate_metrics(fact_table, profile.structural, denied_flat, claims=column_claims)
+    # P2-08: a few extra, business-framed views over the SAME verified
+    # metric catalog above - never a new measure/join/filter-value, only a
+    # curated (base_metric, value-set filter) pairing (see
+    # compiler/metric_proposer.py's docstring for why that's safe by
+    # construction rather than by validation after the fact).
+    agent_proposed_metric_ids: list[str] = []
+    if use_agent and generation_provider is not None:
+        physical_ref = {t.name: t.physical_ref for t in data_source.tables}
+        proposed_metrics = propose_metrics(
+            pack, bindings, metric_defs, physical_ref, generation_provider, data_context
+        )
+        metric_defs.extend(proposed_metrics)
+        agent_proposed_metric_ids = [m.id for m in proposed_metrics]
+    record.log(
+        RunStage.COMPILE_KPIS,
+        f"Generated {len(metric_defs)} parameterized metric(s)"
+        + (f" (+{len(agent_proposed_metric_ids)} AI-suggested)" if agent_proposed_metric_ids else ""),
+        agent_proposed_metrics=agent_proposed_metric_ids,
+    )
     spec = build_plugin_spec(
         pack,
         profile,
@@ -330,6 +471,7 @@ def _run_pipeline_inner(
         data_context=data_context,
         denied_by_table=denied_by_table,
         metric_defs=metric_defs,
+        data_understanding=record.data_understanding,
     )
     plugin_dir = Path(record.output_dir) / spec.manifest.name
     write_plugin(

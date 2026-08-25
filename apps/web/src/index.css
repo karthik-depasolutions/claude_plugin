@@ -1,14 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  /* Landing page design tokens - see docs in Landing.tsx. The existing
-     wizard pages keep using plain Tailwind slate/sky, untouched. */
+  /* Shared design tokens - originally landing-only, now also driving the
+     wizard (StageTimeline + its page shell): canonical (violet) is "not
+     yet resolved", physical (teal) is "confirmed against real data" - the
+     product's own core idea, reused as the literal visual language for a
+     pipeline step going from pending to done. */
   --color-ink: #0b0e14;
   --color-paper: #eceef3;
   --color-canonical: #8b8fff;
   --color-physical: #2fd9a8;
   --color-line: #1e2330;
   --color-muted: #7a8194;
+  --color-attention: #f5a623;
+  --color-danger: #ff6b6b;
 
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -48,6 +53,34 @@
     }
   }
 
+  /* A step's marker, while its stage is running: a scanning ring racing
+     around the outline - canonical (violet) trailing into physical
+     (teal), same idea as "resolving" a role against real data. */
+  @keyframes scan-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* The signature moment a step actually completes: one light sweep
+     travels across the row as its marker resolves from hollow-violet to
+     filled-teal - literally the product's own "canonical becomes
+     physical" idea, played out as a loading animation instead of just
+     described. Fires once, never loops. */
+  @keyframes resolve-sweep {
+    from {
+      transform: translateX(-120%);
+      opacity: 0;
+    }
+    12% {
+      opacity: 1;
+    }
+    to {
+      transform: translateX(120%);
+      opacity: 0;
+    }
+  }
+
   .animate-reveal-up {
     animation: reveal-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
@@ -59,12 +92,38 @@
   .animate-drift {
     animation: drift 14s ease-in-out infinite;
   }
+
+  /* The active progress segment: a soft highlight sweeping back and forth,
+     the bar-level echo of the same scanning idea as ScanRing/resolve-sweep. */
+  @keyframes progress-scan {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  .animate-scan-spin {
+    animation: scan-spin 1.15s linear infinite;
+  }
+
+  .animate-progress-scan {
+    animation: progress-scan 1.4s ease-in-out infinite;
+  }
+
+  .animate-resolve-sweep {
+    animation: resolve-sweep 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .animate-reveal-up,
   .animate-stage-check,
-  .animate-drift {
+  .animate-drift,
+  .animate-scan-spin,
+  .animate-resolve-sweep,
+  .animate-progress-scan {
     animation: none !important;
   }
 }

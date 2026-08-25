@@ -24,9 +24,10 @@ DEFAULT_GUARDRAIL_NOTES = [
 
 _SESSION_CONTEXT_SCRIPT = '''"""SessionStart hook for the MIS plugin.
 
-Prints this plugin's guardrails and data-quality findings to stdout, which
-Claude Code surfaces as session context. Reads config/schema_summary.json at
-session start so regenerating config/ alone keeps the guardrails current.
+Prints this plugin's guardrails, data-quality findings, and DataUnderstanding
+summary to stdout, which Claude Code surfaces as session context. Reads
+config/schema_summary.json and config/data-understanding.json at session start
+so regenerating config/ alone keeps the context current.
 
 Kept small and dependency-free (stdlib only) because its latency is prepended
 to every session start.
@@ -69,6 +70,42 @@ def main() -> int:
             location = f"{finding['table']}.{finding['column']}"
             lines.append(f"- [{finding['severity']}] {location}: {finding['summary']}")
 
+    # U5 — DataUnderstanding summary (grain, temporal, vocabularies, business questions)
+    du_path = PLUGIN_ROOT / "config" / "data-understanding.json"
+    if du_path.is_file():
+        try:
+            du = json.loads(du_path.read_text(encoding="utf-8"))
+            tables = du.get("tables") or []
+            if tables:
+                lines.append("## Data overview")
+                for t in tables[:3]:
+                    grain = (t.get("grain") or {}).get("description") or "unknown grain"
+                    temporal = t.get("temporal") or {}
+                    span = temporal.get("span")
+                    line = f"- {t['name']}: {t.get('row_count', '?')} rows, {grain}"
+                    if span:
+                        line += f", span {span}"
+                    lines.append(line)
+            cols = du.get("columns") or []
+            vocab_cols = [c for c in cols if c.get("vocabulary")]
+            if vocab_cols:
+                lines.append("## Key vocabularies")
+                for c in vocab_cols[:3]:
+                    vals = ", ".join(v["value"] for v in (c.get("vocabulary") or [])[:3])
+                    lines.append(f"- {c['table']}.{c['name']}: {vals}")
+            bqs = du.get("business_questions") or []
+            if bqs:
+                lines.append("## What you can ask (validated)")
+                for q in bqs[:4]:
+                    lines.append(f"- {q['question']}")
+            open_qs = du.get("open_questions") or []
+            if open_qs:
+                lines.append("## Open questions (do not guess)")
+                for q in open_qs[:2]:
+                    lines.append(f"- {q.get('column')}: {q.get('question')}")
+        except (OSError, ValueError):
+            pass
+
     print("\\n".join(lines))
     return 0
 
@@ -78,7 +115,9 @@ if __name__ == "__main__":
 '''
 
 
-def generate_hooks(pack: IndustryPack, data_context: dict | None = None) -> HooksFile:
+def generate_hooks(
+    pack: IndustryPack, data_context: dict | None = None, data_understanding: dict | None = None
+) -> HooksFile:
     """A SessionStart `command` handler whose stdout (the guardrails block,
     rendered by hooks/session_context.py from live config) is injected as
     session context. No customer- or LLM-controlled command is executed.

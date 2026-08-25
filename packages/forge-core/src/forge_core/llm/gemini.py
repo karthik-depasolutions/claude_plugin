@@ -6,9 +6,37 @@ from __future__ import annotations
 
 import json
 import os
-from typing import Any
+import time
+from typing import Any, Callable, TypeVar
 
 from forge_core.llm.provider import LLMError, LLMProvider
+
+_RETRY_ATTEMPTS = 4
+_RETRY_BASE_DELAY_S = 2.0
+_RETRYABLE_CODES = {429, 500, 502, 503, 504}
+
+T = TypeVar("T")
+
+
+def _with_retry(call: Callable[[], T]) -> T:
+    """Mandatory agent passes (Part 4) mean every real run now depends on
+    this call succeeding - a single transient 429/5xx used to silently
+    degrade the whole run to its no-LLM fallback. Only retries genuinely
+    transient API errors (rate limit, server error); a bad prompt or an
+    auth failure raises immediately, unretried."""
+    from google.genai import errors as genai_errors
+
+    last_error: Exception | None = None
+    for attempt in range(_RETRY_ATTEMPTS):
+        try:
+            return call()
+        except genai_errors.APIError as exc:
+            if exc.code not in _RETRYABLE_CODES or attempt == _RETRY_ATTEMPTS - 1:
+                raise
+            last_error = exc
+            time.sleep(_RETRY_BASE_DELAY_S * (2**attempt))
+    assert last_error is not None
+    raise last_error
 
 
 class GeminiProvider(LLMProvider):
@@ -39,7 +67,9 @@ class GeminiProvider(LLMProvider):
             response_mime_type="application/json",
             system_instruction=system,
         )
-        response = client.models.generate_content(model=self.model, contents=prompt, config=config)
+        response = _with_retry(
+            lambda: client.models.generate_content(model=self.model, contents=prompt, config=config)
+        )
         text = response.text
         if not text:
             raise LLMError("Gemini returned an empty response for a JSON-mode request.")
@@ -53,7 +83,9 @@ class GeminiProvider(LLMProvider):
 
         client = self._get_client()
         config = types.GenerateContentConfig(temperature=self.temperature, system_instruction=system)
-        response = client.models.generate_content(model=self.model, contents=prompt, config=config)
+        response = _with_retry(
+            lambda: client.models.generate_content(model=self.model, contents=prompt, config=config)
+        )
         text = response.text
         if not text:
             raise LLMError("Gemini returned an empty text response.")

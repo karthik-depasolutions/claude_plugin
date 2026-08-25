@@ -53,12 +53,12 @@
   question: "Which product sells the most?"
   category: multi_table
   expects:
-    behavior: qualify_answer
-    reason: >
-      Product-level data lives in order_items, a table not bound or
-      reachable by any tool today - only orders is bound. A correct answer
-      declines or clarifies rather than inventing a product name it never
-      queried.
+    # P2-01 (verified entity graph) made order_items genuinely reachable
+    # from orders via a real, checked join - product-level data is no
+    # longer unreachable, it's a correct answer. Real winner, no tie:
+    # Notebook Set sold 4 units, the next-highest is 3.
+    behavior: categorical
+    ground_truth: "Notebook Set"
 
 - id: retail_007
   question: "What was our total refund amount?"

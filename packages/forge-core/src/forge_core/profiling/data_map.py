@@ -23,25 +23,80 @@ _NUMERIC_DUCKDB_TYPES = {
     "TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT", "UTINYINT", "USMALLINT",
     "UINTEGER", "UBIGINT", "FLOAT", "DOUBLE", "DECIMAL", "REAL",
 }
-_CURRENCY_NAME_HINTS = re.compile(r"amount|price|cost|revenue|fee|salary|total|balance|inr|usd|rupee|rs_")
 _UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE)
+_PHONE_RE = re.compile(r"^\+?[\d\s\-\(\)]{7,15}$")
+_AADHAAR_RE = re.compile(r"^\d{4}\s?\d{4}\s?\d{4}$|^\d{12}$")
+_PAN_RE = re.compile(r"^[A-Z]{5}[0-9]{4}[A-Z]$")
+_URL_RE = re.compile(r"^https?://", re.IGNORECASE)
+_BOOLEAN_STR_VALUES = {"true", "false", "yes", "no", "y", "n", "1", "0", "t", "f"}
 
 
 def _base_type(dtype: str) -> str:
     return dtype.split("(", maxsplit=1)[0].strip().upper()
 
 
+def _all_match(values: list[str], pattern: re.Pattern[str]) -> bool:
+    return bool(values) and all(bool(pattern.match(v.strip())) for v in values if v.strip())
+
+
+def _is_boolean_str(values: list[str], cardinality: int) -> bool:
+    if cardinality > 3:
+        return False
+    lowered = {v.strip().lower() for v in values if v.strip()}
+    return bool(lowered) and lowered.issubset(_BOOLEAN_STR_VALUES)
+
+
 def _format_fingerprint(col: ColumnProfile) -> str | None:
+    # Temporal already captured via dtype
     if col.guessed_role in (ColumnRole.DATE, ColumnRole.DATETIME):
+        # Distinguish date vs datetime by dtype string
+        base = _base_type(col.dtype)
+        if "TIMESTAMP" in base or "TIME" in base:
+            return "iso_datetime"
         return "iso_date"
     if col.guessed_role == ColumnRole.EMAIL:
         return "email"
-    if _base_type(col.dtype) in _NUMERIC_DUCKDB_TYPES and _CURRENCY_NAME_HINTS.search(col.name.lower()):
+    if col.guessed_role == ColumnRole.PHONE or _all_match(col.sample_values, _PHONE_RE):
+        return "phone"
+    if col.sample_values and _all_match(col.sample_values, _AADHAAR_RE) and col.cardinality > 5:
+        return "aadhaar"
+    if col.sample_values and _all_match(col.sample_values, _PAN_RE):
+        return "pan"
+    if col.sample_values and _all_match(col.sample_values, _URL_RE):
+        return "url"
+    if col.sample_values and _is_boolean_str(col.sample_values, col.cardinality):
+        return "boolean_str"
+    if _base_type(col.dtype) in _NUMERIC_DUCKDB_TYPES:
+        # Epoch seconds/ms: the range itself is distinctive enough that no
+        # other numeric quantity plausibly lands there by chance - a real
+        # structural fact, unlike "percent" below, which a name hint used
+        # to gate. Deliberately NOT similarly settled: a 0-100 bounded
+        # numeric (age? score? percent? rating?) is genuinely ambiguous
+        # from range alone - that ambiguity is real and belongs to the
+        # agent, not resolved by a name that silently fails on non-English
+        # column names (Tier S/A triage - see docs/adr).
+        try:
+            mn = int(float(col.min_value)) if col.min_value is not None else 0
+            mx = int(float(col.max_value)) if col.max_value is not None else 0
+            if 1_000_000_000 <= mn <= 2_000_000_000 or 1_000_000_000_000 <= mn <= 2_000_000_000_000:
+                return "epoch"
+        except (ValueError, TypeError):
+            pass
+    # Currency symbol inside VARCHAR values (e.g. "₹1,200" or "$45.00")
+    if col.sample_values and any(any(sym in v for sym in ("₹", "$", "€", "£")) for v in col.sample_values):
         return "currency"
     if col.sample_values and all(_UUID_RE.match(v) for v in col.sample_values):
         return "uuid"
+    # Enum: categorical with small cardinality and short values (not free-text)
     if col.guessed_role == ColumnRole.CATEGORICAL and col.cardinality <= 12:
-        return "enum"
+        avg_len = sum(len(v) for v in col.sample_values) / len(col.sample_values) if col.sample_values else 0
+        if avg_len < 40:
+            return "enum"
+    if col.guessed_role == ColumnRole.CATEGORICAL and col.cardinality <= 20:
+        # Wide enum but still enumeration-like if values short
+        avg_len = sum(len(v) for v in col.sample_values) / len(col.sample_values) if col.sample_values else 999
+        if avg_len < 25:
+            return "enum"
     return None
 
 
@@ -52,7 +107,14 @@ def _is_ambiguous(col: ColumnProfile, fingerprint: str | None) -> bool:
     worth a second look given how much damage a wrong guess there does
     (P1.2). A wide categorical is borderline between a genuine dimension
     and a free-text/identifier column that slipped past the cardinality
-    heuristic."""
+    heuristic.
+
+    U2: any confident fingerprint (currency, enum, phone, etc.) resolves
+    ambiguity — the whole point of richer fingerprints is to reduce the
+    agent's work queue.
+    """
+    if fingerprint is not None:
+        return False
     if col.guessed_role == ColumnRole.NUMERIC and fingerprint is None:
         return True
     if col.guessed_role == ColumnRole.FREE_TEXT:

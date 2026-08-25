@@ -32,4 +32,12 @@ def check_tables_allowed(statement: exp.Expression, allowed_tables: list[str]) -
 
 
 def _normalize(table_ref: str) -> str:
-    return table_ref.strip().lower().replace('"', "").replace("'", "")
+    """Bare table name only, schema/catalog qualifier dropped - schema_
+    bindings.json's allowed_tables entries are schema-qualified
+    (`srcdb."enrollments"`), but sqlglot's `exp.Table.name` never includes
+    the schema, so comparing the raw strings rejected every real
+    multi-table metric query (P2-07) even though the underlying table was
+    genuinely allowed. Safe because every plugin attaches exactly one
+    source schema (`srcdb`) - see `ingestion/`."""
+    bare = table_ref.strip().lower().replace('"', "").replace("'", "")
+    return bare.rsplit(".", 1)[-1]

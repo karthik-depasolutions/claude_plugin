@@ -98,6 +98,23 @@ class DimensionRef(BaseModel):
     fan_out_safe: bool
 
 
+class Provenance(BaseModel):
+    """P2-09 — attached to every derived fact so trustworthiness becomes a
+    graph traversal instead of an implicit assumption. `inputs` names the
+    upstream claims/facts this one was built from (e.g. a ColumnClaim's
+    evidence, a JoinEdge's evidence) - walked transitively by a consumer
+    deciding whether to surface a caveat, not interpreted here."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    origin: Literal["deterministic", "inferred_llm", "declared", "human_confirmed"]
+    confidence: float = Field(ge=0.0, le=1.0)
+    evidence: list[str] = Field(default_factory=list)
+    computed_by: str = Field(description='e.g. "metric_generator.generate_metrics", "kpi_proposer.propose_metrics"')
+    computed_at: str = Field(description="ISO 8601 timestamp")
+    inputs: list[str] = Field(default_factory=list, description="Upstream claim/evidence identifiers.")
+
+
 class MetricDefinition(BaseModel):
     """P2-07 — replaces a frozen `CompiledKpi` SQL string with a
     parameterized definition the runtime renders at query time. Every field
@@ -112,6 +129,18 @@ class MetricDefinition(BaseModel):
     description: str
     base_entity: str
     measure_column: str
+    measure_table: str = Field(
+        default="",
+        description="Physical entity measure_column actually lives on. Empty means base_entity "
+        "(the common case). Set to a joined entity's name for a 'broadcast' measure - e.g. "
+        "courses.price_inr aggregated at the enrollments grain via a verified N:1 join - which "
+        "requires measure_join_path to also be set.",
+    )
+    measure_join_path: list[JoinEdge] = Field(
+        default_factory=list,
+        description="[] when measure_table == base_entity. Otherwise the verified, non-fan-out "
+        "path from base_entity to measure_table - the same shape as DimensionRef.join_path.",
+    )
     aggregation: AggOp
     unit: str
     allowed_dimensions: list[DimensionRef] = Field(default_factory=list)
@@ -122,6 +151,7 @@ class MetricDefinition(BaseModel):
     default_filters: list[FilterSpec] = Field(default_factory=list)
     assertions: list[str] = Field(default_factory=list, description="Validated by P1-01's AST policy.")
     source: Literal["generated", "agent_proposed"] = "generated"
+    prov: Provenance | None = None
 
 
 __all__ = [
@@ -130,6 +160,7 @@ __all__ = [
     "FilterOp",
     "FilterSpec",
     "MetricDefinition",
+    "Provenance",
     "TimeGrain",
     "render_aggregation",
 ]

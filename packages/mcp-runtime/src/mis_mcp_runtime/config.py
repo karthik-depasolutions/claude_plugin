@@ -77,6 +77,20 @@ class DimensionConfig:
 
 
 @dataclass(frozen=True)
+class FilterConfig:
+    column: str
+    op: str
+    values: list
+
+
+@dataclass(frozen=True)
+class ProvenanceConfig:
+    origin: str
+    confidence: float
+    evidence: list[str]
+
+
+@dataclass(frozen=True)
 class MetricConfig:
     id: str
     label: str
@@ -88,6 +102,10 @@ class MetricConfig:
     allowed_dimensions: list[DimensionConfig]
     allowed_time_grains: list[str]
     time_column: str | None = None
+    measure_table: str = ""
+    measure_join_path: list[JoinEdgeConfig] = field(default_factory=list)
+    default_filters: list[FilterConfig] = field(default_factory=list)
+    prov: ProvenanceConfig | None = None
 
 
 @dataclass(frozen=True)
@@ -205,6 +223,26 @@ def load_runtime_config(
                 ],
                 allowed_time_grains=m.get("allowed_time_grains", []),
                 time_column=m.get("time_column"),
+                measure_table=m.get("measure_table") or m["base_entity"],
+                measure_join_path=[
+                    JoinEdgeConfig(
+                        from_table=e["from_table"], from_column=e["from_column"],
+                        to_table=e["to_table"], to_column=e["to_column"],
+                    )
+                    for e in m.get("measure_join_path", [])
+                ],
+                default_filters=[
+                    FilterConfig(column=f["column"], op=f["op"], values=f["values"])
+                    for f in m.get("default_filters", [])
+                ],
+                prov=(
+                    ProvenanceConfig(
+                        origin=m["prov"]["origin"], confidence=m["prov"]["confidence"],
+                        evidence=m["prov"].get("evidence", []),
+                    )
+                    if m.get("prov")
+                    else None
+                ),
             )
             for m in metrics_raw.get("metrics", [])
         ]

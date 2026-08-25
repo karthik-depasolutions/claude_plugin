@@ -68,11 +68,23 @@ def render_metric_query(
     base_ref = physical_ref[metric.base_entity]
 
     joins: list[str] = []
+    seen = {metric.base_entity}
     select_group: str | None = None
+
+    measure_table = metric.measure_table or metric.base_entity
+    for edge in metric.measure_join_path:
+        if edge.to_table in seen:
+            continue
+        if edge.to_table not in physical_ref or edge.from_table not in physical_ref:
+            raise MetricQueryError(f"Unknown table in measure join path: {edge.from_table}/{edge.to_table}")
+        joins.append(
+            f'JOIN {physical_ref[edge.to_table]} AS "{edge.to_table}" ON '
+            f'"{edge.from_table}"."{edge.from_column}" = "{edge.to_table}"."{edge.to_column}"'
+        )
+        seen.add(edge.to_table)
 
     if group_by is not None:
         dim = _dimension(metric, group_by)
-        seen = {metric.base_entity}
         for edge in dim.join_path:
             if edge.to_table in seen:
                 continue
@@ -94,16 +106,37 @@ def render_metric_query(
         if not metric.time_column:
             raise MetricQueryError(f"time_grain requested but metric {metric.id!r} has no time_column")
 
+    table_by_filterable_column = {metric.measure_column: measure_table}
+    for d in metric.allowed_dimensions:
+        table_by_filterable_column.setdefault(d.physical, d.table)
+
     conditions: list[str] = []
     params: list[Any] = []
-    valid_filter_columns = {metric.measure_column} | {d.physical for d in metric.allowed_dimensions}
+    # metric.default_filters are the metric's own baseline scope (e.g. an
+    # agent-proposed "completed enrollments only" view, P2-08) - always
+    # applied, in addition to whatever the caller passes at query time.
+    for f in metric.default_filters:
+        if f.column not in table_by_filterable_column:
+            raise MetricQueryError(f"{f.column!r} is not a filterable field for metric {metric.id!r}")
+        col_ref = f'"{table_by_filterable_column[f.column]}"."{f.column}"'
+        if f.op in ("in", "not_in"):
+            placeholders = ", ".join(["?"] * len(f.values))
+            keyword = "NOT IN" if f.op == "not_in" else "IN"
+            conditions.append(f"{col_ref} {keyword} ({placeholders})")
+            params.extend(f.values)
+        else:
+            op_sql = _FILTER_OP_SQL.get(f.op)
+            if op_sql is None:
+                raise MetricQueryError(f"Unknown filter op {f.op!r} on metric {metric.id!r}")
+            conditions.append(f"{col_ref} {op_sql} ?")
+            params.append(f.values[0])
     for column, value in (filters or {}).items():
-        if column not in valid_filter_columns:
+        if column not in table_by_filterable_column:
             raise MetricQueryError(f"{column!r} is not a filterable field for metric {metric.id!r}")
-        conditions.append(f'"{metric.base_entity}"."{column}" = ?')
+        conditions.append(f'"{table_by_filterable_column[column]}"."{column}" = ?')
         params.append(value)
 
-    quoted_measure = f'"{metric.base_entity}"."{metric.measure_column}"'
+    quoted_measure = f'"{measure_table}"."{metric.measure_column}"'
     agg_sql = _render_aggregation(metric.aggregation, quoted_measure)
 
     select_parts = [f"{agg_sql} AS value"]

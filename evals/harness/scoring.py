@@ -23,7 +23,12 @@ class Expectation(BaseModel):
 
     behavior: Behavior
     tool: str | None = Field(default=None, description="Expected tool name, if any.")
-    ground_truth: float | str | None = None
+    ground_truth: float | str | list[str] | None = Field(
+        default=None,
+        description="A list is for a categorical question with a genuine tie in the real data - "
+        "any one of the listed values in the final answer counts as correct, since naming any "
+        "single tied winner is a fully correct answer.",
+    )
     tolerance: float = 0.0
     reason: str = ""
 
@@ -101,9 +106,16 @@ def score_numeric(final_answer: str, ground_truth: float, tolerance: float) -> t
     return False, f"found {numbers}, expected {ground_truth} (tolerance {tolerance})"
 
 
-def score_categorical(final_answer: str, ground_truth: str) -> tuple[bool, str]:
-    hit = ground_truth.lower() in final_answer.lower()
-    return hit, f"{'found' if hit else 'missing'} {ground_truth!r} in the final answer"
+def score_categorical(final_answer: str, ground_truth: str | list[str]) -> tuple[bool, str]:
+    """A list ground_truth means a genuine tie in the real data - any one of
+    the listed values is a fully correct answer, not just the first-listed
+    one."""
+    candidates = ground_truth if isinstance(ground_truth, list) else [ground_truth]
+    lowered = final_answer.lower()
+    matched = [c for c in candidates if c.lower() in lowered]
+    hit = bool(matched)
+    detail = f"found {matched!r}" if hit else f"missing all of {candidates!r}"
+    return hit, f"{detail} in the final answer"
 
 
 def score_refusal_deterministic(final_answer: str) -> tuple[bool, str]:

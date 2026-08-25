@@ -84,6 +84,7 @@ def _config_files(
     data_context: dict | None = None,
     denied_by_table: dict[str, set[str]] | None = None,
     metric_defs: list | None = None,
+    data_understanding: dict | None = None,
 ) -> list[GeneratedFile]:
     source = profile.source
     if denied_by_table is None:
@@ -181,6 +182,15 @@ def _config_files(
             GeneratedFile(
                 relative_path="config/metric_defs.json",
                 content=json.dumps(metrics_json, indent=2),
+                is_json=True,
+            )
+        )
+    # U1 — DataUnderstanding artifact (always emitted when available)
+    if data_understanding is not None:
+        files.append(
+            GeneratedFile(
+                relative_path="config/data-understanding.json",
+                content=json.dumps(data_understanding, indent=2, default=str),
                 is_json=True,
             )
         )
@@ -298,6 +308,7 @@ def build_plugin_spec(
     data_context: dict | None = None,
     denied_by_table: dict[str, set[str]] | None = None,
     metric_defs: list | None = None,
+    data_understanding: dict | None = None,
 ) -> PluginSpec:
     """Build the complete in-memory plugin. Every path here is a
     conventional directory (`skills/`, `agents/`, `commands/`,
@@ -360,7 +371,7 @@ def build_plugin_spec(
             )
         )
     files.extend(
-        _config_files(pack, profile, bindings, kpi_defs, data_context, denied_by_table, metric_defs)
+        _config_files(pack, profile, bindings, kpi_defs, data_context, denied_by_table, metric_defs, data_understanding)
     )
     if generated.hooks is not None:
         # The SessionStart command handler in hooks.json runs this script;

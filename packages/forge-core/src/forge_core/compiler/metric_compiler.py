@@ -60,12 +60,24 @@ def render_metric_query(
     base_ref = physical_ref[metric.base_entity]
 
     joins: list[str] = []
+    seen_tables = {metric.base_entity}
     select_group: str | None = None
     group_alias = "grp"
 
+    measure_table = metric.measure_table or metric.base_entity
+    for edge in metric.measure_join_path:
+        if edge.to_table in seen_tables:
+            continue
+        if edge.to_table not in physical_ref or edge.from_table not in physical_ref:
+            raise MetricCompileError(f"Unknown table in measure join path: {edge.from_table}/{edge.to_table}")
+        joins.append(
+            f'JOIN {physical_ref[edge.to_table]} AS "{edge.to_table}" ON '
+            f'"{edge.from_table}"."{edge.from_column}" = "{edge.to_table}"."{edge.to_column}"'
+        )
+        seen_tables.add(edge.to_table)
+
     if group_by is not None:
         dim = _dimension_ref(metric, group_by)
-        seen_tables = {metric.base_entity}
         for edge in dim.join_path:
             if edge.to_table in seen_tables:
                 continue
@@ -88,13 +100,19 @@ def render_metric_query(
         if not metric.time_column:
             raise MetricCompileError(f"time_grain requested but metric {metric.id!r} has no time_column")
 
+    table_by_filterable_column = {metric.measure_column: measure_table}
+    for d in metric.allowed_dimensions:
+        table_by_filterable_column.setdefault(d.physical, d.table)
+
     conditions: list[str] = []
     params: list[Any] = []
-    for f in filters or []:
-        valid_filter_columns = {metric.measure_column} | {d.physical for d in metric.allowed_dimensions}
-        if f.column not in valid_filter_columns:
+    # metric.default_filters are the metric's own baseline scope (e.g. an
+    # agent-proposed "completed enrollments only" view, P2-08) - always
+    # applied, in addition to whatever the caller passes at query time.
+    for f in [*metric.default_filters, *(filters or [])]:
+        if f.column not in table_by_filterable_column:
             raise MetricCompileError(f"{f.column!r} is not a filterable field for metric {metric.id!r}")
-        col_ref = f'"{metric.base_entity}"."{f.column}"'
+        col_ref = f'"{table_by_filterable_column[f.column]}"."{f.column}"'
         if f.op.value in ("in", "not_in"):
             placeholders = ", ".join(["?"] * len(f.values))
             keyword = "NOT IN" if f.op.value == "not_in" else "IN"
@@ -104,7 +122,7 @@ def render_metric_query(
             conditions.append(f"{col_ref} {_SQL_FILTER_OP[f.op.value]} ?")
             params.append(f.values[0])
 
-    quoted_measure = f'"{metric.base_entity}"."{metric.measure_column}"'
+    quoted_measure = f'"{measure_table}"."{metric.measure_column}"'
     agg_sql = render_aggregation(metric.aggregation, quoted_measure)
 
     select_parts = [f"{agg_sql} AS value"]

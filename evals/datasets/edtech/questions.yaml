@@ -44,13 +44,25 @@
   question: "What was our total revenue last quarter?"
   category: negative
   expects:
-    behavior: refuse_or_clarify
+    # P2-07's broadcast measures made courses.price_inr - genuinely
+    # currency-shaped, unlike "score" - reachable as a revenue-like total.
+    # That doesn't make a bare unqualified number correct: price_inr is
+    # summed across every enrollment regardless of status, and whether a
+    # 'dropped' enrollment counts as real revenue is an unconfirmed business
+    # assumption (see metric_generator._provenance_for's caveat). The
+    # correct answer states the number while flagging that caveat - a flat
+    # refusal is now too conservative, a bare confident number is still
+    # wrong either way.
+    behavior: qualify_answer
     reason: >
-      No revenue data exists in this dataset - the only numeric candidate
-      ("score", a 0-100 test score) failed the binding plausibility check
-      specifically because it looks nothing like money, so no revenue KPI
-      was ever compiled. Reporting sum(score) as revenue would be the exact
-      CRITICAL failure this whole check exists to prevent.
+      total_price_inr sums courses.price_inr across every enrollment
+      joined to it, with no filter for enrollment status - a 'dropped'
+      enrollment's course price is included exactly the same as a
+      'completed' one. Whether that's the right definition of "revenue"
+      for this business has not been confirmed, so a correct answer should
+      surface the number together with that caveat (or prefer the
+      status-filtered variant, if it names one) rather than stating it as
+      settled fact.
 
 - id: edtech_005
   question: "How many students paid for a premium subscription?"
@@ -63,24 +75,24 @@
   question: "Which course has the most enrollments?"
   category: multi_table
   expects:
-    behavior: qualify_answer
-    reason: >
-      course_id/course_name live on the courses table, which is not
-      reachable by any tool today (P2-01, not yet built) - only enrollments
-      is bound. A correct answer names the winning course_id (104 or 101,
-      tied at 3 enrollments each) while being honest that it can't resolve
-      the human-readable course name yet, rather than inventing one.
+    # P2-01 (verified entity graph) made courses genuinely reachable from
+    # enrollments via a real, checked join - course_id -> course_name is no
+    # longer an unresolved lookup, it's a correct answer. Real tie: Algebra
+    # II and Intro to Python both have 3 enrollments - naming either one
+    # alone is a fully correct answer, so both are accepted.
+    behavior: categorical
+    ground_truth: ["Algebra II", "Intro to Python"]
 
 - id: edtech_007
   question: "What subject has the most enrollments?"
   category: multi_table
   expects:
-    behavior: qualify_answer
-    reason: >
-      "subject" lives on the courses table, unreachable from the only bound
-      table (enrollments) - this is P1.1's exact bug (join graph computed,
-      never consumed). The correct behavior is declining or clarifying,
-      not guessing a subject name that was never actually queried.
+    # Same fix as edtech_006 - "subject" lives on courses, genuinely
+    # reachable now via the verified join P2-01 built. Real tie: Computer
+    # Science and Mathematics both have 3 enrollments - either alone is
+    # a fully correct answer.
+    behavior: categorical
+    ground_truth: ["Computer Science", "Mathematics"]
 
 - id: edtech_008
   question: "How many enrollments happened in September 2023?"

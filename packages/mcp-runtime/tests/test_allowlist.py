@@ -42,3 +42,15 @@ def test_aliased_join_to_a_disallowed_table_is_still_rejected():
     )
     with pytest.raises(AllowlistError):
         check_tables_allowed(stmt, ["src_orders"])
+
+
+def test_schema_qualified_allowed_tables_match_the_bare_table_reference():
+    """Regression: schema_bindings.json's allowed_tables are schema-qualified
+    (srcdb."enrollments"), but a rendered metric query references the bare
+    aliased table name - the mismatch rejected every real P2-07 multi-table
+    metric query even though the underlying table was genuinely allowed."""
+    stmt = _parse(
+        'SELECT SUM(c."price_inr") AS value FROM "enrollments" AS "enrollments" '
+        'JOIN "courses" AS "courses" ON "enrollments"."course_id" = "courses"."course_id"'
+    )
+    check_tables_allowed(stmt, ['srcdb."enrollments"', 'srcdb."courses"', 'srcdb."students"'])

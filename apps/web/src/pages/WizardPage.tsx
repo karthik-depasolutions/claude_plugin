@@ -12,19 +12,19 @@ export default function WizardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="flex items-start justify-between border-b border-slate-800 px-6 py-4">
+    <div className="min-h-screen bg-ink font-sans text-paper">
+      <header className="flex items-start justify-between border-b border-line px-6 py-4">
         <div>
-          <Link to="/" className="text-xs text-slate-500 hover:text-slate-300">
+          <Link to="/" className="text-xs text-muted transition-colors hover:text-canonical">
             ← Data2plugin
           </Link>
-          <h1 className="mt-1 text-lg font-semibold tracking-tight">Generate a plugin</h1>
-          <p className="text-sm text-slate-400">Connect a data source and walk through the pipeline.</p>
+          <h1 className="mt-1 font-display text-lg font-semibold tracking-tight text-paper">Generate a plugin</h1>
+          <p className="text-sm text-muted">Connect a data source and watch it resolve, step by step.</p>
         </div>
         {user && (
-          <div className="flex items-center gap-3 text-xs text-slate-500">
-            <span>{user.email}</span>
-            <button type="button" onClick={handleLogout} className="text-slate-400 hover:text-slate-200">
+          <div className="flex items-center gap-3 text-xs text-muted">
+            <span className="font-mono">{user.email}</span>
+            <button type="button" onClick={handleLogout} className="transition-colors hover:text-paper">
               Log out
             </button>
           </div>

@@ -15,14 +15,25 @@ from forge_core.llm.cassette import CassetteProvider
 from forge_core.llm.gemini import GeminiProvider
 from forge_core.llm.provider import LLMError, LLMProvider
 
-Role = Literal["profiling", "generation", "critique"]
+Role = Literal["profiling", "generation", "critique", "agent"]
 
 _ROLE_ENV_VAR = {
     "profiling": "FORGE_LLM_PROFILING_MODEL",
     "generation": "FORGE_LLM_GENERATION_MODEL",
     "critique": "FORGE_LLM_CRITIQUE_MODEL",
+    "agent": "FORGE_LLM_AGENT_MODEL",
 }
-_DEFAULT_MODEL = "gemini-2.5-flash"
+_DEFAULT_MODEL = "gemini-3.7-flash"
+
+
+def resolve_model(role: Role) -> str:
+    """The one place that knows the default model and the env var per role.
+    `agentic/*.py`'s LangChain agents call this directly (they bypass
+    `get_provider` - a different interface, `ChatGoogleGenerativeAI` vs the
+    `LLMProvider` protocol) so there is exactly one default to update, not
+    one per agent file."""
+    load_dotenv()
+    return os.environ.get(_ROLE_ENV_VAR[role], _DEFAULT_MODEL)
 
 
 def get_provider(role: Role = "generation") -> LLMProvider:
@@ -31,8 +42,7 @@ def get_provider(role: Role = "generation") -> LLMProvider:
     # needs to load `.env` - covers processes (like the API's uvicorn
     # reloader subprocess) that don't inherit a shell's exported vars.
     # Never overrides a var the environment already set explicitly.
-    load_dotenv()
-    model = os.environ.get(_ROLE_ENV_VAR[role], _DEFAULT_MODEL)
+    model = resolve_model(role)
     cassette_mode = os.environ.get("FORGE_LLM_CASSETTE_MODE", "off").lower()
     cassette_dir = Path(os.environ.get("FORGE_LLM_CASSETTE_DIR", "fixtures/cassettes"))
 
@@ -58,4 +68,4 @@ class _NullProvider:
         raise LLMError("Attempted a live LLM call while FORGE_LLM_CASSETTE_MODE=replay.")
 
 
-__all__ = ["LLMError", "LLMProvider", "get_provider"]
+__all__ = ["LLMError", "LLMProvider", "get_provider", "resolve_model"]

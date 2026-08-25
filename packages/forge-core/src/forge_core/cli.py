@@ -103,11 +103,13 @@ def run(
         True, "--llm/--no-llm", help="Use Gemini for semantic profiling/generation/critique."
     ),
     use_agent: bool = typer.Option(
-        False,
+        True,
         "--agent/--no-agent",
         help="Use a tool-using LangChain agent (schema inspection, live data preview, web "
-        "search) for schema roles the deterministic scorer and single-shot LLM proposer "
-        "both fail to resolve, instead of leaving them unresolved.",
+        "search) to ground every column's meaning in real values rather than a column-name "
+        "guess - the default for a real run. --no-agent is the deterministic-only path kept "
+        "for offline/CI use; it never guesses a semantic role from a name either, it just "
+        "leaves more roles unresolved (needs_confirmation) without the agent's investigation.",
     ),
     label: str | None = typer.Option(
         None,

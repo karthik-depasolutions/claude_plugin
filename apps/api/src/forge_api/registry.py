@@ -18,7 +18,7 @@ class RunContext:
     # Carried across a NEEDS_INPUT pause/resume (industry confirmation,
     # binding overrides) since it's a run-level choice, not something the
     # caller re-supplies each time it drives the state machine forward.
-    use_agent: bool = False
+    use_agent: bool = True
     # Also carried across resume: a run started with --no-llm / use_llm=false
     # must stay LLM-free when it resumes, or it silently acquires LLM-written
     # prose on the second pass through the pipeline (see pipeline_runner).

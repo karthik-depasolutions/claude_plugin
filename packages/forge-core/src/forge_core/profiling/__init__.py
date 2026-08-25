@@ -25,7 +25,7 @@ def build_structural_only(data_source: DataSource) -> StructuralProfile:
     try:
         base = build_structural_profile(data_source, con)
         relationships = detect_relationships(data_source, base.columns, con)
-        grains = infer_grains(data_source, base.columns)
+        grains = infer_grains(data_source, base.columns, con)
         # P2-02: revise FREE_TEXT columns using the grain just computed,
         # before anything downstream (denial, entity-graph measures/
         # dimensions) reads guessed_role.
