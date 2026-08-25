@@ -10,7 +10,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
   const location = useLocation();
 
   if (loading) {
-    return <div className="flex min-h-screen items-center justify-center bg-slate-950 text-sm text-slate-400">Loading…</div>;
+    return <div className="flex min-h-screen items-center justify-center bg-ink text-sm text-muted">Loading…</div>;
   }
   if (!user) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;

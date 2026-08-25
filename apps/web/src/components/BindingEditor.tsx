@@ -10,17 +10,17 @@ export default function BindingEditor({ unresolvedRoles, onSubmit, submitting }:
   const [values, setValues] = useState<Record<string, string>>({});
 
   return (
-    <div className="space-y-3 rounded border border-amber-800/50 bg-amber-950/20 p-4">
-      <p className="text-sm text-amber-300">
+    <div className="space-y-3 rounded-lg border border-attention/30 bg-attention/5 p-4">
+      <p className="text-sm text-attention">
         These canonical roles couldn't be matched automatically. Provide the physical column
-        (<code>table.column</code>) for any you'd like to force, then re-run.
+        (<code className="font-mono">table.column</code>) for any you'd like to force, then re-run.
       </p>
       <div className="space-y-2">
         {unresolvedRoles.map((role) => (
           <div key={role} className="flex items-center gap-2">
-            <span className="w-40 shrink-0 font-mono text-xs text-slate-400">{role}</span>
+            <span className="w-40 shrink-0 font-mono text-xs text-muted">{role}</span>
             <input
-              className="flex-1 rounded border border-slate-700 bg-slate-900 px-2 py-1 text-sm text-slate-100"
+              className="flex-1 rounded border border-line bg-[#0E121B] px-2.5 py-1.5 text-sm text-paper placeholder:text-muted focus:border-canonical focus:outline-none"
               placeholder="fact.column_name"
               value={values[role] ?? ""}
               onChange={(e) => setValues((v) => ({ ...v, [role]: e.target.value }))}
@@ -37,7 +37,7 @@ export default function BindingEditor({ unresolvedRoles, onSubmit, submitting }:
           );
           onSubmit(overrides);
         }}
-        className="rounded bg-amber-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
+        className="rounded bg-attention px-3 py-1.5 text-sm font-semibold text-ink transition-transform hover:scale-[1.02] disabled:scale-100 disabled:opacity-40"
       >
         {submitting ? "Re-running…" : "Apply overrides and re-run"}
       </button>

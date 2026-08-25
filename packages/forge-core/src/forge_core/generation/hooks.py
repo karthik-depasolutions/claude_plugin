@@ -70,7 +70,7 @@ def main() -> int:
             location = f"{finding['table']}.{finding['column']}"
             lines.append(f"- [{finding['severity']}] {location}: {finding['summary']}")
 
-    # U5 — DataUnderstanding summary (grain, temporal, vocabularies, business questions)
+    # U5 - DataUnderstanding summary (grain, temporal, vocabularies, business questions)
     du_path = PLUGIN_ROOT / "config" / "data-understanding.json"
     if du_path.is_file():
         try:

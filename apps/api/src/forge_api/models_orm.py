@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, DateTime, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from forge_api.db import Base
@@ -25,6 +25,15 @@ class RunORM(Base):
     error: Mapped[str | None] = mapped_column(Text, nullable=True)
     record_json: Mapped[dict] = mapped_column(JSON)
     binding_overrides_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    # Tenant isolation: the email of the user who created this run.
+    # All list/read/mutation endpoints filter to current_user.email.
+    # Defaults to "_local" for runs created before this column existed
+    # (local dev / pre-migration rows).
+    tenant_id: Mapped[str] = mapped_column(String(255), index=True, default="_local")
+    # Carried across resume so a --no-llm run never silently flips to LLM-mode
+    # and an agent-free run never acquires agent calls on the second pass.
+    use_llm: Mapped[bool] = mapped_column(Boolean, default=True)
+    use_agent: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)

@@ -32,6 +32,10 @@ from forge_core.models.quality import DataQuestion, DataReview, QualityFinding, 
 from forge_core.models.schema_profile import ColumnProfile, SemanticProfile, StructuralProfile
 from forge_core.profiling.structural import _NUMERIC_DUCKDB_TYPES, _TEMPORAL_DUCKDB_TYPES, _base_type
 
+# Lazy import to avoid circular dependency — only used in generate_business_context_questions
+if False:  # TYPE_CHECKING guard
+    from forge_core.packs.loader import IndustryPack  # noqa: F401
+
 # A column with more distinct values than this is either free text or a
 # genuine identifier-shaped field - a histogram over it is noise, not signal.
 TOP_VALUE_CARDINALITY_CAP = 50
@@ -415,6 +419,144 @@ def _unclear_meaning_findings(semantic: SemanticProfile | None) -> list[QualityF
     return findings
 
 
+# Max business-context questions per run — kept deliberately low so the pause
+# never feels like a quiz; these are the highest-signal clarifications only.
+MAX_BIZ_QUESTIONS = 3
+
+
+def generate_business_context_questions(
+    data_source: DataSource,
+    structural: StructuralProfile,
+    pack: object | None,  # IndustryPack at runtime; typed as object to avoid circular import
+    existing_scan: dict[str, dict[str, tuple["Histogram | None", int | None]]] | None = None,
+) -> list[DataQuestion]:
+    """Mine low-cardinality string columns on the fact/primary table for
+    business-context questions that let the business owner clarify which
+    values mean what.
+
+    Selection criteria (all must hold):
+    - Column is not PII-flagged
+    - Column cardinality is in [2, TOP_VALUE_CARDINALITY_CAP]
+    - Column type is textual (not numeric or temporal)
+    - Column name matches a key in pack.value_set_hints (if pack supplied)
+      OR the column is on a table classified as a fact table
+    - Max MAX_BIZ_QUESTIONS questions emitted
+
+    Questions use real top-values from the frequency histogram (never
+    LLM-invented choices) and are grounded with deterministic English.
+    `existing_scan` lets the caller pass in histogram results already computed
+    during analyze_quality to avoid re-scanning the same table.
+    """
+    questions: list[DataQuestion] = []
+
+    # Determine which value_set_hints keys the pack cares about, if any
+    hint_keys: set[str] = set()
+    if pack is not None and hasattr(pack, "value_set_hints") and pack.value_set_hints:
+        hint_keys = set(pack.value_set_hints.keys())
+
+    # Find the fact table name from the structural profile
+    fact_table_name: str | None = None
+    if structural.fact_table:
+        fact_table_name = structural.fact_table
+
+    for table in data_source.tables:
+        if len(questions) >= MAX_BIZ_QUESTIONS:
+            break
+        if table.row_count > MAX_ROWS_FOR_FREQUENCY:
+            continue
+
+        cols = structural.columns_for(table.name)
+        candidates = [
+            c for c in cols
+            if not c.is_likely_pii
+            and 1 < c.cardinality <= TOP_VALUE_CARDINALITY_CAP
+            and _base_type(c.dtype) not in _NUMERIC_DUCKDB_TYPES
+            and _base_type(c.dtype) not in _TEMPORAL_DUCKDB_TYPES
+        ]
+        if not candidates:
+            continue
+
+        # Score columns: prefer those whose name appears in a hint_key, or
+        # those on the fact table. Slice to avoid redundant questions.
+        def _col_priority(col: ColumnProfile) -> tuple[int, int]:
+            name_lower = col.name.lower()
+            # Priority 0 (best): name matches a hint key
+            if any(name_lower in key or key in name_lower for key in hint_keys):
+                return (0, col.cardinality)
+            # Priority 1: column is on the fact table
+            if table.name == fact_table_name:
+                return (1, col.cardinality)
+            return (2, col.cardinality)
+
+        candidates.sort(key=_col_priority)
+
+        # Re-use existing scan results when available, otherwise open a new connection
+        # to do a targeted single-column histogram for each candidate
+        table_scan = (existing_scan or {}).get(table.name, {})
+
+        for col in candidates:
+            if len(questions) >= MAX_BIZ_QUESTIONS:
+                break
+            hist, _ = table_scan.get(col.name, (None, None))
+            if hist is None:
+                # No cached result — skip rather than firing an extra query;
+                # the caller can pre-compute existing_scan if desired.
+                continue
+
+            total = sum(hist.values())
+            if total == 0:
+                continue
+            ordered = _ordered(hist)
+            top_vals = [v for v, _ in ordered[:8]]  # up to 8 choices
+            if not top_vals:
+                continue
+
+            # Determine which hint key this question maps to (if any)
+            name_lower = col.name.lower()
+            matched_key = next(
+                (k for k in hint_keys if name_lower in k or k in name_lower), None
+            )
+
+            if matched_key:
+                question_text = (
+                    f'Your data has a \u201c{col.name}\u201d column on the \u201c{table.name}\u201d table '
+                    f"with {col.cardinality} distinct values. "
+                    f"Which of these values means a successful/completed outcome?"
+                )
+                why = (
+                    f"Knowing which {col.name} values mean a positive outcome lets us compute "
+                    "accurate conversion and completion KPIs."
+                )
+            else:
+                question_text = (
+                    f'What does the \u201c{col.name}\u201d column represent in your business? '
+                    f"It has {col.cardinality} distinct values "
+                    f"(e.g. {', '.join(repr(v) for v in top_vals[:3])})."
+                )
+                why = (
+                    f"Understanding what {col.name} values categorize helps us build "
+                    "more meaningful grouping and filtering in KPI queries."
+                )
+
+            q_id = f"biz:{table.name}.{col.name}"
+            questions.append(
+                DataQuestion(
+                    id=q_id,
+                    question=question_text,
+                    context=(
+                        f"Observed values ({total:,} total rows): "
+                        + ", ".join(repr(v) for v in top_vals)
+                    ),
+                    kind="business_context",
+                    answer_type="multi_choice" if matched_key else "free_text",
+                    choices=top_vals if matched_key else [],
+                    why_asking=why,
+                )
+            )
+
+    return questions
+
+
 def build_data_review(
     data_source: DataSource,
     structural: StructuralProfile,
@@ -422,6 +564,7 @@ def build_data_review(
     *,
     provider: LLMProvider | None = None,
     semantic: SemanticProfile | None = None,
+    pack: object | None = None,  # IndustryPack at runtime; typed as object to avoid circular import
 ) -> DataReview:
     """Findings always; questions only when a provider is given. The
     orchestrator passes provider=None when the caller has already declared it
@@ -429,12 +572,28 @@ def build_data_review(
     review still prints on every run, it just never pauses or pays for
     question generation nobody will read answers to. `generate_questions`
     itself still degrades a *failing* provider (LLMError) to the
-    deterministic per-code templates."""
+    deterministic per-code templates.
+
+    `pack` (an IndustryPack, or None) is forwarded to
+    generate_business_context_questions so it can match columns against
+    pack.value_set_hints. Business-context questions are appended after
+    anomaly questions so existing id ordering is preserved.
+    """
     findings, skipped_tables = analyze_quality(data_source, structural, con)
     findings.extend(_unclear_meaning_findings(semantic))
     findings.sort(key=lambda f: (_SEVERITY_RANK[f.severity], f.code, f.table, f.column))
     hints = [flag.issue for flag in semantic.data_quality_flags] if semantic else []
     questions = generate_questions(findings, provider, hints) if provider is not None else []
+
+    # Append business-context questions when a pack is known and LLM is enabled.
+    # These live after anomaly questions (and the general_notes sentinel) so the
+    # existing question ordering is stable for replay.
+    if provider is not None and pack is not None:
+        biz_questions = generate_business_context_questions(
+            data_source, structural, pack
+        )
+        questions.extend(biz_questions)
+
     return DataReview(
         generated_at=datetime.now(UTC).isoformat(),
         findings=findings,
@@ -443,4 +602,4 @@ def build_data_review(
     )
 
 
-__all__ = ["analyze_quality", "build_data_review", "generate_questions"]
+__all__ = ["analyze_quality", "build_data_review", "generate_business_context_questions", "generate_questions"]

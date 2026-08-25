@@ -11,7 +11,7 @@ const STAGES: { label: string; detail?: string }[] = [
   { label: "Compile KPIs", detail: "7/7 compiled" },
   { label: "Generate content", detail: "skill, agent, commands" },
   { label: "Package plugin", detail: "spec-checked" },
-  { label: "Validate", detail: "8 checks · pass" },
+  { label: "Validate", detail: "10 checks · pass" },
 ];
 
 const STEP_DELAY_MS = 260;

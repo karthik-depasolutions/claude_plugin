@@ -17,21 +17,21 @@ const SEVERITY_META: Record<
 > = {
   high: {
     label: "High",
-    dot: "bg-red-400",
-    pill: "border-red-500/40 bg-red-500/10 text-red-300",
-    bar: "bg-red-400",
+    dot: "bg-danger",
+    pill: "border-danger/40 bg-danger/10 text-danger",
+    bar: "bg-danger",
   },
   medium: {
     label: "Medium",
-    dot: "bg-amber-400",
-    pill: "border-amber-500/40 bg-amber-500/10 text-amber-300",
-    bar: "bg-amber-400",
+    dot: "bg-attention",
+    pill: "border-attention/40 bg-attention/10 text-attention",
+    bar: "bg-attention",
   },
   low: {
     label: "Low",
-    dot: "bg-slate-500",
-    pill: "border-slate-600/60 bg-slate-800/60 text-slate-400",
-    bar: "bg-slate-500",
+    dot: "bg-muted",
+    pill: "border-line bg-line text-muted",
+    bar: "bg-muted",
   },
 };
 
@@ -218,30 +218,72 @@ export default function DataReviewPanel({
           </div>
 
           <div className="space-y-4">
-            {review.questions.map((question, index) => (
-              <div key={question.id} className="rounded-lg border border-line bg-[#10141d] p-4">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-canonical/15 font-mono text-[11px] font-medium text-canonical">
-                    {index + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <label className="block text-sm font-medium leading-snug text-paper">
-                      {question.question}
-                    </label>
-                    {question.context && (
-                      <p className="mt-1 text-xs leading-relaxed text-muted">{question.context}</p>
-                    )}
-                    <textarea
-                      value={values[question.id] ?? ""}
-                      onChange={(e) => setValues((v) => ({ ...v, [question.id]: e.target.value }))}
-                      rows={2}
-                      placeholder="Optional — share what you know…"
-                      className="mt-2.5 w-full resize-y rounded-lg border border-line bg-ink px-3 py-2 text-sm text-paper placeholder:text-muted/60 focus:border-canonical/70 focus:outline-none focus:ring-1 focus:ring-canonical/40"
-                    />
+            {review.questions.map((question, index) => {
+              const isChip =
+                question.kind === "business_context" &&
+                (question.answer_type === "single_choice" || question.answer_type === "multi_choice") &&
+                question.choices.length > 0;
+
+              return (
+                <div key={question.id} className="rounded-lg border border-line bg-[#10141d] p-4">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-canonical/15 font-mono text-[11px] font-medium text-canonical">
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <label className="block text-sm font-medium leading-snug text-paper">
+                        {question.question}
+                      </label>
+                      {question.why_asking && (
+                        <p className="mt-0.5 text-xs text-muted/70 italic">{question.why_asking}</p>
+                      )}
+                      {question.context && (
+                        <p className="mt-1 text-xs leading-relaxed text-muted">{question.context}</p>
+                      )}
+                      {isChip ? (
+                        <div className="mt-2.5 flex flex-wrap gap-1.5">
+                          {question.choices.map((choice) => {
+                            const active = (values[question.id] ?? "").split(",").map(s => s.trim()).includes(choice);
+                            return (
+                              <button
+                                key={choice}
+                                type="button"
+                                onClick={() => {
+                                  if (question.answer_type === "multi_choice") {
+                                    const current = (values[question.id] ?? "").split(",").map(s => s.trim()).filter(Boolean);
+                                    const next = active
+                                      ? current.filter(v => v !== choice)
+                                      : [...current, choice];
+                                    setValues(v => ({ ...v, [question.id]: next.join(", ") }));
+                                  } else {
+                                    setValues(v => ({ ...v, [question.id]: active ? "" : choice }));
+                                  }
+                                }}
+                                className={`rounded border px-2.5 py-1 text-xs font-mono transition-colors ${
+                                  active
+                                    ? "border-physical/50 bg-physical/15 text-physical"
+                                    : "border-line text-muted hover:border-canonical/40 hover:text-paper"
+                                }`}
+                              >
+                                {choice}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <textarea
+                          value={values[question.id] ?? ""}
+                          onChange={(e) => setValues((v) => ({ ...v, [question.id]: e.target.value }))}
+                          rows={2}
+                          placeholder="Optional — share what you know…"
+                          className="mt-2.5 w-full resize-y rounded-lg border border-line bg-ink px-3 py-2 text-sm text-paper placeholder:text-muted/60 focus:border-canonical/70 focus:outline-none focus:ring-1 focus:ring-canonical/40"
+                        />
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
@@ -347,7 +389,7 @@ function IndustryPick({
               className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
                 isChosen
                   ? "border-canonical bg-canonical/10"
-                  : "border-line bg-[#10141d] hover:border-slate-600"
+                  : "border-line bg-ink/50 hover:border-line/80"
               }`}
             >
               <div className="flex items-center justify-between gap-3">
@@ -372,7 +414,7 @@ function IndustryPick({
                     className={`flex h-5 w-5 items-center justify-center rounded-full border ${
                       isChosen
                         ? "border-canonical bg-canonical text-ink"
-                        : "border-slate-600 text-transparent"
+                        : "border-line text-transparent"
                     }`}
                   >
                     <CheckIcon />
@@ -381,7 +423,7 @@ function IndustryPick({
               </div>
               <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-line">
                 <div
-                  className={`h-full rounded-full ${isChosen ? "bg-canonical" : "bg-slate-600"} transition-[width] duration-300`}
+                  className={`h-full rounded-full ${isChosen ? "bg-canonical" : "bg-line"} transition-[width] duration-300`}
                   style={{ width: `${confidence}%` }}
                 />
               </div>

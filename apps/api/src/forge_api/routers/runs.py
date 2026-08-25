@@ -235,8 +235,15 @@ def _extract_zip_safely(fileobj: IO[bytes], source_dir: Path) -> None:
 
 
 @router.get("", response_model=list[RunSummary])
-async def list_runs(session: SessionDep) -> list[RunSummary]:
-    result = await session.execute(select(RunORM).order_by(RunORM.created_at.desc()))
+async def list_runs(
+    session: SessionDep,
+    user: Annotated[UserORM, Depends(get_current_user)],
+) -> list[RunSummary]:
+    result = await session.execute(
+        select(RunORM)
+        .where(RunORM.tenant_id == user.email)
+        .order_by(RunORM.created_at.desc())
+    )
     rows = result.scalars().all()
     return [
         RunSummary(run_id=r.run_id, status=r.status, current_stage=r.current_stage, error=r.error)
@@ -245,17 +252,22 @@ async def list_runs(session: SessionDep) -> list[RunSummary]:
 
 
 @router.get("/{run_id}", response_model=RunDetail)
-async def get_run(run_id: str, session: SessionDep) -> RunDetail:
-    return RunDetail.model_validate((await _load_record(run_id, session)).model_dump())
+async def get_run(
+    run_id: str,
+    session: SessionDep,
+    user: Annotated[UserORM, Depends(get_current_user)],
+) -> RunDetail:
+    return RunDetail.model_validate((await _load_record(run_id, session, user)).model_dump())
 
 
 @router.get("/{run_id}/events")
 async def stream_run_events(
     run_id: str,
+    user: Annotated[UserORM, Depends(get_current_user)],
     after: int = Query(0, ge=0),
     session: SessionDep = None,
 ) -> StreamingResponse:
-    await _load_record(run_id, session)  # 404s early if the run truly doesn't exist
+    await _load_record(run_id, session, user)  # 404/tenant-check early
 
     async def gen() -> Any:
         sent = after
@@ -264,7 +276,7 @@ async def stream_run_events(
             if ctx is None:
                 # Not live in this process (e.g. after a restart) - emit what's on
                 # disk once and close; there is nothing further to stream.
-                record = await _load_record(run_id, session)
+                record = await _load_record(run_id, session, user)
                 for event in record.events[sent:]:
                     yield _sse(event.model_dump(mode="json"))
                 return
@@ -283,13 +295,18 @@ async def stream_run_events(
 
 
 @router.post("/{run_id}/review", response_model=RunSummary)
-async def submit_review(run_id: str, body: ReviewRequest, session: SessionDep) -> RunSummary:
+async def submit_review(
+    run_id: str,
+    body: ReviewRequest,
+    session: SessionDep,
+    user: Annotated[UserORM, Depends(get_current_user)],
+) -> RunSummary:
     """Resolves a NEEDS_INPUT run paused on data-quality questions (and/or an
     ambiguous industry match) in one call: sets `industry_override` if given,
     records `data_answers`, then resumes. `answers={}` is meaningful - it
     means "reviewed, nothing supplied" and is what stops the pause re-firing,
     exactly like `industry_override` does for classification."""
-    ctx = await _require_live_context(run_id, session)
+    ctx = await _require_live_context(run_id, session, user)
     _require_status(ctx.record, RunStatus.NEEDS_INPUT)
     if body.industry is not None:
         ctx.record.industry_override = body.industry
@@ -299,12 +316,17 @@ async def submit_review(run_id: str, body: ReviewRequest, session: SessionDep) -
 
 
 @router.post("/{run_id}/confirm-industry", response_model=RunSummary)
-async def confirm_industry(run_id: str, body: ConfirmIndustryRequest, session: SessionDep) -> RunSummary:
+async def confirm_industry(
+    run_id: str,
+    body: ConfirmIndustryRequest,
+    session: SessionDep,
+    user: Annotated[UserORM, Depends(get_current_user)],
+) -> RunSummary:
     """Thin alias for `POST /review` that only supplies an industry - kept as
     the documented contract for the wizard's industry picker. Delegates with
     `answers={}` (or preserves an existing dict) so that resuming here can
     never immediately re-pause on `needs_answers`."""
-    ctx = await _require_live_context(run_id, session)
+    ctx = await _require_live_context(run_id, session, user)
     _require_status(ctx.record, RunStatus.NEEDS_INPUT)
     ctx.record.industry_override = body.industry
     ctx.record.data_answers = ctx.record.data_answers or {}
@@ -313,13 +335,18 @@ async def confirm_industry(run_id: str, body: ConfirmIndustryRequest, session: S
 
 
 @router.post("/{run_id}/confirm-bindings", response_model=RunSummary)
-async def confirm_bindings(run_id: str, body: BindingConfirmationRequest, session: SessionDep) -> RunSummary:
+async def confirm_bindings(
+    run_id: str,
+    body: BindingConfirmationRequest,
+    session: SessionDep,
+    user: Annotated[UserORM, Depends(get_current_user)],
+) -> RunSummary:
     """Resolves a NEEDS_INPUT run paused on P1-08's binding gate
     (`record.binding_questions`). `confirmations={}` is meaningful - it
     declines every gated binding (the dependent KPIs land in .skipped with a
     reason) and is what stops the pause re-firing, exactly like
     `ReviewRequest.answers={}` does for data-quality questions."""
-    ctx = await _require_live_context(run_id, session)
+    ctx = await _require_live_context(run_id, session, user)
     _require_status(ctx.record, RunStatus.NEEDS_INPUT)
     ctx.record.binding_confirmations = body.confirmations
     await pipeline_runner.resume_run(ctx)
@@ -328,9 +355,12 @@ async def confirm_bindings(run_id: str, body: BindingConfirmationRequest, sessio
 
 @router.post("/{run_id}/bindings", response_model=RunSummary)
 async def set_binding_overrides(
-    run_id: str, body: BindingOverridesRequest, session: SessionDep
+    run_id: str,
+    body: BindingOverridesRequest,
+    session: SessionDep,
+    user: Annotated[UserORM, Depends(get_current_user)],
 ) -> RunSummary:
-    ctx = await _require_live_context(run_id, session)
+    ctx = await _require_live_context(run_id, session, user)
     if ctx.record.status not in (RunStatus.NEEDS_INPUT, RunStatus.SUCCEEDED, RunStatus.FAILED):
         raise HTTPException(409, f"Cannot set binding overrides while run is {ctx.record.status.value}.")
     ctx.binding_overrides.update(body.overrides)
@@ -348,8 +378,12 @@ async def get_report(run_id: str, session: SessionDep) -> dict:
 
 
 @router.get("/{run_id}/download")
-async def download_plugin(run_id: str, session: SessionDep) -> FileResponse:
-    record = await _load_record(run_id, session)
+async def download_plugin(
+    run_id: str,
+    session: SessionDep,
+    user: Annotated[UserORM, Depends(get_current_user)],
+) -> FileResponse:
+    record = await _load_record(run_id, session, user)
     event = _last_event(record, RunStage.PACKAGE)
     if event is None or "plugin_dir" not in event.data:
         raise HTTPException(404, "This run hasn't produced a packaged plugin yet.")
@@ -384,13 +418,16 @@ async def get_warehouse_credentials(run_id: str, session: SessionDep) -> Warehou
 
 @router.post("/{run_id}/publish/github", response_model=PublishGithubResponse)
 async def publish_run_to_github(
-    run_id: str, body: PublishGithubRequest, session: SessionDep
+    run_id: str,
+    body: PublishGithubRequest,
+    session: SessionDep,
+    user: Annotated[UserORM, Depends(get_current_user)],
 ) -> PublishGithubResponse:
     """Creates a brand-new GitHub repo for this run's packaged plugin and
     pushes it - the repo is immediately installable in Claude Code/Desktop
     with the two commands this returns. Only available once validation has
     passed (RunStatus.SUCCEEDED); see forge_core.publishing.standalone_repo."""
-    record = await _load_record(run_id, session)
+    record = await _load_record(run_id, session, user)
     if record.status != RunStatus.SUCCEEDED:
         raise HTTPException(
             409, f"Run is {record.status.value}; publish is only available after a successful run."
@@ -460,21 +497,54 @@ def _require_status(record: RunRecord, expected: RunStatus) -> None:
         raise HTTPException(409, f"Run is {record.status.value}, expected {expected.value}.")
 
 
-async def _require_live_context(run_id: str, session: SessionDep) -> registry.RunContext:
-    await _load_record(run_id, session)  # 404s if unknown
+async def _require_live_context(
+    run_id: str,
+    session: SessionDep,
+    user: Annotated[UserORM, Depends(get_current_user)] | None = None,
+) -> registry.RunContext:
+    """Returns the live RunContext for a run the current user owns. Falls back
+    to DB rehydration so a paused run can always be resumed even after an API
+    restart — no more permanent 409 on process death."""
+    # Ownership check (404, not 403, to avoid user enumeration)
+    await _load_record(run_id, session, user)
     ctx = registry.get(run_id)
-    if ctx is None:
-        raise HTTPException(409, "Run isn't live in this API process (e.g. after a restart); can't resume.")
+    if ctx is not None:
+        return ctx
+    # Rehydrate from DB
+    row = await session.get(RunORM, run_id)
+    if row is None:  # guard (already checked by _load_record, but be safe)
+        raise HTTPException(404, f"No run with id {run_id!r}.")
+    record = RunRecord.model_validate(row.record_json)
+    ctx = registry.RunContext(
+        record=record,
+        binding_overrides=dict(row.binding_overrides_json or {}),
+        use_llm=bool(row.use_llm),
+        use_agent=bool(row.use_agent),
+    )
+    registry.put(run_id, ctx)
     return ctx
 
 
-async def _load_record(run_id: str, session: SessionDep) -> RunRecord:
+async def _load_record(
+    run_id: str,
+    session: SessionDep,
+    user: Annotated[UserORM, Depends(get_current_user)] | None = None,
+) -> RunRecord:
+    """Load RunRecord from registry (live) or DB. When `user` is provided,
+    checks tenant ownership and 404s on mismatch (never 403 — see user enumeration)."""
     ctx = registry.get(run_id)
     if ctx is not None:
+        # Tenant check against the in-memory record
+        if user is not None:
+            tenant = getattr(ctx.record, "tenant_id", "_local")
+            if tenant != "_local" and tenant != user.email:
+                raise HTTPException(404, f"No run with id {run_id!r}.")
         return ctx.record
 
     row = await session.get(RunORM, run_id)
     if row is None:
+        raise HTTPException(404, f"No run with id {run_id!r}.")
+    if user is not None and row.tenant_id != "_local" and row.tenant_id != user.email:
         raise HTTPException(404, f"No run with id {run_id!r}.")
     return RunRecord.model_validate(row.record_json)
 

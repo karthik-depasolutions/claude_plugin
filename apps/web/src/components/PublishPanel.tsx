@@ -46,19 +46,19 @@ export default function PublishPanel({
 
   if (result) {
     return (
-      <div className="space-y-3 rounded border border-emerald-800/50 bg-emerald-950/20 p-4">
-        <p className="text-sm text-emerald-300">
+      <div className="animate-reveal-up space-y-3 rounded-lg border border-physical/30 bg-physical/5 p-4">
+        <p className="text-sm text-physical">
           Published to{" "}
-          <a href={result.html_url} target="_blank" rel="noreferrer" className="underline">
+          <a href={result.html_url} target="_blank" rel="noreferrer" className="underline font-semibold">
             {result.repo_full_name}
           </a>
           .
         </p>
         <div className="space-y-1">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-muted">
             Run these in Claude Code or Claude Desktop to install it:
           </p>
-          <pre className="overflow-x-auto rounded bg-slate-950 p-2 text-xs text-slate-200">
+          <pre className="overflow-x-auto rounded border border-line bg-[#0E121B] p-2.5 font-mono text-xs text-paper">
             {result.marketplace_add_command}
             {"\n"}
             {result.install_command}
@@ -68,7 +68,7 @@ export default function PublishPanel({
         <button
           type="button"
           onClick={() => setResult(null)}
-          className="text-xs text-slate-400 underline hover:text-slate-200"
+          className="text-xs text-muted underline hover:text-paper"
         >
           Publish to a different repo
         </button>
@@ -81,7 +81,7 @@ export default function PublishPanel({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+        className="rounded border border-line bg-line/40 px-4 py-2 text-sm font-semibold text-paper transition-colors hover:border-canonical/40 hover:bg-line/80"
       >
         Publish to GitHub
       </button>
@@ -89,42 +89,42 @@ export default function PublishPanel({
   }
 
   return (
-    <div className="space-y-3 rounded border border-slate-700 bg-slate-900/50 p-4">
-      <p className="text-sm text-slate-300">
+    <div className="animate-reveal-up space-y-3 rounded-lg border border-line bg-[#0E121B] p-4">
+      <p className="text-sm text-paper/90">
         Creates a GitHub repo and pushes this plugin to it. If that name is already taken, a new
         repo is created as name-v1 (then name-v2, and so on) instead of overwriting.
       </p>
-      <label className="block text-sm text-slate-300">
+      <label className="block text-sm text-paper/80">
         Repo name
         <input
           value={repoName}
           onChange={(e) => setRepoName(e.target.value)}
           placeholder={defaultRepoName ?? "my-mis-plugin"}
-          className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2"
+          className="mt-1 w-full rounded border border-line bg-ink px-3 py-2 text-paper placeholder:text-muted focus:border-canonical focus:outline-none"
         />
       </label>
-      <label className="block text-sm text-slate-300">
+      <label className="block text-sm text-paper/80">
         Owner (org or user — leave blank to use your GitHub account)
         <input
           value={owner}
           onChange={(e) => setOwner(e.target.value)}
           placeholder="leave blank for your account"
-          className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2"
+          className="mt-1 w-full rounded border border-line bg-ink px-3 py-2 text-paper placeholder:text-muted focus:border-canonical focus:outline-none"
         />
       </label>
-      <label className="flex items-center gap-2 text-sm text-slate-300">
-        <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} />
+      <label className="flex items-center gap-2 text-sm text-paper/80">
+        <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} className="accent-canonical" />
         Private repo
       </label>
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       <div className="flex gap-2">
         <button
           type="button"
           disabled={submitting}
           onClick={submit}
-          className="rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+          className="rounded bg-canonical px-4 py-2 text-sm font-semibold text-ink transition-transform hover:scale-[1.02] disabled:scale-100 disabled:opacity-40"
         >
           {submitting ? "Publishing…" : "Publish"}
         </button>
@@ -132,7 +132,7 @@ export default function PublishPanel({
           type="button"
           disabled={submitting}
           onClick={() => setOpen(false)}
-          className="rounded px-4 py-2 text-sm text-slate-400 hover:text-slate-200"
+          className="rounded px-4 py-2 text-sm text-muted hover:text-paper"
         >
           Cancel
         </button>

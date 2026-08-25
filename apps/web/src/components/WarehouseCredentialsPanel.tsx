@@ -37,28 +37,28 @@ export default function WarehouseCredentialsPanel({ runId }: { runId: string }) 
   }
 
   return (
-    <div className="space-y-3 rounded border border-amber-800/50 bg-amber-950/20 p-4">
-      <p className="text-sm text-amber-300">
+    <div className="space-y-3 rounded-lg border border-attention/30 bg-attention/5 p-4">
+      <p className="text-sm text-attention">
         Your data was loaded into a dedicated, isolated database schema. This is the{" "}
         <strong>only time</strong> this connection string is shown — copy it now and store it
         somewhere safe (e.g. a password manager). We never save it.
       </p>
-      <p className="text-xs text-slate-400">
+      <p className="text-xs text-muted">
         Set this in the environment Claude Desktop/Code launches from, before first use:
       </p>
-      <pre className="overflow-x-auto rounded bg-slate-950 p-2 text-xs text-slate-200">{exportLine}</pre>
+      <pre className="overflow-x-auto rounded border border-line bg-[#0E121B] p-2.5 font-mono text-xs text-paper">{exportLine}</pre>
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={copy}
-          className="rounded border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800"
+          className="rounded border border-line bg-line/40 px-3 py-1.5 text-xs font-medium text-paper transition-colors hover:border-canonical/40 hover:bg-line/80"
         >
           {copied ? "Copied!" : "Copy to clipboard"}
         </button>
         <button
           type="button"
           onClick={() => setAcknowledged(true)}
-          className="rounded px-3 py-1.5 text-xs text-slate-400 underline hover:text-slate-200"
+          className="rounded px-3 py-1.5 text-xs text-muted underline hover:text-paper"
         >
           I've saved it, hide this
         </button>

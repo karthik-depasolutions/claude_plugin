@@ -456,7 +456,7 @@ def _run_pipeline_inner(
         metric_defs.extend(proposed_metrics)
         agent_proposed_metric_ids = [m.id for m in proposed_metrics]
     record.log(
-        RunStage.COMPILE_KPIS,
+        RunStage.PACKAGE,
         f"Generated {len(metric_defs)} parameterized metric(s)"
         + (f" (+{len(agent_proposed_metric_ids)} AI-suggested)" if agent_proposed_metric_ids else ""),
         agent_proposed_metrics=agent_proposed_metric_ids,

@@ -146,7 +146,7 @@ def test_session_context_script_reads_live_config(tmp_path: Path):
 
     (tmp_path / "hooks").mkdir()
     script_path = tmp_path / "hooks" / "session_context.py"
-    script_path.write_text(session_context_script())
+    script_path.write_text(session_context_script(), encoding="utf-8")
 
     result = check_hooks_smoke(tmp_path)
     assert result.status.name == "PASS"

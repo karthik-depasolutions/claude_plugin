@@ -14,7 +14,7 @@ generation, and binding — each consumes the same dict).
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -45,9 +45,40 @@ class QualityFinding(BaseModel):
 class DataQuestion(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    id: str = Field(description="Equals the finding.id it's grounded in, or 'general_notes'.")
+    id: str = Field(description="Equals the finding.id it's grounded in, or 'general_notes', "
+        "or 'biz:{column}' for business-context questions.")
     question: str
-    context: str = Field(default="", description="The finding summary, shown under the question.")
+    context: str = Field(default="", description="The finding summary or observed-value context, shown under the question.")
+    # Structured question fields — allow UI to render choice chips instead of a bare textarea
+    kind: Literal["business_context", "data_anomaly"] = Field(
+        default="data_anomaly",
+        description="'data_anomaly' = derived from a QualityFinding; 'business_context' = from "
+        "Agent A's submit_clarification_question tool, grounded in real observed values.",
+    )
+    answer_type: Literal["free_text", "single_choice", "multi_choice"] = Field(
+        default="free_text",
+        description="'single_choice'/'multi_choice' unlock chip UI; 'free_text' is a textarea.",
+    )
+    choices: list[str] = Field(
+        default_factory=list,
+        description="Candidate values for single_choice / multi_choice questions, "
+        "derived from real top-values in the data (never LLM-invented).",
+    )
+    why_asking: str = Field(
+        default="",
+        description="One sentence explaining why this helps us build a better plugin — "
+        "shown as a sub-line under the question card.",
+    )
+    # Structured answer: a human-confirmed value-set binding
+    # e.g. {"confirmed_completed_values": ["paid", "shipped"]}
+    # Populated by the UI when a choice-chip answer maps to a pack value_set_hints key.
+    # Used by to_context() to propagate confirmed_value_sets to compiler/generation.
+    value_set_answer: dict[str, list[str]] | None = Field(
+        default=None,
+        description="Structured answer for single_choice / multi_choice questions. "
+        "Maps a pack value_set_hints key to the confirmed value list chosen by the owner. "
+        "None = not yet answered or free-text question.",
+    )
 
 
 class DataReview(BaseModel):
@@ -68,7 +99,14 @@ class DataReview(BaseModel):
         """The one payload threaded into describe_schema, the SessionStart
         hook, generation prompts, and binding - see profiling/quality.py's
         module docstring for why every consumer shares this one shape
-        instead of building its own view of the review."""
+        instead of building its own view of the review.
+
+        'confirmed_value_sets' is a new key populated when a
+        business-context question's value_set_answer was already filled in
+        (i.e. the question object itself carries the structured answer, not
+        the free-text `answers` dict). Merges with any matching entries
+        from free-text answers that happen to share a value_set_hints key.
+        """
         question_by_id = {q.id: q for q in self.questions}
         notes = [
             {"question": question_by_id[qid].question, "answer": answer}
@@ -79,7 +117,17 @@ class DataReview(BaseModel):
             {"table": f.table, "column": f.column, "severity": f.severity.value, "summary": f.summary}
             for f in self.findings
         ]
-        return {"notes": notes, "findings": findings}
+        # Propagate confirmed value-sets from structured answers so the compiler
+        # can use human-confirmed category strings (e.g. which statuses mean "completed").
+        confirmed_value_sets: dict[str, list[str]] = {}
+        for q in self.questions:
+            if q.kind == "business_context" and q.value_set_answer:
+                confirmed_value_sets.update(q.value_set_answer)
+
+        ctx: dict[str, Any] = {"notes": notes, "findings": findings}
+        if confirmed_value_sets:
+            ctx["confirmed_value_sets"] = confirmed_value_sets
+        return ctx
 
 
 def render_data_context(context: dict[str, Any] | None, *, cap: int = 2000) -> str:
@@ -95,10 +143,15 @@ def render_data_context(context: dict[str, Any] | None, *, cap: int = 2000) -> s
     lines: list[str] = []
     notes = context.get("notes") or []
     findings = context.get("findings") or []
+    confirmed = context.get("confirmed_value_sets") or {}
     if notes:
         lines.append("## What the business owner told us")
         for note in notes:
             lines.append(f"- Q: {note['question']}  A: {note['answer']}")
+    if confirmed:
+        lines.append("## Confirmed value-set meanings (human-verified)")
+        for key, vals in confirmed.items():
+            lines.append(f"- {key}: {', '.join(vals)}")
     if findings:
         lines.append("## Known data-quality findings")
         for finding in findings:

@@ -3,7 +3,16 @@ async API: runs it in a worker thread via `asyncio.to_thread`, then mirrors
 the resulting `RunRecord` into the `runs` table. Starting or resuming a run
 both go through `_execute` — resuming just means `run_pipeline` is invoked
 again on the same `RunRecord` with `industry_override`/`binding_overrides`
-now set, which is exactly how the orchestrator is designed to be driven."""
+now set, which is exactly how the orchestrator is designed to be driven.
+
+Persistence strategy:
+  - `_persist` is called at start and at end (terminal/paused states).
+  - `_persist_on_event` is registered as an on_event callback so every
+    StageEvent is mirrored to the DB as it happens. This prevents losing
+    mid-run progress on a crash and lets /events replay from DB on resume.
+  - `use_llm`/`use_agent` are written to RunORM at start so rehydration
+    after an API restart picks up the correct flags (see routers/runs.py).
+"""
 
 from __future__ import annotations
 
@@ -65,6 +74,14 @@ async def start_run(
     registry.put(run_id, ctx)
     await _persist(ctx)
     logger.info("[%s] started - source=%s industry=%s use_llm=%s", run_id, source_path, industry_override, use_llm)
+    # Register per-event persistence AFTER the initial _persist so the first
+    # event doesn't race with the row INSERT.
+    loop = asyncio.get_event_loop()
+    record.on_event(
+        lambda event, _ctx=ctx: loop.call_soon_threadsafe(
+            lambda e=event: asyncio.ensure_future(_persist_on_event(_ctx, e))
+        )
+    )
     asyncio.create_task(_execute(ctx, use_llm=use_llm))  # noqa: RUF006 - fire-and-forget job, tracked via ctx
     return ctx
 
@@ -109,9 +126,11 @@ async def _execute(ctx: registry.RunContext, *, use_llm: bool) -> None:
         logger.info("[%s] finished - status=%s%s", record.run_id, record.status.value, f" ({record.error})" if record.error else "")
 
 
-async def _persist(ctx: registry.RunContext) -> None:
+def _build_row(ctx: registry.RunContext) -> RunORM:
+    """Build the RunORM row from current context state. Centralised so
+    _persist and _persist_on_event both produce identical shapes."""
     record = ctx.record
-    row = RunORM(
+    return RunORM(
         run_id=record.run_id,
         status=record.status.value,
         current_stage=record.current_stage.value if record.current_stage else None,
@@ -121,7 +140,29 @@ async def _persist(ctx: registry.RunContext) -> None:
         error=record.error,
         record_json=record.model_dump(mode="json"),
         binding_overrides_json=ctx.binding_overrides,
+        tenant_id=getattr(record, "tenant_id", "_local"),
+        use_llm=ctx.use_llm,
+        use_agent=ctx.use_agent,
     )
+
+
+async def _persist(ctx: registry.RunContext) -> None:
+    """Persist the full RunRecord at start and end (terminal/paused states)."""
+    row = _build_row(ctx)
     async with session_factory()() as session:
         await session.merge(row)
         await session.commit()
+
+
+async def _persist_on_event(ctx: registry.RunContext, _event: StageEvent) -> None:
+    """Lightweight per-event upsert — mirrors status/stage/record_json to the
+    DB every time a StageEvent fires. Called from a thread-safe fire-and-forget
+    registered in start_run; any exception here is swallowed so a DB blip never
+    kills the pipeline thread."""
+    try:
+        row = _build_row(ctx)
+        async with session_factory()() as session:
+            await session.merge(row)
+            await session.commit()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("[%s] _persist_on_event failed: %s", ctx.record.run_id, exc)

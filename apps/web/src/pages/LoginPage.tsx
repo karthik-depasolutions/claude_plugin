@@ -36,16 +36,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-slate-100">
-      <div className="w-full max-w-sm">
-        <Link to="/" className="text-xs text-slate-500 hover:text-slate-300">
+    <div className="flex min-h-screen items-center justify-center bg-ink px-6 text-paper">
+      <div className="w-full max-w-sm rounded-xl border border-line bg-[#0E121B] p-6 shadow-2xl">
+        <Link to="/" className="text-xs text-muted hover:text-paper">
           ← Data2plugin
         </Link>
-        <h1 className="mt-2 text-lg font-semibold tracking-tight">Log in</h1>
-        <p className="text-sm text-slate-400">Accounts are provisioned by an admin - ask for access if you don't have one.</p>
+        <h1 className="mt-3 font-display text-xl font-semibold tracking-tight text-paper">Log in</h1>
+        <p className="mt-1 text-xs text-muted">Accounts are provisioned by an admin — ask for access if you don't have one.</p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
-          <label className="block text-sm text-slate-300">
+          <label className="block text-sm text-paper/80">
             Email
             <input
               type="email"
@@ -53,26 +53,26 @@ export default function LoginPage() {
               autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2"
+              className="mt-1.5 w-full rounded border border-line bg-ink px-3 py-2 text-sm text-paper placeholder:text-muted focus:border-canonical focus:outline-none"
             />
           </label>
-          <label className="block text-sm text-slate-300">
+          <label className="block text-sm text-paper/80">
             Password
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2"
+              className="mt-1.5 w-full rounded border border-line bg-ink px-3 py-2 text-sm text-paper placeholder:text-muted focus:border-canonical focus:outline-none"
             />
           </label>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-danger">{error}</p>}
 
           <button
             type="submit"
             disabled={submitting}
-            className="w-full rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
+            className="w-full rounded bg-canonical px-4 py-2.5 text-sm font-semibold text-ink transition-transform hover:scale-[1.02] disabled:scale-100 disabled:opacity-40"
           >
             {submitting ? "Logging in…" : "Log in"}
           </button>

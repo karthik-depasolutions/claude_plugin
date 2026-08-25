@@ -51,7 +51,7 @@ export function listPacks(): Promise<PackSummary[]> {
 
 export function createRunFromPath(
   sourcePath: string,
-  opts: { industry?: string; useLlm: boolean; label?: string }
+  opts: { industry?: string; useLlm: boolean; useAgent?: boolean; label?: string }
 ): Promise<RunSummary> {
   return apiFetch(`/runs`, {
     method: "POST",
@@ -60,6 +60,7 @@ export function createRunFromPath(
       source_path: sourcePath,
       industry: opts.industry ?? null,
       use_llm: opts.useLlm,
+      use_agent: opts.useAgent ?? opts.useLlm,
       label: opts.label ?? null,
     }),
   }).then((r) => asJson(r));
@@ -67,9 +68,12 @@ export function createRunFromPath(
 
 export function createRunFromUpload(
   files: File[],
-  opts: { industry?: string; useLlm: boolean; label?: string }
+  opts: { industry?: string; useLlm: boolean; useAgent?: boolean; label?: string }
 ): Promise<RunSummary> {
-  const params = new URLSearchParams({ use_llm: String(opts.useLlm) });
+  const params = new URLSearchParams({
+    use_llm: String(opts.useLlm),
+    use_agent: String(opts.useAgent ?? opts.useLlm),
+  });
   if (opts.industry) params.set("industry", opts.industry);
   if (opts.label) params.set("label", opts.label);
   const form = new FormData();
@@ -108,6 +112,14 @@ export function setBindingOverrides(runId: string, overrides: Record<string, str
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ overrides }),
+  }).then((r) => asJson(r));
+}
+
+export function confirmBindings(runId: string, confirmations: Record<string, string>): Promise<RunSummary> {
+  return apiFetch(`/runs/${runId}/confirm-bindings`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ confirmations }),
   }).then((r) => asJson(r));
 }
 

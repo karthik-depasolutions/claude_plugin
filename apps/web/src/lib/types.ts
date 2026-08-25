@@ -134,6 +134,10 @@ export interface DataQuestion {
   id: string;
   question: string;
   context: string;
+  kind: "business_context" | "data_anomaly";
+  answer_type: "free_text" | "single_choice" | "multi_choice";
+  choices: string[];
+  why_asking: string;
 }
 
 export interface DataReview {
@@ -141,4 +145,15 @@ export interface DataReview {
   findings: QualityFinding[];
   questions: DataQuestion[];
   skipped_tables: string[];
+}
+
+export interface BindingQuestion {
+  id: string;
+  role: string;
+  physical: string;
+  confidence: number;
+  evidence: string;
+  alternatives: [string, number][];
+  kpis_affected: string[];
+  question: string;
 }
