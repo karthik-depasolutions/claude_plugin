@@ -9,7 +9,7 @@ import os
 import time
 from typing import Any, Callable, TypeVar
 
-from forge_core.llm.provider import LLMError, LLMProvider
+from forge_core.llm.provider import LLMError, LLMProvider, UsageTracker
 
 _RETRY_ATTEMPTS = 4
 _RETRY_BASE_DELAY_S = 2.0
@@ -39,8 +39,27 @@ def _with_retry(call: Callable[[], T]) -> T:
     raise last_error
 
 
-class GeminiProvider(LLMProvider):
+def _record_response_usage(tracker: UsageTracker, response: Any) -> None:
+    """Fold one google-genai response's `usage_metadata` into the tracker.
+    Tolerates a missing or differently-shaped field (older SDK, blocked
+    response) by counting the call with zero tokens rather than raising -
+    cost telemetry must never be what fails a run."""
+    meta = getattr(response, "usage_metadata", None)
+    prompt_tokens = getattr(meta, "prompt_token_count", 0) or 0
+    candidates = getattr(meta, "candidates_token_count", 0) or 0
+    thinking = getattr(meta, "thoughts_token_count", 0) or 0
+    # Gemini bills thinking as output but reports it outside
+    # candidates_token_count, so add it in to get true billed output.
+    tracker.record_usage(
+        input_tokens=int(prompt_tokens),
+        output_tokens=int(candidates) + int(thinking),
+        thinking_tokens=int(thinking),
+    )
+
+
+class GeminiProvider(LLMProvider, UsageTracker):
     def __init__(self, model: str, api_key: str | None = None, temperature: float = 0.2) -> None:
+        UsageTracker.__init__(self)
         self.model = model
         self.temperature = temperature
         self._api_key = api_key or os.environ.get("GEMINI_API_KEY")
@@ -70,6 +89,7 @@ class GeminiProvider(LLMProvider):
         response = _with_retry(
             lambda: client.models.generate_content(model=self.model, contents=prompt, config=config)
         )
+        _record_response_usage(self, response)
         text = response.text
         if not text:
             raise LLMError("Gemini returned an empty response for a JSON-mode request.")
@@ -86,6 +106,7 @@ class GeminiProvider(LLMProvider):
         response = _with_retry(
             lambda: client.models.generate_content(model=self.model, contents=prompt, config=config)
         )
+        _record_response_usage(self, response)
         text = response.text
         if not text:
             raise LLMError("Gemini returned an empty text response.")

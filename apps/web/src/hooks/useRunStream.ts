@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { streamRunEvents } from "../lib/api";
+import { getRun, streamRunEvents } from "../lib/api";
 import type { RunStage, RunStatus, StageEvent } from "../lib/types";
 
 interface RunStreamState {
   events: StageEvent[];
   status: RunStatus;
   currentStage: RunStage | null;
+  label?: string | null;
 }
 
 /** Subscribes to the run's SSE feed. Bump `streamKey` to force a fresh
@@ -15,18 +16,47 @@ interface RunStreamState {
  * events.
  *
  * The timeline is *cumulative*: on a resubscribe we keep the events we've
- * already seen and ask the server to resume from that count (`?after=N`).
- * Clearing and replaying would make a resumed run look like it started over
- * from step 1, since the orchestrator re-runs the pre-pause stages (a
- * documented constraint) - only the genuinely new post-resume events should
- * appear. */
-export function useRunStream(runId: string | null, streamKey: number): RunStreamState {
+ * already seen and ask the server to resume from that count (`?after=N`). */
+export function useRunStream(
+  runId: string | null,
+  streamKey: number
+): RunStreamState & { refetch: () => void } {
   const [state, setState] = useState<RunStreamState>({ events: [], status: "pending", currentStage: null });
   const seenRef = useRef(0);
+  const currentRunIdRef = useRef<string | null>(null);
+
+  const fetchLatest = () => {
+    if (!runId) return;
+    getRun(runId)
+      .then((detail) => {
+        seenRef.current = detail.events.length;
+        setState({
+          events: detail.events,
+          status: detail.status,
+          currentStage: detail.current_stage,
+          label: detail.label,
+        });
+      })
+      .catch(() => {});
+  };
 
   useEffect(() => {
-    if (!runId) return;
-    setState((s) => ({ ...s, status: "running", currentStage: null }));
+    if (!runId) {
+      setState({ events: [], status: "pending", currentStage: null });
+      seenRef.current = 0;
+      currentRunIdRef.current = null;
+      return;
+    }
+
+    // Reset if switching runId
+    if (currentRunIdRef.current !== runId) {
+      currentRunIdRef.current = runId;
+      seenRef.current = 0;
+      setState({ events: [], status: "running", currentStage: null });
+    }
+
+    // Always fetch latest record state on runId or streamKey change
+    fetchLatest();
 
     return streamRunEvents(
       runId,
@@ -37,12 +67,21 @@ export function useRunStream(runId: string | null, streamKey: number): RunStream
         }
         const event = payload as StageEvent;
         seenRef.current += 1;
-        setState((s) => ({ ...s, events: [...s.events, event], currentStage: event.stage }));
+        setState((s) => {
+          const exists = s.events.some(
+            (e) => e.stage === event.stage && e.timestamp === event.timestamp && e.message === event.message
+          );
+          if (exists) return s;
+          return {
+            ...s,
+            events: [...s.events, event],
+            currentStage: event.stage,
+          };
+        });
       },
       seenRef.current,
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runId, streamKey]);
 
-  return state;
+  return { ...state, refetch: fetchLatest };
 }

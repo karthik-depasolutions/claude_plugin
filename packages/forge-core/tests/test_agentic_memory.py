@@ -200,3 +200,31 @@ def test_trace_checkpointer_persists_and_is_readable_across_calls():
         stored = checkpointer.get({"configurable": {"thread_id": "test-thread-1", "checkpoint_ns": ""}})
 
     assert stored is not None
+
+
+def test_trace_checkpointer_with_invalid_postgres_url_falls_back_to_sqlite(monkeypatch, tmp_path):
+    monkeypatch.setenv("FORGE_AGENT_MEMORY_DIR", str(tmp_path))
+    monkeypatch.setenv("FORGE_POSTGRES_CHECKPOINTER_URL", "postgresql://invalid:invalid@localhost/db")
+
+    from langgraph.checkpoint.postgres import PostgresSaver
+
+    def _boom(*_args, **_kwargs):
+        raise ConnectionError("Simulated Postgres failure")
+
+    monkeypatch.setattr(PostgresSaver, "from_conn_string", _boom)
+
+    with memory.trace_checkpointer() as checkpointer:
+        config = {"configurable": {"thread_id": "test-fallback-thread", "checkpoint_ns": ""}}
+        checkpoint = {
+            "v": 4,
+            "ts": "2024-07-31T20:14:19.804150+00:00",
+            "id": "1ef4f797-8335-6428-8001-8a1503f9b875",
+            "channel_values": {"messages": []},
+            "channel_versions": {},
+            "versions_seen": {},
+        }
+        checkpointer.put(config, checkpoint, {}, {})
+
+    with memory.trace_checkpointer() as checkpointer:
+        stored = checkpointer.get({"configurable": {"thread_id": "test-fallback-thread", "checkpoint_ns": ""}})
+    assert stored is not None

@@ -39,6 +39,15 @@ class CassetteProvider(LLMProvider):
     def _path_for(self, method: str, prompt: str, system: str | None) -> Path:
         return self._dir / f"{_cassette_key(method, prompt, system)}.json"
 
+    def drain_usage(self) -> dict[str, int]:
+        """Delegate to the wrapped provider so cost telemetry survives the
+        wrapper. Replay and the null provider never touch the network, so
+        they legitimately report zeros rather than being unmeasurable."""
+        drain = getattr(self._wrapped, "drain_usage", None)
+        if drain is None:
+            return {"input_tokens": 0, "output_tokens": 0, "thinking_tokens": 0, "llm_calls": 0}
+        return drain()
+
     def generate_json(self, prompt: str, *, system: str | None = None) -> dict[str, Any]:
         return self._dispatch("generate_json", prompt, system)
 

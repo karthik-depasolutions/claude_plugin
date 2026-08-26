@@ -1,10 +1,13 @@
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
+  cancelRun,
   confirmBindings,
   createRunFromPath,
   createRunFromUpload,
   downloadUrl,
+  getRunLogs,
   listPacks,
   setBindingOverrides,
   submitReview,
@@ -16,46 +19,122 @@ import BindingEditor from "../components/BindingEditor";
 import BindingConfirmationPanel from "../components/BindingConfirmationPanel";
 import DataReviewPanel from "../components/DataReviewPanel";
 import DataUnderstandingPanel from "../components/DataUnderstandingPanel";
+import BusinessContextPanel from "../components/BusinessContextPanel";
 import PublishPanel from "../components/PublishPanel";
 import WarehouseCredentialsPanel from "../components/WarehouseCredentialsPanel";
-import type { BindingQuestion, IndustryGuess, RankedMatch } from "../lib/types";
+import DataSourceConnector from "../components/DataSourceConnector";
+import RunsDashboard from "../components/RunsDashboard";
+import TokenUsagePanel from "../components/TokenUsagePanel";
+import type { BindingQuestion, IndustryGuess, RankedMatch, TokenUsage } from "../lib/types";
 
 export default function Wizard() {
-  const [runId, setRunId] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const runIdFromUrl = searchParams.get("run_id");
+  const isNewFromUrl = searchParams.get("new") === "true";
+
   const [streamKey, setStreamKey] = useState(0);
 
-  if (!runId) {
-    return <ConnectStep onStarted={setRunId} />;
+  function handleSelectRun(id: string) {
+    setSearchParams({ run_id: id });
   }
-  return <RunProgress runId={runId} streamKey={streamKey} onResumed={() => setStreamKey((k) => k + 1)} />;
+
+  function handleStartNew() {
+    setSearchParams({ new: "true" });
+  }
+
+  function handleBackToDashboard() {
+    setSearchParams({});
+  }
+
+  function handleRunStarted(id: string) {
+    setSearchParams({ run_id: id });
+  }
+
+  if (runIdFromUrl) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handleBackToDashboard}
+            className="group flex items-center gap-2 rounded-lg border border-line bg-[#0E121B] px-3 py-1.5 text-xs text-muted transition-colors hover:border-canonical hover:text-paper"
+          >
+            <span className="transition-transform group-hover:-translate-x-0.5">←</span>
+            <span>All Plugins & History</span>
+          </button>
+          <button
+            type="button"
+            onClick={handleStartNew}
+            className="rounded-lg border border-line bg-ink px-3 py-1.5 text-xs text-muted transition-colors hover:text-paper"
+          >
+            + New Plugin
+          </button>
+        </div>
+
+        <RunProgress
+          runId={runIdFromUrl}
+          streamKey={streamKey}
+          onResumed={() => setStreamKey((k) => k + 1)}
+          onBack={handleBackToDashboard}
+        />
+      </div>
+    );
+  }
+
+  if (isNewFromUrl) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            onClick={handleBackToDashboard}
+            className="group flex items-center gap-2 rounded-lg border border-line bg-[#0E121B] px-3 py-1.5 text-xs text-muted transition-colors hover:border-canonical hover:text-paper"
+          >
+            <span className="transition-transform group-hover:-translate-x-0.5">←</span>
+            <span>Back to Dashboard</span>
+          </button>
+        </div>
+
+        <ConnectStep onStarted={handleRunStarted} />
+      </div>
+    );
+  }
+
+  return (
+    <RunsDashboard
+      onSelectRun={handleSelectRun}
+      onNewRun={handleStartNew}
+    />
+  );
 }
 
 function ConnectStep({ onStarted }: { onStarted: (runId: string) => void }) {
   const { data: packs } = useQuery({ queryKey: ["packs"], queryFn: listPacks });
-  const [mode, setMode] = useState<"upload" | "path">("upload");
-  const [files, setFiles] = useState<File[]>([]);
-  const [path, setPath] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [useLlm, setUseLlm] = useState(true);
-  const [useAgent, setUseAgent] = useState(true);
-  const [label, setLabel] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function submit() {
+  async function handleSubmit(payload: {
+    mode: "upload" | "path" | "database";
+    files?: File[];
+    sourcePath?: string;
+    industry?: string;
+    useLlm: boolean;
+    useAgent: boolean;
+    label?: string;
+  }) {
     setError(null);
     setSubmitting(true);
     try {
       const opts = {
-        industry: industry || undefined,
-        useLlm,
-        useAgent: useLlm ? useAgent : false,
-        label: label.trim() || undefined,
+        industry: payload.industry,
+        useLlm: payload.useLlm,
+        useAgent: payload.useAgent,
+        label: payload.label,
       };
       const run =
-        mode === "upload" && files.length > 0
-          ? await createRunFromUpload(files, opts)
-          : await createRunFromPath(path, opts);
+        payload.mode === "upload" && payload.files && payload.files.length > 0
+          ? await createRunFromUpload(payload.files, opts)
+          : await createRunFromPath(payload.sourcePath || "", opts);
       onStarted(run.run_id);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -64,138 +143,13 @@ function ConnectStep({ onStarted }: { onStarted: (runId: string) => void }) {
     }
   }
 
-  const canSubmit = mode === "upload" ? files.length > 0 : path.trim().length > 0;
-
   return (
-    <div className="space-y-6">
-      <div className="flex gap-2 text-sm">
-        <TabButton active={mode === "upload"} onClick={() => setMode("upload")}>
-          Upload a file
-        </TabButton>
-        <TabButton active={mode === "path"} onClick={() => setMode("path")}>
-          Server path
-        </TabButton>
-      </div>
-
-      {mode === "upload" ? (
-        <div className="space-y-2">
-          <input
-            type="file"
-            multiple
-            accept=".csv,.tsv,.json,.ndjson,.parquet,.xlsx,.xls,.sqlite,.db,.zip"
-            onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-            className="block w-full text-sm text-paper/80 file:mr-3 file:rounded file:border-0 file:bg-canonical file:px-3 file:py-1.5 file:font-medium file:text-ink file:transition-colors hover:file:bg-canonical/85"
-          />
-          <p className="text-xs text-muted">
-            Select multiple CSV/Excel/JSON/Parquet files for a multi-table source, or a single{" "}
-            <code className="rounded bg-line px-1 py-0.5 font-mono text-[11px]">.zip</code> containing them.
-          </p>
-          {files.length > 0 && (
-            <ul className="font-mono text-xs text-paper/70">
-              {files.map((f) => (
-                <li key={f.name}>{f.name}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ) : (
-        <input
-          value={path}
-          onChange={(e) => setPath(e.target.value)}
-          placeholder="/path/to/dataset.csv or a directory of tables"
-          className="w-full rounded border border-line bg-[#0E121B] px-3 py-2 text-sm text-paper placeholder:text-muted focus:border-canonical focus:outline-none"
-        />
-      )}
-
-      <label className="block text-sm text-paper/80">
-        Project / business name (optional)
-        <input
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          placeholder="e.g. Sparda Music Academy"
-          className="mt-1 w-full rounded border border-line bg-[#0E121B] px-3 py-2 text-paper placeholder:text-muted focus:border-canonical focus:outline-none"
-        />
-        <span className="mt-1 block text-xs text-muted">
-          Names the plugin and (for warehouse-backed uploads) the database schema. Defaults to a
-          generic name based on the detected industry if left blank.
-        </span>
-      </label>
-
-      <label className="block text-sm text-paper/80">
-        Industry (optional - skips auto-classification)
-        <select
-          value={industry}
-          onChange={(e) => setIndustry(e.target.value)}
-          className="mt-1 w-full rounded border border-line bg-[#0E121B] px-3 py-2 text-paper focus:border-canonical focus:outline-none"
-        >
-          <option value="">Auto-detect</option>
-          {packs?.map((p) => (
-            <option key={p.slug} value={p.slug}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <div className="space-y-2">
-        <label className="flex items-center gap-2 text-sm text-paper/80">
-          <input
-            type="checkbox"
-            checked={useLlm}
-            onChange={(e) => {
-              setUseLlm(e.target.checked);
-              if (!e.target.checked) setUseAgent(false);
-            }}
-            className="accent-canonical"
-          />
-          Use Gemini for semantic profiling, prose generation, and self-critique
-        </label>
-        {useLlm && (
-          <label className="flex items-center gap-2 pl-6 text-sm text-paper/70">
-            <input
-              type="checkbox"
-              checked={useAgent}
-              onChange={(e) => setUseAgent(e.target.checked)}
-              className="accent-canonical"
-            />
-            Use tool-using agent for deeper column understanding (recommended)
-          </label>
-        )}
-      </div>
-
-      {error && <p className="text-sm text-danger">{error}</p>}
-
-      <button
-        type="button"
-        disabled={!canSubmit || submitting}
-        onClick={submit}
-        className="rounded bg-physical px-4 py-2 text-sm font-semibold text-ink transition-transform hover:scale-[1.02] disabled:scale-100 disabled:opacity-40"
-      >
-        {submitting ? "Starting…" : "Generate plugin"}
-      </button>
-    </div>
-  );
-}
-
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded px-3 py-1.5 transition-colors ${
-        active ? "bg-canonical/15 text-canonical" : "text-muted hover:text-paper"
-      }`}
-    >
-      {children}
-    </button>
+    <DataSourceConnector
+      packs={packs}
+      submitting={submitting}
+      error={error}
+      onSubmit={handleSubmit}
+    />
   );
 }
 
@@ -203,21 +157,41 @@ function RunProgress({
   runId,
   streamKey,
   onResumed,
+  onBack,
 }: {
   runId: string;
   streamKey: number;
   onResumed: () => void;
+  onBack: () => void;
 }) {
-  const { events, status, currentStage } = useRunStream(runId, streamKey);
+  const { events, status, currentStage, label, refetch } = useRunStream(runId, streamKey);
   const [busy, setBusy] = useState(false);
 
-  // The classify stage logs 3 events ("Classifying industry" -> "Top match:
-  // ..." -> "Awaiting customer input"); ranked_matches rides the middle one,
-  // and the merged pause's needs_industry/needs_answers flags ride the last.
+  // The classify stage logs events
   const classifyEvent = [...events].reverse().find((e) => e.stage === "classify" && e.data.ranked_matches);
-  const pauseEvent = [...events].reverse().find(
-    (e) => e.stage === "classify" && (e.data.needs_industry || e.data.needs_answers)
+  // Which pause is the run *currently* sitting on.
+  //
+  // A resumed run replays from ingest and appends to the same event list, so
+  // the "Awaiting customer input" event from the first pass is still there
+  // after its questions have been answered. Searching the whole history for
+  // it made `needsAnswers` permanently true, which both re-rendered the
+  // answered review panel and suppressed the binding gate that was actually
+  // blocking the run — the user answered 13 questions and was handed the
+  // same 13 back.
+  //
+  // Both pause sites log immediately before returning, so the later of the
+  // two in the list is the live one; anything earlier is settled history.
+  const lastPauseIndex = events.reduce(
+    (last, e, i) =>
+      (e.stage === "classify" && (e.data.needs_industry || e.data.needs_answers)) ||
+      (e.stage === "bind" && e.data.questions)
+        ? i
+        : last,
+    -1
   );
+  const livePause = lastPauseIndex >= 0 ? events[lastPauseIndex] : undefined;
+  const pauseEvent = livePause?.stage === "classify" ? livePause : undefined;
+  const bindPauseEvent = livePause?.stage === "bind" ? livePause : undefined;
   const reviewEvent = [...events].reverse().find((e) => e.stage === "profile" && e.data.review);
   const bindEvent = [...events].reverse().find((e) => e.stage === "bind");
   const validateEvent = [...events].reverse().find((e) => e.stage === "validate");
@@ -228,24 +202,31 @@ function RunProgress({
     (e) => e.stage === "profile" && e.data.data_understanding
   );
 
-  const unresolvedRoles: string[] = bindEvent?.data.unresolved_roles ?? [];
-  const bindingQuestions: BindingQuestion[] = bindEvent?.data.questions ?? [];
+  // The Context Discovery Agent's read of the business behind the data.
+  const businessContext = [...events].reverse().find(
+    (e) => e.stage === "profile" && e.data.business_context
+  )?.data.business_context;
 
-  // plugin_dir is a server filesystem path (e.g. "generated\runs\<id>\output\
-  // <pack>-mis-plugin") - only the last segment (the plugin's own directory
-  // name, which is also its manifest `name`) is meaningful client-side.
+  // Cumulative LLM cost, emitted as the last event of a completed run.
+  const tokenUsage = [...events].reverse().find((e) => e.data.token_usage)?.data
+    .token_usage as TokenUsage | undefined;
+
+  const unresolvedRoles: string[] = bindEvent?.data.unresolved_roles ?? [];
+  // From the live pause, not from any historical bind event — a resumed run
+  // whose bindings were already confirmed still has the old questions event.
+  const bindingQuestions: BindingQuestion[] = bindPauseEvent?.data.questions ?? [];
+
   const pluginDirPath: string | undefined = packageEvent?.data.plugin_dir;
   const pluginName = pluginDirPath?.split(/[\\\/]/).filter(Boolean).pop();
 
   const needsAnswers = pauseEvent?.data.needs_answers ?? false;
   const needsIndustry = pauseEvent?.data.needs_industry ?? false;
 
-  // Binding gate: paused with binding questions to answer
+  // Binding gate: paused with binding questions to answer. Keyed off the
+  // live pause rather than "are there any binding questions in history",
+  // for the same reason as above.
   const needsBindingConfirmation =
-    status === "needs_input" &&
-    bindingQuestions.length > 0 &&
-    !needsAnswers &&
-    !needsIndustry;
+    status === "needs_input" && bindPauseEvent !== undefined && bindingQuestions.length > 0;
 
   // Unresolved roles (after binding gate, for manual override)
   const canEditBindings =
@@ -257,6 +238,7 @@ function RunProgress({
     setBusy(true);
     try {
       await submitReview(runId, { industry, answers });
+      refetch();
       onResumed();
     } finally {
       setBusy(false);
@@ -267,6 +249,7 @@ function RunProgress({
     setBusy(true);
     try {
       await confirmBindings(runId, confirmations);
+      refetch();
       onResumed();
     } finally {
       setBusy(false);
@@ -277,7 +260,22 @@ function RunProgress({
     setBusy(true);
     try {
       await setBindingOverrides(runId, overrides);
+      refetch();
       onResumed();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleCancelRun() {
+    if (!window.confirm("Are you sure you want to stop and cancel this plugin build?")) return;
+    setBusy(true);
+    try {
+      await cancelRun(runId);
+      refetch();
+      onResumed();
+    } catch (err) {
+      alert("Failed to stop run: " + err);
     } finally {
       setBusy(false);
     }
@@ -285,14 +283,61 @@ function RunProgress({
 
   return (
     <div className="space-y-6">
-      <div className="animate-reveal-up rounded-lg border border-line bg-[#0E121B] p-4">
-        <div className="mb-3 flex items-center justify-between border-b border-line pb-3">
-          <span className="text-xs text-muted">
-            Run <span className="font-mono text-paper/70">{runId}</span>
-          </span>
+      <div className="animate-reveal-up rounded-xl border border-line bg-[#0E121B] p-5 shadow-lg">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
+          <div className="flex items-center gap-2">
+            <span className="font-display text-sm font-semibold text-paper">
+              {label || `Plugin #${runId.slice(0, 8)}`}
+            </span>
+            <span className="rounded bg-ink px-2 py-0.5 font-mono text-[10px] text-muted">
+              ID: {runId}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            {(status === "running" || status === "needs_input") && (
+              <button
+                type="button"
+                onClick={handleCancelRun}
+                disabled={busy}
+                className="flex items-center gap-1.5 rounded-lg border border-danger/40 bg-danger/10 px-2.5 py-1 text-xs font-semibold text-danger hover:bg-danger/20 hover:border-danger/60 transition-colors cursor-pointer disabled:opacity-50"
+                title="Stop execution and cancel run"
+              >
+                <span>⏹</span>
+                <span>Stop Run</span>
+              </button>
+            )}
+
+            {status === "needs_input" && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/20 px-2.5 py-0.5 text-xs font-semibold text-amber-300">
+                <span className="h-2 w-2 animate-ping rounded-full bg-amber-400"></span>
+                Action Required — Awaiting Input
+              </span>
+            )}
+            {status === "running" && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-500/40 bg-cyan-500/20 px-2.5 py-0.5 text-xs font-semibold text-cyan-300">
+                <span className="h-2 w-2 animate-ping rounded-full bg-cyan-400"></span>
+                Executing Pipeline
+              </span>
+            )}
+            {status === "succeeded" && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/20 px-2.5 py-0.5 text-xs font-semibold text-emerald-300">
+                ✓ Plugin Ready & Validated
+              </span>
+            )}
+            {status === "failed" && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-danger/40 bg-danger/20 px-2.5 py-0.5 text-xs font-semibold text-danger">
+                ✕ Build Stopped / Failed
+              </span>
+            )}
+          </div>
         </div>
+
         <StageTimeline events={events} status={status} currentStage={currentStage} />
       </div>
+
+      {/* What the Context Discovery Agent worked out about the business */}
+      {businessContext && <BusinessContextPanel context={businessContext} />}
 
       {/* data_understanding — show once PROFILE completes */}
       {understandingEvent && (
@@ -326,23 +371,86 @@ function RunProgress({
       )}
 
       {status === "failed" && (
-        <p className="animate-reveal-up rounded border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
-          Run failed. Check the timeline above for the stage that raised the error.
-        </p>
+        <div className="animate-reveal-up rounded-xl border border-danger/30 bg-danger/10 p-4 space-y-3">
+          <div className="flex items-center gap-2 text-danger font-semibold text-sm">
+            <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>Run execution encountered a failure</span>
+          </div>
+          <p className="text-xs text-paper/80">
+            Review the timeline or view the execution logs below to see details.
+          </p>
+          <RunLogViewer runId={runId} />
+        </div>
       )}
 
       {validateEvent?.data.report && <ValidationReportView report={validateEvent.data.report} />}
 
+      {tokenUsage && <TokenUsagePanel usage={tokenUsage} />}
+
       {status === "succeeded" && (
         <div className="animate-reveal-up space-y-4">
           <WarehouseCredentialsPanel runId={runId} />
-          <a
-            href={downloadUrl(runId)}
-            className="inline-block rounded bg-physical px-4 py-2 text-sm font-semibold text-ink transition-transform hover:scale-[1.02]"
-          >
-            Download plugin (.zip)
-          </a>
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href={downloadUrl(runId)}
+              download
+              className="inline-flex items-center gap-2 rounded-lg bg-canonical px-5 py-2.5 text-sm font-bold text-ink shadow-lg shadow-canonical/20 transition-all hover:scale-105 hover:brightness-105"
+            >
+              <span>Download Plugin (.zip)</span>
+              <span>↓</span>
+            </a>
+            <button
+              type="button"
+              onClick={onBack}
+              className="rounded-lg border border-line bg-ink px-4 py-2.5 text-sm font-medium text-paper hover:bg-line/40 transition-colors"
+            >
+              Return to My Plugins
+            </button>
+          </div>
           <PublishPanel runId={runId} defaultRepoName={pluginName} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RunLogViewer({ runId }: { runId: string }) {
+  const [open, setOpen] = useState(false);
+  const { data: logs, isLoading } = useQuery({
+    queryKey: ["run-logs", runId],
+    queryFn: () => getRunLogs(runId),
+    enabled: open,
+  });
+
+  return (
+    <div className="rounded-lg border border-line bg-base/80 overflow-hidden text-xs">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-3 py-2 text-muted hover:text-paper hover:bg-white/5 transition-colors font-mono"
+      >
+        <span>{open ? "▼ Hide Execution Logs" : "▶ View Detailed Execution Logs"}</span>
+        <span className="text-[10px] text-muted">pipeline.log</span>
+      </button>
+
+      {open && (
+        <div className="p-3 border-t border-line/60 bg-ink">
+          {isLoading ? (
+            <p className="text-muted font-mono">Loading execution logs…</p>
+          ) : logs?.log_text ? (
+            <pre className="max-h-64 overflow-y-auto font-mono text-[11px] text-paper/80 whitespace-pre-wrap select-all">
+              {logs.log_text}
+            </pre>
+          ) : logs?.error ? (
+            <div className="font-mono text-danger text-[11px]">
+              <p className="font-bold mb-1">Error message:</p>
+              <p>{logs.error}</p>
+            </div>
+          ) : (
+            <p className="text-muted font-mono">No log entries recorded yet.</p>
+          )}
         </div>
       )}
     </div>

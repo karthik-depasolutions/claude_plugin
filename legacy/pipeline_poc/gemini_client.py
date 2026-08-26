@@ -10,7 +10,7 @@ from typing import Any
 from google import genai
 from google.genai import types
 
-DEFAULT_MODEL = "gemini-2.5-flash"
+DEFAULT_MODEL = "gemini-3.7-flash"
 
 
 def get_client() -> genai.Client:

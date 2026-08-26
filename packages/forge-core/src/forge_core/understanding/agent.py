@@ -10,7 +10,9 @@ is a valid outcome — the column stays as open_question for human review.
 from __future__ import annotations
 
 import json
+import logging
 import os
+import time
 from typing import Any, Callable
 
 from forge_core.agentic.investigation_tools import build_investigation_tools
@@ -26,7 +28,9 @@ from forge_core.models.data_understanding import (
 from forge_core.models.datasource import DataSource
 from forge_core.models.schema_profile import StructuralProfile
 
-DEFAULT_AGENT_MODEL = "gemini-2.5-flash"
+logger = logging.getLogger("forge_core.understanding.agent")
+
+DEFAULT_AGENT_MODEL = "gemini-3.7-flash"
 MAX_AGENT_STEPS = 25
 
 _SYSTEM_PROMPT = """You are enriching a deterministic data-understanding artifact.
@@ -159,6 +163,29 @@ def enrich_data_understanding(
         """Call exactly once when done enriching."""
         return "Done."
 
+    # Cheap path first: one structured call over the data map.
+    #
+    # Measured on a 17-column table, the tool loop below spent 126,089 input
+    # tokens across 13 steps and 45 seconds - more than every other component
+    # of the build combined, and half its wall clock - to resolve 0 of 3 open
+    # questions. Naming an ambiguous column is a judgement over the measured
+    # profile, not an investigation, and the profile is already in the prompt.
+    #
+    # Fills the same two collections the tools below do, so the merge that
+    # follows is shared and neither path can drift from the other.
+    _enrich_from_map_single_call(
+        data_understanding,
+        structural,
+        submit_column_enrichment,
+        submit_business_question,
+        model_name=model_name,
+        on_stats=on_stats,
+    )
+    if enrichments or extra_questions:
+        return _finalise(
+            data_understanding, enrichments, extra_questions, data_source, model_name
+        )
+
     recorder = AgentCallRecorder()
     try:
         from langchain.agents import create_agent
@@ -211,6 +238,20 @@ def enrich_data_understanding(
     if on_stats is not None:
         on_stats(recorder.summary())
 
+    return _finalise(data_understanding, enrichments, extra_questions, data_source, model_name)
+
+
+def _finalise(
+    data_understanding: DataUnderstanding,
+    enrichments: dict[tuple[str, str], dict[str, Any]],
+    extra_questions: list[BusinessQuestion],
+    data_source: DataSource,
+    model_name: str | None,
+) -> DataUnderstanding:
+    """Merge proposals into a new DataUnderstanding. Shared by both the
+    single-call path and the tool-agent fallback so the two can never drift -
+    a column enriched cheaply must end up identical to one enriched
+    expensively."""
     # U4 — validate agent-proposed business questions (sqlglot + dry-run) before merging
     if extra_questions:
         try:
@@ -299,3 +340,139 @@ def enrich_data_understanding(
 
 
 __all__ = ["enrich_data_understanding"]
+
+
+_SINGLE_CALL_PROMPT = """\
+You are naming and describing the columns of a customer's dataset that
+automated profiling could not settle on its own.
+
+MEASURED PROFILE (authoritative - every number is a real observation):
+{data_map_block}
+
+COLUMNS STILL AMBIGUOUS (these are what you must decide):
+{open_questions}
+
+Return JSON:
+
+{{"enrichments": [{{"table": "...", "column": "...",
+                   "business_name": "<short human label>",
+                   "description": "<one sentence on what it actually holds>",
+                   "understanding_role": "<one of: {valid_roles}>",
+                   "unit": "INR|count|percent|score|... or null",
+                   "confidence": 0.7,
+                   "evidence": "<the specific numbers from the profile that justify this>"}}],
+ "business_questions": [{{"question": "...", "support": 0.7,
+                          "tables": ["..."], "columns": ["table.column"]}}]}}
+
+Rules:
+- Decide from the measured VALUES, not the column name. A numeric column with
+  no currency fingerprint could be revenue or a score; only its distribution
+  tells you which.
+- "confidence" is a NUMBER between 0 and 1, never a word. Be honest - a low
+  score is a useful answer, because it routes the column to a human.
+- **Omit a column entirely rather than guess.** An unresolved column stays an
+  open question for its owner to answer, which is the correct outcome; a
+  confident-sounding guess silently becomes a wrong metric.
+- Propose at most 3 business questions, and only ones the observed tables and
+  columns genuinely support.
+- Never invent a table or column name.
+"""
+
+
+def _enrich_from_map_single_call(
+    data_understanding: DataUnderstanding,
+    structural: StructuralProfile,
+    submit_column_enrichment: Callable[..., str],
+    submit_business_question: Callable[..., str],
+    *,
+    model_name: str | None,
+    on_stats: Callable[[dict], None] | None,
+) -> None:
+    """One structured call, no tools. Feeds the same two submit callbacks the
+    tool agent uses, so both paths get identical validation (real column
+    names, valid roles, bounded confidence) and share the merge afterwards."""
+    if structural.data_map is None:
+        return
+
+    open_block = "\n".join(
+        f"- {q.column or '(table-level)'}: {q.question}"
+        for q in data_understanding.open_questions
+    )
+    started = time.monotonic()
+    try:
+        from forge_core.llm import get_provider
+
+        provider = get_provider(role="agent")
+        raw = provider.generate_json(
+            _SINGLE_CALL_PROMPT.format(
+                data_map_block=structural.data_map.to_prompt(),
+                open_questions=open_block,
+                valid_roles=_valid_roles(),
+            )
+        )
+        usage = provider.drain_usage() if hasattr(provider, "drain_usage") else {}
+    except Exception as exc:  # noqa: BLE001 - falls back to the tool agent
+        logger.warning("Single-call enrichment failed: %s", exc)
+        return
+
+    if on_stats is not None:
+        on_stats(
+            {
+                "steps": usage.get("llm_calls", 1),
+                "tool_calls": 0,
+                "input_tokens": usage.get("input_tokens", 0),
+                "output_tokens": usage.get("output_tokens", 0),
+                "thinking_tokens": usage.get("thinking_tokens", 0),
+                "wall_seconds": round(time.monotonic() - started, 3),
+            }
+        )
+
+    for item in (raw or {}).get("enrichments") or []:
+        try:
+            unit = item.get("unit")
+            if isinstance(unit, str) and unit.strip().lower() in ("null", "none", ""):
+                unit = None
+            # The submit callback validates and rejects; its error string is
+            # ignored here exactly as a tool-calling model would ignore it,
+            # because there is no second round to react in.
+            submit_column_enrichment(
+                table=item["table"],
+                column=item["column"],
+                business_name=str(item.get("business_name", "")),
+                description=str(item.get("description", "")),
+                understanding_role=str(item.get("understanding_role", "")),
+                unit=unit,
+                confidence=_confidence(item.get("confidence")),
+                evidence_summary=str(item.get("evidence", "")),
+            )
+        except Exception as exc:  # noqa: BLE001 - one bad row must not lose the rest
+            logger.debug("Skipping malformed enrichment %r: %s", item, exc)
+
+    for item in ((raw or {}).get("business_questions") or [])[:3]:
+        try:
+            submit_business_question(
+                question=str(item.get("question", "")),
+                sql_sketch=item.get("sql_sketch"),
+                support=_confidence(item.get("support")),
+                tables=list(item.get("tables") or []),
+                columns=list(item.get("columns") or []),
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("Skipping malformed business question %r: %s", item, exc)
+
+
+_WORD_CONFIDENCE = {"high": 0.85, "medium": 0.6, "moderate": 0.6, "low": 0.35}
+
+
+def _confidence(value: Any) -> float:
+    if isinstance(value, (int, float)):
+        return max(0.0, min(1.0, float(value)))
+    if isinstance(value, str):
+        text = value.strip().lower()
+        if text in _WORD_CONFIDENCE:
+            return _WORD_CONFIDENCE[text]
+        try:
+            return max(0.0, min(1.0, float(text)))
+        except ValueError:
+            pass
+    return 0.6

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from pathlib import Path
 
 import typer
@@ -74,7 +75,30 @@ packs_app = typer.Typer(help="Inspect and validate industry packs.")
 publish_app = typer.Typer(help="Publish an already-packaged plugin (see `forge run`'s package stage output).")
 app.add_typer(packs_app, name="packs")
 app.add_typer(publish_app, name="publish")
-console = Console()
+
+def _utf8_safe_console() -> Console:
+    """A Windows console defaults to a legacy codepage (cp1252 here), and
+    Rich writes straight through to it - so a single non-Latin-1 character
+    anywhere in a progress message raises UnicodeEncodeError and takes the
+    whole run down at whatever stage happened to emit it. Progress text comes
+    from all over the pipeline (and increasingly from model output), so
+    sanitising each call site is a losing game: fix the stream once.
+
+    `errors="replace"` rather than strict, because a plugin build must never
+    fail over an unencodable glyph in a status line."""
+    stream = sys.stdout
+    reconfigure = getattr(stream, "reconfigure", None)
+    if reconfigure is not None:
+        try:
+            reconfigure(encoding="utf-8", errors="replace")
+        except (ValueError, OSError):
+            # Detached or already-wrapped stream - fall through; Rich's own
+            # encoding fallbacks still apply.
+            pass
+    return Console()
+
+
+console = _utf8_safe_console()
 
 
 @app.callback()

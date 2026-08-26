@@ -119,7 +119,7 @@ def run_semantic_profile(
         return SemanticProfile(
             column_semantics=column_semantics,
             suggested_industry=suggested_industry,
-            model_used=os.environ.get("FORGE_LLM_AGENT_MODEL", "gemini-2.5-flash"),
+            model_used=os.environ.get("FORGE_LLM_AGENT_MODEL", "gemini-3.7-flash"),
         )
 
     prompt = _PROMPT_TEMPLATE.format(

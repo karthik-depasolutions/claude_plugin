@@ -70,6 +70,26 @@ def main() -> int:
             location = f"{finding['table']}.{finding['column']}"
             lines.append(f"- [{finding['severity']}] {location}: {finding['summary']}")
 
+    # Record grain and owner-confirmed facts, from the Context Discovery
+    # Agent. Grain earns its place in every session: an analyst that does not
+    # know one row is an interaction rather than a customer will double-count
+    # on the first GROUP BY it writes. Hypotheses and open questions are
+    # deliberately left out - they are uncertain, and nobody in this session
+    # can resolve them.
+    business = context.get("business_context") or {}
+    if business.get("record_grain") or business.get("confirmed_facts"):
+        lines.append("## What this data represents")
+        if business.get("record_grain"):
+            lines.append(f"- One row is {business['record_grain']}")
+        for entity in (business.get("primary_entities") or [])[:4]:
+            if not entity.get("is_unique_key"):
+                lines.append(
+                    f"- {entity['table']}.{entity['identifier_column']} repeats across rows - "
+                    f"count distinct values, not rows, to count {entity['name']}"
+                )
+        for fact in (business.get("confirmed_facts") or [])[:5]:
+            lines.append(f"- Confirmed by the owner: {fact['observation']}")
+
     # U5 - DataUnderstanding summary (grain, temporal, vocabularies, business questions)
     du_path = PLUGIN_ROOT / "config" / "data-understanding.json"
     if du_path.is_file():

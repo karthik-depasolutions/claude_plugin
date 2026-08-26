@@ -61,3 +61,32 @@ async def test_logout_clears_the_session(unauthenticated_client: AsyncClient):
 
     assert (await unauthenticated_client.get("/auth/me")).status_code == 401
     assert (await unauthenticated_client.get("/runs")).status_code == 401
+
+
+async def test_signup_creates_account_and_logs_in(unauthenticated_client: AsyncClient):
+    signup_res = await unauthenticated_client.post(
+        "/auth/signup", json={"email": "newuser@example.com", "password": "securepassword123"}
+    )
+    assert signup_res.status_code == 201, signup_res.text
+    assert signup_res.json()["email"] == "newuser@example.com"
+
+    me = await unauthenticated_client.get("/auth/me")
+    assert me.status_code == 200
+    assert me.json()["email"] == "newuser@example.com"
+
+    # Duplicate email returns 409
+    dup = await unauthenticated_client.post(
+        "/auth/signup", json={"email": "NEWUSER@example.com", "password": "anotherpassword"}
+    )
+    assert dup.status_code == 409
+
+    # Invalid email or short password
+    invalid_email = await unauthenticated_client.post(
+        "/auth/signup", json={"email": "notanemail", "password": "securepassword123"}
+    )
+    assert invalid_email.status_code == 422
+
+    short_pw = await unauthenticated_client.post(
+        "/auth/signup", json={"email": "valid@example.com", "password": "123"}
+    )
+    assert short_pw.status_code == 422

@@ -37,12 +37,24 @@ export function login(email: string, password: string): Promise<CurrentUser> {
   }).then((r) => asJson(r));
 }
 
+export function signup(email: string, password: string): Promise<CurrentUser> {
+  return apiFetch(`/auth/signup`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  }).then((r) => asJson(r));
+}
+
 export async function logout(): Promise<void> {
   await apiFetch(`/auth/logout`, { method: "POST" });
 }
 
 export function getCurrentUser(): Promise<CurrentUser> {
   return apiFetch(`/auth/me`).then((r) => asJson(r));
+}
+
+export function listRuns(scope: "all" | "mine" = "all"): Promise<RunSummary[]> {
+  return apiFetch(`/runs?scope=${scope}`).then((r) => asJson(r));
 }
 
 export function listPacks(): Promise<PackSummary[]> {
@@ -85,6 +97,10 @@ export function getRun(runId: string): Promise<RunDetail> {
   return apiFetch(`/runs/${runId}`).then((r) => asJson(r));
 }
 
+export function getRunLogs(runId: string): Promise<{ run_id: string; status: string; error: string | null; events_count: number; log_text: string }> {
+  return apiFetch(`/runs/${runId}/logs`).then((r) => asJson(r));
+}
+
 export function confirmIndustry(runId: string, industry: string): Promise<RunSummary> {
   return apiFetch(`/runs/${runId}/confirm-industry`, {
     method: "POST",
@@ -120,6 +136,18 @@ export function confirmBindings(runId: string, confirmations: Record<string, str
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ confirmations }),
+  }).then((r) => asJson(r));
+}
+
+export function cancelRun(runId: string): Promise<RunSummary> {
+  return apiFetch(`/runs/${runId}/cancel`, {
+    method: "POST",
+  }).then((r) => asJson(r));
+}
+
+export function deleteRun(runId: string): Promise<{ ok: boolean; run_id: string }> {
+  return apiFetch(`/runs/${runId}`, {
+    method: "DELETE",
   }).then((r) => asJson(r));
 }
 

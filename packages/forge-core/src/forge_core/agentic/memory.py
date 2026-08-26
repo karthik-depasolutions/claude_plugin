@@ -234,13 +234,54 @@ def record_decision(
         )
 
 
+_PG_CHECKPOINTER_SETUP_DONE = False
+
+
+def _get_postgres_checkpointer_url() -> str | None:
+    return (
+        os.environ.get("FORGE_POSTGRES_CHECKPOINTER_URL")
+        or os.environ.get("FORGE_CLIENT_WAREHOUSE_URL")
+    )
+
+
 @contextmanager
 def trace_checkpointer():
-    """A LangGraph SQLite checkpointer, for full-trace audit/debugging only
-    - every message and tool call the agent makes gets persisted under a
-    thread_id the caller controls. Never read back by the pipeline itself;
-    inspect it directly (e.g. `forge_core.agentic.memory.read_trace`) if you
-    need to see why a past decision was made."""
+    """A LangGraph checkpointer for full-trace audit and debugging.
+
+    Uses `PostgresSaver` connected to PostgreSQL (e.g. Supabase) when
+    `FORGE_POSTGRES_CHECKPOINTER_URL` or `FORGE_CLIENT_WAREHOUSE_URL` is set,
+    and falls back cleanly to local SQLite (`SqliteSaver`) if running offline
+    or in a lightweight environment.
+    """
+    global _PG_CHECKPOINTER_SETUP_DONE
+    pg_url = _get_postgres_checkpointer_url()
+    if pg_url:
+        saver = None
+        pg_cm = None
+        try:
+            from langgraph.checkpoint.postgres import PostgresSaver
+
+            pg_cm = PostgresSaver.from_conn_string(pg_url)
+            saver = pg_cm.__enter__()
+            if not _PG_CHECKPOINTER_SETUP_DONE:
+                saver.setup()
+                _PG_CHECKPOINTER_SETUP_DONE = True
+        except Exception:
+            if pg_cm is not None:
+                try:
+                    pg_cm.__exit__(None, None, None)
+                except Exception:
+                    pass
+            saver = None
+            pg_cm = None
+
+        if saver is not None:
+            try:
+                yield saver
+            finally:
+                pg_cm.__exit__(None, None, None)
+            return
+
     from langgraph.checkpoint.sqlite import SqliteSaver
 
     with SqliteSaver.from_conn_string(str(_traces_db_path())) as saver:

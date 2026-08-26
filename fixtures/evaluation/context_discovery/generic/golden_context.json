@@ -1,0 +1,34 @@
+{
+  "_comment": "Generated from real agent behaviour; see _README.md. 'deterministic' holds with no LLM; 'semantic' needs a live agent.",
+  "dataset": "fixtures/datasets/dirty_leads.csv",
+  "description": "Deliberately messy lead data exercising every quality check.",
+  "expected_pack": "generic-analytics",
+  "deterministic": {
+    "entities": {
+      "dirty_leads": {
+        "identifier_column": "lead_id",
+        "is_unique_key": true
+      }
+    },
+    "question_categories": [
+      "field_semantics",
+      "success_definition"
+    ],
+    "min_questions": 1,
+    "max_questions": 8,
+    "expected_hypothesis_categories": [
+      "field_semantics",
+      "record_grain"
+    ],
+    "expected_quality_issues": [
+      "CATEGORY_CASING_VARIATIONS"
+    ],
+    "non_additive_measures": []
+  },
+  "semantic": {
+    "domain": "generic-analytics",
+    "record_grain": "One row per lead",
+    "primary_entity": "Lead",
+    "business_process": null
+  }
+}

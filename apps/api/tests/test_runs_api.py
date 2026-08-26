@@ -434,3 +434,78 @@ async def test_sse_after_slices_events_for_a_resumed_client(client: AsyncClient)
     assert '"final": true' in body
     assert '"stage":"ingest"' not in body
     assert "compile_kpis" not in body
+
+
+async def test_admin_can_see_all_pending_generation_while_regular_user_only_sees_theirs(
+    unauthenticated_client: AsyncClient,
+):
+    from forge_api.db import session_factory
+    from forge_api.models_orm import UserORM
+    from forge_api.security import hash_password
+
+    # Create two users: user A (regular), user B (admin)
+    async with session_factory()() as session:
+        session.add(UserORM(email="alice@company.com", password_hash=hash_password("pw123456"), is_admin=False))
+        session.add(UserORM(email="admin@company.com", password_hash=hash_password("pw123456"), is_admin=True))
+        await session.commit()
+
+    # Login as Alice (regular user)
+    alice_login = await unauthenticated_client.post(
+        "/auth/login", json={"email": "alice@company.com", "password": "pw123456"}
+    )
+    assert alice_login.status_code == 200
+    assert not alice_login.json()["is_admin"]
+
+    # Alice creates a run
+    alice_run = await unauthenticated_client.post(
+        "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False, "label": "Alice Plugin"}
+    )
+    assert alice_run.status_code == 201
+    alice_run_id = alice_run.json()["run_id"]
+
+    # Alice sees her run
+    alice_runs = await unauthenticated_client.get("/runs")
+    assert alice_runs.status_code == 200
+    assert any(r["run_id"] == alice_run_id for r in alice_runs.json())
+
+    # Logout Alice
+    await unauthenticated_client.post("/auth/logout")
+
+    # Login as Bob (another regular user)
+    async with session_factory()() as session:
+        session.add(UserORM(email="bob@company.com", password_hash=hash_password("pw123456"), is_admin=False))
+        await session.commit()
+
+    bob_login = await unauthenticated_client.post(
+        "/auth/login", json={"email": "bob@company.com", "password": "pw123456"}
+    )
+    assert bob_login.status_code == 200
+
+    # Bob's runs list should NOT include Alice's run!
+    bob_runs = await unauthenticated_client.get("/runs")
+    assert bob_runs.status_code == 200
+    assert not any(r["run_id"] == alice_run_id for r in bob_runs.json())
+
+    # Bob cannot access Alice's run directly
+    bob_get_alice_run = await unauthenticated_client.get(f"/runs/{alice_run_id}")
+    assert bob_get_alice_run.status_code == 404
+
+    # Logout Bob
+    await unauthenticated_client.post("/auth/logout")
+
+    # Login as Admin
+    admin_login = await unauthenticated_client.post(
+        "/auth/login", json={"email": "admin@company.com", "password": "pw123456"}
+    )
+    assert admin_login.status_code == 200
+    assert admin_login.json()["is_admin"]
+
+    # Admin CAN see all runs across all users
+    admin_runs = await unauthenticated_client.get("/runs?scope=all")
+    assert admin_runs.status_code == 200
+    assert any(r["run_id"] == alice_run_id for r in admin_runs.json())
+
+    # Admin can access Alice's run directly
+    admin_get_alice_run = await unauthenticated_client.get(f"/runs/{alice_run_id}")
+    assert admin_get_alice_run.status_code == 200
+

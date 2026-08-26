@@ -1,0 +1,44 @@
+{
+  "_comment": "Generated from real agent behaviour; see _README.md. 'deterministic' holds with no LLM; 'semantic' needs a live agent.",
+  "dataset": "fixtures/datasets/retail_orders",
+  "description": "Three joined tables: customers, orders, and order line items.",
+  "expected_pack": "retail-ecommerce",
+  "deterministic": {
+    "entities": {
+      "customers": {
+        "identifier_column": "customer_id",
+        "is_unique_key": true
+      },
+      "order_items": {
+        "identifier_column": "order_item_id",
+        "is_unique_key": true
+      },
+      "orders": {
+        "identifier_column": "order_id",
+        "is_unique_key": true
+      }
+    },
+    "question_categories": [
+      "record_grain",
+      "success_definition"
+    ],
+    "min_questions": 1,
+    "max_questions": 8,
+    "expected_hypothesis_categories": [
+      "field_semantics",
+      "record_grain"
+    ],
+    "expected_quality_issues": [],
+    "non_additive_measures": [
+      "order_total",
+      "quantity",
+      "unit_price"
+    ]
+  },
+  "semantic": {
+    "domain": "retail-ecommerce",
+    "record_grain": "One row per order line item",
+    "primary_entity": "Order",
+    "business_process": "Order placed to payment to shipment"
+  }
+}

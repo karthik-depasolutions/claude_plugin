@@ -26,10 +26,12 @@ PACKS_ROOT = REPO_ROOT / "industry-packs"
 
 load_dotenv(REPO_ROOT / ".env")
 
-requires_live_llm = pytest.mark.skipif(
-    not os.environ.get("GEMINI_API_KEY"),
-    reason="GEMINI_API_KEY is not set - set it to run this live-agent test",
-)
+# conftest's _no_live_llm_by_default fixture owns both halves of this: it
+# skips a live_llm test when no key is configured, and blanks the key for
+# every test that is *not* marked, so the mandatory agent path can't make
+# real calls during an ordinary run. A module-level skipif can't do the
+# second half (it's evaluated at collection, before any fixture runs).
+requires_live_llm = pytest.mark.live_llm
 
 
 @requires_live_llm

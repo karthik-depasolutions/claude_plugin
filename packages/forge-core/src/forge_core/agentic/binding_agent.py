@@ -26,7 +26,8 @@ from __future__ import annotations
 import os
 import re
 import uuid
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from forge_core.agentic import memory
 from forge_core.agentic.tools import build_binding_tools
@@ -34,7 +35,7 @@ from forge_core.llm.provider import AgentCallRecorder
 from forge_core.models.datasource import DataSource
 from forge_core.models.schema_profile import ColumnProfile
 
-DEFAULT_AGENT_MODEL = "gemini-2.5-flash"
+DEFAULT_AGENT_MODEL = "gemini-3.7-flash"
 MAX_AGENT_STEPS = 12
 
 _SYSTEM_PROMPT_TEMPLATE = """You are a careful data engineer binding one canonical business \

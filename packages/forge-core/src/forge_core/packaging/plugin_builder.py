@@ -14,6 +14,7 @@ import json
 import re
 import secrets
 from pathlib import Path
+from typing import Any
 
 from forge_core.generation import MCP_SERVER_NAME, GeneratedPlugin
 from forge_core.generation.hooks import DEFAULT_GUARDRAIL_NOTES, session_context_script
@@ -148,10 +149,42 @@ def _config_files(
             for f in (data_context.get("findings") or [])
             if f.get("column") not in denied_all
         ]
-        schema_summary_json["data_context"] = {
+        shipped_context: dict[str, Any] = {
             "notes": data_context.get("notes") or [],
             "findings": denied_findings,
         }
+
+        # Record grain and owner-confirmed facts from the Context Discovery
+        # Agent, for the SessionStart hook and describe_schema. Grain is the
+        # single most useful thing to tell an analyst - not knowing that one
+        # row is an interaction rather than a customer produces a wrong
+        # answer on the first GROUP BY.
+        #
+        # An explicit allowlist, like the two keys above: hypotheses and open
+        # questions are deliberately not shipped (uncertain, and unresolvable
+        # by anyone in a plugin session), and entities naming a denied column
+        # are dropped through the same gate the findings pass.
+        business = data_context.get("business_context") or {}
+        if business:
+            entities = [
+                e
+                for e in (business.get("primary_entities") or [])
+                if e.get("identifier_column") not in denied_all
+            ]
+            shipped_business = {
+                k: v
+                for k, v in (
+                    ("record_grain", business.get("record_grain")),
+                    ("business_objective", business.get("business_objective")),
+                    ("primary_entities", entities),
+                    ("confirmed_facts", business.get("confirmed_facts") or []),
+                )
+                if v
+            }
+            if shipped_business:
+                shipped_context["business_context"] = shipped_business
+
+        schema_summary_json["data_context"] = shipped_context
 
     files = [
         GeneratedFile(

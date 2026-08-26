@@ -22,6 +22,31 @@ from typing import Any, Protocol
 from langchain_core.callbacks import BaseCallbackHandler
 
 
+class UsageTracker:
+    """Accumulates token usage across calls on a single provider instance.
+
+    The agents report usage through `AgentCallRecorder` (a LangChain
+    callback); the `LLMProvider` path has no equivalent hook, so providers
+    mix this in and the orchestrator drains it per stage. Draining rather
+    than reading keeps attribution honest: whatever has accrued since the
+    last drain belongs to the stage that just ran."""
+
+    def __init__(self) -> None:
+        self._usage = {"input_tokens": 0, "output_tokens": 0, "thinking_tokens": 0, "llm_calls": 0}
+
+    def record_usage(self, input_tokens: int, output_tokens: int, thinking_tokens: int = 0) -> None:
+        self._usage["input_tokens"] += input_tokens
+        self._usage["output_tokens"] += output_tokens
+        self._usage["thinking_tokens"] += thinking_tokens
+        self._usage["llm_calls"] += 1
+
+    def drain_usage(self) -> dict[str, int]:
+        """Return usage accrued since the last drain, and reset."""
+        drained = dict(self._usage)
+        self._usage = dict.fromkeys(self._usage, 0)
+        return drained
+
+
 class LLMProvider(Protocol):
     def generate_json(self, prompt: str, *, system: str | None = None) -> dict[str, Any]:
         """Return a parsed JSON object. Implementations must enforce JSON-mode
@@ -97,4 +122,4 @@ class AgentCallRecorder(BaseCallbackHandler):
         }
 
 
-__all__ = ["AgentCallRecorder", "LLMError", "LLMProvider"]
+__all__ = ["AgentCallRecorder", "LLMError", "LLMProvider", "UsageTracker"]

@@ -102,6 +102,10 @@ class MetricConfig:
     allowed_dimensions: list[DimensionConfig]
     allowed_time_grains: list[str]
     time_column: str | None = None
+    time_format: str | None = None
+    """strptime pattern when time_column holds non-ISO text dates. CAST
+    raises on '02-05-1993' instead of returning NULL, so without this a
+    metric that built fine fails at query time."""
     measure_table: str = ""
     measure_join_path: list[JoinEdgeConfig] = field(default_factory=list)
     default_filters: list[FilterConfig] = field(default_factory=list)
@@ -223,6 +227,7 @@ def load_runtime_config(
                 ],
                 allowed_time_grains=m.get("allowed_time_grains", []),
                 time_column=m.get("time_column"),
+                time_format=m.get("time_format"),
                 measure_table=m.get("measure_table") or m["base_entity"],
                 measure_join_path=[
                     JoinEdgeConfig(

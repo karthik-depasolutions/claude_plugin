@@ -35,7 +35,7 @@ from forge_core.models.bindings import ColumnBinding, SchemaBindings, TableBindi
 from forge_core.models.claims import ColumnClaim
 from forge_core.models.datasource import DataSource
 from forge_core.models.industry_pack import IndustryPack
-from forge_core.models.schema_profile import ColumnProfile, SchemaProfile
+from forge_core.models.schema_profile import ColumnProfile, SchemaProfile, temporal_sql_expression
 from forge_core.packaging.denial import compute_denied_columns
 from forge_core.runtime_session import open_session
 
@@ -103,6 +103,76 @@ def _judge_value_set(
     return matched, "llm_judged"
 
 
+_VALUE_SETS_PROMPT = """A customer's data has these business concepts to resolve, each against the \
+real, observed distinct values of a column.
+
+{blocks}
+
+For each concept, decide which of ITS listed values genuinely belong to it.
+
+Return ONLY JSON: {{"<concept name>": ["<value copied exactly from that concept's list>", ...], ...}}
+
+Only include a value if it genuinely, semantically belongs - never because it superficially resembles \
+a hint. If you're unsure about a value, leave it out rather than guess. A concept with no matching \
+value gets an empty list. Concepts drawn from the same column are usually mutually exclusive: a value \
+that means "completed" is not also "cancelled"."""
+
+
+def _judge_value_sets(
+    jobs: list[tuple[str, list[str], list[str]]], provider: LLMProvider | None
+) -> list[ValueSetBinding]:
+    """Judge every value set in one call. Same contract as the single-set
+    version below, which remains the per-set fallback."""
+
+    def _fallback() -> list[ValueSetBinding]:
+        return [
+            ValueSetBinding(
+                name=name,
+                values=[v for v in values if any(h in v.lower() for h in hints)],
+                source="deterministic",
+            )
+            for name, values, hints in jobs
+        ]
+
+    if provider is None:
+        return _fallback()
+
+    blocks = "\n\n".join(
+        f'Concept "{name}"\n  observed values: {values}'
+        + (f"\n  hints from the pack author (may be wrong - verify against real meaning): {hints}" if hints else "")
+        for name, values, hints in jobs
+    )
+    try:
+        raw = provider.generate_json(_VALUE_SETS_PROMPT.format(blocks=blocks))
+    except LLMError:
+        return _fallback()
+    if not isinstance(raw, dict):
+        return _fallback()
+
+    results: list[ValueSetBinding] = []
+    for name, values, hints in jobs:
+        valid = set(values)
+        matched = raw.get(name)
+        if not isinstance(matched, list):
+            # One malformed entry falls back for that concept alone, not all.
+            results.append(
+                ValueSetBinding(
+                    name=name,
+                    values=[v for v in values if any(h in v.lower() for h in hints)],
+                    source="deterministic",
+                )
+            )
+            continue
+        results.append(
+            ValueSetBinding(
+                name=name,
+                values=[v for v in matched if isinstance(v, str) and v in valid],
+                source="llm_judged",
+            )
+        )
+    return results
+
+
 def _is_denied(column: ColumnProfile, pack: IndustryPack) -> bool:
     return (
         column.is_likely_pii
@@ -163,7 +233,20 @@ def _resolve_columns(
     tenant_id: str = "_local",
     on_agent_stats: Callable[[dict], None] | None = None,
     agent_claims: dict[str, tuple[str, ColumnClaim]] | None = None,
+    batched_agent_ran: bool = False,
 ) -> tuple[list[ColumnBinding], list[str]]:
+    """`batched_agent_ran` says the all-roles agent pass actually executed.
+
+    It gates the per-role agent below (tier 4). That tier predates the
+    batched pass and asks the *same agent* the *same question* with strictly
+    less context - the batched pass sees the data map, real values, and every
+    role at once, then gate-verifies each claim. Re-asking per role once it
+    has already declined bought nothing and dominated the run's cost: 42k
+    tokens across ~20 extra LLM calls on a 6-role pack, more than the whole
+    rest of the pipeline combined.
+
+    When the batched pass declined a role, the honest outcome is
+    needs-confirmation, not three more guesses at it."""
     bindings: list[ColumnBinding] = []
     unresolved: list[str] = []
     valid_names = {c.name for c in table_cols}
@@ -258,7 +341,12 @@ def _resolve_columns(
                 if best_so_far is None or candidate.confidence > best_so_far.confidence:
                     best_so_far = candidate
 
-        if use_agent and source is not None and fact_table_physical_ref is not None:
+        if (
+            use_agent
+            and not batched_agent_ran
+            and source is not None
+            and fact_table_physical_ref is not None
+        ):
             from forge_core.agentic import propose_binding_with_agent
 
             agent_proposed = propose_binding_with_agent(
@@ -298,7 +386,36 @@ def _resolve_columns(
         else:
             unresolved.append(role)
 
-    return bindings, unresolved
+    return _attach_temporal_expressions(bindings, table_cols), unresolved
+
+
+def _attach_temporal_expressions(
+    bindings: list[ColumnBinding], table_cols: list[ColumnProfile]
+) -> list[ColumnBinding]:
+    """Give every binding on a non-ISO date column the STRPTIME expression
+    its KPIs need.
+
+    Applied once here rather than at each of the five tiers that construct a
+    ColumnBinding: a tier added later would otherwise silently omit it, and
+    the failure mode is severe and remote from the cause - DuckDB's
+    `CAST('02-05-1993' AS TIMESTAMP)` raises instead of returning NULL, so a
+    single such column takes the whole build down at dry-run with a SQL error
+    rather than degrading to a skipped KPI."""
+    fmt_by_column = {
+        c.name: c.temporal_format for c in table_cols if c.temporal_format
+    }
+    if not fmt_by_column:
+        return bindings
+    return [
+        b.model_copy(
+            update={
+                "sql_expression": temporal_sql_expression(b.physical, fmt_by_column[b.physical])
+            }
+        )
+        if b.physical in fmt_by_column and b.sql_expression is None
+        else b
+        for b in bindings
+    ]
 
 
 def _resolve_value_sets(
@@ -317,22 +434,33 @@ def _resolve_value_sets(
 
     con = open_session(profile.source)
     try:
-        results: list[ValueSetBinding] = []
-        for role, value_set_name in pairs:
+        # Gather every value set first, then judge them in ONE call.
+        # A pack's sets are usually drawn from the same column
+        # ("completed_values" and "cancelled_values" both partition
+        # transaction_status), so judging them separately re-sent an
+        # identical value list per set - three sequential round trips where
+        # one does strictly better, since deciding them together is also what
+        # makes them mutually consistent.
+        distinct_cache: dict[str, list[str]] = {}
+        jobs: list[tuple[str, list[str], list[str]]] = []
+        for role, value_set_name in sorted(pairs):
             binding = next((c for c in columns if c.role == role), None)
             if binding is None:
                 continue
-            rows = con.execute(
-                f'SELECT DISTINCT "{binding.physical}" FROM {fact_physical_ref} '
-                f'WHERE "{binding.physical}" IS NOT NULL LIMIT {MAX_DISTINCT_VALUES_SCANNED}'
-            ).fetchall()
-            distinct_values = [str(r[0]) for r in rows]
+            if binding.physical not in distinct_cache:
+                rows = con.execute(
+                    f'SELECT DISTINCT "{binding.physical}" FROM {fact_physical_ref} '
+                    f'WHERE "{binding.physical}" IS NOT NULL LIMIT {MAX_DISTINCT_VALUES_SCANNED}'
+                ).fetchall()
+                distinct_cache[binding.physical] = [str(r[0]) for r in rows]
+            distinct_values = distinct_cache[binding.physical]
             if not distinct_values:
                 continue
-            hints = pack.value_set_hints.get(value_set_name, [])
-            matched, source = _judge_value_set(value_set_name, distinct_values, hints, provider)
-            results.append(ValueSetBinding(name=value_set_name, values=matched, source=source))
-        return results
+            jobs.append((value_set_name, distinct_values, pack.value_set_hints.get(value_set_name, [])))
+
+        if not jobs:
+            return []
+        return _judge_value_sets(jobs, provider)
     finally:
         con.close()
 
@@ -418,6 +546,7 @@ def resolve_bindings(
     )
 
     agent_claims: dict[str, tuple[str, ColumnClaim]] = {}
+    batched_agent_ran = False
     # An agent IS an LLM call - use_agent=True with no provider (use_llm=
     # False upstream) must not silently make one anyway, matching every
     # other agent gate in orchestrator.py (`use_agent and profiling_
@@ -429,6 +558,7 @@ def resolve_bindings(
             profile, pack, bindable_cols, overrides, set(denied_columns),
             tenant_id=tenant_id, on_agent_stats=on_agent_stats,
         )
+        batched_agent_ran = True
         # generate_metrics (P2-07) needs these too, keyed by physical
         # column rather than canonical role - the ONLY wire from a verified
         # semantic claim to what actually gets built (see orchestrator.py's
@@ -446,6 +576,7 @@ def resolve_bindings(
         fact_table_physical_ref=fact_table.physical_ref,
         use_agent=use_agent,
         agent_claims=agent_claims,
+        batched_agent_ran=batched_agent_ran,
         notes=notes,
         tenant_id=tenant_id,
         on_agent_stats=on_agent_stats,

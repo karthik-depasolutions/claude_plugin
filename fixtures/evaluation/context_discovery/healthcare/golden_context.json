@@ -1,0 +1,36 @@
+{
+  "_comment": "Generated from real agent behaviour; see _README.md. 'deterministic' holds with no LLM; 'semantic' needs a live agent.",
+  "dataset": "fixtures/datasets/bookings.csv",
+  "description": "Diagnostic test bookings for a pathology lab network.",
+  "expected_pack": "healthcare-diagnostics",
+  "deterministic": {
+    "entities": {
+      "bookings": {
+        "identifier_column": "booking_id",
+        "is_unique_key": true
+      }
+    },
+    "question_categories": [
+      "record_grain",
+      "success_definition"
+    ],
+    "min_questions": 1,
+    "max_questions": 8,
+    "expected_hypothesis_categories": [
+      "field_semantics",
+      "record_grain"
+    ],
+    "expected_quality_issues": [],
+    "non_additive_measures": [
+      "age",
+      "amount_inr",
+      "phone"
+    ]
+  },
+  "semantic": {
+    "domain": "healthcare-diagnostics",
+    "record_grain": "One row per diagnostic booking",
+    "primary_entity": "Booking",
+    "business_process": "Booking to sample to report delivery"
+  }
+}

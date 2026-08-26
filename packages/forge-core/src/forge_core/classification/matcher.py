@@ -61,12 +61,83 @@ def score_pack(pack: IndustryPack, sig: ProfileSignature) -> IndustryMatch:
     )
 
 
-def classify(profile: SchemaProfile, packs: list[IndustryPack]) -> ClassificationResult:
+def _apply_evidence(
+    ranked: list[IndustryMatch], slug: str, confidence: float, signal: str
+) -> list[IndustryMatch]:
+    """Raise one pack's score to `confidence` if that is higher, recording
+    why. Deliberately `max` and not a sum: an agent's read is corroborating
+    evidence for a pack the deterministic matcher also considered, never a
+    licence to push a pack past every structural signal at once."""
+    updated: list[IndustryMatch] = []
+    for match in ranked:
+        if match.pack_slug == slug:
+            updated.append(
+                IndustryMatch(
+                    pack_slug=match.pack_slug,
+                    confidence=round(max(confidence, match.confidence), 4),
+                    matched_signals=[signal] + match.matched_signals,
+                )
+            )
+        else:
+            updated.append(match)
+    return updated
+
+
+def classify(
+    profile: SchemaProfile,
+    packs: list[IndustryPack],
+    business_context: dict | None = None,
+) -> ClassificationResult:
+    """`business_context` is the Context Discovery Agent's handoff payload
+    (see BusinessContext.to_handoff, spec §22). Its `domain` is the agent's
+    own evidence-backed industry claim, so classification consumes it here
+    rather than the agent's investigation being thrown away and this stage
+    re-deriving industry from name hints alone.
+
+    It stays *evidence*, not an override: the deterministic matcher still
+    ranks every pack, and a domain the agent names that scores near-zero
+    structurally will still lose - and a run whose top match is weak still
+    pauses for the customer to confirm."""
     if not packs:
         raise ValueError("No industry packs available to classify against.")
 
     sig = extract_signature(profile)
-    ranked = sorted((score_pack(p, sig) for p in packs), key=lambda m: m.confidence, reverse=True)
+    ranked = [score_pack(p, sig) for p in packs]
+    valid_slugs = {p.slug for p in packs}
+
+    if business_context:
+        domain = business_context.get("domain")
+        domain_confidence = float(business_context.get("domain_confidence") or 0.0)
+        if domain and domain in valid_slugs and domain_confidence > 0:
+            grain = business_context.get("record_grain") or "investigated the data"
+            ranked = _apply_evidence(
+                ranked,
+                domain,
+                domain_confidence,
+                f"Context Discovery Agent identified this domain ({domain_confidence:.0%} confidence): {grain}",
+            )
+
+    # Incorporate AI semantic / LLM exploration confidence if available
+    ai_guess = profile.semantic.suggested_industry if profile.semantic else None
+    if ai_guess and ai_guess.pack_slug_guess:
+        updated_ranked = []
+        for m in ranked:
+            if m.pack_slug == ai_guess.pack_slug_guess:
+                # Use the AI semantic analysis confidence
+                combined_confidence = round(max(ai_guess.confidence, m.confidence), 4)
+                signals = [f"AI semantic analysis: {ai_guess.reasoning[:90]}..."] + m.matched_signals
+                updated_ranked.append(
+                    IndustryMatch(
+                        pack_slug=m.pack_slug,
+                        confidence=combined_confidence,
+                        matched_signals=signals,
+                    )
+                )
+            else:
+                updated_ranked.append(m)
+        ranked = updated_ranked
+
+    ranked.sort(key=lambda m: m.confidence, reverse=True)
 
     primary = ranked[0]
     secondary = None

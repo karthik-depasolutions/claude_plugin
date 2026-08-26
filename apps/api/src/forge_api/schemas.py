@@ -37,8 +37,17 @@ class CreateRunFromPathRequest(BaseModel):
 class RunSummary(BaseModel):
     run_id: str
     status: str
-    current_stage: str | None
-    error: str | None
+    current_stage: str | None = None
+    error: str | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+    label: str | None = None
+    industry: str | None = None
+    tables: list[str] = Field(default_factory=list)
+    kpis_count: int | None = None
+    tenant_id: str | None = None
+    total_tokens: int = 0
+    llm_calls: int = 0
 
 
 class RunDetail(RunRecord):
@@ -52,8 +61,14 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class SignupRequest(BaseModel):
+    email: str
+    password: str = Field(..., min_length=6, description="Password with at least 6 characters")
+
+
 class UserPublic(BaseModel):
     email: str
+    is_admin: bool = False
 
 
 class ConfirmIndustryRequest(BaseModel):

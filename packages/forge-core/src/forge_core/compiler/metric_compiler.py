@@ -18,6 +18,7 @@ from typing import Any
 import sqlglot
 
 from forge_core.models.metrics import AggOp, FilterSpec, MetricDefinition, render_aggregation
+from forge_core.models.schema_profile import temporal_sql_expression
 
 MAX_METRIC_ROWS = 200
 
@@ -42,7 +43,9 @@ def _dimension_ref(metric: MetricDefinition, group_by: str):
     raise MetricCompileError(f"{group_by!r} is not a valid dimension for metric {metric.id!r}. Valid: {valid}")
 
 
-def _time_bucket_expr(time_column: str, grain: str) -> str:
+def _time_bucket_expr(time_column: str, grain: str, time_format: str | None = None) -> str:
+    """`time_format` handles a date stored as non-ISO text: CAST would raise
+    on '02-05-1993' rather than returning NULL, taking the query down."""
     return f"DATE_TRUNC('{grain}', CAST({time_column} AS TIMESTAMP))"
 
 
@@ -131,7 +134,12 @@ def render_metric_query(
         select_parts.insert(0, f"{select_group} AS {group_alias}")
         group_parts.append(select_group)
     if time_grain is not None:
-        bucket = _time_bucket_expr(f'"{metric.base_entity}"."{metric.time_column}"', time_grain)
+        bucket = _time_bucket_expr(
+            temporal_sql_expression(
+                metric.time_column, metric.time_format, qualifier=metric.base_entity
+            ),
+            time_grain,
+        )
         select_parts.insert(0, f"{bucket} AS time_bucket")
         group_parts.append(bucket)
 

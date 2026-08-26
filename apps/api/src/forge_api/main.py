@@ -23,6 +23,8 @@ def create_app() -> FastAPI:
         settings = get_settings()
         settings.runs_dir.mkdir(parents=True, exist_ok=True)
         await init_db()
+        from forge_api import pipeline_runner
+        await pipeline_runner.startup_cleanup_zombie_runs()
         if settings.client_warehouse_url:
             os.environ.setdefault("FORGE_SOURCE_DB_URL", settings.client_warehouse_url)
         async with mcp_inner.router.lifespan_context(mcp_inner):

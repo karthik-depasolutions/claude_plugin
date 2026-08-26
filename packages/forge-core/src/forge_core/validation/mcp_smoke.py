@@ -112,7 +112,20 @@ def check_mcp_smoke(
         )
 
     try:
-        issues = asyncio.run(_run_smoke(config_dir, data_dir, [k.id for k in kpi_defs.kpis]))
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            import concurrent.futures
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                issues = pool.submit(
+                    lambda: asyncio.run(_run_smoke(config_dir, data_dir, [k.id for k in kpi_defs.kpis]))
+                ).result()
+        else:
+            issues = asyncio.run(_run_smoke(config_dir, data_dir, [k.id for k in kpi_defs.kpis]))
     except Exception as exc:
         issues = [
             ValidationIssue(

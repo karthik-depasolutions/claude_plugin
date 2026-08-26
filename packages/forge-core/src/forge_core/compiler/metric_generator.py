@@ -210,9 +210,12 @@ def generate_metrics(
         # rather than ship "average course_id".
         and (_claim_for(claims, c.table, c.name) is None or _claim_for(claims, c.table, c.name).kind == "measure")
     ]
-    time_cols = [c.name for c in fact_cols if c.guessed_role in (ColumnRole.DATE, ColumnRole.DATETIME)]
-    allowed_time_grains = _TIME_GRAINS_FOR if time_cols else []
-    time_column = time_cols[0] if time_cols else None
+    temporal = [c for c in fact_cols if c.guessed_role in (ColumnRole.DATE, ColumnRole.DATETIME)]
+    allowed_time_grains = _TIME_GRAINS_FOR if temporal else []
+    time_column = temporal[0].name if temporal else None
+    # Travels with every metric: a date stored as non-ISO text needs
+    # STRPTIME, and the shipped runtime builds its own bucket SQL.
+    time_format = temporal[0].temporal_format if temporal else None
     dimensions = [d for d in _dimension_candidates(fact_table, graph, structural) if d.physical not in denied_columns]
 
     metrics: list[MetricDefinition] = []
@@ -241,6 +244,7 @@ def generate_metrics(
                     allowed_dimensions=dimensions,
                     allowed_time_grains=allowed_time_grains,
                     time_column=time_column,
+                    time_format=time_format,
                     prov=_provenance_for(aggregations, dimensions, claim),
                 )
             )
@@ -274,6 +278,7 @@ def generate_metrics(
                     allowed_dimensions=dimensions,
                     allowed_time_grains=allowed_time_grains,
                     time_column=time_column,
+                    time_format=time_format,
                     prov=_provenance_for(aggregations, dimensions, claim),
                 )
             )
@@ -297,6 +302,7 @@ def generate_metrics(
                 allowed_dimensions=dimensions,
                 allowed_time_grains=allowed_time_grains,
                 time_column=time_column,
+                time_format=time_format,
                 prov=_provenance_for([("count", AggOp.COUNT)], dimensions, None),
             )
         )

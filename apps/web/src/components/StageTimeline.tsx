@@ -13,22 +13,34 @@ const LABELS: Record<RunStage, string> = {
   publish: "Publish",
 };
 
+const STAGE_SUB_HINTS: Record<RunStage, string> = {
+  ingest: "Connecting to data source and loading tables into workspace",
+  profile: "Statistical data-map, entropy, value frequency & AI reasoning",
+  classify: "Evaluating schema structure against industry domain ontology",
+  bind: "Mapping physical columns to semantic metric roles with AST safety",
+  compile_kpis: "Compiling business formulas, aggregates, and metric definitions",
+  generate: "Authoring plugin manifest, MCP tool handlers & operational skills",
+  package: "Bundling plugin artifacts, SQLite caches and configurations",
+  validate: "Running comprehensive sandbox verification and smoke tests",
+  publish: "Packaging distribution ready bundle",
+};
+
 const STATUS_META: Record<RunStatus, { label: string; className: string }> = {
   pending: { label: "Pending", className: "bg-line text-muted" },
-  running: { label: "Running", className: "bg-canonical/15 text-canonical" },
-  needs_input: { label: "Needs input", className: "bg-attention/15 text-attention" },
-  succeeded: { label: "Succeeded", className: "bg-physical/15 text-physical" },
-  failed: { label: "Failed", className: "bg-danger/15 text-danger" },
+  running: { label: "Running", className: "bg-canonical/20 text-canonical border border-canonical/40" },
+  needs_input: { label: "Needs input", className: "bg-attention/20 text-attention border border-attention/40" },
+  succeeded: { label: "Succeeded", className: "bg-physical/20 text-physical border border-physical/40" },
+  failed: { label: "Failed", className: "bg-danger/20 text-danger border border-danger/40" },
   cancelled: { label: "Cancelled", className: "bg-line text-muted" },
 };
 
 const HEADLINE: Record<RunStatus, string> = {
-  pending: "Starting…",
-  running: "Resolving your data…",
-  needs_input: "Needs your input",
-  succeeded: "Plugin generated",
-  failed: "Generation failed",
-  cancelled: "Run cancelled",
+  pending: "Starting Pipeline…",
+  running: "AI Agent Active · Resolving your data",
+  needs_input: "Action Required · Clarify Business Context",
+  succeeded: "MIS Plugin Ready",
+  failed: "Generation Encountered an Error",
+  cancelled: "Run Cancelled",
 };
 
 interface Props {
@@ -51,8 +63,6 @@ function formatDuration(ms: number): string {
   return `${minutes}m ${seconds}s`;
 }
 
-/** Ticks its own state every second rather than lifting the interval into the
- * parent, so a live counter doesn't force the whole stage list to re-render. */
 function LiveDuration({ startIso }: { startIso: string }) {
   const [, tick] = useState(0);
   useEffect(() => {
@@ -109,10 +119,6 @@ function DataValue({ value }: { value: unknown }): React.ReactElement {
   return <>{String(value)}</>;
 }
 
-/** Renders an event's `data` payload as compact key/value rows. Skips
- * `report` - the validate stage's full ValidationReport is already rendered
- * by ValidationReportView elsewhere on the page, so repeating it here would
- * just be noise. */
 function EventDataPreview({ data }: { data: Record<string, unknown> }) {
   const entries = Object.entries(data).filter(
     ([key, value]) =>
@@ -147,13 +153,9 @@ function ChevronIcon({ open }: { open: boolean }) {
   );
 }
 
-/** The running-state marker: a conic-gradient ring, masked into a hairline
- * circle and spun continuously - physical (teal) leading into canonical
- * (violet) trailing, the same "resolving" idea as the sweep below, just
- * looping for as long as the stage is actually in flight. */
 function ScanRing() {
   return (
-    <div className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-canonical/10">
+    <div className="relative flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-canonical/15">
       <div
         className="animate-scan-spin absolute inset-0 rounded-full"
         style={{
@@ -188,7 +190,7 @@ function StepBadge({
     : isNeedsInput
       ? "bg-attention/15 text-attention ring-1 ring-attention/40"
       : isDone
-        ? "bg-physical text-ink"
+        ? "bg-physical text-ink font-bold"
         : isCurrent
           ? "bg-canonical/10 text-canonical ring-1 ring-canonical/50"
           : "bg-transparent text-muted ring-1 ring-line";
@@ -203,23 +205,26 @@ function StepBadge({
 
 export default function StageTimeline({ events, status, currentStage }: Props) {
   const [showDetails, setShowDetails] = useState(true);
+  const [showLiveFeed, setShowLiveFeed] = useState(true);
   const [expanded, setExpanded] = useState<Set<RunStage>>(() => new Set(currentStage ? [currentStage] : []));
+  const feedScrollRef = useRef<HTMLDivElement>(null);
 
-  // Auto-expand a newly-reached stage (and always keep a stuck/failed one
-  // visible) without fighting a user's manual collapse of earlier stages.
   useEffect(() => {
     if (!currentStage) return;
     setExpanded((prev) => (prev.has(currentStage) ? prev : new Set(prev).add(currentStage)));
   }, [currentStage, status]);
 
+  // Auto-scroll the live feed as new events arrive
+  useEffect(() => {
+    if (feedScrollRef.current) {
+      feedScrollRef.current.scrollTop = feedScrollRef.current.scrollHeight;
+    }
+  }, [events.length]);
+
   const reachedIndex = currentStage ? STAGE_ORDER.indexOf(currentStage) : -1;
   const doneCount = status === "succeeded" ? STAGE_ORDER.length : Math.max(reachedIndex, 0);
   const stepNumber = Math.min(doneCount + (status === "running" ? 1 : 0), STAGE_ORDER.length);
 
-  // Tracks which stage just transitioned to "done" so the resolve-sweep
-  // plays exactly once for it, never replaying on an unrelated re-render
-  // and never firing for stages that were already done on first paint
-  // (e.g. reconnecting mid-run).
   const [justResolved, setJustResolved] = useState<RunStage | null>(null);
   const prevDoneCountRef = useRef(doneCount);
   useEffect(() => {
@@ -241,43 +246,114 @@ export default function StageTimeline({ events, status, currentStage }: Props) {
   }
 
   const firstEventTime = events[0]?.timestamp;
+  const latestEvent = events[events.length - 1];
 
   return (
-    <div className="space-y-5 font-sans">
+    <div className="space-y-6 font-sans">
+      {/* Top Banner & Header */}
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-display text-base font-semibold tracking-tight text-paper">{HEADLINE[status]}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-display text-lg font-bold tracking-tight text-paper">{HEADLINE[status]}</h2>
+            {status === "running" && (
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-physical opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-physical" />
+              </span>
+            )}
+          </div>
           <p className="mt-0.5 font-mono text-xs text-muted">
             Step {stepNumber} of {STAGE_ORDER.length}
             {firstEventTime && (status === "running" || status === "pending") && (
               <>
-                {" "}
-                · <LiveDuration startIso={firstEventTime} />
+                {" "}· <LiveDuration startIso={firstEventTime} />
               </>
             )}
           </p>
         </div>
+
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={() => setShowDetails((v) => !v)}
-            className="rounded border border-line px-2 py-1 text-xs text-muted transition-colors hover:border-canonical/50 hover:text-paper"
+            className="rounded-lg border border-line bg-base px-2.5 py-1 text-xs text-muted transition-colors hover:border-canonical/50 hover:text-paper"
           >
-            {showDetails ? "Hide details" : "Show details"}
+            {showDetails ? "Hide stages" : "Show stages"}
           </button>
-          <span className={`rounded px-2 py-0.5 text-xs font-medium ${STATUS_META[status].className}`}>
+          <span className={`rounded-lg px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ${STATUS_META[status].className}`}>
             {STATUS_META[status].label}
           </span>
         </div>
       </div>
 
+      {/* Prominent Live Agent Activity Card when running */}
+      {status === "running" && currentStage && (
+        <div className="relative overflow-hidden rounded-2xl border border-canonical/40 bg-gradient-to-br from-canonical/10 via-surface to-base p-5 shadow-xl">
+          <div className="flex items-center justify-between gap-3 pb-3 border-b border-line/60">
+            <div className="flex items-center gap-2.5">
+              <ScanRing />
+              <div>
+                <span className="text-[10px] font-mono uppercase tracking-widest text-canonical font-bold">
+                  Active Stage: {LABELS[currentStage]}
+                </span>
+                <p className="text-xs text-muted">{STAGE_SUB_HINTS[currentStage]}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full bg-canonical/15 px-2.5 py-0.5 text-[10px] font-mono text-canonical font-medium border border-canonical/30">
+                🤖 Gemini 3.7 Flash
+              </span>
+              <span className="rounded-full bg-physical/15 px-2.5 py-0.5 text-[10px] font-mono text-physical font-medium border border-physical/30">
+                AST Verified
+              </span>
+            </div>
+          </div>
+
+          {/* Real-time ticker of latest activity */}
+          <div className="pt-3 flex items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-muted shrink-0 font-mono">Current Action:</span>
+              <span className="font-mono text-paper font-semibold truncate animate-pulse">
+                {latestEvent ? latestEvent.message : "Processing..."}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowLiveFeed((v) => !v)}
+              className="text-[11px] text-canonical hover:underline shrink-0"
+            >
+              {showLiveFeed ? "Collapse activity feed" : "Expand activity feed"}
+            </button>
+          </div>
+
+          {/* Live Activity Stream Terminal */}
+          {showLiveFeed && (
+            <div
+              ref={feedScrollRef}
+              className="mt-3 max-h-36 overflow-y-auto rounded-xl border border-line bg-ink/90 p-3 font-mono text-[11px] text-paper/80 space-y-1 select-all"
+            >
+              {events.map((e, idx) => (
+                <div key={idx} className="flex items-start gap-2 leading-relaxed">
+                  <span className="text-muted text-[10px] shrink-0">{formatTime(e.timestamp)}</span>
+                  <span className="rounded bg-line/80 px-1 py-0.2 text-[9px] uppercase tracking-wider text-canonical shrink-0">
+                    {e.stage}
+                  </span>
+                  <span className="text-paper/90">{e.message}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Top Multi-Segment Progress Bar */}
       <div className="flex gap-1">
         {STAGE_ORDER.map((stage, index) => {
           const isDone = index < reachedIndex || (index === reachedIndex && status === "succeeded");
           const isCurrent = index === reachedIndex && status !== "succeeded";
           const isActiveScan = isCurrent && status === "running";
           return (
-            <div key={stage} className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-line">
+            <div key={stage} className="relative h-2 flex-1 overflow-hidden rounded-full bg-line">
               <div
                 className={`h-full rounded-full transition-[width,background-color] duration-500 ease-out ${
                   isDone
@@ -304,109 +380,110 @@ export default function StageTimeline({ events, status, currentStage }: Props) {
         })}
       </div>
 
-      <ol>
-        {STAGE_ORDER.map((stage, index) => {
-          const isDone = index < reachedIndex || (index === reachedIndex && status === "succeeded");
-          const isCurrent = index === reachedIndex && status !== "succeeded";
-          const isFailed = isCurrent && status === "failed";
-          const isNeedsInput = isCurrent && status === "needs_input";
-          const isSpinning = isCurrent && status === "running";
-          const isLast = index === STAGE_ORDER.length - 1;
-          const stageEvents = eventsByStage.get(stage) ?? [];
-          const latestMessage = stageEvents[stageEvents.length - 1]?.message;
-          const isOpen = showDetails && expanded.has(stage) && stageEvents.length > 0;
-          const sweeping = justResolved === stage;
+      {/* Stage Item List */}
+      {showDetails && (
+        <ol className="space-y-1">
+          {STAGE_ORDER.map((stage, index) => {
+            const isDone = index < reachedIndex || (index === reachedIndex && status === "succeeded");
+            const isCurrent = index === reachedIndex && status !== "succeeded";
+            const isFailed = isCurrent && status === "failed";
+            const isNeedsInput = isCurrent && status === "needs_input";
+            const isSpinning = isCurrent && status === "running";
+            const isLast = index === STAGE_ORDER.length - 1;
+            const stageEvents = eventsByStage.get(stage) ?? [];
+            const latestMessage = stageEvents[stageEvents.length - 1]?.message;
+            const isOpen = expanded.has(stage) && stageEvents.length > 0;
+            const sweeping = justResolved === stage;
 
-          const start = stageEvents[0]?.timestamp;
-          const nextStart = eventsByStage.get(STAGE_ORDER[index + 1])?.[0]?.timestamp;
-          const staticEnd = nextStart ?? (isLast ? stageEvents[stageEvents.length - 1]?.timestamp : undefined);
+            const start = stageEvents[0]?.timestamp;
+            const nextStart = eventsByStage.get(STAGE_ORDER[index + 1])?.[0]?.timestamp;
+            const staticEnd = nextStart ?? (isLast ? stageEvents[stageEvents.length - 1]?.timestamp : undefined);
 
-          return (
-            <li key={stage} className="relative flex gap-3 overflow-hidden">
-              {sweeping && (
-                <div
-                  className="animate-resolve-sweep pointer-events-none absolute inset-y-0 left-0 w-2/3"
-                  style={{
-                    background:
-                      "linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-canonical) 35%, transparent), color-mix(in srgb, var(--color-physical) 35%, transparent), transparent)",
-                  }}
-                />
-              )}
-              <div className="flex flex-col items-center">
-                <StepBadge
-                  index={index}
-                  isDone={isDone}
-                  isCurrent={isCurrent}
-                  isFailed={isFailed}
-                  isNeedsInput={isNeedsInput}
-                  spinning={isSpinning}
-                />
-                {!isLast && (
+            return (
+              <li key={stage} className="relative flex gap-3 overflow-hidden rounded-xl p-2 transition-colors hover:bg-surface/40">
+                {sweeping && (
                   <div
-                    className={`min-h-6 w-px flex-1 transition-colors duration-500 ${isDone ? "bg-physical/50" : "bg-line"}`}
+                    className="animate-resolve-sweep pointer-events-none absolute inset-y-0 left-0 w-2/3"
+                    style={{
+                      background:
+                        "linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-canonical) 35%, transparent), color-mix(in srgb, var(--color-physical) 35%, transparent), transparent)",
+                    }}
                   />
                 )}
-              </div>
+                <div className="flex flex-col items-center">
+                  <StepBadge
+                    index={index}
+                    isDone={isDone}
+                    isCurrent={isCurrent}
+                    isFailed={isFailed}
+                    isNeedsInput={isNeedsInput}
+                    spinning={isSpinning}
+                  />
+                  {!isLast && (
+                    <div
+                      className={`min-h-6 w-px flex-1 transition-colors duration-500 ${isDone ? "bg-physical/50" : "bg-line"}`}
+                    />
+                  )}
+                </div>
 
-              <div className="min-w-0 flex-1 pb-4">
-                <button
-                  type="button"
-                  disabled={stageEvents.length === 0}
-                  onClick={() =>
-                    setExpanded((prev) => {
-                      const next = new Set(prev);
-                      if (next.has(stage)) next.delete(stage);
-                      else next.add(stage);
-                      return next;
-                    })
-                  }
-                  className="flex w-full items-baseline gap-2 text-left disabled:cursor-default"
-                >
-                  <span className="font-display text-sm font-medium text-paper">{LABELS[stage]}</span>
-                  {!isDone && !isCurrent && <span className="text-xs text-muted">pending</span>}
-                  {isCurrent && !isFailed && !isNeedsInput && (
-                    <span className="text-xs text-canonical">resolving…</span>
-                  )}
-                  <span className="flex-1" />
-                  {isSpinning && start && (
-                    <span className="font-mono text-xs text-muted">
-                      <LiveDuration startIso={start} />
-                    </span>
-                  )}
-                  {!isSpinning && start && staticEnd && staticEnd !== start && (
-                    <span className="font-mono text-xs text-muted">
-                      {formatDuration(new Date(staticEnd).getTime() - new Date(start).getTime())}
-                    </span>
-                  )}
-                  {showDetails && stageEvents.length > 0 && (
-                    <span className="text-muted">
-                      <ChevronIcon open={isOpen} />
-                    </span>
-                  )}
-                </button>
+                <div className="min-w-0 flex-1 pb-2">
+                  <button
+                    type="button"
+                    disabled={stageEvents.length === 0}
+                    onClick={() =>
+                      setExpanded((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(stage)) next.delete(stage);
+                        else next.add(stage);
+                        return next;
+                      })
+                    }
+                    className="flex w-full items-baseline gap-2 text-left disabled:cursor-default"
+                  >
+                    <span className="font-display text-sm font-semibold text-paper">{LABELS[stage]}</span>
+                    {!isDone && !isCurrent && <span className="text-xs text-muted">pending</span>}
+                    {isCurrent && !isFailed && !isNeedsInput && (
+                      <span className="text-xs font-semibold text-canonical animate-pulse">resolving…</span>
+                    )}
+                    <span className="flex-1" />
+                    {isSpinning && start && (
+                      <span className="font-mono text-xs text-muted">
+                        <LiveDuration startIso={start} />
+                      </span>
+                    )}
+                    {!isSpinning && start && staticEnd && staticEnd !== start && (
+                      <span className="font-mono text-xs text-muted">
+                        {formatDuration(new Date(staticEnd).getTime() - new Date(start).getTime())}
+                      </span>
+                    )}
+                    {stageEvents.length > 0 && <ChevronIcon open={isOpen} />}
+                  </button>
 
-                {!isOpen && latestMessage && <p className="mt-0.5 truncate text-xs text-muted">{latestMessage}</p>}
+                  {/* Single-line latest message preview when closed */}
+                  {!isOpen && latestMessage && (
+                    <p className="mt-0.5 truncate font-mono text-xs text-muted">{latestMessage}</p>
+                  )}
 
-                {isOpen && (
-                  <ul className="mt-1.5 space-y-2 border-l border-line pl-3">
-                    {stageEvents.map((event, i) => (
-                      <li key={i}>
-                        <div className="flex gap-2 text-xs">
-                          <span className="shrink-0 font-mono tabular-nums text-muted/70">
-                            {formatTime(event.timestamp)}
-                          </span>
-                          <span className="text-paper/80">{event.message}</span>
+                  {/* Expanded Sub-events List */}
+                  {isOpen && (
+                    <div className="mt-2 space-y-2 rounded-xl border border-line/60 bg-base/60 p-3">
+                      {stageEvents.map((event, eventIdx) => (
+                        <div key={eventIdx} className="text-xs">
+                          <div className="flex items-baseline gap-2">
+                            <span className="font-mono text-[10px] text-muted">{formatTime(event.timestamp)}</span>
+                            <span className="font-mono text-xs text-paper/90">{event.message}</span>
+                          </div>
+                          {Object.keys(event.data).length > 0 && <EventDataPreview data={event.data} />}
                         </div>
-                        <EventDataPreview data={event.data} />
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      )}
     </div>
   );
 }

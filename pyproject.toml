@@ -49,6 +49,7 @@ explicit_package_bases = true
 
 [tool.pytest.ini_options]
 testpaths = ["packages/forge-core/tests", "packages/mcp-runtime/tests", "apps/api/tests", "tests"]
+pythonpath = ["."]
 asyncio_mode = "auto"
 addopts = "-ra"
 

@@ -29,6 +29,7 @@ class RunContext:
     # a persisted JSON file. Lost on API restart; that's the point (see
     # /runs/{run_id}/warehouse-credentials - "show once").
     warehouse_connection_string: str | None = None
+    task: Any = None
 
 
 _RUNS: dict[str, RunContext] = {}

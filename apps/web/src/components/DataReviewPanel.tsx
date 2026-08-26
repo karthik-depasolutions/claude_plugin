@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { DataReview, FindingSeverity, IndustryGuess, RankedMatch } from "../lib/types";
 
 interface Props {
@@ -39,7 +39,7 @@ const SEVERITY_ORDER: FindingSeverity[] = ["high", "medium", "low"];
 
 function CheckIcon() {
   return (
-    <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2}>
+    <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5}>
       <path d="M5 10.5 8.5 14 15 6.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -70,7 +70,7 @@ function SeverityTally({ findings }: { findings: DataReview["findings"] }) {
       {counts.map(({ severity, count }) => (
         <span
           key={severity}
-          className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium ${SEVERITY_META[severity].pill}`}
+          className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium ${SEVERITY_META[severity].pill}`}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${SEVERITY_META[severity].dot}`} />
           {count} {SEVERITY_META[severity].label.toLowerCase()}
@@ -91,9 +91,20 @@ export default function DataReviewPanel({
 }: Props) {
   const [values, setValues] = useState<Record<string, string>>({});
   const [chosenPack, setChosenPack] = useState<string | null>(null);
-  const [findingsOpen, setFindingsOpen] = useState(review.findings.length > 0);
+  const [findingsOpen, setFindingsOpen] = useState(false);
+  const [currentQIndex, setCurrentQIndex] = useState(0);
 
-  const hasAnswers = needsAnswers && review.questions.length > 0;
+  const questions = review.questions || [];
+  const hasQuestions = needsAnswers && questions.length > 0;
+  const currentQuestion = hasQuestions ? questions[currentQIndex] : null;
+
+  // Auto select default industry guess if confident
+  useEffect(() => {
+    if (matches.length > 0 && !chosenPack) {
+      setChosenPack(matches[0].pack_slug);
+    }
+  }, [matches, chosenPack]);
+
   const answerCount = Object.values(values).filter((v) => v.trim().length > 0).length;
   const canContinue = (!needsIndustry || chosenPack !== null) && !submitting;
 
@@ -104,46 +115,359 @@ export default function DataReviewPanel({
     onSubmit(answers, chosenPack ?? undefined);
   }
 
+  function handleToggleChoice(questionId: string, choice: string, isMulti: boolean) {
+    const currentVal = values[questionId] ?? "";
+    if (isMulti) {
+      const selected = currentVal.split(",").map((s) => s.trim()).filter(Boolean);
+      const next = selected.includes(choice)
+        ? selected.filter((s) => s !== choice)
+        : [...selected, choice];
+      setValues((prev) => ({ ...prev, [questionId]: next.join(", ") }));
+    } else {
+      setValues((prev) => ({
+        ...prev,
+        [questionId]: currentVal === choice ? "" : choice,
+      }));
+    }
+  }
+
+  function handleSelectAll(questionId: string, choices: string[]) {
+    setValues((prev) => ({ ...prev, [questionId]: choices.join(", ") }));
+  }
+
+  function handleClear(questionId: string) {
+    setValues((prev) => ({ ...prev, [questionId]: "" }));
+  }
+
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-ink">
-      {/* Frame — what this step is */}
-      <div className="border-b border-line px-6 py-5">
-        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-canonical">
-          Data check · before building
-        </p>
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-xl font-semibold tracking-tight text-paper">
-            Confirm how your data should be read
-          </h2>
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface/90 shadow-2xl backdrop-blur-xl transition-all space-y-0">
+      {/* Top Header Banner */}
+      <div className="border-b border-line bg-gradient-to-r from-canonical/15 via-base to-base px-6 py-5">
+        <div className="flex items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-canonical/15 px-3 py-1 font-mono text-[11px] font-semibold text-canonical border border-canonical/30">
+            <span className="h-2 w-2 rounded-full bg-canonical animate-pulse" />
+            AI Domain Alignment
+          </span>
           <SeverityTally findings={review.findings} />
         </div>
-        <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-muted">
-          The pipeline analyzed your source and found a few things worth your call before it
-          generates the plugin. Answer what you can — skipped questions stay skipped.
-        </p>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-display text-xl font-bold tracking-tight text-paper">
+              Review Industry & Business Context
+            </h2>
+            <p className="mt-1 max-w-xl text-xs leading-relaxed text-muted">
+              Confirm the domain model and clarify key business outcomes so your plugin delivers exact operational metrics.
+            </p>
+          </div>
+        </div>
       </div>
 
-      {review.skipped_tables.length > 0 && (
-        <p className="border-b border-line px-6 py-3 text-xs text-muted">
-          Skipped value-frequency analysis on {review.skipped_tables.length} table(s) over the
-          size ceiling: <span className="font-mono">{review.skipped_tables.join(", ")}</span>
-        </p>
+      {/* STEP 1: Industry Model Selection (FIRST) */}
+      <section className="border-b border-line px-6 py-6 bg-surface/40">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-canonical/20 text-canonical font-mono text-[11px] font-bold border border-canonical/40">
+                1
+              </span>
+              <span className="text-xs font-bold uppercase tracking-wider text-canonical">
+                Industry Domain Model
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-muted">
+              The ontology and KPI formulas are tailored to this industry. Select or confirm below:
+            </p>
+          </div>
+
+          {chosenPack && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-physical/15 border border-physical/30 px-3 py-1 text-xs font-mono font-bold text-physical">
+              <span>Selected:</span>
+              <span>{chosenPack}</span>
+            </span>
+          )}
+        </div>
+
+        {/* AI Recommendation Highlight */}
+        {industryGuess && industryGuess.reasoning && (
+          <div className="mb-4 rounded-xl border border-canonical/30 bg-canonical/10 p-3.5 text-xs leading-relaxed text-paper">
+            <span className="font-semibold text-canonical">AI Recommendation:</span>{" "}
+            {industryGuess.pack_slug_guess && (
+              <span className="font-mono font-bold text-physical">
+                {industryGuess.pack_slug_guess} ({Math.round(industryGuess.confidence * 100)}% match) —{" "}
+              </span>
+            )}
+            {industryGuess.reasoning}
+          </div>
+        )}
+
+        {/* Industry Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {matches.map((match) => {
+            const isSelected = chosenPack === match.pack_slug;
+            const isAiPick = industryGuess?.pack_slug_guess === match.pack_slug;
+            const effectiveConfidence = isAiPick
+              ? Math.max(match.confidence, industryGuess.confidence)
+              : match.confidence;
+            const displaySignals = isAiPick && industryGuess?.reasoning
+              ? [`AI semantic data analysis match`, ...(match.matched_signals || [])]
+              : (match.matched_signals || []);
+
+            return (
+              <button
+                key={match.pack_slug}
+                type="button"
+                onClick={() => setChosenPack(match.pack_slug)}
+                className={`flex flex-col text-left rounded-xl border p-3.5 transition-all cursor-pointer ${
+                  isSelected
+                    ? "border-physical bg-physical/15 text-paper ring-1 ring-physical/50 shadow-md scale-[1.01]"
+                    : "border-line bg-base/60 text-muted hover:border-line hover:bg-base hover:text-paper"
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="font-mono font-bold text-sm text-paper truncate">{match.pack_slug}</span>
+                    {isAiPick && (
+                      <span className="shrink-0 rounded bg-canonical/20 px-1.5 py-0.5 text-[9px] font-mono font-bold text-canonical border border-canonical/30 uppercase tracking-wide">
+                        AI Pick
+                      </span>
+                    )}
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-mono font-bold ${
+                      isSelected ? "bg-physical text-ink" : "bg-line text-muted"
+                    }`}
+                  >
+                    {Math.round(effectiveConfidence * 100)}% Match
+                  </span>
+                </div>
+                {displaySignals.length > 0 && (
+                  <ul className="mt-2 space-y-0.5 text-[11px] text-muted">
+                    {displaySignals.slice(0, 2).map((signal, i) => (
+                      <li key={i} className="truncate">• {signal}</li>
+                    ))}
+                  </ul>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* STEP 2: Business Context Questions (AFTER Industry Classification) */}
+      {hasQuestions && currentQuestion && (
+        <section className="px-6 py-6 border-b border-line bg-base/50">
+          <div className="flex items-center justify-between pb-4">
+            <div className="flex items-center gap-2">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-canonical/20 text-canonical font-mono text-[11px] font-bold border border-canonical/40">
+                2
+              </span>
+              <span className="text-xs font-mono font-bold text-canonical">
+                Question {currentQIndex + 1} of {questions.length}
+              </span>
+              <span className="text-line">·</span>
+              <span className="text-[11px] text-muted font-medium">
+                {currentQuestion.kind === "business_context" ? "Business Outcome Mapping" : "Data Finding"}
+              </span>
+            </div>
+
+            {/* Step Dots */}
+            <div className="flex items-center gap-1.5">
+              {questions.map((q, idx) => {
+                const isAnswered = (values[q.id] ?? "").trim().length > 0;
+                const isCurrent = idx === currentQIndex;
+                return (
+                  <button
+                    key={q.id}
+                    type="button"
+                    onClick={() => setCurrentQIndex(idx)}
+                    title={`Jump to Question ${idx + 1}`}
+                    className={`h-2 rounded-full transition-all ${
+                      isCurrent
+                        ? "w-6 bg-canonical"
+                        : isAnswered
+                        ? "w-2 bg-physical"
+                        : "w-2 bg-line hover:bg-muted"
+                    }`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Interactive Question Card */}
+          <div className="relative overflow-hidden rounded-2xl border border-line bg-surface/80 p-6 shadow-md transition-all">
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-display text-base font-semibold text-paper leading-snug">
+                  {currentQuestion.question}
+                </h3>
+                {currentQuestion.why_asking && (
+                  <div className="mt-1.5 flex items-center gap-1.5 text-xs text-physical font-medium">
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>{currentQuestion.why_asking}</span>
+                  </div>
+                )}
+              </div>
+
+              {currentQuestion.context && (
+                <div className="rounded-xl border border-line/60 bg-ink/60 px-3.5 py-2.5 text-xs font-mono text-paper/80">
+                  <span className="text-muted block text-[10px] uppercase tracking-wider mb-1">
+                    Observed in your data:
+                  </span>
+                  {currentQuestion.context}
+                </div>
+              )}
+
+              {/* Choice Chips (Quick Selection) */}
+              {currentQuestion.choices && currentQuestion.choices.length > 0 && (
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between text-xs text-muted">
+                    <span>
+                      {currentQuestion.answer_type === "multi_choice"
+                        ? "Quick Select relevant values:"
+                        : "Quick Select primary value:"}
+                    </span>
+                    {currentQuestion.answer_type === "multi_choice" && (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleSelectAll(currentQuestion.id, currentQuestion.choices)}
+                          className="text-canonical hover:underline text-[11px]"
+                        >
+                          Select All
+                        </button>
+                        <span>·</span>
+                        <button
+                          type="button"
+                          onClick={() => handleClear(currentQuestion.id)}
+                          className="text-muted hover:text-danger text-[11px]"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap gap-2">
+                    {currentQuestion.choices.map((choice) => {
+                      const selectedValues = (values[currentQuestion.id] ?? "")
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean);
+                      const isSelected = selectedValues.includes(choice);
+                      const isMulti = currentQuestion.answer_type === "multi_choice";
+
+                      return (
+                        <button
+                          key={choice}
+                          type="button"
+                          onClick={() => handleToggleChoice(currentQuestion.id, choice, isMulti)}
+                          className={`group flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs font-mono font-medium transition-all ${
+                            isSelected
+                              ? "border-physical bg-physical/20 text-physical shadow-sm ring-1 ring-physical/40 scale-[1.02]"
+                              : "border-line bg-base/60 text-paper/80 hover:border-canonical/50 hover:bg-base hover:text-paper"
+                          }`}
+                        >
+                          <span
+                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] transition-colors ${
+                              isSelected
+                                ? "bg-physical text-ink font-bold"
+                                : "border border-line bg-ink group-hover:border-canonical"
+                            }`}
+                          >
+                            {isSelected ? "✓" : ""}
+                          </span>
+                          <span>{choice}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Free-Text Custom Input & Business Context Note (Always Available) */}
+              <div className="pt-2 space-y-1.5">
+                <div className="flex items-center justify-between text-xs text-muted">
+                  <span className="font-medium text-paper/90">
+                    {currentQuestion.choices && currentQuestion.choices.length > 0
+                      ? "Custom Business Explanation or Notes (Optional / Editable):"
+                      : "Your Explanation / Business Context:"}
+                  </span>
+                  {values[currentQuestion.id] && (
+                    <button
+                      type="button"
+                      onClick={() => handleClear(currentQuestion.id)}
+                      className="text-muted hover:text-danger text-[11px] transition-colors"
+                    >
+                      Clear text
+                    </button>
+                  )}
+                </div>
+                <textarea
+                  value={values[currentQuestion.id] ?? ""}
+                  onChange={(e) =>
+                    setValues((prev) => ({ ...prev, [currentQuestion.id]: e.target.value }))
+                  }
+                  rows={2}
+                  placeholder={
+                    currentQuestion.choices && currentQuestion.choices.length > 0
+                      ? "Type custom explanation or rules (e.g. 'Exclude spardha-staging and asd because they are test bots; spardha-logos is production')..."
+                      : "Type your business clarification or notes for the AI KPI compiler…"
+                  }
+                  className="w-full resize-y rounded-xl border border-line bg-ink px-4 py-3 text-xs text-paper placeholder:text-muted focus:border-canonical focus:outline-none focus:ring-1 focus:ring-canonical/50 font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Question Step Navigation */}
+            <div className="mt-6 flex items-center justify-between border-t border-line/60 pt-4 text-xs">
+              <button
+                type="button"
+                disabled={currentQIndex === 0}
+                onClick={() => setCurrentQIndex((i) => Math.max(0, i - 1))}
+                className="inline-flex items-center gap-1.5 text-muted hover:text-paper disabled:opacity-30 disabled:pointer-events-none transition-colors"
+              >
+                ← Previous
+              </button>
+
+              <div className="flex items-center gap-3">
+                {currentQIndex < questions.length - 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setCurrentQIndex((i) => Math.min(questions.length - 1, i + 1))}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-canonical/20 border border-canonical/40 px-4 py-2 text-xs font-semibold text-canonical hover:bg-canonical/30 transition-all cursor-pointer"
+                  >
+                    <span>Next Question</span>
+                    <span>→</span>
+                  </button>
+                ) : (
+                  <span className="text-[11px] font-mono text-physical">
+                    ✓ All questions reviewed
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
       )}
 
-      {/* Findings — what the analyzer flagged */}
+      {/* STEP 3: Collapsed Technical Data Quality Findings */}
       {review.findings.length > 0 && (
         <section className="border-b border-line">
           <button
             type="button"
             onClick={() => setFindingsOpen((v) => !v)}
-            className="flex w-full items-center justify-between gap-3 px-6 py-4 text-left"
+            className="flex w-full items-center justify-between gap-3 px-6 py-3.5 text-left hover:bg-white/5 transition-colors"
           >
-            <span className="flex items-center gap-2.5 text-sm font-medium text-paper">
+            <span className="flex items-center gap-2 text-xs font-semibold text-muted hover:text-paper">
               <FlagIcon />
-              What the analyzer flagged
+              <span>Technical Data Quality Findings ({review.findings.length})</span>
             </span>
             <span className="flex items-center gap-2 text-xs text-muted">
-              {findingsOpen ? "Hide details" : "Show details"}
+              <span>{findingsOpen ? "Collapse" : "Expand details"}</span>
               <svg
                 viewBox="0 0 20 20"
                 className={`h-3.5 w-3.5 transition-transform duration-200 ${findingsOpen ? "rotate-180" : ""}`}
@@ -157,178 +481,44 @@ export default function DataReviewPanel({
           </button>
 
           {findingsOpen && (
-            <ul className="space-y-2.5 px-6 pb-5">
-              {review.findings.map((finding, index) => {
+            <div className="max-h-60 overflow-y-auto space-y-2 px-6 pb-4">
+              {review.findings.map((finding) => {
                 const meta = SEVERITY_META[finding.severity];
                 return (
-                  <li
+                  <div
                     key={finding.id}
-                    className="relative overflow-hidden rounded-lg border border-line bg-[#10141d] pl-3"
+                    className="rounded-lg border border-line/60 bg-base/70 p-3 text-xs"
                   >
-                    <span className={`absolute inset-y-0 left-0 w-0.5 ${meta.bar}`} />
-                    <div className="px-3 py-3">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span
-                          className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide ${meta.pill}`}
-                        >
-                          <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
-                          {meta.label}
-                        </span>
-                        <span className="font-mono text-xs text-paper">
-                          {finding.table}.{finding.column}
-                        </span>
-                        <span className="font-mono text-[10px] text-muted">{finding.code}</span>
-                        {index === 0 && (
-                          <span className="rounded-full border border-canonical/40 bg-canonical/10 px-2 py-0.5 text-[10px] font-medium text-canonical">
-                            most relevant
-                          </span>
-                        )}
-                      </div>
-                      <p className="mt-1.5 text-sm leading-relaxed text-paper/80">{finding.summary}</p>
-                      {finding.top_values.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {finding.top_values.map((tv) => (
-                            <span
-                              key={tv.value}
-                              className="rounded border border-line bg-line/60 px-1.5 py-0.5 font-mono text-[11px] text-paper/70"
-                            >
-                              {tv.value} <span className="text-muted">· {tv.percent}%</span>
-                            </span>
-                          ))}
-                        </div>
-                      )}
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${meta.pill}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
+                        {meta.label}
+                      </span>
+                      <span className="font-mono text-paper font-semibold">
+                        {finding.table}.{finding.column}
+                      </span>
                     </div>
-                  </li>
+                    <p className="mt-1 text-muted text-[11px] leading-relaxed">{finding.summary}</p>
+                  </div>
                 );
               })}
-            </ul>
-          )}
-        </section>
-      )}
-
-      {/* Questions — the human's take */}
-      {hasAnswers && (
-        <section className="border-b border-line px-6 py-5">
-          <div className="mb-4">
-            <p className="text-sm font-medium text-paper">Your take on a few things</p>
-            <p className="mt-0.5 text-xs leading-relaxed text-muted">
-              The analyzer paused here because these answers change how the plugin reads your
-              columns. Answer what you can — each field is optional.
-            </p>
-          </div>
-
-          <div className="space-y-4">
-            {review.questions.map((question, index) => {
-              const isChip =
-                question.kind === "business_context" &&
-                (question.answer_type === "single_choice" || question.answer_type === "multi_choice") &&
-                question.choices.length > 0;
-
-              return (
-                <div key={question.id} className="rounded-lg border border-line bg-[#10141d] p-4">
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-canonical/15 font-mono text-[11px] font-medium text-canonical">
-                      {index + 1}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <label className="block text-sm font-medium leading-snug text-paper">
-                        {question.question}
-                      </label>
-                      {question.why_asking && (
-                        <p className="mt-0.5 text-xs text-muted/70 italic">{question.why_asking}</p>
-                      )}
-                      {question.context && (
-                        <p className="mt-1 text-xs leading-relaxed text-muted">{question.context}</p>
-                      )}
-                      {isChip ? (
-                        <div className="mt-2.5 flex flex-wrap gap-1.5">
-                          {question.choices.map((choice) => {
-                            const active = (values[question.id] ?? "").split(",").map(s => s.trim()).includes(choice);
-                            return (
-                              <button
-                                key={choice}
-                                type="button"
-                                onClick={() => {
-                                  if (question.answer_type === "multi_choice") {
-                                    const current = (values[question.id] ?? "").split(",").map(s => s.trim()).filter(Boolean);
-                                    const next = active
-                                      ? current.filter(v => v !== choice)
-                                      : [...current, choice];
-                                    setValues(v => ({ ...v, [question.id]: next.join(", ") }));
-                                  } else {
-                                    setValues(v => ({ ...v, [question.id]: active ? "" : choice }));
-                                  }
-                                }}
-                                className={`rounded border px-2.5 py-1 text-xs font-mono transition-colors ${
-                                  active
-                                    ? "border-physical/50 bg-physical/15 text-physical"
-                                    : "border-line text-muted hover:border-canonical/40 hover:text-paper"
-                                }`}
-                              >
-                                {choice}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <textarea
-                          value={values[question.id] ?? ""}
-                          onChange={(e) => setValues((v) => ({ ...v, [question.id]: e.target.value }))}
-                          rows={2}
-                          placeholder="Optional — share what you know…"
-                          className="mt-2.5 w-full resize-y rounded-lg border border-line bg-ink px-3 py-2 text-sm text-paper placeholder:text-muted/60 focus:border-canonical/70 focus:outline-none focus:ring-1 focus:ring-canonical/40"
-                        />
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-      )}
-
-      {/* Industry — the human's pick */}
-      {needsIndustry && (
-        <section className="border-b border-line px-6 py-5">
-          <div className="mb-4">
-            <p className="text-sm font-medium text-paper">Pick the industry match</p>
-            <p className="mt-0.5 text-xs leading-relaxed text-muted">
-              Auto-classification couldn't settle on one. Choose the closest fit — this sets the
-              schema roles, KPIs, and vocabulary the plugin is built around.
-            </p>
-          </div>
-          {industryGuess && industryGuess.reasoning && (
-            <div className="mb-4 rounded-lg border border-canonical/30 bg-canonical/5 px-3.5 py-3 text-xs leading-relaxed text-paper/80">
-              <span className="font-medium text-canonical">AI's read of the data:</span>{" "}
-              {industryGuess.pack_slug_guess && (
-                <>
-                  likely <span className="font-mono">{industryGuess.pack_slug_guess}</span>{" "}
-                  ({Math.round(industryGuess.confidence * 100)}% confidence) —{" "}
-                </>
-              )}
-              {industryGuess.reasoning}
             </div>
           )}
-          <IndustryPick matches={matches} chosen={chosenPack} onChoose={setChosenPack} />
         </section>
       )}
 
-      {/* Footer — one action */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
+      {/* Action Footer */}
+      <div className="flex flex-wrap items-center justify-between gap-4 px-6 py-4 bg-surface">
         <div className="flex items-center gap-2 text-xs text-muted">
-          {hasAnswers && (
-            <>
-              <span className={answerCount > 0 ? "text-physical" : ""}>
-                {answerCount === 0
-                  ? "No answers yet — all optional"
-                  : `${answerCount} of ${review.questions.length} answered`}
-              </span>
-              <span className="text-line">·</span>
-            </>
+          {hasQuestions && (
+            <span className={answerCount > 0 ? "text-physical font-medium" : ""}>
+              {answerCount === 0
+                ? "Answers optional — click confirm to proceed"
+                : `${answerCount} of ${questions.length} answered`}
+            </span>
           )}
           {needsIndustry && !chosenPack && (
-            <span className="text-amber-300/80">Pick an industry to continue</span>
+            <span className="text-attention font-medium">Please select an industry pack above</span>
           )}
         </div>
 
@@ -336,101 +526,21 @@ export default function DataReviewPanel({
           type="button"
           disabled={!canContinue}
           onClick={submit}
-          className="inline-flex items-center gap-2 rounded-lg bg-physical px-5 py-2.5 text-sm font-semibold text-[#06251c] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex items-center gap-2.5 rounded-xl bg-gradient-to-r from-physical to-emerald-400 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-ink shadow-lg shadow-physical/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:scale-100 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
         >
           {submitting ? (
             <>
-              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#06251c]/30 border-t-[#06251c]" />
-              Resuming…
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink/30 border-t-ink" />
+              <span>Resuming Pipeline…</span>
             </>
           ) : (
             <>
-              Confirm and continue
+              <span>Confirm & Build Plugin</span>
               <CheckIcon />
             </>
           )}
         </button>
       </div>
     </div>
-  );
-}
-
-function IndustryPick({
-  matches,
-  chosen,
-  onChoose,
-}: {
-  matches: RankedMatch[];
-  chosen: string | null;
-  onChoose: (slug: string) => void;
-}) {
-  const allLowConfidence = matches.every((m) => m.confidence < 0.45);
-  const hasGenericFallback = matches.some((m) => m.pack_slug === "generic-analytics");
-  const promoteGeneric = allLowConfidence && hasGenericFallback;
-  const orderedMatches = promoteGeneric
-    ? [
-        matches.find((m) => m.pack_slug === "generic-analytics")!,
-        ...matches.filter((m) => m.pack_slug !== "generic-analytics"),
-      ]
-    : matches;
-
-  return (
-    <ul className="space-y-2">
-      {orderedMatches.map((match) => {
-        const isSafeFallback = promoteGeneric && match.pack_slug === "generic-analytics";
-        const isChosen = chosen === match.pack_slug;
-        const confidence = Math.round(match.confidence * 100);
-        return (
-          <li key={match.pack_slug}>
-            <button
-              type="button"
-              onClick={() => onChoose(match.pack_slug)}
-              aria-pressed={isChosen}
-              className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
-                isChosen
-                  ? "border-canonical bg-canonical/10"
-                  : "border-line bg-ink/50 hover:border-line/80"
-              }`}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-medium text-paper">{match.pack_slug}</span>
-                    {isSafeFallback && (
-                      <span className="rounded-full border border-physical/40 bg-physical/10 px-2 py-0.5 text-[10px] font-medium text-physical">
-                        recommended · safe fallback
-                      </span>
-                    )}
-                  </div>
-                  {match.matched_signals.length > 0 && (
-                    <p className="mt-0.5 truncate text-xs text-muted">
-                      Matched on: {match.matched_signals.join(", ")}
-                    </p>
-                  )}
-                </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  <span className="text-xs tabular-nums text-muted">{confidence}%</span>
-                  <span
-                    className={`flex h-5 w-5 items-center justify-center rounded-full border ${
-                      isChosen
-                        ? "border-canonical bg-canonical text-ink"
-                        : "border-line text-transparent"
-                    }`}
-                  >
-                    <CheckIcon />
-                  </span>
-                </div>
-              </div>
-              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-line">
-                <div
-                  className={`h-full rounded-full ${isChosen ? "bg-canonical" : "bg-line"} transition-[width] duration-300`}
-                  style={{ width: `${confidence}%` }}
-                />
-              </div>
-            </button>
-          </li>
-        );
-      })}
-    </ul>
   );
 }

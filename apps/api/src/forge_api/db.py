@@ -35,11 +35,76 @@ def configure(database_url: str) -> None:
     _session_factory = async_sessionmaker(_engine, expire_on_commit=False)
 
 
+def _sqlite_default_literal(column) -> str | None:  # noqa: ANN001
+    """SQLite requires ADD COLUMN's DEFAULT to be a constant, so a column
+    whose default is a Python callable (`datetime.now`) can't be backfilled
+    this way. Returns None for those - they're added without a default,
+    which is only safe because every such column is also nullable."""
+    server_default = getattr(column, "server_default", None)
+    if server_default is not None and getattr(server_default, "arg", None) is not None:
+        return str(server_default.arg)
+    default = getattr(column, "default", None)
+    if default is None or getattr(default, "is_callable", False):
+        return None
+    arg = getattr(default, "arg", None)
+    if callable(arg) or arg is None:
+        return None
+    if isinstance(arg, bool):
+        return "1" if arg else "0"
+    if isinstance(arg, (int, float)):
+        return str(arg)
+    return "'" + str(arg).replace("'", "''") + "'"
+
+
+def _add_missing_sqlite_columns(sync_conn) -> None:  # noqa: ANN001
+    """Add any column the ORM declares that the live table lacks."""
+    from sqlalchemy import text
+    from sqlalchemy.schema import CreateColumn
+
+    from forge_api import models_orm  # noqa: F401  (registers metadata)
+
+    dialect = sync_conn.dialect
+    for table in Base.metadata.sorted_tables:
+        rows = sync_conn.execute(text(f"PRAGMA table_info({table.name})")).fetchall()
+        if not rows:
+            continue  # table didn't exist; create_all just made it correctly
+        existing = {row[1] for row in rows}
+        for column in table.columns:
+            if column.name in existing:
+                continue
+            # Compile the real type from the model rather than hardcoding a
+            # SQL string, so the added column matches what create_all builds.
+            ddl = CreateColumn(column).compile(dialect=dialect).string
+            # NOT NULL without a default is rejected on a populated table;
+            # the default below supplies the backfill value where there is one.
+            ddl = ddl.replace(" NOT NULL", "")
+            literal = _sqlite_default_literal(column)
+            if literal is not None:
+                ddl = f"{ddl} DEFAULT {literal}"
+            sync_conn.execute(text(f"ALTER TABLE {table.name} ADD COLUMN {ddl}"))
+
+
 async def init_db() -> None:
     from forge_api import models_orm  # noqa: F401  (registers metadata)
 
     async with _engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+        # SQLite self-healing auto-migration for dev/test databases.
+        #
+        # `create_all` only creates *missing tables* - it never alters an
+        # existing one - so a dev database made before a column was added
+        # keeps the old shape and every query against the new column fails.
+        # This used to be a hand-maintained list of ALTER statements, which
+        # silently drifted from the Alembic revisions (0005's token columns
+        # were missing from it on arrival). Deriving the diff from the ORM
+        # metadata instead means adding a column to a model is all it takes;
+        # there is no second list to remember.
+        #
+        # SQLite only, and only for additive changes: Postgres/staging/prod
+        # go through `migrations/` (Alembic), which stays the reviewable path.
+        if str(_engine.url).startswith("sqlite"):
+            await conn.run_sync(_add_missing_sqlite_columns)
 
 
 async def get_session() -> AsyncIterator[AsyncSession]:

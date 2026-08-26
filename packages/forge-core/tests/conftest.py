@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import pytest
@@ -19,6 +20,31 @@ def _pii_protection_on_by_default(monkeypatch):
     test_profiling_structural.py explicitly unsets this to prove the real
     production default independently."""
     monkeypatch.setenv("FORGE_ENABLE_PII_PROTECTION", "true")
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "live_llm: test makes real, billed LLM calls; runs only when GEMINI_API_KEY is set",
+    )
+
+
+@pytest.fixture(autouse=True)
+def _no_live_llm_by_default(request, monkeypatch):
+    """The agents (context discovery, binding, understanding) build
+    ChatGoogleGenerativeAI straight off GEMINI_API_KEY instead of going
+    through LLMProvider, so FORGE_LLM_CASSETTE_MODE does not gate them. Since
+    the agent path became mandatory, a developer's local .env would otherwise
+    turn most of this suite into real, billed, minutes-long network calls.
+
+    Set empty rather than delete: provider lookups call load_dotenv(), which
+    leaves a present-but-empty var alone but repopulates a deleted one.
+    Tests that genuinely want the network opt in with @pytest.mark.live_llm."""
+    if request.node.get_closest_marker("live_llm"):
+        if not os.environ.get("GEMINI_API_KEY"):
+            pytest.skip("GEMINI_API_KEY is not set - set it to run this live-agent test")
+        return
+    monkeypatch.setenv("GEMINI_API_KEY", "")
 
 
 @pytest.fixture

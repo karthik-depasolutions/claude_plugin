@@ -1,49 +1,103 @@
+version: "3.8"
+
 services:
   postgres:
     image: postgres:16-alpine
+    container_name: data2plugin-postgres
+    restart: unless-stopped
     environment:
-      POSTGRES_USER: forge
-      POSTGRES_PASSWORD: forge
-      POSTGRES_DB: forge
+      POSTGRES_DB: data2plugin
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
     ports:
       - "5432:5432"
     volumes:
-      - forge_pg_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U forge"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 5
+
+  temporal:
+    image: temporalio/auto-setup:1.24.2
+    container_name: data2plugin-temporal
+    restart: unless-stopped
+    environment:
+      - DB=postgresql
+      - DB_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PWD=password
+      - POSTGRES_SEEDS=postgres
+      - DYNAMIC_CONFIG_FILE_PATH=/etc/temporal/config/dynamicconfig/development.yaml
+    ports:
+      - "7233:7233"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  temporal-ui:
+    image: temporalio/ui:2.26.2
+    container_name: data2plugin-temporal-ui
+    restart: unless-stopped
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:8233
+    ports:
+      - "8233:8080"
+    depends_on:
+      - temporal
 
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+    container_name: data2plugin-api
+    restart: unless-stopped
     environment:
-      FORGE_DATABASE_URL: postgresql+psycopg://forge:forge@postgres:5432/forge
-      FORGE_RUNS_DIR: /data/runs
-      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      FORGE_JWT_SECRET: ${FORGE_JWT_SECRET:-}
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@postgres:5432/data2plugin
+      - TEMPORAL_ADDRESS=temporal:7233
+      - USE_TEMPORAL=true
+      - STORAGE_PROVIDER=local
+      - STORAGE_DIR=/app/storage
     ports:
-      # Host-side 8420, not 8000 - avoids silently colliding with another
-      # project's container already bound to the common default.
-      - "8420:8000"
+      - "8000:8000"
     volumes:
-      - forge_runs:/data/runs
+      - shared_storage:/app/storage
     depends_on:
       postgres:
         condition: service_healthy
+      temporal:
+        condition: service_started
+
+  temporal-worker:
+    build:
+      context: .
+      dockerfile: workers/temporal_worker/Dockerfile
+    container_name: data2plugin-worker
+    restart: unless-stopped
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@postgres:5432/data2plugin
+      - STORAGE_PROVIDER=local
+      - STORAGE_DIR=/app/storage
+    volumes:
+      - shared_storage:/app/storage
+    depends_on:
+      - temporal
+      - postgres
 
   web:
     build:
-      context: apps/web
-    environment:
-      VITE_API_BASE_URL: http://localhost:8420
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: data2plugin-web
+    restart: unless-stopped
     ports:
-      - "5420:5173"
+      - "5173:80"
     depends_on:
       - api
 
 volumes:
-  forge_pg_data:
-  forge_runs:
+  postgres_data:
+  shared_storage:

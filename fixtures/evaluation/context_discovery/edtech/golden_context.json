@@ -1,0 +1,39 @@
+{
+  "_comment": "Generated from real agent behaviour; see _README.md. 'deterministic' holds with no LLM; 'semantic' needs a live agent.",
+  "dataset": "fixtures/datasets/sparda_leads.csv",
+  "description": "Inbound music-school leads with call outcomes and trial bookings.",
+  "expected_pack": "edtech",
+  "deterministic": {
+    "entities": {
+      "sparda_leads": {
+        "identifier_column": "lead_id",
+        "is_unique_key": true
+      }
+    },
+    "question_categories": [
+      "data_quality",
+      "field_semantics",
+      "record_grain",
+      "success_definition"
+    ],
+    "min_questions": 1,
+    "max_questions": 8,
+    "expected_hypothesis_categories": [
+      "field_semantics",
+      "record_grain"
+    ],
+    "expected_quality_issues": [
+      "CATEGORY_CASING_VARIATIONS",
+      "TEST_ENVIRONMENT_VALUES_PRESENT"
+    ],
+    "non_additive_measures": [
+      "lead_score"
+    ]
+  },
+  "semantic": {
+    "domain": "edtech",
+    "record_grain": "One row per call/interaction with a lead",
+    "primary_entity": "Lead",
+    "business_process": "Lead to contact to trial to enrollment"
+  }
+}

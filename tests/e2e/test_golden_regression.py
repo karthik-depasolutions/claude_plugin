@@ -34,7 +34,15 @@ def test_bookings_dataset_still_produces_a_fully_valid_plugin(bookings_csv: Path
         industry_override="healthcare-diagnostics",
     )
 
-    result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+    # "location" has zero name-token overlap with its real column "city", and
+    # GEOGRAPHIC is no longer a name-derived role (see profiling/structural.py) -
+    # so it cannot resolve deterministically without either the agent or a
+    # human. This override stands in for "someone confirmed it", the same way
+    # test_validation_harness.py::_pipeline does, keeping this test about
+    # "does the golden dataset still compile and validate end-to-end" rather
+    # than re-proving the separately-tested unresolved-role path.
+    overrides = {"location": "city"}
+    result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT, binding_overrides=overrides)
 
     # P1-08: every one of this pack's bindings sits in the 0.45-0.62
     # confidence band (see review P0.2 - "Healthcare example is better but
@@ -46,7 +54,7 @@ def test_bookings_dataset_still_produces_a_fully_valid_plugin(bookings_csv: Path
     assert result.status == RunStatus.NEEDS_INPUT, result.error
     assert result.binding_questions
     result.binding_confirmations = {q.role: q.physical for q in result.binding_questions}
-    result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+    result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT, binding_overrides=overrides)
 
     assert result.status == RunStatus.SUCCEEDED, result.error
 
@@ -61,7 +69,7 @@ def test_bookings_dataset_still_produces_a_fully_valid_plugin(bookings_csv: Path
     for hard_check in ("fact_check", "sql_safety", "dry_run", "pii_scan", "plugin_spec", "cli_validate"):
         assert checks_by_name[hard_check]["status"] == CheckStatus.PASS.value, checks_by_name[hard_check]
 
-    package_event = next(e for e in reversed(result.events) if e.stage.value == "package")
+    package_event = next(e for e in reversed(result.events) if e.stage.value == "package" and "plugin_dir" in e.data)
     plugin_dir = Path(package_event.data["plugin_dir"])
     assert (plugin_dir / ".claude-plugin" / "plugin.json").is_file()
     assert (plugin_dir / ".mcp.json").is_file()

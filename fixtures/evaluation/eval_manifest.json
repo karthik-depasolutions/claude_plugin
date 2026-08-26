@@ -1,0 +1,42 @@
+{
+  "version": "1.0.0",
+  "benchmarks": [
+    {
+      "id": "healthcare_bookings",
+      "dataset_path": "fixtures/datasets/bookings.csv",
+      "expected_pack": "healthcare-diagnostics",
+      "expected_fact_table": "bookings",
+      "expected_bindings": {
+        "booking_ref": "booking_id",
+        "transaction_date": "booking_date",
+        "revenue_amount": "amount_inr",
+        "transaction_status": "status"
+      },
+      "expected_min_kpi_count": 2
+    },
+    {
+      "id": "retail_orders_dir",
+      "dataset_path": "fixtures/datasets/retail_orders",
+      "expected_pack": "retail-ecommerce",
+      "expected_fact_table": "orders",
+      "expected_bindings": {
+        "order_ref": "order_id",
+        "transaction_date": "order_date",
+        "revenue_amount": "order_total"
+      },
+      "expected_min_kpi_count": 2
+    },
+    {
+      "id": "edtech_sqlite",
+      "dataset_path": "fixtures/datasets/edtech.sqlite",
+      "expected_pack": "edtech",
+      "expected_fact_table": "enrollments",
+      "expected_bindings": {
+        "student_ref": "student_id",
+        "course_ref": "course_id",
+        "transaction_date": "enrolled_on"
+      },
+      "expected_min_kpi_count": 2
+    }
+  ]
+}

@@ -23,6 +23,7 @@ def bookings_config_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path
     from forge_core.models.schema_profile import SchemaProfile
     from forge_core.profiling import build_structural_only
 
+    monkeypatch.setenv("FORGE_ENABLE_PII_PROTECTION", "true")
     source = REPO_ROOT / "fixtures" / "datasets" / "bookings.csv"
     ds = ingest(source)
     structural = build_structural_only(ds)
@@ -59,6 +60,7 @@ def bookings_config_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path
         json.dumps(
             {
                 "pack_slug": pack.slug,
+                "denied_columns": sorted(bindings.denied_columns),
                 "guardrails": {
                     "max_query_rows": pack.guardrails.max_query_rows,
                     "query_timeout_seconds": pack.guardrails.query_timeout_seconds,

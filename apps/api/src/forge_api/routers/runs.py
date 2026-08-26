@@ -234,21 +234,67 @@ def _extract_zip_safely(fileobj: IO[bytes], source_dir: Path) -> None:
                 shutil.copyfileobj(src, out)
 
 
+def _is_user_admin(user: UserORM | None) -> bool:
+    if user is None:
+        return False
+    settings = get_settings()
+    return bool(user.is_admin or user.email in settings.admin_email_list or user.email.startswith("admin@"))
+
+
 @router.get("", response_model=list[RunSummary])
 async def list_runs(
     session: SessionDep,
     user: Annotated[UserORM, Depends(get_current_user)],
+    scope: str = Query("all", description="'all' (all platform runs for admins) or 'mine'"),
 ) -> list[RunSummary]:
-    result = await session.execute(
-        select(RunORM)
-        .where(RunORM.tenant_id == user.email)
-        .order_by(RunORM.created_at.desc())
-    )
+    is_admin = _is_user_admin(user)
+
+    query = select(RunORM)
+    if not is_admin or scope == "mine":
+        # Regular users ONLY see their own runs and pending generation
+        query = query.where(RunORM.tenant_id == user.email)
+
+    query = query.order_by(RunORM.created_at.desc())
+    result = await session.execute(query)
     rows = result.scalars().all()
-    return [
-        RunSummary(run_id=r.run_id, status=r.status, current_stage=r.current_stage, error=r.error)
-        for r in rows
-    ]
+    summaries: list[RunSummary] = []
+    for r in rows:
+        label = None
+        industry = r.industry_override
+        tables: list[str] = []
+        kpis_count: int | None = None
+        if r.record_json:
+            label = r.record_json.get("label") or None
+            for e in r.record_json.get("events", []):
+                stage = e.get("stage")
+                data = e.get("data", {})
+                if stage == "ingest" and "tables" in data:
+                    tables = data["tables"]
+                elif stage == "classify" and not industry and data.get("ranked_matches"):
+                    matches = data["ranked_matches"]
+                    if matches:
+                        industry = matches[0].get("pack_slug")
+                elif stage == "compile_kpis" and "agent_proposed" in data:
+                    kpis_count = len(data.get("agent_proposed", []))
+
+        summaries.append(
+            RunSummary(
+                run_id=r.run_id,
+                status=r.status,
+                current_stage=r.current_stage,
+                error=r.error,
+                created_at=r.created_at.isoformat() if r.created_at else None,
+                updated_at=r.updated_at.isoformat() if r.updated_at else None,
+                label=label,
+                industry=industry,
+                tables=tables,
+                kpis_count=kpis_count,
+                tenant_id=r.tenant_id if is_admin else None,
+                total_tokens=r.total_tokens or 0,
+                llm_calls=r.llm_calls or 0,
+            )
+        )
+    return summaries
 
 
 @router.get("/{run_id}", response_model=RunDetail)
@@ -258,6 +304,31 @@ async def get_run(
     user: Annotated[UserORM, Depends(get_current_user)],
 ) -> RunDetail:
     return RunDetail.model_validate((await _load_record(run_id, session, user)).model_dump())
+
+
+@router.get("/{run_id}/logs")
+async def get_run_logs(
+    run_id: str,
+    session: SessionDep,
+    user: Annotated[UserORM, Depends(get_current_user)],
+) -> dict:
+    """Returns the consolidated execution log and error traces for a specific run."""
+    record = await _load_record(run_id, session, user)
+    log_file = get_settings().runs_dir / run_id / "pipeline.log"
+    log_content = ""
+    if log_file.exists():
+        try:
+            log_content = log_file.read_text(encoding="utf-8")
+        except Exception:
+            pass
+
+    return {
+        "run_id": run_id,
+        "status": record.status.value,
+        "error": record.error,
+        "events_count": len(record.events),
+        "log_text": log_content,
+    }
 
 
 @router.get("/{run_id}/events")
@@ -279,6 +350,7 @@ async def stream_run_events(
                 record = await _load_record(run_id, session, user)
                 for event in record.events[sent:]:
                     yield _sse(event.model_dump(mode="json"))
+                yield _sse({"final": True, "status": record.status.value})
                 return
 
             events = ctx.record.events
@@ -368,6 +440,50 @@ async def set_binding_overrides(
     return _summary(ctx.record)
 
 
+@router.post("/{run_id}/cancel", response_model=RunSummary)
+async def cancel_run(
+    run_id: str,
+    session: SessionDep,
+    user: Annotated[UserORM, Depends(get_current_user)],
+) -> RunSummary:
+    """Stops/cancels a running or paused run and marks it as failed."""
+    # Ensure permission / existence
+    await _load_record(run_id, session, user)
+    record = await pipeline_runner.cancel_run(run_id, reason="Cancelled by user")
+    return _summary(record)
+
+
+@router.delete("/{run_id}")
+async def delete_run(
+    run_id: str,
+    session: SessionDep,
+    user: Annotated[UserORM, Depends(get_current_user)],
+) -> dict:
+    """Deletes a run record from history and removes associated local directories."""
+    await _load_record(run_id, session, user)
+    # Stop if running
+    try:
+        await pipeline_runner.cancel_run(run_id, reason="Deleted by user")
+    except Exception:
+        pass
+
+    # Remove from DB
+    row = await session.get(RunORM, run_id)
+    if row is not None:
+        await session.delete(row)
+        await session.commit()
+
+    # Remove run artifacts from disk
+    run_dir = get_settings().runs_dir / run_id
+    if run_dir.exists():
+        try:
+            shutil.rmtree(run_dir, ignore_errors=True)
+        except Exception:
+            pass
+
+    return {"ok": True, "run_id": run_id}
+
+
 @router.get("/{run_id}/report")
 async def get_report(run_id: str, session: SessionDep) -> dict:
     record = await _load_record(run_id, session)
@@ -384,8 +500,8 @@ async def download_plugin(
     user: Annotated[UserORM, Depends(get_current_user)],
 ) -> FileResponse:
     record = await _load_record(run_id, session, user)
-    event = _last_event(record, RunStage.PACKAGE)
-    if event is None or "plugin_dir" not in event.data:
+    event = _last_event_with(record, RunStage.PACKAGE, "plugin_dir")
+    if event is None:
         raise HTTPException(404, "This run hasn't produced a packaged plugin yet.")
 
     plugin_dir = Path(event.data["plugin_dir"])
@@ -432,8 +548,8 @@ async def publish_run_to_github(
         raise HTTPException(
             409, f"Run is {record.status.value}; publish is only available after a successful run."
         )
-    event = _last_event(record, RunStage.PACKAGE)
-    if event is None or "plugin_dir" not in event.data:
+    event = _last_event_with(record, RunStage.PACKAGE, "plugin_dir")
+    if event is None:
         raise HTTPException(404, "This run hasn't produced a packaged plugin yet.")
 
     plugin_dir = Path(event.data["plugin_dir"])
@@ -482,12 +598,31 @@ def _summary(record: RunRecord) -> RunSummary:
         status=record.status.value,
         current_stage=record.current_stage.value if record.current_stage else None,
         error=record.error,
+        created_at=record.created_at.isoformat() if hasattr(record, "created_at") and record.created_at else None,
+        label=getattr(record, "label", None),
+        industry=getattr(record, "industry_override", None),
+        total_tokens=record.token_usage.total_tokens,
+        llm_calls=record.token_usage.llm_calls,
     )
 
 
 def _last_event(record: RunRecord, stage: RunStage) -> StageEvent | None:
     for event in reversed(record.events):
         if event.stage == stage:
+            return event
+    return None
+
+
+def _last_event_with(record: RunRecord, stage: RunStage, key: str) -> StageEvent | None:
+    """Last event of `stage` that actually carries `key`.
+
+    A stage emits several events and only some carry a given payload - PACKAGE
+    logs "Packaging plugin", the packaged path, and the run's token usage. A
+    plain last-event-of-stage lookup silently resolves to whichever happens to
+    be last, so adding any new event to a stage broke `download` and `publish`
+    with a 404. Selecting on the payload makes the lookup say what it means."""
+    for event in reversed(record.events):
+        if event.stage == stage and key in event.data:
             return event
     return None
 
@@ -531,20 +666,22 @@ async def _load_record(
     user: Annotated[UserORM, Depends(get_current_user)] | None = None,
 ) -> RunRecord:
     """Load RunRecord from registry (live) or DB. When `user` is provided,
-    checks tenant ownership and 404s on mismatch (never 403 — see user enumeration)."""
+    checks tenant ownership and 404s on mismatch (never 403 — see user enumeration).
+    Admins are permitted to load any run."""
+    is_admin = _is_user_admin(user)
     ctx = registry.get(run_id)
     if ctx is not None:
         # Tenant check against the in-memory record
-        if user is not None:
-            tenant = getattr(ctx.record, "tenant_id", "_local")
-            if tenant != "_local" and tenant != user.email:
+        if user is not None and not is_admin:
+            tenant = getattr(ctx.record, "tenant_id", None)
+            if tenant != user.email:
                 raise HTTPException(404, f"No run with id {run_id!r}.")
         return ctx.record
 
     row = await session.get(RunORM, run_id)
     if row is None:
         raise HTTPException(404, f"No run with id {run_id!r}.")
-    if user is not None and row.tenant_id != "_local" and row.tenant_id != user.email:
+    if user is not None and not is_admin and row.tenant_id != user.email:
         raise HTTPException(404, f"No run with id {run_id!r}.")
     return RunRecord.model_validate(row.record_json)
 

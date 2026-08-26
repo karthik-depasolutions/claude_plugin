@@ -28,24 +28,41 @@ from forge_api import registry
 from forge_api.db import session_factory
 from forge_api.models_orm import RunORM
 
+from datetime import UTC, datetime
+from pathlib import Path
+
 # A dedicated, explicitly-configured logger rather than relying on the root
 # logger: uvicorn only sets up handlers on its own "uvicorn"/"uvicorn.access"
 # loggers, so plain `logging.getLogger(__name__).info(...)` would otherwise
 # be silently dropped (root's default level is WARNING, no handler attached).
-# This is the only place run progress reaches the API process's own
-# terminal - the SSE stream (`RunRecord.events`) is what the browser sees,
-# this is what whoever is running the server sees.
 logger = logging.getLogger("forge_api.pipeline")
 if not logger.handlers:
     _handler = logging.StreamHandler()
     _handler.setFormatter(logging.Formatter("%(asctime)s %(message)s", datefmt="%H:%M:%S"))
     logger.addHandler(_handler)
+
+    try:
+        _log_dir = Path("generated/logs")
+        _log_dir.mkdir(parents=True, exist_ok=True)
+        _file_handler = logging.FileHandler(_log_dir / "forge.log", encoding="utf-8")
+        _file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(name)s: %(message)s"))
+        logger.addHandler(_file_handler)
+    except Exception:
+        pass
+
     logger.setLevel(logging.INFO)
     logger.propagate = False
 
 
 def _log_event(run_id: str, event: StageEvent) -> None:
     logger.info("[%s] %-13s %s", run_id, event.stage.value, event.message)
+    try:
+        run_log_path = Path("generated/runs") / run_id / "pipeline.log"
+        run_log_path.parent.mkdir(parents=True, exist_ok=True)
+        with run_log_path.open("a", encoding="utf-8") as f:
+            f.write(f"{datetime.now(UTC).isoformat()} [{event.stage.value}] {event.message}\n")
+    except Exception:
+        pass
 
 
 async def start_run(
@@ -77,12 +94,28 @@ async def start_run(
     # Register per-event persistence AFTER the initial _persist so the first
     # event doesn't race with the row INSERT.
     loop = asyncio.get_event_loop()
-    record.on_event(
-        lambda event, _ctx=ctx: loop.call_soon_threadsafe(
-            lambda e=event: asyncio.ensure_future(_persist_on_event(_ctx, e))
-        )
-    )
-    asyncio.create_task(_execute(ctx, use_llm=use_llm))  # noqa: RUF006 - fire-and-forget job, tracked via ctx
+
+    def _schedule_persist(event: StageEvent, _ctx: registry.RunContext = ctx) -> None:
+        """Hand the write from the pipeline thread back to the API's loop.
+
+        The pipeline runs on its own thread and outlives the loop in two real
+        situations: an API shutting down mid-run, and a test whose event loop
+        closes while a run is still going. `call_soon_threadsafe` on a closed
+        loop raises RuntimeError inside the *pipeline* thread, where nothing
+        catches it - it surfaced as a cross-suite flake ("Event loop is
+        closed") that only appeared when another suite's teardown happened to
+        land in the window. Losing a persist during shutdown is fine (the
+        terminal `_persist` in `_execute`'s finally block is the durable
+        write); crashing the pipeline thread over it is not."""
+        try:
+            loop.call_soon_threadsafe(
+                lambda e=event: asyncio.ensure_future(_persist_on_event(_ctx, e))
+            )
+        except RuntimeError as exc:  # loop already closed / shutting down
+            logger.debug("[%s] skipped per-event persist: %s", _ctx.record.run_id, exc)
+
+    record.on_event(_schedule_persist)
+    ctx.task = asyncio.create_task(_execute(ctx, use_llm=use_llm))  # noqa: RUF006 - fire-and-forget job, tracked via ctx
     return ctx
 
 
@@ -91,13 +124,135 @@ async def resume_run(ctx: registry.RunContext) -> None:
     # resuming must not silently flip an LLM-free run into an LLM one
     # (previously hardcoded `use_llm=True` here, which made a `--no-llm`
     # run acquire LLM-written prose on resume).
-    asyncio.create_task(_execute(ctx, use_llm=ctx.use_llm))  # noqa: RUF006
+    ctx.task = asyncio.create_task(_execute(ctx, use_llm=ctx.use_llm))  # noqa: RUF006
+
+
+async def cancel_run(run_id: str, reason: str = "Cancelled by user") -> RunRecord:
+    """Stops/cancels a running or paused run and marks it as FAILED with the cancellation reason."""
+    ctx = registry.get(run_id)
+    if ctx is not None:
+        if ctx.task and not ctx.task.done():
+            ctx.task.cancel()
+        ctx.running = False
+        ctx.record.status = RunStatus.FAILED
+        ctx.record.error = reason
+        ctx.record.log(ctx.record.current_stage or RunStage.INGEST, f"Run cancelled: {reason}")
+        await _persist(ctx)
+        logger.info("[%s] Cancelled active run in memory: %s", run_id, reason)
+        return ctx.record
+
+    # If not active in memory (e.g., zombie after server restart), update DB row directly
+    async with session_factory()() as session:
+        row = await session.get(RunORM, run_id)
+        if row is None:
+            raise ValueError(f"Run {run_id} not found")
+        row.status = RunStatus.FAILED.value
+        row.error = reason
+        if row.record_json:
+            row.record_json["status"] = RunStatus.FAILED.value
+            row.record_json["error"] = reason
+            events = row.record_json.get("events", [])
+            events.append({
+                "stage": row.current_stage or "ingest",
+                "message": f"Run cancelled: {reason}",
+                "timestamp": datetime.now(UTC).isoformat(),
+                "data": {},
+            })
+            row.record_json["events"] = events
+        await session.commit()
+        logger.info("[%s] Cancelled persisted run in database: %s", run_id, reason)
+        return RunRecord.model_validate(row.record_json)
+
+
+async def startup_cleanup_zombie_runs() -> None:
+    """Marks any runs left in RUNNING status from a previous crashed/reloaded process as FAILED."""
+    from sqlalchemy import select
+    try:
+        async with session_factory()() as session:
+            result = await session.execute(
+                select(RunORM).where(RunORM.status == RunStatus.RUNNING.value)
+            )
+            zombies = result.scalars().all()
+            for z in zombies:
+                z.status = RunStatus.FAILED.value
+                z.error = "Pipeline execution was stopped due to server restart or interruption."
+                if z.record_json:
+                    z.record_json["status"] = RunStatus.FAILED.value
+                    z.record_json["error"] = z.error
+                    events = z.record_json.get("events", [])
+                    events.append({
+                        "stage": z.current_stage or "ingest",
+                        "message": "Run stopped: Server process restarted while execution was in progress.",
+                        "timestamp": datetime.now(UTC).isoformat(),
+                        "data": {},
+                    })
+                    z.record_json["events"] = events
+            if zombies:
+                logger.info("Cleaned up %d orphaned zombie run(s) from prior session", len(zombies))
+                await session.commit()
+    except Exception as exc:
+        logger.warning("Startup cleanup of zombie runs failed: %s", exc)
+
+
+import os
+
+async def _execute_temporal(ctx: registry.RunContext) -> bool:
+    """Attempts to execute pipeline via Temporal workflow. Returns True if succeeded."""
+    record = ctx.record
+    temporal_address = os.getenv("TEMPORAL_ADDRESS", "localhost:7233")
+    try:
+        from temporalio.client import Client
+        from workers.temporal_worker.workflows.forge_generation import (
+            TASK_QUEUE,
+            ForgeGenerationWorkflow,
+            ForgeWorkflowInput,
+        )
+
+        client = await Client.connect(temporal_address)
+        input_data = ForgeWorkflowInput(
+            run_id=record.run_id,
+            tenant_id=getattr(record, "tenant_id", "default"),
+            source_path=record.source_path,
+            output_dir=record.output_dir,
+            industry_override=record.industry_override,
+            data_answers=record.data_answers or {},
+            binding_confirmations=record.binding_confirmations or {},
+            use_agent=ctx.use_agent,
+            label=record.label,
+        )
+        logger.info("[%s] Dispatching to Temporal workflow at %s", record.run_id, temporal_address)
+        handle = await client.start_workflow(
+            ForgeGenerationWorkflow.run,
+            input_data,
+            id=f"forge-{record.run_id}",
+            task_queue=TASK_QUEUE,
+        )
+        result = await handle.result()
+        if result.status == "succeeded":
+            record.status = RunStatus.SUCCEEDED
+            record.output_dir = result.plugin_dir or record.output_dir
+        else:
+            record.status = RunStatus.FAILED
+            record.error = result.error
+        return True
+    except Exception as exc:
+        logger.warning(
+            "[%s] Temporal dispatch failed (%s). Falling back to in-process execution.",
+            record.run_id,
+            exc,
+        )
+        return False
 
 
 async def _execute(ctx: registry.RunContext, *, use_llm: bool) -> None:
     ctx.running = True
     record = ctx.record
     try:
+        if os.getenv("USE_TEMPORAL", "false").lower() in ("true", "1"):
+            dispatched = await _execute_temporal(ctx)
+            if dispatched:
+                return
+
         profiling = get_provider(role="profiling") if use_llm else None
         generation = get_provider(role="generation") if use_llm else None
         critique = get_provider(role="critique") if use_llm else None
@@ -112,6 +267,18 @@ async def _execute(ctx: registry.RunContext, *, use_llm: bool) -> None:
             use_agent=ctx.use_agent,
         )
     except Exception as exc:
+        import traceback
+
+        tb = traceback.format_exc()
+        logger.error("[%s] Pipeline execution failed: %s\n%s", record.run_id, exc, tb)
+        try:
+            run_log_path = Path("generated/runs") / record.run_id / "pipeline.log"
+            run_log_path.parent.mkdir(parents=True, exist_ok=True)
+            with run_log_path.open("a", encoding="utf-8") as f:
+                f.write(f"\n[ERROR] Pipeline failed: {exc}\n{tb}\n")
+        except Exception:
+            pass
+
         # Provider construction (e.g. a missing GEMINI_API_KEY) happens
         # *before* run_pipeline's own try/except is entered, so without this
         # the background task's exception would just vanish into "Task
@@ -143,6 +310,10 @@ def _build_row(ctx: registry.RunContext) -> RunORM:
         tenant_id=getattr(record, "tenant_id", "_local"),
         use_llm=ctx.use_llm,
         use_agent=ctx.use_agent,
+        input_tokens=record.token_usage.input_tokens,
+        output_tokens=record.token_usage.output_tokens,
+        total_tokens=record.token_usage.total_tokens,
+        llm_calls=record.token_usage.llm_calls,
     )
 
 

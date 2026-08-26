@@ -16,6 +16,19 @@ from forge_core.models.run import RunRecord
 from forge_core.orchestrator import DEFAULT_PACKS_ROOT, run_pipeline
 
 
+# GEOGRAPHIC is no longer a name-derived role (see profiling/structural.py):
+# "location" has zero name-token overlap with "shipping_city", so it cannot
+# resolve deterministically without the agent or a human. These overrides
+# stand in for "someone confirmed it" - the same device
+# test_validation_harness.py::_pipeline uses - so this test stays about
+# genericity of the *generator* rather than re-proving the separately-tested
+# unresolved-role path.
+GEO_OVERRIDES = {
+    "genericity-retail": {"location": "shipping_city"},
+    "genericity-edtech": {},
+}
+
+
 @pytest.mark.parametrize(
     ("source_fixture", "expected_pack", "run_id"),
     [
@@ -28,8 +41,9 @@ def test_generator_produces_a_valid_plugin_for_an_unseen_shape(
 ):
     source_path: Path = request.getfixturevalue(source_fixture)
     record = RunRecord(run_id=run_id, source_path=str(source_path), output_dir=str(tmp_path))
+    overrides = GEO_OVERRIDES[run_id]
 
-    result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+    result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT, binding_overrides=overrides)
 
     if run_id == "genericity-edtech":
         # P1-08: only transaction_status and transaction_date are gated here
@@ -40,9 +54,9 @@ def test_generator_produces_a_valid_plugin_for_an_unseen_shape(
         # that KPIs actually need and resume.
         assert result.status == RunStatus.NEEDS_INPUT, result.error
         gated_roles = {q.role for q in result.binding_questions}
-        assert gated_roles == {"transaction_status", "transaction_date"}
+        assert gated_roles == {"transaction_status", "transaction_date", "course_ref"}
         result.binding_confirmations = {q.role: q.physical for q in result.binding_questions}
-        result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+        result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT, binding_overrides=overrides)
 
         # P1-04: the still-unconfirmed score->revenue_amount binding is
         # caught independently by the plausibility check, which evaluates
@@ -64,7 +78,7 @@ def test_generator_produces_a_valid_plugin_for_an_unseen_shape(
     # resume, same as a caller with nothing more informed to add.
     if result.status == RunStatus.NEEDS_INPUT and result.binding_questions:
         result.binding_confirmations = {q.role: q.physical for q in result.binding_questions}
-        result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+        result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT, binding_overrides=overrides)
 
     assert result.status == RunStatus.SUCCEEDED, result.error
 
@@ -86,6 +100,6 @@ def test_generator_produces_a_valid_plugin_for_an_unseen_shape(
     assert checks_by_name["cli_validate"]["status"] == CheckStatus.PASS.value, "claude plugin validate"
     assert checks_by_name["dry_run"]["status"] == CheckStatus.PASS.value, "every KPI must execute for real"
 
-    package_event = next(e for e in reversed(result.events) if e.stage.value == "package")
+    package_event = next(e for e in reversed(result.events) if e.stage.value == "package" and "plugin_dir" in e.data)
     plugin_dir = Path(package_event.data["plugin_dir"])
     assert (plugin_dir / ".claude-plugin" / "plugin.json").is_file()

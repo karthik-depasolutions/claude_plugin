@@ -136,11 +136,32 @@ def test_generic_pack_never_binds_a_denied_column(tmp_path: Path):
 
 
 class _StubValueSetJudge:
+    """Speaks the single-set protocol: {"matched": [...]}."""
+
     def __init__(self, matched: list[str]):
         self._matched = matched
 
     def generate_json(self, prompt: str, *, system: str | None = None) -> dict:
         return {"matched": self._matched}
+
+    def generate_text(self, prompt: str, *, system: str | None = None) -> str:
+        return ""
+
+
+class _StubBatchedValueSetJudge:
+    """Speaks the batched protocol: one key per concept.
+
+    `resolve_bindings` judges every value set in a single call (a pack's sets
+    are usually drawn from the same column, so per-set calls re-sent an
+    identical value list). A stub returning the single-set shape makes the
+    real code fall back to the hint matcher - correct behaviour, but it means
+    the test would silently stop exercising the judge at all."""
+
+    def __init__(self, by_concept: dict[str, list[str]]):
+        self._by_concept = by_concept
+
+    def generate_json(self, prompt: str, *, system: str | None = None) -> dict:
+        return dict(self._by_concept)
 
     def generate_text(self, prompt: str, *, system: str | None = None) -> str:
         return ""
@@ -281,14 +302,79 @@ def test_edtech_value_set_resolution_end_to_end_with_stub_judge(edtech_sqlite: P
     substring matcher) correctly excludes 'active' from 'completed_values'.
     The stub ignores the prompt and always returns the same verdict - this
     exercises the real resolve_bindings -> _resolve_value_sets ->
-    _judge_value_set wiring end to end, not just the judge function alone."""
+    _judge_value_sets wiring end to end, not just the judge function alone.
+
+    Both of the pack's sets are answered in one call, and they must come back
+    mutually consistent: a value meaning "completed" is not also "dropped"."""
     profile = _profile_for(edtech_sqlite)
     pack = load_pack(PACKS_ROOT / "edtech")
+    judge = _StubBatchedValueSetJudge(
+        {"completed_values": ["completed"], "cancelled_values": ["dropped"]}
+    )
 
-    bindings = resolve_bindings(profile, pack, provider=_StubValueSetJudge(matched=["completed"]))
+    bindings = resolve_bindings(profile, pack, provider=judge)
 
     value_set = bindings.value_set("completed_values")
     assert value_set is not None
     assert value_set.values == ["completed"]
     assert "active" not in value_set.values
     assert value_set.source == "llm_judged"
+
+    cancelled = bindings.value_set("cancelled_values")
+    assert cancelled is not None
+    assert cancelled.values == ["dropped"]
+    assert set(cancelled.values).isdisjoint(value_set.values)
+
+
+class _CountingValueSetJudge(_StubBatchedValueSetJudge):
+    """Counts only the value-set calls.
+
+    `resolve_bindings` shares one provider across several tiers - the
+    per-role LLM proposer also calls it - so counting every call would
+    measure the wrong thing entirely."""
+
+    def __init__(self, by_concept):
+        super().__init__(by_concept)
+        self.calls = 0
+
+    def generate_json(self, prompt: str, *, system: str | None = None) -> dict:
+        if "business concepts to resolve" in prompt:
+            self.calls += 1
+        return super().generate_json(prompt, system=system)
+
+
+def test_every_value_set_is_judged_in_one_call(edtech_sqlite: Path):
+    """edtech defines completed_values and cancelled_values, both drawn from
+    the same `status` column - so judging them separately re-sent an
+    identical value list and cost a second sequential round trip for nothing.
+
+    Deciding them together is also what makes them mutually consistent."""
+    profile = _profile_for(edtech_sqlite)
+    pack = load_pack(PACKS_ROOT / "edtech")
+    judge = _CountingValueSetJudge(
+        {"completed_values": ["completed"], "cancelled_values": ["dropped"]}
+    )
+
+    bindings = resolve_bindings(profile, pack, provider=judge)
+
+    assert {v.name for v in bindings.value_sets} == {"completed_values", "cancelled_values"}
+    assert judge.calls == 1, "value sets must be resolved in a single call"
+
+
+def test_a_malformed_batched_reply_falls_back_per_concept(edtech_sqlite: Path):
+    """One unusable entry must not discard the concepts that came back fine."""
+    profile = _profile_for(edtech_sqlite)
+    pack = load_pack(PACKS_ROOT / "edtech")
+    judge = _StubBatchedValueSetJudge(
+        {"completed_values": ["completed"], "cancelled_values": "not-a-list"}
+    )
+
+    bindings = resolve_bindings(profile, pack, provider=judge)
+
+    good = bindings.value_set("completed_values")
+    assert good.values == ["completed"]
+    assert good.source == "llm_judged"
+    # The broken one degrades to the deterministic hint match, not to nothing.
+    bad = bindings.value_set("cancelled_values")
+    assert bad is not None
+    assert bad.source == "deterministic"

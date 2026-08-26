@@ -20,6 +20,12 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path
 
+from forge_core.agentic.agents.context_discovery import (
+    answers_to_business_answers,
+    merge_context_questions_into_review,
+    run_context_discovery_agent,
+)
+from forge_core.agentic.schemas.business_context import BusinessContext
 from forge_core.binding import gate_bindings, resolve_bindings
 from forge_core.classification import classify, load_all_packs, load_pack
 from forge_core.compiler import compile_all
@@ -36,6 +42,7 @@ from forge_core.models.claims import ColumnClaim
 from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.quality import DataReview
 from forge_core.models.run import RunRecord
+from forge_core.models.schema_profile import SemanticProfile
 from forge_core.packaging import build_plugin_spec, write_plugin
 from forge_core.packaging.denial import compute_denied_columns
 from forge_core.profiling import build_schema_profile
@@ -145,6 +152,48 @@ def _run_pipeline_inner(
         if not resumed or stage not in (RunStage.INGEST, RunStage.PROFILE, RunStage.CLASSIFY):
             record.log(stage, message, **data)
 
+    # --- LLM cost accounting -------------------------------------------
+    # Two kinds of call sites spend tokens and neither reported them before:
+    # the LLMProvider path (profiling/generation/critique) now accumulates
+    # into a UsageTracker we drain here, and the LangChain agents report
+    # through AgentCallRecorder's `on_stats` callbacks. Both funnel into
+    # record.token_usage so "what did this plugin cost to build" has one
+    # answer instead of being scattered across event payloads.
+    _providers = {
+        "profiling": profiling_provider,
+        "generation": generation_provider,
+        "critique": critique_provider,
+    }
+
+    def bill_providers() -> None:
+        """Attribute whatever each provider has accrued since the last call."""
+        for component, provider in _providers.items():
+            drain = getattr(provider, "drain_usage", None)
+            if drain is None:
+                continue
+            usage = drain()
+            if usage.get("llm_calls"):
+                record.token_usage.add(component, usage)
+
+    def bill_agent(component: str, stats: dict[str, Any]) -> None:
+        record.token_usage.add(component, stats)
+
+    def usage_payload() -> dict[str, Any]:
+        """Cost-so-far, as extra `data` on whatever event is already being
+        logged at an exit point - a pause or the final validation result.
+
+        Deliberately NOT its own StageEvent: several consumers locate a
+        stage's payload by taking the *last* event of that stage (the API's
+        download/publish lookups, the e2e tests' `plugin_dir`, the pause
+        flags), so an extra trailing event per stage silently shadows the one
+        they meant. Attaching to the existing event keeps the number visible
+        at every exit - including a run parked on a human for hours, which
+        has usually already paid for the expensive agent passes - without
+        adding a shadowing event anywhere."""
+        bill_providers()
+        usage = record.token_usage
+        return {"token_usage": usage.model_dump(mode="json"), "total_tokens": usage.total_tokens}
+
     # use_agent is now the default for every real run (CLI/API), but every
     # LangChain agent construct-and-invoke is wrapped in a bare
     # `except Exception` (agentic/*.py, understanding/agent.py) so it can
@@ -186,14 +235,42 @@ def _run_pipeline_inner(
         # Agent LLM spend is otherwise invisible to record.events (the two
         # agents call ChatGoogleGenerativeAI directly, not through the
         # cassette-wrapped provider) - surface one StageEvent per invocation.
-        on_agent_stats=lambda stats: record.log(
-            RunStage.PROFILE,
-            "Data-understanding agent",
-            agent="data_understanding",
-            **stats,
+        on_agent_stats=lambda stats: (
+            bill_agent("data_understanding", stats),
+            record.log(
+                RunStage.PROFILE,
+                "Data-understanding agent",
+                agent="data_understanding",
+                **stats,
+            ),
+        )[-1],
+        on_progress=lambda msg: log_progress(RunStage.PROFILE, msg),
+        # Reuse the semantic pass this run already paid for. Structural
+        # profiling still re-runs (deterministic and cheap); this is only
+        # about not re-invoking the most expensive agent in the pipeline on
+        # every pause/resume cycle.
+        cached_semantic=(
+            SemanticProfile.model_validate(record.semantic_profile)
+            if record.semantic_profile
+            else None
         ),
     )
+    if profile.semantic is not None and record.semantic_profile is None:
+        record.semantic_profile = profile.semantic.model_dump(mode="json")
+    bill_providers()
     log_progress(RunStage.PROFILE, "Profile complete", columns=len(profile.structural.columns))
+
+    candidate_pack = None
+    if record.industry_override:
+        try:
+            candidate_pack = load_pack(packs_root / record.industry_override)
+        except Exception:
+            candidate_pack = None
+    elif profile.semantic and profile.semantic.suggested_industry and profile.semantic.suggested_industry.pack_slug_guess:
+        try:
+            candidate_pack = load_pack(packs_root / profile.semantic.suggested_industry.pack_slug_guess)
+        except Exception:
+            candidate_pack = None
 
     # Computed once and reused on every resume - see RunRecord.data_review's
     # docstring. Wrapped in its own try/except: a data-quality review must
@@ -203,29 +280,74 @@ def _run_pipeline_inner(
     if record.data_review is None:
         con = open_session(data_source)
         try:
+            review_kwargs: dict[str, Any] = {}
+            if candidate_pack is not None:
+                review_kwargs["pack"] = candidate_pack
             record.data_review = build_data_review(
                 data_source,
                 profile.structural,
                 con,
-# No provider => findings only, no LLM-phrased questions.
-            # Set when the caller has already declared it won't ask (e.g. the
-            # CLI's default, data_answers={}, without --review) - no point
-            # paying for question generation nobody will read answers to.
-            # A *non-empty* data_answers still regenerates questions: to_context
-            # joins each answer back to its question's text, and that join is
-            # impossible if the questions were never (re)generated.
-            provider=(
-                profiling_provider
-                if record.data_answers is None or record.data_answers
-                else None
-            ),
-            semantic=profile.semantic,
-        )
+                provider=(
+                    profiling_provider
+                    if record.data_answers is None or record.data_answers
+                    else None
+                ),
+                semantic=profile.semantic,
+                **review_kwargs,
+            )
         except Exception as exc:  # noqa: BLE001 - informs, never blocks
             record.data_review = DataReview(generated_at=datetime.now(UTC).isoformat())
             log_progress(RunStage.PROFILE, f"Data-quality review unavailable: {exc}")
         finally:
             con.close()
+    # Run Context Discovery Agent
+    if record.business_context is None:
+        # Same signal compute_denied_columns uses (it derives denial purely
+        # from is_likely_pii and ignores the pack), computed here because the
+        # pack isn't chosen until CLASSIFY, which runs after this. Keeps the
+        # agent's tools from reading a column the packaged plugin will delete.
+        denied_for_agent = {c.name for c in profile.structural.columns if c.is_likely_pii}
+        try:
+            biz_context = run_context_discovery_agent(
+                data_source,
+                profile.structural,
+                packs,
+                # Spec §13's adaptive loop: on a resumed run the customer's
+                # replies are fed back in, so discovery continues from what
+                # they told us instead of re-asking what it already knows.
+                answers=answers_to_business_answers(record.data_answers or {}),
+                denied_columns=denied_for_agent,
+                on_stats=lambda stats: (
+                    bill_agent("context_discovery", stats),
+                    record.log(
+                        RunStage.PROFILE, "Context discovery agent", agent="context_discovery", **stats
+                    ),
+                )[-1],
+            )
+            record.business_context = biz_context.model_dump(mode="json")
+            # Put the agent's open questions on the same review page as the
+            # deterministic ones. Without this the agent investigates, finds
+            # real ambiguities, and nobody is ever asked about them.
+            #
+            # Only when the agentic path is actually live. Offline, discovery
+            # degrades to a structural pass whose questions substantially
+            # overlap the ones `generate_business_context_questions` already
+            # produced - and adding questions is what makes a run *pause*, so
+            # doing it unconditionally would turn every --no-llm/CI run into
+            # one that stops for human input it can't usefully act on.
+            asked = 0
+            if use_agent and profiling_provider is not None:
+                asked = merge_context_questions_into_review(record.data_review, biz_context)
+            log_progress(
+                RunStage.PROFILE,
+                f"Business context discovered: grain='{biz_context.record_grain}', "
+                f"{len(biz_context.inferred_hypotheses)} hypotheses, "
+                f"{len(biz_context.open_questions)} open question(s), {asked} to ask",
+                business_context=record.business_context,
+            )
+        except Exception as exc:  # noqa: BLE001 - informs, never blocks
+            log_progress(RunStage.PROFILE, f"Context discovery unavailable: {exc}")
+
     log_progress(
         RunStage.PROFILE,
         f"Data quality: {len(record.data_review.findings)} finding(s)",
@@ -236,9 +358,20 @@ def _run_pipeline_inner(
     # review (binding, generation, packaging) - computed once, so all four
     # see the exact same notes/findings.
     data_context = record.data_review.to_context(record.data_answers or {})
+    # Spec §22's handoff contract. Merged into the shared payload rather than
+    # threaded through four signatures, so binding, KPI proposal, generation
+    # and packaging all consume the agent's findings instead of each
+    # re-deriving business context for itself.
+    business_handoff: dict[str, Any] = {}
+    if record.business_context:
+        try:
+            business_handoff = BusinessContext.model_validate(record.business_context).to_handoff()
+            data_context["business_context"] = business_handoff
+        except Exception as exc:  # noqa: BLE001 - a bad artifact must not fail the run
+            log_progress(RunStage.PROFILE, f"Business context handoff skipped: {exc}")
 
     log_progress(RunStage.CLASSIFY, "Classifying industry")
-    classification = classify(profile, packs)
+    classification = classify(profile, packs, business_context=business_handoff)
     suggested_industry = profile.semantic.suggested_industry if profile.semantic else None
     log_progress(
         RunStage.CLASSIFY,
@@ -253,7 +386,11 @@ def _run_pipeline_inner(
     )
 
     # U1 — build DataUnderstanding (deterministic, never blocks pipeline)
-    if build_data_understanding is not None:
+    # Skipped once already computed, for the same reason as `semantic_profile`
+    # and `data_review`: a resume replays from ingest, and the enrichment pass
+    # inside this block makes an LLM call. Re-deriving a near-identical answer
+    # at full price on every pause is pure waste.
+    if build_data_understanding is not None and record.data_understanding is None:
         try:
             # DomainAssessment from classification (deterministic matcher is source of truth)
             top = classification.ranked_matches[0] if classification.ranked_matches else None
@@ -294,6 +431,14 @@ def _run_pipeline_inner(
                     from forge_core.understanding.agent import enrich_data_understanding
 
                     def _on_enrich_stats(stats: dict) -> None:
+                        # Bill it. This agent logged its usage but was never
+                        # added to the run's totals, so its spend - measured
+                        # at 126,089 input tokens on a 17-column table, more
+                        # than every other component combined - was invisible
+                        # in the figure shown to the user and stored in the
+                        # database. A cost report that silently omits the
+                        # largest line item is worse than none.
+                        bill_agent("understanding", stats)
                         record.log(RunStage.PROFILE, "Understanding enrichment agent", agent="understanding", **stats)
 
                     enriched = enrich_data_understanding(
@@ -341,6 +486,7 @@ def _run_pipeline_inner(
             "Awaiting customer input",
             needs_industry=needs_industry,
             needs_answers=needs_answers,
+            **usage_payload(),
         )
         return
 
@@ -368,14 +514,18 @@ def _run_pipeline_inner(
         use_agent=use_agent,
         data_context=data_context,
         tenant_id=record.tenant_id,
-        on_agent_stats=lambda stats: record.log(
-            RunStage.BIND,
-            "Binding agent invocation",
-            agent="binding",
-            **stats,
-        ),
+        on_agent_stats=lambda stats: (
+            bill_agent("binding", stats),
+            record.log(
+                RunStage.BIND,
+                "Binding agent invocation",
+                agent="binding",
+                **stats,
+            ),
+        )[-1],
         on_agent_claims=_capture_claims,
     )
+    bill_providers()
     record.log(
         RunStage.BIND,
         f"Bound {len(bindings.columns)} role(s); {len(bindings.unresolved_roles)} unresolved",
@@ -393,6 +543,7 @@ def _run_pipeline_inner(
                 RunStage.BIND,
                 "Awaiting binding confirmation",
                 questions=[q.model_dump() for q in binding_questions],
+                **usage_payload(),
             )
             return
         gated_roles = {q.role for q in binding_questions}
@@ -415,6 +566,7 @@ def _run_pipeline_inner(
             except KpiCompileError as exc:
                 kpi_defs.skipped[candidate.id] = str(exc)
 
+    bill_providers()
     record.log(
         RunStage.COMPILE_KPIS,
         f"Compiled {len(kpi_defs.kpis)}/{len(pack.kpis)} KPI(s)"
@@ -427,6 +579,7 @@ def _run_pipeline_inner(
     generated = generate_plugin_content(
         pack, kpi_defs, data_source, generation_provider, data_context, record.data_understanding
     )
+    bill_providers()
     record.log(RunStage.GENERATE, "Generation complete", commands=[c.name for c in generated.commands])
 
     record.log(RunStage.PACKAGE, "Packaging plugin")
@@ -499,11 +652,14 @@ def _run_pipeline_inner(
             RunStage.VALIDATE, f"{result.check}: {result.status.value}", check=result.check, status=result.status.value
         ),
     )
+    # usage_payload() bills the critique pass that just ran, so this carries
+    # the run's final total - the number shown as "what this plugin cost".
     record.log(
         RunStage.VALIDATE,
         f"Validation overall: {report.overall.value}",
         overall=report.overall.value,
         report=report.model_dump(mode="json"),
+        **usage_payload(),
     )
 
     if report.overall == "fail":

@@ -7,6 +7,7 @@ contract and why this exists.
 from __future__ import annotations
 
 import re
+from enum import Enum
 
 import duckdb
 
@@ -217,24 +218,45 @@ def build_data_map(
 
 
 def render_prompt(data_map: DataMap, *, char_budget: int = 30_000) -> str:
-    """Full detail for ambiguous columns; one line each for the rest. If the
-    full render still exceeds the budget, unambiguous columns degrade to a
-    bare name list per table - tables are never dropped, only summarized
-    more tersely, so the agent always sees the whole shape of the data."""
-    full = _render(data_map, verbose_unambiguous=True)
-    if len(full) <= char_budget:
-        return full
-    return _render(data_map, verbose_unambiguous=False)
+    """Every fact we already measured, for every column, within the budget.
+
+    Degrades in three steps, never dropping a table: full detail for all
+    columns -> full detail for ambiguous columns and a type line for the
+    rest -> bare names.
+
+    The top tier used to be tier 2, which meant an agent was handed
+    `name: VARCHAR, role=categorical` for most columns and had to spend a
+    tool call to learn anything else - cardinality, value range, the actual
+    top values. All of that is computed deterministically during profiling
+    and was simply being withheld: the render came to 674 characters against
+    a 30,000 budget, while the agent burned ~8 round trips rediscovering it,
+    each one resending the whole growing conversation.
+
+    Full detail for every column costs 300-950 tokens on the datasets here.
+    One tool round trip costs several times that, so this is strictly
+    cheaper as well as more complete - the tools are for the genuine
+    follow-ups (fresh rows, a full value list), not for facts already known."""
+    for tier in (_Detail.ALL, _Detail.AMBIGUOUS_ONLY, _Detail.NAMES_ONLY):
+        rendered = _render(data_map, detail=tier)
+        if len(rendered) <= char_budget:
+            return rendered
+    return rendered
 
 
-def _render(data_map: DataMap, *, verbose_unambiguous: bool) -> str:
+class _Detail(str, Enum):
+    ALL = "all"
+    AMBIGUOUS_ONLY = "ambiguous_only"
+    NAMES_ONLY = "names_only"
+
+
+def _render(data_map: DataMap, *, detail: _Detail) -> str:
     lines: list[str] = []
     for entity in data_map.entities:
         lines.append(f"## {entity.name} (role={entity.role}, rows={entity.row_count}, grain={entity.grain})")
         for col in entity.columns:
-            if col.ambiguous:
+            if col.ambiguous or detail is _Detail.ALL:
                 lines.append(_verbose_line(col))
-            elif verbose_unambiguous:
+            elif detail is _Detail.AMBIGUOUS_ONLY:
                 lines.append(f"  - {col.name}: {col.dtype}, role={col.guessed_role.value}")
             else:
                 lines.append(f"  - {col.name}")

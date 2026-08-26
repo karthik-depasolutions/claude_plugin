@@ -148,6 +148,13 @@ class MetricDefinition(BaseModel):
     time_column: str | None = Field(
         default=None, description="The base entity's real time column, when allowed_time_grains is non-empty."
     )
+    time_format: str | None = Field(
+        default=None,
+        description="strptime pattern when time_column is a date stored as non-ISO text "
+        "(e.g. '%d-%m-%Y'). Travels with the metric because the shipped runtime builds its own "
+        "time-bucket SQL and would otherwise CAST - which raises, not returns NULL, on such a "
+        "value. See models/schema_profile.temporal_sql_expression.",
+    )
     default_filters: list[FilterSpec] = Field(default_factory=list)
     assertions: list[str] = Field(default_factory=list, description="Validated by P1-01's AST policy.")
     source: Literal["generated", "agent_proposed"] = "generated"

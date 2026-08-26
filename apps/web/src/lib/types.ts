@@ -1,5 +1,6 @@
 export interface CurrentUser {
   email: string;
+  is_admin?: boolean;
 }
 
 export type RunStatus = "pending" | "running" | "needs_input" | "succeeded" | "failed" | "cancelled";
@@ -39,6 +40,28 @@ export interface RunSummary {
   status: RunStatus;
   current_stage: RunStage | null;
   error: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  label?: string | null;
+  industry?: string | null;
+  tables?: string[];
+  kpis_count?: number | null;
+  tenant_id?: string | null;
+  /** Total LLM tokens spent building this plugin (input + output). */
+  total_tokens?: number;
+  llm_calls?: number;
+}
+
+/** Per-component breakdown of what a run cost, from RunDetail.token_usage. */
+export interface TokenUsage {
+  input_tokens: number;
+  output_tokens: number;
+  thinking_tokens: number;
+  llm_calls: number;
+  by_component: Record<
+    string,
+    { input_tokens: number; output_tokens: number; thinking_tokens: number; llm_calls: number }
+  >;
 }
 
 export interface RunDetail extends RunSummary {
@@ -49,6 +72,7 @@ export interface RunDetail extends RunSummary {
   events: StageEvent[];
   created_at: string;
   updated_at: string;
+  token_usage?: TokenUsage;
 }
 
 export interface RankedMatch {

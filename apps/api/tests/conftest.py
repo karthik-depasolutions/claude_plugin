@@ -17,6 +17,16 @@ def isolated_env(tmp_path, monkeypatch):
     monkeypatch.setenv("FORGE_DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
     monkeypatch.setenv("FORGE_RUNS_DIR", str(runs_dir))
     monkeypatch.setenv("FORGE_LLM_CASSETTE_MODE", "off")
+    # The agents (context discovery, binding, understanding) construct
+    # ChatGoogleGenerativeAI directly off GEMINI_API_KEY rather than going
+    # through LLMProvider, so cassette mode "off" does not stop them - and a
+    # developer's local .env is loaded by load_dotenv() regardless of
+    # monkeypatch. Without this the suite makes real, billed, minutes-long
+    # Gemini calls (the agent path is mandatory now). Tests that want an
+    # agent must stub it explicitly. Set empty rather than delete: every
+    # provider lookup calls load_dotenv(), which does not override a var
+    # that is present-but-empty but *does* repopulate one that was deleted.
+    monkeypatch.setenv("GEMINI_API_KEY", "")
     # A developer's local .env may configure the client warehouse (it's
     # loaded by `Settings(env_file=".env")` regardless of monkeypatch) - the
     # API test suite must stay hermetic and exercise the plain-local-files

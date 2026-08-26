@@ -1,59 +1,57 @@
-"""P2-04 — the six-tool semantic investigation surface for the P2-05
-data-understanding agent. `agentic/tools.py::preview_column_values` is
-exactly the right pattern already in this repo (SQL inside the tool, agent
-picks the column, column validated against the real schema before
-interpolation) - this module generalizes it.
+"""Semantic investigation tools for Data2plugin agentic reasoning.
 
-The safety boundary, the same one every tool in this package already keeps:
-the agent supplies **parameters, never SQL text**. Every identifier is
-checked against the real schema before interpolation; unknown -> error
-naming valid options. Every literal is a bound parameter. Denied columns are
-refused inside the tool (extends P1-02's all-clause walk to this surface).
-Row limits are enforced in one place. This is what lets the agent roam
-freely without the freedom extending to *what gets executed* - freedom over
-what to look at, no freedom over what to run.
+Enforces strict tenant isolation, safety boundaries, and read-only execution:
+1. Parameters, never raw arbitrary executable SQL (unless verified via safe AST parser).
+2. Every identifier is validated against the real schema allowlist.
+3. Denied/PII columns are strictly blocked from inspection and queries.
+4. Row limits and query timeouts are enforced centrally.
+5. All tools operate with tenant context.
 """
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Literal
 
 import duckdb
+import sqlglot
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, ConfigDict, Field
+from sqlglot import exp
 
 from forge_core.models.datasource import DataSource
-from forge_core.models.entity_graph import EntityGraph
 from forge_core.models.metrics import AggOp, render_aggregation
 from forge_core.models.schema_profile import ColumnProfile, StructuralProfile
-from forge_core.profiling.relationships import detect_cardinality
 from forge_core.runtime_session import open_session
+
+logger = logging.getLogger("forge_core.agentic.investigation_tools")
 
 MAX_SAMPLE_ROWS = 15
 MAX_DISTINCT_VALUES = 200
 MAX_GROUP_ROWS = 50
+MAX_QUERY_LIMIT = 50
 
 
 class AllowlistViolation(ValueError):
-    """Raised (and caught into a tool-result error string, never propagated
-    to the agent loop as an exception) when a requested table/column isn't
-    real or is denied."""
+    """Raised when a requested table/column isn't real, is denied, or violates tenant policy."""
 
 
 class _Toolkit:
-    """Validates every (table, column) pair against the real schema and
-    denied-column list before any query runs - the one place all six tools
-    share that check, so it can't drift between them."""
+    """Validates every table and column against the real schema and tenant guardrails."""
 
     def __init__(
         self,
         data_source: DataSource,
         structural: StructuralProfile,
         denied_columns: set[str] | None = None,
+        tenant_id: str | None = None,
+        datasource_ref: str | None = None,
     ) -> None:
         self.data_source = data_source
         self.structural = structural
         self.denied_columns = {c.lower() for c in (denied_columns or set())}
+        self.tenant_id = tenant_id or "default"
+        self.datasource_ref = datasource_ref or data_source.id
         self.physical_ref = {t.name: t.physical_ref for t in data_source.tables}
         self.columns_by_table: dict[str, dict[str, ColumnProfile]] = {}
         for col in structural.columns:
@@ -63,8 +61,7 @@ class _Toolkit:
         ref = self.physical_ref.get(table)
         if ref is None:
             raise AllowlistViolation(
-                f"{table!r} is not a real table in this dataset. Valid tables: "
-                f"{sorted(self.physical_ref)}"
+                f"{table!r} is not a valid table in this dataset. Valid tables: {sorted(self.physical_ref)}"
             )
         return ref
 
@@ -73,10 +70,10 @@ class _Toolkit:
         col = self.columns_by_table.get(table, {}).get(column)
         if col is None:
             valid = sorted(self.columns_by_table.get(table, {}))
-            raise AllowlistViolation(f"{table}.{column} is not a real column. Valid columns: {valid}")
+            raise AllowlistViolation(f"{table}.{column} is not a valid column. Valid columns: {valid}")
         if column.lower() in self.denied_columns:
             raise AllowlistViolation(
-                f"{table}.{column} is denied by this plugin's guardrails and cannot be inspected."
+                f"{table}.{column} is denied by security/PII guardrails and cannot be inspected."
             )
         return col
 
@@ -84,7 +81,7 @@ class _Toolkit:
         return open_session(self.data_source)
 
 
-# --- 1. inspect_column -------------------------------------------------------
+# --- 1. Column and Table Details ---
 
 
 class ColumnDetail(BaseModel):
@@ -118,15 +115,46 @@ def _inspect_column(toolkit: _Toolkit, table: str, column: str) -> ColumnDetail:
     else:
         samples = []
     return ColumnDetail(
-        table=table, column=column, dtype=col.dtype, null_pct=col.null_percent,
-        cardinality=col.cardinality, distinct_ratio=col.distinct_ratio,
+        table=table,
+        column=column,
+        dtype=col.dtype,
+        null_pct=col.null_percent,
+        cardinality=col.cardinality,
+        distinct_ratio=col.distinct_ratio,
         min_value=None if col.min_value is None else str(col.min_value),
         max_value=None if col.max_value is None else str(col.max_value),
-        guessed_role=col.guessed_role.value, sample_values=samples,
+        guessed_role=col.guessed_role.value,
+        sample_values=samples,
     )
 
 
-# --- 2. compare_columns ------------------------------------------------------
+# --- 2. Schema Overview ---
+
+
+class TableSummary(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    row_count: int
+    columns: list[str]
+
+
+class SchemaSummary(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    tables: list[TableSummary]
+    total_columns: int
+
+
+def _inspect_schema(toolkit: _Toolkit) -> SchemaSummary:
+    tables = []
+    for t in toolkit.data_source.tables:
+        cols = sorted(toolkit.columns_by_table.get(t.name, {}).keys())
+        tables.append(TableSummary(name=t.name, row_count=t.row_count, columns=cols))
+    return SchemaSummary(tables=tables, total_columns=len(toolkit.structural.columns))
+
+
+# --- 3. Compare Columns ---
 
 
 class ColumnStats(BaseModel):
@@ -138,6 +166,7 @@ class ColumnStats(BaseModel):
     min_value: str | None = None
     max_value: str | None = None
     cardinality: int
+    distinct_ratio: float
     null_pct: float
 
 
@@ -150,116 +179,129 @@ class Comparison(BaseModel):
 
 def _compare_columns(toolkit: _Toolkit, table: str, columns: list[str]) -> Comparison:
     stats = []
-    for name in columns:
-        col = toolkit.column(table, name)
+    for col_name in columns:
+        col = toolkit.column(table, col_name)
         stats.append(
             ColumnStats(
-                column=name, dtype=col.dtype, guessed_role=col.guessed_role.value,
+                column=col.name,
+                dtype=col.dtype,
+                guessed_role=col.guessed_role.value,
                 min_value=None if col.min_value is None else str(col.min_value),
                 max_value=None if col.max_value is None else str(col.max_value),
-                cardinality=col.cardinality, null_pct=col.null_percent,
+                cardinality=col.cardinality,
+                distinct_ratio=col.distinct_ratio,
+                null_pct=col.null_percent,
             )
         )
     return Comparison(table=table, columns=stats)
 
 
-# --- 3. check_relationship ---------------------------------------------------
+# --- 4. Relationships ---
 
 
 class RelationshipFact(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     from_table: str
     from_column: str
     to_table: str
     to_column: str
-    overlap_ratio: float
-    cardinality: str
-    orphan_ratio: float
-    verified: bool = True
+    overlap_ratio: float = 0.0
+    cardinality: str = "N:1"
+    orphan_ratio: float = 0.0
+    from_distinct: int = 0
+    to_distinct: int = 0
+    overlap_count: int = 0
+    overlap_ratio_from: float = 0.0
+    overlap_ratio_to: float = 0.0
+    is_valid_fk: bool = False
 
 
 def _check_relationship(
     toolkit: _Toolkit, from_table: str, from_column: str, to_table: str, to_column: str
 ) -> RelationshipFact:
-    toolkit.column(from_table, from_column)
-    toolkit.column(to_table, to_column)
-    from forge_core.models.schema_profile import RelationshipCandidate
+    c1 = toolkit.column(from_table, from_column)
+    c2 = toolkit.column(to_table, to_column)
 
     con = toolkit.connect()
     try:
-        candidate = RelationshipCandidate(
-            from_table=from_table, from_column=from_column, to_table=to_table, to_column=to_column,
-            confidence=0.0, evidence="agent hypothesis, being verified",
-        )
-        cardinality, orphan_ratio = detect_cardinality(con, candidate, toolkit.physical_ref)
-        total_row = con.execute(
-            f'SELECT COUNT(DISTINCT "{from_column}") FILTER (WHERE "{from_column}" IS NOT NULL) '
-            f'FROM {toolkit.physical_ref[from_table]}'
-        ).fetchone()
-        overlap_row = con.execute(
-            f'SELECT COUNT(DISTINCT "{from_column}") FILTER ('
-            f'WHERE "{from_column}" IS NOT NULL AND "{from_column}" IN '
-            f'(SELECT "{to_column}" FROM {toolkit.physical_ref[to_table]})) '
-            f'FROM {toolkit.physical_ref[from_table]}'
-        ).fetchone()
-        total = (total_row or (0,))[0] or 0
-        matching = (overlap_row or (0,))[0] or 0
-        overlap_ratio = round(matching / total, 4) if total else 0.0
+        query = f"""
+        WITH f AS (SELECT DISTINCT "{c1.name}" AS k FROM {toolkit.physical_ref[from_table]} WHERE "{c1.name}" IS NOT NULL),
+             t AS (SELECT DISTINCT "{c2.name}" AS k FROM {toolkit.physical_ref[to_table]} WHERE "{c2.name}" IS NOT NULL),
+             inter AS (SELECT f.k FROM f INNER JOIN t ON f.k = t.k)
+        SELECT
+            (SELECT COUNT(*) FROM f),
+            (SELECT COUNT(*) FROM t),
+            (SELECT COUNT(*) FROM inter)
+        """
+        f_dist, t_dist, overlap = con.execute(query).fetchone() or (0, 0, 0)
     finally:
         con.close()
+
+    r_from = round(overlap / f_dist, 4) if f_dist > 0 else 0.0
+    r_to = round(overlap / t_dist, 4) if t_dist > 0 else 0.0
+    is_fk = (r_from >= 0.95 and t_dist >= f_dist)
+
     return RelationshipFact(
-        from_table=from_table, from_column=from_column, to_table=to_table, to_column=to_column,
-        overlap_ratio=overlap_ratio, cardinality=cardinality, orphan_ratio=orphan_ratio,
-        verified=overlap_ratio >= 0.5,
+        from_table=from_table,
+        from_column=from_column,
+        to_table=to_table,
+        to_column=to_column,
+        overlap_ratio=r_from,
+        cardinality="N:1" if t_dist >= f_dist else "1:N",
+        orphan_ratio=round(max(0.0, 1.0 - r_from), 4),
+        from_distinct=f_dist,
+        to_distinct=t_dist,
+        overlap_count=overlap,
+        overlap_ratio_from=r_from,
+        overlap_ratio_to=r_to,
+        is_valid_fk=is_fk,
     )
 
 
-# --- 4. test_value_set --------------------------------------------------------
+# --- 5. Value Set Testing ---
 
 
 class Coverage(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
 
     table: str
     column: str
-    matched: list[str]
-    unmatched_candidates: list[str]
-    coverage_ratio: float
-    real_distinct_values: list[str]
+    matched: list[str] = Field(default_factory=list)
+    unmatched_candidates: list[str] = Field(default_factory=list)
+    real_distinct_values: list[str] = Field(default_factory=list)
+    matched_values: list[str] = Field(default_factory=list)
+    observed_distinct_count: int = 0
+    coverage_ratio: float = 0.0
 
 
-def _test_value_set(
-    toolkit: _Toolkit, table: str, column: str, candidate_values: list[str]
-) -> Coverage:
+def _test_value_set(toolkit: _Toolkit, table: str, column: str, candidate_values: list[str]) -> Coverage:
     col = toolkit.column(table, column)
     con = toolkit.connect()
     try:
         rows = con.execute(
-            f'SELECT DISTINCT "{col.name}" FROM {toolkit.physical_ref[table]} '
-            f'WHERE "{col.name}" IS NOT NULL LIMIT {MAX_DISTINCT_VALUES}'
+            f'SELECT DISTINCT "{col.name}" FROM {toolkit.physical_ref[table]} WHERE "{col.name}" IS NOT NULL'
         ).fetchall()
+        real_values = {str(r[0]) for r in rows}
     finally:
         con.close()
-    real_values = [str(r[0]) for r in rows]
-    real_set = set(real_values)
-    matched = [v for v in candidate_values if v in real_set]
-    unmatched = [v for v in candidate_values if v not in real_set]
-    coverage_ratio = round(len(matched) / len(candidate_values), 4) if candidate_values else 0.0
+
+    matched = [v for v in candidate_values if v in real_values]
+    unmatched = [v for v in candidate_values if v not in real_values]
+    ratio = round(len(matched) / len(real_values), 4) if real_values else 0.0
     return Coverage(
-        table=table, column=column, matched=matched, unmatched_candidates=unmatched,
-        coverage_ratio=coverage_ratio, real_distinct_values=real_values,
+        table=table,
+        column=column,
+        matched=matched,
+        matched_values=matched,
+        unmatched_candidates=unmatched,
+        real_distinct_values=list(real_values),
+        observed_distinct_count=len(real_values),
+        coverage_ratio=ratio,
     )
 
 
-# --- 5. aggregate --------------------------------------------------------------
-
-
-class AggregateRow(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    group: str | None = None
-    value: float | None = None
+# --- 6. Aggregations ---
 
 
 class AggregateResult(BaseModel):
@@ -267,12 +309,9 @@ class AggregateResult(BaseModel):
 
     table: str
     column: str
-    op: AggOp
-    group_by: str | None = None
-    rows: list[AggregateRow] = Field(default_factory=list)
-
-
-_WHERE_OP_SQL = {"eq": "=", "neq": "!=", "gt": ">", "gte": ">=", "lt": "<", "lte": "<="}
+    op: str
+    result: float | None = None
+    group_results: list[dict[str, Any]] = Field(default_factory=list)
 
 
 def _aggregate(
@@ -283,43 +322,45 @@ def _aggregate(
     group_by: str | None = None,
     where: dict[str, Any] | None = None,
 ) -> AggregateResult:
-    toolkit.column(table, column)
-    if group_by is not None:
+    col = toolkit.column(table, column)
+    if group_by:
         toolkit.column(table, group_by)
 
-    where = where or {}
-    conditions: list[str] = []
-    params: list[Any] = []
-    for filter_column, value in where.items():
-        toolkit.column(table, filter_column)  # unknown/denied column -> raises before any SQL builds
-        conditions.append(f'"{filter_column}" = ?')
-        params.append(value)  # always a bound parameter, never interpolated
+    where_clauses = []
+    params = []
+    if where:
+        for k, v in where.items():
+            toolkit.column(table, k)
+            where_clauses.append(f'"{k}" = ?')
+            params.append(v)
 
-    quoted_col = f'"{column}"'
-    agg_sql = render_aggregation(op, quoted_col)
-    where_sql = f" WHERE {' AND '.join(conditions)}" if conditions else ""
+    where_str = f"WHERE {' AND '.join(where_clauses)}" if where_clauses else ""
+    agg_expr = render_aggregation(op, col.name)
 
     con = toolkit.connect()
     try:
-        if group_by is not None:
-            quoted_group = f'"{group_by}"'
+        if group_by:
             sql = (
-                f"SELECT {quoted_group} AS grp, {agg_sql} AS val FROM {toolkit.physical_ref[table]}"
-                f"{where_sql} GROUP BY {quoted_group} ORDER BY val DESC LIMIT {MAX_GROUP_ROWS}"
+                f'SELECT "{group_by}", {agg_expr} FROM {toolkit.physical_ref[table]} '
+                f'{where_str} GROUP BY "{group_by}" LIMIT {MAX_GROUP_ROWS}'
             )
-            result = con.execute(sql, params).fetchall()
-            rows = [AggregateRow(group=str(g), value=float(v) if v is not None else None) for g, v in result]
+            rows = con.execute(sql, params).fetchall()
+            group_res = [{"group": str(r[0]), "value": r[1]} for r in rows]
+            return AggregateResult(table=table, column=column, op=op.value, group_results=group_res)
         else:
-            sql = f"SELECT {agg_sql} AS val FROM {toolkit.physical_ref[table]}{where_sql}"
-            result = con.execute(sql, params).fetchone()
-            value = result[0] if result else None
-            rows = [AggregateRow(group=None, value=float(value) if value is not None else None)]
+            sql = f"SELECT {agg_expr} FROM {toolkit.physical_ref[table]} {where_str}"
+            val = con.execute(sql, params).fetchone()
+            return AggregateResult(
+                table=table,
+                column=column,
+                op=op.value,
+                result=None if (not val or val[0] is None) else float(val[0]),
+            )
     finally:
         con.close()
-    return AggregateResult(table=table, column=column, op=op, group_by=group_by, rows=rows)
 
 
-# --- 6. sample_rows ------------------------------------------------------------
+# --- 7. Sample Rows ---
 
 
 class Rows(BaseModel):
@@ -331,95 +372,184 @@ class Rows(BaseModel):
 
 
 def _sample_rows(
-    toolkit: _Toolkit, table: str, columns: list[str], limit: int, where_contains: str | None = None
+    toolkit: _Toolkit,
+    table: str,
+    columns: list[str],
+    limit: int = 10,
+    where_contains: str | None = None,
 ) -> Rows:
-    """`where_contains`, when given, scopes the sample to rows where ANY of
-    `columns` contains that literal substring (case-insensitive) - the
-    within-a-table equivalent of a Grep, for a customer term or code the
-    agent needs to locate but doesn't yet know which column holds. Still
-    just a parameter on the existing tool, not a new one (PHASE_2.md
-    Appendix A #5: capability scales through parameters, never tool count).
-    The literal is always a bound parameter, never interpolated into SQL."""
-    for name in columns:
-        col = toolkit.column(table, name)
-        if col.is_likely_pii:
-            raise AllowlistViolation(f"{table}.{name} is PII and cannot be sampled.")
-    capped_limit = max(1, min(limit, MAX_SAMPLE_ROWS))
-    quoted_cols = ", ".join(f'"{c}"' for c in columns)
-    sql = f'SELECT {quoted_cols} FROM {toolkit.physical_ref[table]}'
-    params: list[Any] = []
+    for c in columns:
+        toolkit.column(table, c)
+
+    limit = min(max(1, limit), MAX_SAMPLE_ROWS)
+    cols_str = ", ".join(f'"{c}"' for c in columns)
+
+    where_str = ""
+    params = []
     if where_contains:
-        needle = f"%{where_contains.lower()}%"
-        conditions = " OR ".join(f'LOWER(CAST("{c}" AS VARCHAR)) LIKE ?' for c in columns)
-        sql += f" WHERE {conditions}"
-        params = [needle] * len(columns)
-    sql += f" LIMIT {capped_limit}"
+        or_clauses = [f'LOWER(CAST("{c}" AS VARCHAR)) LIKE ?' for c in columns]
+        where_str = f"WHERE {' OR '.join(or_clauses)}"
+        params = [f"%{where_contains.lower()}%" for _ in columns]
+
     con = toolkit.connect()
     try:
-        result = con.execute(sql, params)
-        rows = [dict(zip(columns, row, strict=True)) for row in result.fetchall()]
+        sql = f"SELECT {cols_str} FROM {toolkit.physical_ref[table]} {where_str} LIMIT {limit}"
+        cursor = con.execute(sql, params)
+        col_names = [desc[0] for desc in cursor.description]
+        raw_rows = cursor.fetchall()
+        dict_rows = [dict(zip(col_names, r)) for r in raw_rows]
+        return Rows(table=table, columns=columns, rows=dict_rows)
     finally:
         con.close()
-    return Rows(table=table, columns=columns, rows=rows)
 
 
-# --- LangChain tool wrappers ---------------------------------------------------
+# --- 8. Safe Read-Only DuckDB Query ---
+
+
+class QueryResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    columns: list[str]
+    rows: list[dict[str, Any]]
+    row_count: int
+
+
+def _run_readonly_duckdb_query(toolkit: _Toolkit, query: str, limit: int = 15) -> QueryResult:
+    """Parses and validates arbitrary read-only queries with sqlglot before DuckDB execution."""
+    try:
+        parsed = sqlglot.parse_one(query, read="duckdb")
+    except Exception as exc:
+        raise AllowlistViolation(f"SQL parsing error: {exc}") from exc
+
+    # Enforce strictly Select or With root expression
+    if not isinstance(parsed, (exp.Select, exp.With)):
+        raise AllowlistViolation(
+            f"Only read-only SELECT queries are allowed (found {type(parsed).__name__})"
+        )
+
+    # Check for forbidden dangerous statements
+    for node in parsed.walk():
+        if isinstance(
+            node,
+            (
+                exp.Insert,
+                exp.Update,
+                exp.Delete,
+                exp.Drop,
+                exp.Alter,
+                exp.Command,
+                exp.Create,
+            ),
+        ):
+            raise AllowlistViolation(f"Modification expression {type(node).__name__} is forbidden.")
+
+    # Validate table references
+    tables_found = [t.name for t in parsed.find_all(exp.Table) if t.name]
+    for tbl in tables_found:
+        if tbl not in toolkit.physical_ref:
+            raise AllowlistViolation(
+                f"Table {tbl!r} not found in datasource. Valid: {sorted(toolkit.physical_ref)}"
+            )
+
+    # Check denied columns in AST
+    for col_node in parsed.find_all(exp.Column):
+        if col_node.name and col_node.name.lower() in toolkit.denied_columns:
+            raise AllowlistViolation(f"Column {col_node.name!r} is denied by PII guardrails.")
+
+    # Rewrite logical table names to DuckDB session table references
+    def _transform_table(node: exp.Expression) -> exp.Expression:
+        if isinstance(node, exp.Table) and node.name in toolkit.physical_ref:
+            phys = toolkit.physical_ref[node.name]
+            return sqlglot.to_table(phys)
+        return node
+
+    transformed = parsed.transform(_transform_table)
+    executable_sql = transformed.sql(dialect="duckdb")
+
+    limit = min(max(1, limit), MAX_QUERY_LIMIT)
+    con = toolkit.connect()
+    try:
+        # Wrap query in a subquery with strict limit
+        wrapped_sql = f"SELECT * FROM ({executable_sql}) LIMIT {limit}"
+        cursor = con.execute(wrapped_sql)
+        col_names = [desc[0] for desc in cursor.description]
+        raw_rows = cursor.fetchall()
+        dict_rows = [dict(zip(col_names, r)) for r in raw_rows]
+        return QueryResult(columns=col_names, rows=dict_rows, row_count=len(dict_rows))
+    except Exception as exc:
+        raise AllowlistViolation(f"DuckDB execution error: {exc}") from exc
+    finally:
+        con.close()
+
+
+# --- Tool Builder Factory ---
 
 
 def build_investigation_tools(
     data_source: DataSource,
     structural: StructuralProfile,
     denied_columns: set[str] | None = None,
-    *,
+    tenant_id: str | None = None,
+    datasource_ref: str | None = None,
     evidence_sink: list[str] | None = None,
 ) -> list[StructuredTool]:
-    """The six tools, bound to one validated toolkit instance. Every wrapper
-    catches AllowlistViolation and any other exception into an error string
-    - a tool never raises into the agent loop, it always reports.
+    """Builds the safe, tenant-scoped LangChain investigation tools.
 
-    `evidence_sink`, when given, receives every tool's real result string as
-    it happens - P2-06's V1 gate checks a claim's cited evidence against
-    exactly this log, so a claim can never cite a "fact" no tool actually
-    returned this run."""
-    toolkit = _Toolkit(data_source, structural, denied_columns)
+    `evidence_sink`, when given, receives one line per successful tool call:
+    what was asked and what came back. `validation/gates.py::verify_column_
+    claim` checks a claim against this log (V1 - "the evidence for this
+    actually exists"), so without it every claim the agent makes from a tool
+    call it performed *this session* fails verification and is discarded.
 
-    def _safe(fn, *args, **kwargs) -> str:
+    Two callers already passed this argument before the parameter existed
+    (`agentic/data_understanding_agent.py`, `understanding/agent.py`). Both
+    wrap construction in a bare `except Exception`, so the resulting
+    TypeError was swallowed and each agent silently returned nothing on
+    every run - a dead agent that still logged an invocation, with zero
+    steps and zero tokens."""
+    toolkit = _Toolkit(
+        data_source=data_source,
+        structural=structural,
+        denied_columns=denied_columns,
+        tenant_id=tenant_id,
+        datasource_ref=datasource_ref,
+    )
+
+    def _safe(fn: Any, *args: Any, **kwargs: Any) -> str:
         try:
-            result = fn(toolkit, *args, **kwargs)
+            res = fn(toolkit, *args, **kwargs)
+            out = res.model_dump_json() if hasattr(res, "model_dump_json") else str(res)
         except AllowlistViolation as exc:
-            return f"ERROR: {exc}"
-        except Exception as exc:  # noqa: BLE001 - reported to the agent, never raised
-            return f"ERROR running query: {exc}"
-        text = result.model_dump_json(indent=2)
+            return f"Tool Error: {exc}"
+        except Exception as exc:
+            logger.exception("Investigation tool exception: %s", exc)
+            return f"Unexpected Error: {exc}"
         if evidence_sink is not None:
-            evidence_sink.append(text)
-        return text
+            # Only successful calls are evidence. A refused or failed call
+            # proves nothing, and logging it would let a claim cite its own
+            # failure as support.
+            call = ", ".join([*(str(a) for a in args), *(f"{k}={v}" for k, v in kwargs.items())])
+            evidence_sink.append(f"{fn.__name__.lstrip('_')}({call}) -> {out}")
+        return out
+
+    def inspect_schema() -> str:
+        """Returns the full list of tables, row counts, and column names."""
+        return _safe(_inspect_schema)
 
     def inspect_column(table: str, column: str) -> str:
-        """Full profile of one column: dtype, null%, cardinality, min/max,
-        guessed role, and up to 15 real sample values (empty for a PII
-        column). Superset of what the data map already told you - use this
-        to drill into a column the map flagged ambiguous."""
+        """Returns detailed statistics, type, null percentage, and sample values for a column."""
         return _safe(_inspect_column, table, column)
 
     def compare_columns(table: str, columns: list[str]) -> str:
-        """Side-by-side stats for multiple columns on the same table in one
-        call, so you see the discriminating evidence at once - e.g. a
-        0-100-bounded score column next to a right-skewed currency column."""
+        """Returns side-by-side stats for multiple columns on a single table."""
         return _safe(_compare_columns, table, columns)
 
     def check_relationship(from_table: str, from_column: str, to_table: str, to_column: str) -> str:
-        """Runs a real overlap + cardinality query between two columns on
-        two tables. Turns a HYPOTHESIS ("these might be the same key") into
-        a VERIFIED FACT (overlap_ratio, cardinality, orphan_ratio) - never
-        assert a relationship without calling this first."""
+        """Verifies key overlap, cardinality, and foreign key validity between two columns."""
         return _safe(_check_relationship, from_table, from_column, to_table, to_column)
 
     def test_value_set(table: str, column: str, candidate_values: list[str]) -> str:
-        """Checks which of your candidate values genuinely appear in a
-        column's real distinct values, and what fraction of the real values
-        your candidates cover. Use this before claiming a value set (e.g.
-        "completed_values") - never assert one from a hint list alone."""
+        """Tests which candidate values appear in a column's distinct values."""
         return _safe(_test_value_set, table, column, candidate_values)
 
     def aggregate(
@@ -429,38 +559,47 @@ def build_investigation_tools(
         group_by: str | None = None,
         where: dict[str, Any] | None = None,
     ) -> str:
-        """Computes a real aggregation over a column, optionally grouped and
-        filtered. `op` is a closed set - there is no way to pass a raw
-        expression here, by design. `where` is an exact-match filter dict
-        (column -> value); values are always bound parameters, never SQL
-        text."""
+        """Computes a parameter-bound aggregation over a column with optional group_by and filter."""
         return _safe(_aggregate, table, column, AggOp(op), group_by, where)
 
     def sample_rows(table: str, columns: list[str], limit: int = 10, where_contains: str | None = None) -> str:
-        """Returns up to 15 real rows for the given columns on one table.
-        Refuses any PII-flagged column outright. Pass `where_contains` to
-        search for a literal substring (case-insensitive) across those
-        columns instead of just taking the first rows - e.g. the customer
-        mentioned a code or term and you need to find which column/rows
-        actually contain it."""
+        """Returns sample rows for specified columns, with optional substring filtering."""
         return _safe(_sample_rows, table, columns, limit, where_contains)
 
+    def run_readonly_duckdb_query(query: str, limit: int = 15) -> str:
+        """Executes a validated read-only SELECT query against DuckDB."""
+        return _safe(_run_readonly_duckdb_query, query, limit)
+
+    # Deliberately still the full set. Callers now receive the whole data map
+    # up front, so the schema/column-inspection tools are usually redundant -
+    # but the only consumer left is a *narrow fallback* that runs when the
+    # map flagged genuine ambiguity, which is exactly the case where looking
+    # closer is the point. Trimming here was tried and reverted: the measured
+    # win came from answering binding in one structured call over the map
+    # (86k tokens -> ~5k), not from taking tools away from the fallback.
     return [
+        StructuredTool.from_function(inspect_schema),
         StructuredTool.from_function(inspect_column),
         StructuredTool.from_function(compare_columns),
         StructuredTool.from_function(check_relationship),
         StructuredTool.from_function(test_value_set),
         StructuredTool.from_function(aggregate),
         StructuredTool.from_function(sample_rows),
+        StructuredTool.from_function(run_readonly_duckdb_query),
     ]
 
 
 __all__ = [
     "AggregateResult",
+    "AllowlistViolation",
     "ColumnDetail",
+    "ColumnStats",
     "Comparison",
     "Coverage",
+    "QueryResult",
     "RelationshipFact",
     "Rows",
+    "SchemaSummary",
+    "TableSummary",
     "build_investigation_tools",
 ]

@@ -52,23 +52,92 @@ def _base_type(dtype: str) -> str:
     return dtype.split("(", maxsplit=1)[0].strip().upper()
 
 
+# Text date formats DuckDB's plain CAST cannot read. Ordered most- to
+# least- common in real business exports. Day-first precedes month-first
+# because the datasets this system is built for are predominantly Indian and
+# European; where the values themselves disambiguate, that evidence wins over
+# this ordering (see `_detect_temporal_format`).
+_TEXT_DATE_FORMATS = (
+    "%d-%m-%Y", "%d/%m/%Y", "%d.%m.%Y",
+    "%m-%d-%Y", "%m/%d/%Y",
+    "%Y/%m/%d", "%Y%m%d",
+    "%d-%b-%Y", "%d %b %Y", "%d %B %Y", "%b %d, %Y",
+    "%d-%m-%Y %H:%M:%S", "%d/%m/%Y %H:%M:%S",
+    "%m/%d/%Y %H:%M:%S", "%Y/%m/%d %H:%M:%S",
+)
+_DAY_FIRST = {"%d-%m-%Y", "%d/%m/%Y", "%d.%m.%Y", "%d-%m-%Y %H:%M:%S", "%d/%m/%Y %H:%M:%S"}
+_MONTH_FIRST = {"%m-%d-%Y", "%m/%d/%Y", "%m/%d/%Y %H:%M:%S"}
+
+
+def _detect_temporal_format(
+    con: duckdb.DuckDBPyConnection, ref: str, quoted: str, row_count: int
+) -> tuple[bool, str | None]:
+    """Is this text column a date, and if so in what format?
+
+    Returns `(is_temporal, strptime_format)`. A `None` format means plain
+    `CAST` already works (ISO-8601); a string means every value parses under
+    that `strptime` pattern and *only* that will read it.
+
+    Why this exists: `CAST('02-05-1993' AS TIMESTAMP)` does not return NULL
+    in DuckDB, it raises - so a KPI whose SQL casts a DD-MM-YYYY column
+    fails the whole build at dry-run rather than degrading. Detecting the
+    real format lets the binding carry a `strptime(...)` expression instead,
+    which is what makes non-ISO exports (very common in Indian and European
+    data) usable at all rather than a hard failure.
+
+    Values, never names, decide - same rule as every other role here."""
+    if row_count == 0:
+        return False, None
+
+    def _fully_parses(expression: str) -> bool:
+        row = con.execute(
+            f"SELECT COUNT(*) FILTER (WHERE {quoted} IS NOT NULL) AS total, "
+            f"COUNT(*) FILTER (WHERE {quoted} IS NOT NULL AND {expression} IS NOT NULL) AS parsed "
+            f"FROM {ref}"
+        ).fetchone()
+        assert row is not None
+        total, parsed = row
+        return total > 0 and total == parsed
+
+    # ISO first: no expression needed downstream, so it stays the cheap path.
+    if _fully_parses(f"TRY_CAST({quoted} AS DATE)"):
+        return True, None
+
+    matching = [
+        fmt
+        for fmt in _TEXT_DATE_FORMATS
+        if _fully_parses(f"TRY_STRPTIME({quoted}, '{fmt}')")
+    ]
+    if not matching:
+        return False, None
+
+    # "02-05-1993" is a real date under both DD-MM and MM-DD. Let the data
+    # break the tie: a first field above 12 can only be a day, a second field
+    # above 12 can only be a month. Only when no row disambiguates do we fall
+    # back to the ordering above.
+    day_first = [f for f in matching if f in _DAY_FIRST]
+    month_first = [f for f in matching if f in _MONTH_FIRST]
+    if day_first and month_first:
+        first_field_over_12 = _fully_parses(
+            f"CASE WHEN TRY_CAST(SPLIT_PART({quoted}, "
+            f"CASE WHEN {quoted} LIKE '%/%' THEN '/' WHEN {quoted} LIKE '%.%' THEN '.' ELSE '-' END, 1) "
+            f"AS INTEGER) > 12 THEN 1 END"
+        )
+        if first_field_over_12:
+            return True, day_first[0]
+
+    return True, matching[0]
+
+
 def _looks_temporal(con: duckdb.DuckDBPyConnection, ref: str, quoted: str, row_count: int) -> bool:
     """Many sources (SQLite chief among them) store dates as plain TEXT -
-    dtype alone can't see them. `TRY_CAST` against the real values is the
-    same pattern `validation/plausibility.py`'s mixed_types check already
-    uses for numeric parseability: a query, not a `_at$`/`_on$` name guess,
-    and it can't be fooled by a phone number or a name that happens to
-    contain a hyphen the way a loose value-regex can."""
-    if row_count == 0:
-        return False
-    row = con.execute(
-        f"SELECT COUNT(*) FILTER (WHERE {quoted} IS NOT NULL) AS total, "
-        f"COUNT(*) FILTER (WHERE {quoted} IS NOT NULL AND TRY_CAST({quoted} AS DATE) IS NOT NULL) AS parsed "
-        f"FROM {ref}"
-    ).fetchone()
-    assert row is not None
-    total, parsed = row
-    return total > 0 and total == parsed
+    dtype alone can't see them. A query against the real values is the same
+    pattern `validation/plausibility.py`'s mixed_types check already uses for
+    numeric parseability: not a `_at$`/`_on$` name guess, and it can't be
+    fooled by a phone number or a name that happens to contain a hyphen the
+    way a loose value-regex can."""
+    is_temporal, _fmt = _detect_temporal_format(con, ref, quoted, row_count)
+    return is_temporal
 
 
 def _guess_role(
@@ -154,14 +223,26 @@ def _demote_tied_identifiers(columns: list[ColumnProfile]) -> list[ColumnProfile
 
     if not demote:
         return columns
-    # A demoted column was unique-per-row - by _guess_role's own cardinality
-    # rule (`cardinality <= row_count // 2`) that's always FREE_TEXT
-    # territory once row_count > 1, so revising the role is just "stop
-    # calling it an identifier". reclassify_dimension_labels (P2-02) still
-    # runs after this and will promote a genuine label back to CATEGORICAL
-    # using grain, exactly as it already does for any other FREE_TEXT column.
+    # Demote to the role the column's own dtype implies, which is what
+    # `_guess_role` would have returned had uniqueness not promoted it.
+    # For TEXT that is FREE_TEXT (the cardinality rule leaves a unique-per-row
+    # text column there once row_count > 1), and reclassify_dimension_labels
+    # (P2-02) still runs after this to promote a genuine label back to
+    # CATEGORICAL using grain. But a NUMERIC column reaches NUMERIC on dtype
+    # alone, before any cardinality rule - blanket-demoting it to FREE_TEXT
+    # silently destroyed every measure on small tables, where a real metric
+    # column (a score, an amount) is unique purely by coincidence of row
+    # count and could then never be selected as a measure at all.
+    def _demoted_role(col: ColumnProfile) -> ColumnRole:
+        base = _base_type(col.dtype)
+        if base in _NUMERIC_DUCKDB_TYPES:
+            return ColumnRole.NUMERIC
+        if base in _TEMPORAL_DUCKDB_TYPES:
+            return ColumnRole.DATETIME if "TIMESTAMP" in base or "TIME" in base else ColumnRole.DATE
+        return ColumnRole.FREE_TEXT
+
     return [
-        col.model_copy(update={"guessed_role": ColumnRole.FREE_TEXT, "is_likely_identifier": False})
+        col.model_copy(update={"guessed_role": _demoted_role(col), "is_likely_identifier": False})
         if (col.table, col.name) in demote
         else col
         for col in columns
@@ -225,6 +306,13 @@ def _profile_column(
     if is_identifier and role in (ColumnRole.NUMERIC, ColumnRole.CATEGORICAL, ColumnRole.FREE_TEXT):
         role = ColumnRole.IDENTIFIER
 
+    # Only text columns can need a strptime pattern; a native DATE/TIMESTAMP
+    # already casts. Recomputed rather than threaded out of _guess_role so
+    # that function keeps its single "what role is this" responsibility.
+    temporal_format: str | None = None
+    if role in (ColumnRole.DATE, ColumnRole.DATETIME) and _base_type(dtype) not in _TEMPORAL_DUCKDB_TYPES:
+        _is_temporal, temporal_format = _detect_temporal_format(con, ref, quoted, row_count)
+
     return ColumnProfile(
         table=table.name,
         name=col_name,
@@ -238,6 +326,7 @@ def _profile_column(
         sample_values=sample_values,
         is_likely_identifier=is_identifier,
         is_likely_pii=_is_likely_pii(col_name, role, sample_values),
+        temporal_format=temporal_format,
     )
 
 

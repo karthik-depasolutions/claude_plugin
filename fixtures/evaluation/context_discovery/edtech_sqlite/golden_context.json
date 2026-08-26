@@ -1,0 +1,45 @@
+{
+  "_comment": "Generated from real agent behaviour; see _README.md. 'deterministic' holds with no LLM; 'semantic' needs a live agent.",
+  "dataset": "fixtures/datasets/edtech.sqlite",
+  "description": "A SQLite school database: students, courses, enrollments.",
+  "expected_pack": "edtech",
+  "deterministic": {
+    "entities": {
+      "courses": {
+        "identifier_column": "course_id",
+        "is_unique_key": true
+      },
+      "enrollments": {
+        "identifier_column": "enrollment_id",
+        "is_unique_key": true
+      },
+      "students": {
+        "identifier_column": "student_id",
+        "is_unique_key": true
+      }
+    },
+    "question_categories": [
+      "record_grain",
+      "success_definition"
+    ],
+    "min_questions": 1,
+    "max_questions": 8,
+    "expected_hypothesis_categories": [
+      "field_semantics",
+      "record_grain"
+    ],
+    "expected_quality_issues": [],
+    "non_additive_measures": [
+      "course_id",
+      "price_inr",
+      "score",
+      "student_id"
+    ]
+  },
+  "semantic": {
+    "domain": "edtech",
+    "record_grain": "One row per student enrollment in a course",
+    "primary_entity": "Enrollment",
+    "business_process": "Enrollment to completion"
+  }
+}

@@ -20,6 +20,20 @@ from typing import Any
 
 from mis_mcp_runtime.config import MetricConfig
 
+
+def temporal_sql_expression(column: str, time_format: str | None, *, qualifier: str = "") -> str:
+    """Mirror of forge_core.models.schema_profile.temporal_sql_expression.
+
+    Duplicated deliberately: this package ships inside the generated
+    plugin and must not import forge_core. The two must stay identical -
+    if they drift, a metric that validated at build time raises at query
+    time (or vice versa)."""
+    reference = f'"{qualifier}"."{column}"' if qualifier else f'"{column}"'
+    if not time_format:
+        return reference
+    escaped = time_format.replace("'", "''")
+    return f"STRPTIME({reference}, '{escaped}')"
+
 _AGG_SQL = {
     "sum": "SUM", "mean": "AVG", "min": "MIN", "max": "MAX", "count": "COUNT",
     "std": "STDDEV", "var": "VARIANCE", "median": "MEDIAN",
@@ -145,7 +159,13 @@ def render_metric_query(
         select_parts.insert(0, f"{select_group} AS grp")
         group_parts.append(select_group)
     if time_grain is not None:
-        bucket = f"DATE_TRUNC('{time_grain}', CAST(\"{metric.base_entity}\".\"{metric.time_column}\" AS TIMESTAMP))"
+        # A date stored as non-ISO text needs STRPTIME - CAST raises on
+        # '02-05-1993' rather than returning NULL, which would surface here
+        # as a runtime error on a metric that validated fine at build time.
+        time_ref = temporal_sql_expression(
+            metric.time_column, getattr(metric, "time_format", None), qualifier=metric.base_entity
+        )
+        bucket = f"DATE_TRUNC('{time_grain}', CAST({time_ref} AS TIMESTAMP))"
         select_parts.insert(0, f"{bucket} AS time_bucket")
         group_parts.append(bucket)
 

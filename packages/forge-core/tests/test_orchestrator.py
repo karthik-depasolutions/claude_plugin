@@ -36,7 +36,7 @@ def _new_record(source_path: Path, output_dir: Path, industry_override: str | No
     )
 
 
-def _auto_accept(profile, packs):
+def _auto_accept(profile, packs, business_context=None):
     return ClassificationResult(
         ranked_matches=[IndustryMatch(pack_slug="generic-analytics", confidence=0.9)],
         primary_pack_slug="generic-analytics",
@@ -44,7 +44,7 @@ def _auto_accept(profile, packs):
     )
 
 
-def _require_confirmation(profile, packs):
+def _require_confirmation(profile, packs, business_context=None):
     return ClassificationResult(
         ranked_matches=[IndustryMatch(pack_slug="generic-analytics", confidence=0.1)],
         primary_pack_slug="generic-analytics",
@@ -146,6 +146,42 @@ def test_pipeline_resumes_after_data_review_answers(dirty_leads_csv: Path, tmp_p
     result = _run_confirming_all_bindings(record, profiling_provider=_QuestionProvider())
 
     assert result.status == RunStatus.SUCCEEDED, result.error
+
+
+def test_resume_does_not_pay_for_semantic_profiling_twice(
+    dirty_leads_csv: Path, tmp_path: Path, monkeypatch
+):
+    """A resume replays the pipeline from ingest. Semantic profiling is the
+    most expensive agent in the run (~31k tokens on a 26-column table), and
+    re-deriving a near-identical answer at full price on every pause was
+    40%+ of one real build's entire token cost.
+
+    Structural profiling still re-runs - it is deterministic and cheap."""
+    import forge_core.orchestrator as orch
+
+    monkeypatch.setattr(orch, "classify", _auto_accept)
+    record = _new_record(dirty_leads_csv, tmp_path)
+
+    calls: list[int] = []
+    real = orch.build_schema_profile
+
+    def _counting(*args, **kwargs):
+        # Only count passes that actually reach the provider.
+        if kwargs.get("cached_semantic") is None:
+            calls.append(1)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(orch, "build_schema_profile", _counting)
+
+    run_pipeline(record, profiling_provider=_QuestionProvider())
+    assert record.status == RunStatus.NEEDS_INPUT
+    assert len(calls) == 1
+    assert record.semantic_profile is not None, "the paid-for result must be cached on the record"
+
+    record.data_answers = {}
+    _run_confirming_all_bindings(record, profiling_provider=_QuestionProvider())
+
+    assert len(calls) == 1, "resume re-ran the semantic pass instead of reusing it"
 
 
 def test_pipeline_does_not_pause_without_a_question_provider(dirty_leads_csv: Path, tmp_path: Path, monkeypatch):

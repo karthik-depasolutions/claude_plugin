@@ -152,6 +152,39 @@ def render_data_context(context: dict[str, Any] | None, *, cap: int = 2000) -> s
         lines.append("## Confirmed value-set meanings (human-verified)")
         for key, vals in confirmed.items():
             lines.append(f"- {key}: {', '.join(vals)}")
+    # The Context Discovery Agent's handoff (spec §22). Rendered after the
+    # human's own answers and before raw findings: confirmed > investigated >
+    # measured. Facts and hypotheses stay under separate headings so a prompt
+    # can never read "we suspect X" as "the owner confirmed X".
+    business = context.get("business_context") or {}
+    if business:
+        lines.append("## What this data represents (investigated)")
+        if business.get("record_grain"):
+            lines.append(f"- One row represents: {business['record_grain']}")
+        if business.get("business_objective"):
+            lines.append(f"- The owner's stated objective: {business['business_objective']}")
+        for entity in business.get("primary_entities") or []:
+            uniqueness = "unique per row" if entity["is_unique_key"] else "repeats across rows"
+            lines.append(
+                f"- Entity {entity['name']!r} in {entity['table']}, "
+                f"identified by {entity['identifier_column']} ({uniqueness})"
+            )
+        success = business.get("success_definition")
+        if success:
+            lines.append(f"- Counts as a conversion: {success['conversion_event']} - {success['criteria']}")
+        for fact in business.get("confirmed_facts") or []:
+            lines.append(f"- CONFIRMED by the owner: {fact['observation']}")
+        hypotheses = business.get("hypotheses") or []
+        if hypotheses:
+            lines.append("### Unconfirmed hypotheses - treat as uncertain, do not state as fact")
+            for hypothesis in hypotheses:
+                lines.append(f"- ({hypothesis['confidence']:.0%} confidence) {hypothesis['claim']}")
+        unresolved = business.get("unresolved_questions") or []
+        if unresolved:
+            lines.append("### Still unknown - do not invent an answer")
+            for question in unresolved:
+                lines.append(f"- [{question['impact']}] {question['question']}")
+
     if findings:
         lines.append("## Known data-quality findings")
         for finding in findings:

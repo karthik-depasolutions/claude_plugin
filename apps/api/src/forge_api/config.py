@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     # Signs login session tokens (see security.py). Accounts are
     # admin-provisioned via scripts/create_user.py - there is no signup route.
     jwt_secret: str | None = None
+    # Comma-separated list of admin emails
+    admin_emails: str = "admin@example.com,admin@enterprise.io,admin@data2plugin.com"
     # Public origin Claude Desktop uses to reach hosted MCP (HTTPS in prod;
     # a tunnel URL for local demos). Required for GitHub publish.
     public_base_url: str | None = None
@@ -40,6 +42,10 @@ class Settings(BaseSettings):
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.api_cors_origins.split(",") if origin.strip()]
+
+    @property
+    def admin_email_list(self) -> list[str]:
+        return [e.strip().lower() for e in self.admin_emails.split(",") if e.strip()]
 
     @property
     def client_warehouse_enabled(self) -> bool:

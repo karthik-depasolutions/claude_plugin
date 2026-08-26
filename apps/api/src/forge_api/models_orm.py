@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from forge_api.db import Base
@@ -34,6 +34,14 @@ class RunORM(Base):
     # and an agent-free run never acquires agent calls on the second pass.
     use_llm: Mapped[bool] = mapped_column(Boolean, default=True)
     use_agent: Mapped[bool] = mapped_column(Boolean, default=True)
+    # What this plugin cost to build. Promoted out of record_json into real
+    # columns so spend is queryable/aggregatable (per tenant, over a date
+    # range) without deserializing every run's blob - the blob still holds
+    # the per-component breakdown under record_json["token_usage"].
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    total_tokens: Mapped[int] = mapped_column(Integer, default=0, index=True)
+    llm_calls: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC)
@@ -48,4 +56,5 @@ class UserORM(Base):
 
     email: Mapped[str] = mapped_column(String(255), primary_key=True)
     password_hash: Mapped[str] = mapped_column(String(255))
+    is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))

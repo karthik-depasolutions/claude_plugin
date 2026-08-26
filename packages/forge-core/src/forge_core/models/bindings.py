@@ -28,6 +28,14 @@ class ColumnBinding(BaseModel):
     physical: str
     confidence: float = Field(ge=0.0, le=1.0)
     evidence: str = ""
+    sql_expression: str | None = Field(
+        default=None,
+        description="SQL to substitute for this role instead of the plain quoted column. Set "
+        "only when the raw column can't be used as-is - today that means a date stored as "
+        "non-ISO text, where the expression is STRPTIME(col, fmt). DuckDB's CAST raises rather "
+        "than returning NULL on such a value, so without this a single DD-MM-YYYY column fails "
+        "the entire build at dry-run. None means use the column directly.",
+    )
     source: str = Field(
         default="deterministic",
         description="'deterministic' | 'llm_proposed' | 'agent_proposed' | 'human_override'.",

@@ -34,6 +34,15 @@ class ColumnProfile(BaseModel):
     sample_values: list[str] = Field(default_factory=list)
     is_likely_identifier: bool = False
     is_likely_pii: bool = False
+    temporal_format: str | None = None
+    """`strptime` pattern for a DATE column stored as non-ISO text (e.g.
+    "%d-%m-%Y" for "02-05-1993"). None means either not temporal, or ISO
+    text/native date where a plain CAST already works.
+
+    Load-bearing: DuckDB's `CAST('02-05-1993' AS TIMESTAMP)` *raises* rather
+    than returning NULL, so a KPI that casts such a column fails the entire
+    build at dry-run. Carrying the format lets every SQL site emit
+    `strptime(col, fmt)` instead - see `temporal_sql_expression`."""
 
 
 class RelationshipCandidate(BaseModel):
@@ -152,3 +161,21 @@ class SchemaProfile(BaseModel):
     structural: StructuralProfile
     semantic: SemanticProfile | None = None
     source: DataSource
+
+
+def temporal_sql_expression(column: str, temporal_format: str | None, *, qualifier: str = "") -> str:
+    """The SQL that turns a date column into a real timestamp.
+
+    One helper because three places build this independently - compiled KPI
+    SQL (`compiler/sql_render.py`), generated metrics
+    (`compiler/metric_compiler.py`) and the shipped runtime
+    (`mcp-runtime/engine/metric_query.py`) - and they must agree. If they
+    drift, a metric works in one surface and raises in another.
+
+    `qualifier`, when given, is a table name/alias to prefix.
+    """
+    reference = f'"{qualifier}"."{column}"' if qualifier else f'"{column}"'
+    if not temporal_format:
+        return reference
+    escaped = temporal_format.replace("'", "''")
+    return f"STRPTIME({reference}, '{escaped}')"
