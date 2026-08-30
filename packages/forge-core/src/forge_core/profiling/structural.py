@@ -82,53 +82,78 @@ def _is_likely_pii(name: str, role: ColumnRole) -> bool:
     return bool(_PERSON_NAME_HINTS.search(lower) or _OTHER_PII_HINTS.search(lower))
 
 
-def _profile_column(
-    con: duckdb.DuckDBPyConnection, table: TableDescriptor, col_name: str, dtype: str, row_count: int
-) -> ColumnProfile:
+def _profile_table(
+    con: duckdb.DuckDBPyConnection, table: TableDescriptor
+) -> list[ColumnProfile]:
     ref = table.physical_ref
-    quoted = f'"{col_name}"'
-    stats = con.execute(
-        f"SELECT COUNT(*) FILTER (WHERE {quoted} IS NULL), COUNT(DISTINCT {quoted}) FROM {ref}"
-    ).fetchone()
-    assert stats is not None  # an aggregate query always returns exactly one row
-    null_count, cardinality = int(stats[0]), int(stats[1])
-    null_percent = round((null_count / row_count * 100.0) if row_count else 0.0, 2)
-    distinct_ratio = round((cardinality / row_count) if row_count else 0.0, 4)
+    row_count = table.row_count
+    if not table.columns:
+        return []
 
-    role = _guess_role(col_name, dtype, cardinality, row_count)
+    # Batch column stats in chunks of 25 to avoid re-scanning views 100s of times
+    profiles: list[ColumnProfile] = []
+    chunk_size = 25
+    for i in range(0, len(table.columns), chunk_size):
+        chunk = table.columns[i : i + chunk_size]
+        select_exprs = []
+        for idx, col in enumerate(chunk):
+            quoted = f'"{col.name}"'
+            base = _base_type(col.raw_dtype)
+            select_exprs.append(f"COUNT(*) FILTER (WHERE {quoted} IS NULL) AS n_{idx}")
+            select_exprs.append(f"COUNT(DISTINCT {quoted}) AS c_{idx}")
+            if base in _NUMERIC_DUCKDB_TYPES:
+                select_exprs.append(f"MIN({quoted}) AS min_{idx}")
+                select_exprs.append(f"MAX({quoted}) AS max_{idx}")
 
-    min_value = max_value = None
-    sample_values: list[str] = []
-    base = _base_type(dtype)
-    if base in _NUMERIC_DUCKDB_TYPES:
-        mm = con.execute(f"SELECT MIN({quoted}), MAX({quoted}) FROM {ref}").fetchone()
-        assert mm is not None
-        min_value, max_value = mm[0], mm[1]
-    else:
-        rows = con.execute(
-            f"SELECT DISTINCT {quoted} FROM {ref} WHERE {quoted} IS NOT NULL LIMIT 5"
-        ).fetchall()
-        sample_values = [str(r[0]) for r in rows]
+        stats_sql = f"SELECT {', '.join(select_exprs)} FROM {ref}"
+        res = con.execute(stats_sql).fetchone()
+        assert res is not None
 
-    return ColumnProfile(
-        table=table.name,
-        name=col_name,
-        dtype=dtype,
-        null_percent=null_percent,
-        cardinality=cardinality,
-        distinct_ratio=min(distinct_ratio, 1.0),
-        guessed_role=role,
-        min_value=min_value,
-        max_value=max_value,
-        sample_values=sample_values,
-        is_likely_identifier=role == ColumnRole.IDENTIFIER,
-        is_likely_pii=_is_likely_pii(col_name, role),
-    )
+        res_idx = 0
+        for idx, col in enumerate(chunk):
+            null_count = int(res[res_idx] or 0)
+            cardinality = int(res[res_idx + 1] or 0)
+            res_idx += 2
+
+            base = _base_type(col.raw_dtype)
+            min_value = max_value = None
+            sample_values: list[str] = []
+            if base in _NUMERIC_DUCKDB_TYPES:
+                min_value, max_value = res[res_idx], res[res_idx + 1]
+                res_idx += 2
+            elif row_count > 0:
+                quoted = f'"{col.name}"'
+                rows = con.execute(
+                    f"SELECT DISTINCT {quoted} FROM {ref} WHERE {quoted} IS NOT NULL LIMIT 5"
+                ).fetchall()
+                sample_values = [str(r[0]) for r in rows]
+
+            null_percent = round((null_count / row_count * 100.0) if row_count else 0.0, 2)
+            distinct_ratio = round((cardinality / row_count) if row_count else 0.0, 4)
+            role = _guess_role(col.name, col.raw_dtype, cardinality, row_count)
+
+            profiles.append(
+                ColumnProfile(
+                    table=table.name,
+                    name=col.name,
+                    dtype=col.raw_dtype,
+                    null_percent=null_percent,
+                    cardinality=cardinality,
+                    distinct_ratio=min(distinct_ratio, 1.0),
+                    guessed_role=role,
+                    min_value=min_value,
+                    max_value=max_value,
+                    sample_values=sample_values,
+                    is_likely_identifier=role == ColumnRole.IDENTIFIER,
+                    is_likely_pii=_is_likely_pii(col.name, role),
+                )
+            )
+
+    return profiles
 
 
 def build_structural_profile(data_source: DataSource, con: duckdb.DuckDBPyConnection) -> StructuralProfile:
     columns: list[ColumnProfile] = []
     for table in data_source.tables:
-        for col in table.columns:
-            columns.append(_profile_column(con, table, col.name, col.raw_dtype, table.row_count))
+        columns.extend(_profile_table(con, table))
     return StructuralProfile(columns=columns)

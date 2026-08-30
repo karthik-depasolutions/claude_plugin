@@ -30,8 +30,9 @@ def test_dirty_leads_reproduces_every_check_code(dirty_leads_csv: Path):
     """dirty_leads.csv is hand-built with one exact-percentage example of
     every check this analyzer implements - the same shape (case-inconsistent
     categoricals, a column mixing labels with raw numbers, a dominant
-    campaign/outcome value, a mostly-null column) that motivated this
-    feature after a real post-install analysis found them by hand."""
+    campaign/outcome value, a mostly-null column, and a numeric column with
+    three planted outliers) that motivated this feature after a real
+    post-install analysis found them by hand."""
     findings, skipped = _analyze(dirty_leads_csv)
 
     assert skipped == []
@@ -39,6 +40,7 @@ def test_dirty_leads_reproduces_every_check_code(dirty_leads_csv: Path):
     assert codes_by_column["age_group"] == "mixed_types"
     assert codes_by_column["gender"] == "inconsistent_format"
     assert codes_by_column["status_flag"] == "single_value"
+    assert codes_by_column["deal_value"] == "numeric_outlier"
 
     campaign = next(f for f in findings if f.column == "campaign_id")
     assert campaign.code == "dominant_value"
@@ -52,6 +54,17 @@ def test_dirty_leads_reproduces_every_check_code(dirty_leads_csv: Path):
     sentiment_findings = {f.code for f in findings if f.column == "user_sentiment"}
     assert "high_null" in sentiment_findings  # 60% empty
     assert "single_value" in sentiment_findings  # the 40% that isn't is all "neutral"
+
+    deal_value = next(f for f in findings if f.column == "deal_value")
+    assert deal_value.code == "numeric_outlier"
+    assert "3 of 100" in deal_value.summary
+
+
+def test_numeric_column_within_typical_range_has_no_outlier_finding(bookings_csv: Path):
+    """Sanity check against over-firing: a well-formed numeric column with no
+    planted extremes must not produce a numeric_outlier finding."""
+    findings, _ = _analyze(bookings_csv)
+    assert not any(f.code == "numeric_outlier" for f in findings)
 
 
 def test_low_cardinality_id_named_column_is_still_analyzed(dirty_leads_csv: Path):
@@ -204,4 +217,5 @@ def test_build_data_review_end_to_end_with_no_provider(dirty_leads_csv: Path):
         con.close()
 
     assert review.findings
-    assert review.questions == []
+    assert len(review.questions) == 6
+    assert review.questions[-1].id == GENERAL_NOTES_ID

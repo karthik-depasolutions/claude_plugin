@@ -117,6 +117,12 @@ def test_write_plugin_produces_a_bom_less_spec_valid_plugin(bookings_csv: Path, 
     assert (plugin_dir / "mcp_server" / "mis_mcp_runtime" / "server.py").is_file()
     assert (plugin_dir / "data" / "bookings.csv").is_file()
 
+    # Multi-skill packaging check: all 3 skills must be packaged on disk, each namespaced
+    # with the pack slug so two generated plugins never collide on skill name.
+    assert (plugin_dir / "skills" / "healthcare-diagnostics-analyst" / "SKILL.md").is_file()
+    assert (plugin_dir / "skills" / "healthcare-diagnostics-data-visualizer" / "SKILL.md").is_file()
+    assert (plugin_dir / "skills" / "healthcare-diagnostics-root-cause-investigator" / "SKILL.md").is_file()
+
     # `phone` is denied (healthcare-diagnostics denies the `phone` role
     # category) - it must be dropped from the shipped file, not just from
     # compiled SQL/generated prose.

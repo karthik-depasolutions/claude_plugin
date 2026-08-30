@@ -33,7 +33,9 @@ class QualityFinding(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(description="code:table.column - server-assigned, never LLM-invented.")
-    code: str = Field(description="dominant_value | high_null | inconsistent_format | mixed_types | single_value")
+    code: str = Field(
+        description="dominant_value | high_null | inconsistent_format | mixed_types | numeric_outlier | single_value"
+    )
     severity: Severity
     table: str
     column: str

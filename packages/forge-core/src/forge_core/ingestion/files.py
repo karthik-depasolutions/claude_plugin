@@ -92,6 +92,8 @@ class FileAdapter(IngestionAdapter):
         kinds_seen: set[SourceKind] = set()
 
         for file_path in files:
+            if file_path.is_file() and file_path.stat().st_size == 0:
+                raise ValueError(f"Source file {file_path.name!r} is empty (0 bytes).")
             ext = file_path.suffix.lower()
             kind = _EXTENSION_KIND[ext]
             kinds_seen.add(kind)

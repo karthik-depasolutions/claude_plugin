@@ -48,6 +48,14 @@ def test_generate_plugin_content_grounds_every_kpi_id(bookings_csv: Path):
 
     content = generate_plugin_content(pack, kpi_defs, profile.source, provider=None)
 
+    # Multi-skill generation: packages domain analyst, data-visualizer, and root-cause-investigator,
+    # each namespaced with the pack slug so two generated plugins never collide on skill name.
+    assert len(content.skills) == 3
+    skill_names = {s.name for s in content.skills}
+    assert "healthcare-diagnostics-analyst" in skill_names
+    assert "healthcare-diagnostics-data-visualizer" in skill_names
+    assert "healthcare-diagnostics-root-cause-investigator" in skill_names
+
     # Skill frontmatter must satisfy the portable field constraints by construction.
     assert content.skill_frontmatter.name == content.skill_name
     assert len(content.skill_frontmatter.description) <= 1024

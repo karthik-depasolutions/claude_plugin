@@ -125,3 +125,101 @@ def test_normalize_env_value_unwraps_pasted_export_lines():
     assert _normalize_env_value(f'FORGE_SOURCE_DB_URL="{url}"') == url
     assert _normalize_env_value(f'export FORGE_SOURCE_DB_URL="{url}"') == url
     assert _normalize_env_value(f'"{url}"') == url
+
+
+def test_describe_data_and_business_concepts(bookings_config_dir: Path):
+    from mis_mcp_runtime.tools.describe_data import describe_data, list_business_concepts
+
+    config, _ = _load(bookings_config_dir)
+    data_desc = describe_data(config)
+    assert "business_domain" in data_desc
+    assert "entities" in data_desc
+    assert data_desc["available_kpis"] >= 4
+
+    concepts = list_business_concepts(config)
+    assert "entities" in concepts
+    assert "dimensions" in concepts
+
+
+def test_describe_schema_targeted(bookings_config_dir: Path):
+    config, _ = _load(bookings_config_dir)
+    result = describe_schema(config, table="bookings")
+    assert len(result["tables"]) == 1
+    assert result["tables"][0]["name"] == "bookings"
+
+    invalid_res = describe_schema(config, table="non_existent")
+    assert "error" in invalid_res
+
+
+def test_get_value_set_success_and_denied_rejection(bookings_config_dir: Path):
+    from mis_mcp_runtime.tools.get_value_set import get_value_set
+
+    config, con = _load(bookings_config_dir)
+    res = get_value_set(config, con, field="status")
+    assert "values" in res
+    assert len(res["values"]) > 0
+    assert any(v["value"] == "Completed" for v in res["values"])
+
+    # Denied column must be rejected
+    denied_res = get_value_set(config, con, field="phone")
+    assert "error" in denied_res
+    assert "denied" in denied_res["error"].lower()
+
+
+def test_metric_analytics_tools(bookings_config_dir: Path):
+    from mis_mcp_runtime.tools.metric_analytics import (
+        breakdown_metric,
+        compare_kpi,
+        explain_metric,
+        query_metric,
+        rank_entities,
+    )
+
+    config, con = _load(bookings_config_dir)
+
+    # 1. explain_metric
+    explained = explain_metric(config, "total_revenue")
+    assert explained["is_verified"] is True
+    assert "sql_expression" in explained
+
+    # 2. compare_kpi
+    compared = compare_kpi(config, con, "total_revenue")
+    assert "absolute_change" in compared
+    assert "period_a" in compared
+
+    # 3. breakdown_metric
+    breakdown = breakdown_metric(config, con, dimension="status")
+    assert len(breakdown["slices"]) > 0
+    assert "share_percent" in breakdown["slices"][0]
+
+    # Denied breakdown must be rejected
+    assert "error" in breakdown_metric(config, con, dimension="phone")
+
+    # 4. rank_entities
+    ranked = rank_entities(config, con, entity_dimension="package_name", limit=5)
+    assert len(ranked["ranked_results"]) <= 5
+    assert ranked["ranked_results"][0]["rank"] == 1
+
+    # Denied entity ranking must be rejected
+    assert "error" in rank_entities(config, con, entity_dimension="phone")
+
+    # 5. query_metric
+    qm = query_metric(config, con, metric_id="bookings_count", group_by=["status"])
+    assert "rows" in qm
+    assert len(qm["rows"]) > 0
+
+
+def test_record_exploration_tools(bookings_config_dir: Path):
+    from mis_mcp_runtime.tools.record_tools import get_record
+
+    config, con = _load(bookings_config_dir)
+    first_row = con.execute('SELECT "booking_id" FROM src_bookings LIMIT 1').fetchone()[0]
+
+    rec = get_record(config, con, table_or_entity="bookings", id_value=first_row, id_column="booking_id")
+    assert rec["found"] is True
+    assert "phone" not in rec["record"]
+    assert "customer_name" not in rec["record"]
+
+    # Denied ID lookup
+    denied_rec = get_record(config, con, table_or_entity="bookings", id_value="123", id_column="phone")
+    assert "error" in denied_rec

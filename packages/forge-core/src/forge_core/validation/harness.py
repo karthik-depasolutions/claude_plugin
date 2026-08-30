@@ -36,10 +36,15 @@ def _prose_texts(generated: GeneratedPlugin) -> dict[str, str]:
     reviewing for hallucinated facts. Deliberately excludes the dashboard
     snapshot, which embeds a generation timestamp and real computed numbers
     rather than reviewable prose."""
-    texts = {
-        f"skills/{generated.skill_name}/SKILL.md": generated.skill_body,
-        f"agents/{generated.agent_name}.md": generated.agent_body,
-    }
+    texts = {}
+    skills = generated.skills if generated.skills else []
+    if skills:
+        for s in skills:
+            texts[f"skills/{s.name}/SKILL.md"] = s.body
+    else:
+        texts[f"skills/{generated.skill_name}/SKILL.md"] = generated.skill_body
+
+    texts[f"agents/{generated.agent_name}.md"] = generated.agent_body
     for command in generated.commands:
         texts[f"commands/{command.name}.md"] = command.body
     return texts

@@ -18,7 +18,7 @@ from forge_core.generation.artifacts import generate_dashboard
 from forge_core.generation.commands import generate_commands
 from forge_core.generation.constants import MCP_SERVER_NAME, TOOL_NAMES, mcp_tool_ref
 from forge_core.generation.hooks import generate_hooks
-from forge_core.generation.skills import generate_skill, skill_name
+from forge_core.generation.skills import GeneratedSkill, generate_all_skills, generate_skill, skill_name
 from forge_core.llm.provider import LLMProvider
 from forge_core.models.datasource import DataSource
 from forge_core.models.industry_pack import IndustryPack
@@ -49,6 +49,7 @@ class GeneratedPlugin:
     agent_name: str
     agent_frontmatter: AgentFrontmatter
     agent_body: str
+    skills: list[GeneratedSkill] = field(default_factory=list)
     commands: list[GeneratedCommand] = field(default_factory=list)
     hooks: HooksFile = field(default_factory=HooksFile)
     dashboard_html: str = ""
@@ -60,7 +61,8 @@ def generate_plugin_content(
     source: DataSource,
     provider: LLMProvider | None = None,
 ) -> GeneratedPlugin:
-    skill_fm, skill_body = generate_skill(pack, kpi_defs, provider)
+    skills = generate_all_skills(pack, kpi_defs, provider)
+    domain_skill = skills[0]
     agent_fm, agent_body = generate_agent(pack, kpi_defs, provider)
     commands = [
         GeneratedCommand(name=name, frontmatter=fm, body=body)
@@ -68,12 +70,13 @@ def generate_plugin_content(
     ]
 
     return GeneratedPlugin(
-        skill_name=skill_name(pack),
-        skill_frontmatter=skill_fm,
-        skill_body=skill_body,
+        skill_name=domain_skill.name,
+        skill_frontmatter=domain_skill.frontmatter,
+        skill_body=domain_skill.body,
         agent_name=agent_name(pack),
         agent_frontmatter=agent_fm,
         agent_body=agent_body,
+        skills=skills,
         commands=commands,
         hooks=generate_hooks(pack),
         dashboard_html=generate_dashboard(pack.name, kpi_defs, source),
@@ -85,6 +88,7 @@ __all__ = [
     "TOOL_NAMES",
     "GeneratedCommand",
     "GeneratedPlugin",
+    "GeneratedSkill",
     "generate_plugin_content",
     "mcp_tool_ref",
 ]

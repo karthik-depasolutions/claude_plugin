@@ -17,6 +17,8 @@ import pandas as pd
 
 def json_safe(value: Any) -> Any:
     """Unwrap a numpy scalar to its Python equivalent and map NaN to None."""
+    if hasattr(value, "isoformat") and not isinstance(value, str):
+        return value.isoformat()
     if hasattr(value, "item") and not isinstance(value, (bytes, str)):
         try:
             return json_safe(value.item())

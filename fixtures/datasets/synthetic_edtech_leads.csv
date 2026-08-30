@@ -1,0 +1,1001 @@
+lead_id,student_name,email,phone,course_name,campaign_id,sales_rep,city,status,call_duration_mins,lead_score,course_fee_inr,amount_paid_inr,discount_applied_inr,created_at,trial_date
+LEAD-10001,Rohan Verma,rohan.verma74@example.com,+91-9890801586,Python for AI,youtube_creator_sponsor,Agent-Pooja,Bengaluru,Completed,9.6,31,25000,25000,0,2026-03-11 09:37:00,2026-03-15
+LEAD-10002,Aarav Malhotra,aarav.malhotra37@example.com,+91-9855176955,Data Science Bootcamp,organic_referral,Agent-Sneha,Chandigarh,Completed,11.5,63,35000,25000,10000,2026-02-05 20:55:00,2026-02-06
+LEAD-10003,Aditi Verma,aditi.verma58@example.com,+91-9820576383,Machine Learning Mastery,google_search_q1,Agent-Amit,Chandigarh,Not Interested,1.4,88,60000,0,0,2026-02-03 20:02:00,
+LEAD-10004,Rahul Iyer,rahul.iyer68@example.com,+91-9895320121,UI/UX Design Masterclass,organic_referral,Agent-Amit,Bengaluru,Trial Booked,14.9,32,25000,0,0,2026-01-06 18:14:00,2026-01-09
+LEAD-10005,Varun Nair,varun.nair44@example.com,+91-9895899313,Data Science Bootcamp,youtube_creator_sponsor,Agent-Amit,Pune,Completed,17.5,40,75000,73000,2000,2026-01-10 17:40:00,2026-01-12
+LEAD-10006,Sanya Malhotra,sanya.malhotra60@example.com,+91-9896282117,Data Science Bootcamp,youtube_creator_sponsor,Agent-Vikram,Mumbai,Completed,23.8,47,35000,30000,5000,2026-02-10 14:17:00,2026-02-11
+LEAD-10007,Neha Patel,neha.patel38@example.com,+91-9828566572,Full-Stack Web Dev,meta_leads_spring,Agent-Pooja,Jaipur,Callback Requested,3.5,94,60000,0,0,2026-02-03 19:37:00,
+LEAD-10008,Rahul Gupta,rahul.gupta80@example.com,+91-9811540956,Python for AI,google_search_q1,Agent-Vikram,Delhi,Completed,10.7,87,60000,50000,10000,2026-02-24 17:04:00,2026-02-28
+LEAD-10009,Rohan Joshi,rohan.joshi43@example.com,+91-9877187530,Python for AI,organic_referral,Agent-Amit,Chennai,Not Interested,0.5,78,35000,0,0,2026-01-15 12:27:00,
+LEAD-10010,Tanvi Patel,tanvi.patel77@example.com,+91-9810076758,Cloud DevOps Pro,google_search_q1,Agent-Amit,Jaipur,Not Interested,7.7,89,35000,0,0,2026-01-26 10:23:00,
+LEAD-10011,Riya Nair,riya.nair72@example.com,+91-9819289546,Machine Learning Mastery,google_search_q1,Agent-Vikram,Pune,Lost,1.1,30,75000,0,0,2026-01-31 08:15:00,
+LEAD-10012,Tanvi Malhotra,tanvi.malhotra79@example.com,+91-9836998038,Data Science Bootcamp,meta_leads_spring,Agent-Sneha,Delhi,Lost,7.7,74,75000,0,0,2026-02-03 16:55:00,
+LEAD-10013,Sanya Iyer,sanya.iyer80@example.com,+91-9840885476,Machine Learning Mastery,youtube_creator_sponsor,Agent-Sneha,Ahmedabad,Lost,0.7,63,25000,0,0,2026-01-16 11:14:00,
+LEAD-10014,Riya Mehta,riya.mehta83@example.com,+91-9887337818,Python for AI,google_search_q1,Agent-Vikram,Mumbai,Completed,20.0,47,45000,35000,10000,2026-02-12 09:32:00,2026-02-14
+LEAD-10015,Neha Mehta,neha.mehta53@example.com,+91-9824665841,Machine Learning Mastery,linkedin_professionals,Agent-Pooja,Kolkata,Completed,15.6,27,25000,25000,0,2026-02-15 14:26:00,2026-02-19
+LEAD-10016,Dev Mehta,dev.mehta79@example.com,+91-9811980765,Data Science Bootcamp,organic_referral,Agent-Sneha,Delhi,Completed,23.7,26,60000,60000,0,2026-02-05 15:15:00,2026-02-06
+LEAD-10017,Aditi Chopra,aditi.chopra68@example.com,+91-9848285503,Data Science Bootcamp,meta_leads_spring,Agent-Sneha,Hyderabad,Trial Booked,32.6,53,25000,1000,0,2026-02-21 08:10:00,2026-02-25
+LEAD-10018,Mira Joshi,mira.joshi71@example.com,+91-9877491435,UI/UX Design Masterclass,organic_referral,Agent-Sneha,Pune,Completed,4.1,27,25000,20000,5000,2026-01-28 08:37:00,2026-02-02
+LEAD-10019,Zoya Das,zoya.das61@example.com,+91-9826090908,Cloud DevOps Pro,meta_leads_spring,Agent-Vikram,Bengaluru,Invalid Number,7.0,11,25000,0,0,2026-01-24 09:38:00,
+LEAD-10020,Zoya Kapoor,zoya.kapoor50@example.com,+91-9842035886,Data Science Bootcamp,organic_referral,Agent-Karan,Bengaluru,Completed,9.1,53,75000,70000,5000,2026-02-23 18:37:00,2026-02-28
+LEAD-10021,Ishaan Reddy,ishaan.reddy43@example.com,+91-9827778019,Data Science Bootcamp,youtube_creator_sponsor,Agent-Sneha,Bengaluru,Completed,9.4,88,25000,25000,0,2026-01-02 15:39:00,2026-01-07
+LEAD-10022,Zoya Nair,zoya.nair94@example.com,+91-9823903144,Python for AI,meta_leads_spring,Agent-Amit,Ahmedabad,Completed,12.2,90,75000,75000,0,2026-03-11 19:19:00,2026-03-16
+LEAD-10023,Zoya Patel,zoya.patel91@example.com,+91-9845431319,Full-Stack Web Dev,google_search_q1,Agent-Vikram,Delhi,Callback Requested,2.0,63,35000,0,0,2026-02-04 12:38:00,
+LEAD-10024,Rahul Gupta,rahul.gupta66@example.com,+91-9884045292,Full-Stack Web Dev,google_search_q1,Agent-Vikram,Pune,Callback Requested,1.7,53,35000,0,0,2026-01-06 08:21:00,
+LEAD-10025,Sanya Reddy,sanya.reddy49@example.com,+91-9858942697,Cloud DevOps Pro,google_search_q1,Agent-Vikram,Delhi,Completed,6.6,75,75000,73000,2000,2026-03-11 08:53:00,2026-03-14
+LEAD-10026,Zoya Chopra,zoya.chopra40@example.com,+91-9831810617,Python for AI,youtube_creator_sponsor,Agent-Pooja,Bengaluru,Callback Requested,6.1,99,60000,0,0,2026-02-15 20:35:00,
+LEAD-10027,Tanvi Chopra,tanvi.chopra14@example.com,+91-9873174945,Data Science Bootcamp,linkedin_professionals,Agent-Vikram,Chennai,Completed,14.9,33,45000,43000,2000,2026-02-22 20:42:00,2026-02-24
+LEAD-10028,Dev Mehta,dev.mehta18@example.com,+91-9847463522,Machine Learning Mastery,youtube_creator_sponsor,Agent-Amit,Hyderabad,Not Interested,3.0,71,35000,0,0,2026-01-29 08:42:00,
+LEAD-10029,Kavya Bhatia,kavya.bhatia54@example.com,+91-9852101056,Cloud DevOps Pro,linkedin_professionals,Agent-Karan,Mumbai,Completed,21.9,33,45000,45000,0,2026-01-15 12:11:00,2026-01-20
+LEAD-10030,Mira Kapoor,mira.kapoor78@example.com,+91-9836445607,Cloud DevOps Pro,google_search_q1,Agent-Sneha,Hyderabad,Lost,4.4,20,60000,0,0,2026-02-02 08:45:00,
+LEAD-10031,Kavya Reddy,kavya.reddy34@example.com,+91-9866431351,Python for AI,youtube_creator_sponsor,Agent-Karan,Bengaluru,Completed,20.5,57,45000,35000,10000,2026-02-08 16:19:00,2026-02-12
+LEAD-10032,Rohan Reddy,rohan.reddy51@example.com,+91-9872409658,UI/UX Design Masterclass,meta_leads_spring,Agent-Karan,Kolkata,Trial Booked,22.2,94,35000,1000,0,2026-03-12 08:19:00,2026-03-15
+LEAD-10033,Neha Gupta,neha.gupta38@example.com,+91-9836726767,UI/UX Design Masterclass,meta_leads_spring,Agent-Karan,Delhi,Trial Booked,24.4,50,45000,0,0,2026-01-11 12:32:00,2026-01-16
+LEAD-10034,Ananya Sharma,ananya.sharma59@example.com,+91-9876354180,Python for AI,meta_leads_spring,Agent-Sneha,Bengaluru,Callback Requested,5.9,44,75000,0,0,2026-02-28 14:56:00,
+LEAD-10035,Mira Mehta,mira.mehta41@example.com,+91-9826288475,Data Science Bootcamp,google_search_q1,Agent-Vikram,Hyderabad,Not Interested,0.9,79,75000,0,0,2026-01-23 20:44:00,
+LEAD-10036,Neha Patel,neha.patel41@example.com,+91-9895585469,Machine Learning Mastery,organic_referral,Agent-Karan,Ahmedabad,Trial Booked,17.1,80,60000,0,0,2026-03-06 14:53:00,2026-03-11
+LEAD-10037,Ishaan Chopra,ishaan.chopra59@example.com,+91-9830509175,Cloud DevOps Pro,linkedin_professionals,Agent-Pooja,Bengaluru,Completed,7.4,37,45000,45000,0,2026-02-06 11:17:00,2026-02-09
+LEAD-10038,Sanya Mehta,sanya.mehta10@example.com,+91-9857212267,Python for AI,linkedin_professionals,Agent-Sneha,Ahmedabad,Completed,14.9,93,60000,60000,0,2026-02-23 08:13:00,2026-02-27
+LEAD-10039,Ishaan Chopra,ishaan.chopra59@example.com,+91-9855114543,Machine Learning Mastery,linkedin_professionals,Agent-Karan,Jaipur,Callback Requested,4.1,75,45000,0,0,2026-01-29 15:14:00,
+LEAD-10040,Rohan Bhatia,rohan.bhatia13@example.com,+91-9821267237,Machine Learning Mastery,meta_leads_spring,Agent-Sneha,Chandigarh,Lost,4.7,95,60000,0,0,2026-03-10 08:58:00,
+LEAD-10041,Rohan Reddy,rohan.reddy63@example.com,+91-9843859311,Data Science Bootcamp,linkedin_professionals,Agent-Pooja,Kolkata,Completed,26.9,55,45000,35000,10000,2026-02-11 11:29:00,2026-02-14
+LEAD-10042,Varun Verma,varun.verma89@example.com,+91-9830452412,Machine Learning Mastery,google_search_q1,Agent-Karan,Chennai,Completed,29.8,45,25000,23000,2000,2026-01-29 18:04:00,2026-01-30
+LEAD-10043,Dev Patel,dev.patel24@example.com,+91-9831980274,Machine Learning Mastery,google_search_q1,Agent-Karan,Ahmedabad,Lost,5.1,97,35000,0,0,2026-02-02 20:23:00,
+LEAD-10044,Ishaan Verma,ishaan.verma48@example.com,+91-9890585882,Cloud DevOps Pro,google_search_q1,Agent-Amit,Kolkata,Trial Booked,5.8,51,75000,2000,0,2026-02-20 19:12:00,2026-02-21
+LEAD-10045,Tanvi Verma,tanvi.verma56@example.com,+91-9895306788,Cloud DevOps Pro,google_search_q1,Agent-Amit,Chennai,Trial Booked,5.9,82,25000,1000,0,2026-01-09 16:41:00,2026-01-12
+LEAD-10046,Zoya Das,zoya.das85@example.com,+91-9846023439,Machine Learning Mastery,meta_leads_spring,Agent-Sneha,Jaipur,Completed,29.3,75,60000,50000,10000,2026-02-04 17:51:00,2026-02-09
+LEAD-10047,Kavya Das,kavya.das51@example.com,+91-9834406132,Data Science Bootcamp,google_search_q1,Agent-Amit,Hyderabad,Lost,0.7,63,60000,0,0,2026-03-01 17:39:00,
+LEAD-10048,Neha Mehta,neha.mehta72@example.com,+91-9884514489,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Amit,Chandigarh,Completed,25.9,50,35000,35000,0,2026-02-05 16:00:00,2026-02-10
+LEAD-10049,Tanvi Mehta,tanvi.mehta80@example.com,+91-9881259135,UI/UX Design Masterclass,linkedin_professionals,Agent-Sneha,Mumbai,Trial Booked,14.5,94,35000,1000,0,2026-01-12 12:14:00,2026-01-16
+LEAD-10050,Kavya Reddy,kavya.reddy78@example.com,+91-9834850391,UI/UX Design Masterclass,organic_referral,Agent-Amit,Ahmedabad,Trial Booked,12.8,44,25000,2000,0,2026-02-04 12:16:00,2026-02-06
+LEAD-10051,Dev Mehta,dev.mehta32@example.com,+91-9850569669,UI/UX Design Masterclass,linkedin_professionals,Agent-Amit,Jaipur,Callback Requested,2.2,57,35000,0,0,2026-02-06 09:53:00,
+LEAD-10052,Aarav Joshi,aarav.joshi70@example.com,+91-9874251933,Cloud DevOps Pro,meta_leads_spring,Agent-Amit,Mumbai,Completed,21.2,21,60000,60000,0,2026-03-12 12:44:00,2026-03-14
+LEAD-10053,Neha Nair,neha.nair97@example.com,+91-9817195288,Data Science Bootcamp,google_search_q1,Agent-Amit,Ahmedabad,Lost,4.8,29,60000,0,0,2026-01-15 09:25:00,
+LEAD-10054,Ananya Patel,ananya.patel38@example.com,+91-9880138498,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Vikram,Bengaluru,Invalid Number,6.4,10,75000,0,0,2026-03-13 20:26:00,
+LEAD-10055,Mira Gupta,mira.gupta36@example.com,+91-9893955206,Machine Learning Mastery,youtube_creator_sponsor,Agent-Karan,Pune,Invalid Number,1.2,12,75000,0,0,2026-03-14 17:03:00,
+LEAD-10056,Dev Iyer,dev.iyer46@example.com,+91-9847945817,UI/UX Design Masterclass,google_search_q1,Agent-Pooja,Jaipur,Completed,3.6,57,60000,50000,10000,2026-01-10 10:00:00,2026-01-14
+LEAD-10057,Sanya Das,sanya.das44@example.com,+91-9829090631,Machine Learning Mastery,google_search_q1,Agent-Pooja,Chandigarh,Lost,5.4,48,75000,0,0,2026-01-26 14:07:00,
+LEAD-10058,Aditi Sharma,aditi.sharma44@example.com,+91-9877172238,Data Science Bootcamp,youtube_creator_sponsor,Agent-Karan,Chandigarh,Callback Requested,5.7,58,60000,0,0,2026-02-06 15:07:00,
+LEAD-10059,Rahul Gupta,rahul.gupta12@example.com,+91-9846173157,Machine Learning Mastery,google_search_q1,Agent-Karan,Kolkata,Completed,21.6,93,25000,23000,2000,2026-02-11 17:16:00,2026-02-12
+LEAD-10060,Riya Sharma,riya.sharma62@example.com,+91-9854735895,Data Science Bootcamp,linkedin_professionals,Agent-Karan,Pune,Callback Requested,4.0,31,60000,0,0,2026-01-24 17:27:00,
+LEAD-10061,Kavya Bhatia,kavya.bhatia51@example.com,+91-9825558733,Python for AI,meta_leads_spring,Agent-Amit,Ahmedabad,Trial Booked,12.7,31,25000,1000,0,2026-02-06 18:25:00,2026-02-11
+LEAD-10062,Tanvi Reddy,tanvi.reddy36@example.com,+91-9845843681,Cloud DevOps Pro,google_search_q1,Agent-Karan,Mumbai,Trial Booked,27.2,76,60000,2000,0,2026-01-25 16:23:00,2026-01-30
+LEAD-10063,Rahul Patel,rahul.patel38@example.com,+91-9825228493,Full-Stack Web Dev,linkedin_professionals,Agent-Sneha,Chandigarh,Completed,15.8,90,75000,75000,0,2026-01-31 19:10:00,2026-02-03
+LEAD-10064,Neha Verma,neha.verma41@example.com,+91-9871308842,UI/UX Design Masterclass,meta_leads_spring,Agent-Sneha,Pune,Lost,7.9,81,60000,0,0,2026-03-07 19:17:00,
+LEAD-10065,Rahul Patel,rahul.patel46@example.com,+91-9850071487,Machine Learning Mastery,meta_leads_spring,Agent-Karan,Delhi,Trial Booked,29.2,54,45000,2000,0,2026-01-09 12:49:00,2026-01-13
+LEAD-10066,Varun Kapoor,varun.kapoor99@example.com,+91-9842051937,Cloud DevOps Pro,linkedin_professionals,Agent-Pooja,Ahmedabad,Trial Booked,30.8,61,60000,1000,0,2026-02-14 13:35:00,2026-02-19
+LEAD-10067,Riya Reddy,riya.reddy85@example.com,+91-9854559574,Data Science Bootcamp,linkedin_professionals,Agent-Vikram,Ahmedabad,Completed,18.8,36,60000,60000,0,2026-02-18 14:42:00,2026-02-20
+LEAD-10068,Varun Verma,varun.verma43@example.com,+91-9855440919,Machine Learning Mastery,google_search_q1,Agent-Karan,Mumbai,Lost,4.0,29,35000,0,0,2026-01-19 14:55:00,
+LEAD-10069,Riya Joshi,riya.joshi18@example.com,+91-9841510328,Machine Learning Mastery,google_search_q1,Agent-Amit,Jaipur,Not Interested,0.8,89,60000,0,0,2026-02-18 13:40:00,
+LEAD-10070,Rohan Bhatia,rohan.bhatia47@example.com,+91-9858112135,Full-Stack Web Dev,meta_leads_spring,Agent-Vikram,Bengaluru,Trial Booked,28.4,61,25000,0,0,2026-01-13 15:10:00,2026-01-16
+LEAD-10071,Kavya Reddy,kavya.reddy84@example.com,+91-9829208935,Data Science Bootcamp,meta_leads_spring,Agent-Karan,Delhi,Trial Booked,18.7,50,60000,2000,0,2026-01-22 10:05:00,2026-01-27
+LEAD-10072,Dev Gupta,dev.gupta85@example.com,+91-9850151803,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Sneha,Mumbai,Completed,33.2,76,35000,35000,0,2026-03-01 12:43:00,2026-03-06
+LEAD-10073,Rohan Reddy,rohan.reddy83@example.com,+91-9849711319,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Sneha,Hyderabad,Not Interested,4.8,68,35000,0,0,2026-02-19 15:06:00,
+LEAD-10074,Sanya Iyer,sanya.iyer89@example.com,+91-9843638559,Python for AI,linkedin_professionals,Agent-Amit,Mumbai,Completed,23.2,48,75000,70000,5000,2026-03-05 12:49:00,2026-03-07
+LEAD-10075,Rohan Chopra,rohan.chopra26@example.com,+91-9822097496,UI/UX Design Masterclass,meta_leads_spring,Agent-Vikram,Mumbai,Lost,3.2,94,25000,0,0,2026-02-09 20:28:00,
+LEAD-10076,Zoya Iyer,zoya.iyer47@example.com,+91-9855461591,Full-Stack Web Dev,linkedin_professionals,Agent-Pooja,Jaipur,Completed,33.9,81,35000,30000,5000,2026-02-16 16:32:00,2026-02-19
+LEAD-10077,Tanvi Verma,tanvi.verma11@example.com,+91-9845495029,Machine Learning Mastery,google_search_q1,Agent-Pooja,Hyderabad,Not Interested,6.4,31,45000,0,0,2026-02-20 20:35:00,
+LEAD-10078,Rahul Verma,rahul.verma88@example.com,+91-9839711402,Machine Learning Mastery,youtube_creator_sponsor,Agent-Amit,Chennai,Trial Booked,13.2,91,25000,2000,0,2026-01-14 18:14:00,2026-01-18
+LEAD-10079,Rohan Verma,rohan.verma40@example.com,+91-9882148284,UI/UX Design Masterclass,linkedin_professionals,Agent-Amit,Bengaluru,Callback Requested,1.4,83,45000,0,0,2026-01-18 08:02:00,
+LEAD-10080,Ananya Reddy,ananya.reddy57@example.com,+91-9839161443,Machine Learning Mastery,youtube_creator_sponsor,Agent-Karan,Delhi,Trial Booked,3.6,55,75000,1000,0,2026-02-23 18:06:00,2026-02-27
+LEAD-10081,Neha Gupta,neha.gupta25@example.com,+91-9871031132,Data Science Bootcamp,youtube_creator_sponsor,Agent-Vikram,Chennai,Invalid Number,2.6,7,25000,0,0,2026-03-11 18:22:00,
+LEAD-10082,Aditi Bhatia,aditi.bhatia37@example.com,+91-9841272553,Data Science Bootcamp,organic_referral,Agent-Vikram,Chennai,Completed,9.2,90,35000,35000,0,2026-02-01 10:50:00,2026-02-06
+LEAD-10083,Kavya Chopra,kavya.chopra40@example.com,+91-9889034501,Data Science Bootcamp,organic_referral,Agent-Vikram,Delhi,Completed,3.0,36,25000,25000,0,2026-01-17 16:16:00,2026-01-19
+LEAD-10084,Kavya Sharma,kavya.sharma23@example.com,+91-9870667140,Data Science Bootcamp,youtube_creator_sponsor,Agent-Vikram,Kolkata,Completed,19.2,66,60000,50000,10000,2026-03-09 09:47:00,2026-03-10
+LEAD-10085,Rahul Mehta,rahul.mehta66@example.com,+91-9819863756,Cloud DevOps Pro,google_search_q1,Agent-Karan,Mumbai,Completed,25.7,82,60000,60000,0,2026-01-08 15:54:00,2026-01-12
+LEAD-10086,Zoya Verma,zoya.verma65@example.com,+91-9823311507,Full-Stack Web Dev,organic_referral,Agent-Pooja,Pune,Completed,18.9,78,60000,55000,5000,2026-03-16 16:45:00,2026-03-19
+LEAD-10087,Tanvi Joshi,tanvi.joshi50@example.com,+91-9899269266,Python for AI,organic_referral,Agent-Pooja,Hyderabad,Trial Booked,12.7,32,60000,1000,0,2026-02-22 13:52:00,2026-02-26
+LEAD-10088,Ishaan Nair,ishaan.nair81@example.com,+91-9854244334,Data Science Bootcamp,linkedin_professionals,Agent-Vikram,Bengaluru,Completed,33.6,95,35000,35000,0,2026-01-12 14:06:00,2026-01-15
+LEAD-10089,Rohan Verma,rohan.verma37@example.com,+91-9830767532,Machine Learning Mastery,youtube_creator_sponsor,Agent-Sneha,Mumbai,Not Interested,4.8,33,45000,0,0,2026-02-06 17:19:00,
+LEAD-10090,Rohan Gupta,rohan.gupta81@example.com,+91-9893446356,Data Science Bootcamp,google_search_q1,Agent-Amit,Chennai,Not Interested,6.6,48,75000,0,0,2026-01-15 20:17:00,
+LEAD-10091,Riya Bhatia,riya.bhatia33@example.com,+91-9829226889,UI/UX Design Masterclass,organic_referral,Agent-Vikram,Pune,Callback Requested,3.1,63,45000,0,0,2026-01-04 10:17:00,
+LEAD-10092,Riya Bhatia,riya.bhatia53@example.com,+91-9831127115,Machine Learning Mastery,google_search_q1,Agent-Pooja,Mumbai,Callback Requested,3.6,68,35000,0,0,2026-01-12 19:33:00,
+LEAD-10093,Kavya Iyer,kavya.iyer94@example.com,+91-9866910299,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Karan,Mumbai,Trial Booked,11.3,30,25000,2000,0,2026-01-20 10:48:00,2026-01-25
+LEAD-10094,Neha Kapoor,neha.kapoor15@example.com,+91-9839597483,Machine Learning Mastery,linkedin_professionals,Agent-Amit,Jaipur,Completed,24.2,87,45000,35000,10000,2026-01-15 13:27:00,2026-01-16
+LEAD-10095,Mira Kapoor,mira.kapoor65@example.com,+91-9833581357,Python for AI,google_search_q1,Agent-Pooja,Hyderabad,Completed,18.7,20,45000,45000,0,2026-01-18 20:16:00,2026-01-21
+LEAD-10096,Ananya Reddy,ananya.reddy50@example.com,+91-9887277086,Cloud DevOps Pro,meta_leads_spring,Agent-Karan,Chennai,Trial Booked,32.4,78,60000,0,0,2026-01-10 14:55:00,2026-01-11
+LEAD-10097,Mira Kapoor,mira.kapoor23@example.com,+91-9842657384,Machine Learning Mastery,linkedin_professionals,Agent-Amit,Mumbai,Completed,16.7,31,60000,55000,5000,2026-02-11 10:51:00,2026-02-16
+LEAD-10098,Mira Kapoor,mira.kapoor34@example.com,+91-9856892354,Machine Learning Mastery,organic_referral,Agent-Vikram,Pune,Trial Booked,19.7,34,25000,2000,0,2026-02-13 11:21:00,2026-02-15
+LEAD-10099,Kavya Joshi,kavya.joshi82@example.com,+91-9887774890,UI/UX Design Masterclass,meta_leads_spring,Agent-Pooja,Pune,Completed,17.6,83,25000,23000,2000,2026-01-26 10:38:00,2026-01-28
+LEAD-10100,Neha Bhatia,neha.bhatia45@example.com,+91-9889379016,Cloud DevOps Pro,organic_referral,Agent-Amit,Chennai,Not Interested,5.2,76,60000,0,0,2026-01-20 15:04:00,
+LEAD-10101,Aarav Nair,aarav.nair74@example.com,+91-9861604364,Cloud DevOps Pro,google_search_q1,Agent-Amit,Mumbai,Trial Booked,22.5,31,25000,2000,0,2026-01-08 13:53:00,2026-01-11
+LEAD-10102,Neha Kapoor,neha.kapoor17@example.com,+91-9870468188,Cloud DevOps Pro,google_search_q1,Agent-Sneha,Chandigarh,Lost,1.6,84,60000,0,0,2026-01-25 13:38:00,
+LEAD-10103,Aditi Chopra,aditi.chopra30@example.com,+91-9858841557,Full-Stack Web Dev,google_search_q1,Agent-Karan,Mumbai,Callback Requested,4.4,87,60000,0,0,2026-02-01 19:28:00,
+LEAD-10104,Kavya Iyer,kavya.iyer46@example.com,+91-9843822301,Machine Learning Mastery,linkedin_professionals,Agent-Amit,Mumbai,Callback Requested,5.6,91,25000,0,0,2026-02-12 09:21:00,
+LEAD-10105,Sanya Das,sanya.das92@example.com,+91-9854087376,UI/UX Design Masterclass,organic_referral,Agent-Pooja,Chandigarh,Completed,20.7,59,35000,35000,0,2026-01-19 13:19:00,2026-01-23
+LEAD-10106,Varun Patel,varun.patel37@example.com,+91-9855866538,UI/UX Design Masterclass,organic_referral,Agent-Vikram,Kolkata,Callback Requested,1.9,59,45000,0,0,2026-03-07 13:01:00,
+LEAD-10107,Tanvi Gupta,tanvi.gupta89@example.com,+91-9827589104,Data Science Bootcamp,meta_leads_spring,Agent-Pooja,Pune,Completed,31.0,63,75000,75000,0,2026-01-13 16:49:00,2026-01-18
+LEAD-10108,Riya Reddy,riya.reddy40@example.com,+91-9869619341,Data Science Bootcamp,meta_leads_spring,Agent-Pooja,Chandigarh,Not Interested,3.2,72,25000,0,0,2026-01-22 19:28:00,
+LEAD-10109,Riya Iyer,riya.iyer74@example.com,+91-9880794454,UI/UX Design Masterclass,linkedin_professionals,Agent-Pooja,Pune,Trial Booked,27.8,56,60000,1000,0,2026-03-02 11:23:00,2026-03-07
+LEAD-10110,Mira Patel,mira.patel46@example.com,+91-9821257528,Data Science Bootcamp,organic_referral,Agent-Pooja,Mumbai,Lost,6.9,86,25000,0,0,2026-03-03 13:35:00,
+LEAD-10111,Tanvi Patel,tanvi.patel74@example.com,+91-9860192261,Full-Stack Web Dev,linkedin_professionals,Agent-Karan,Kolkata,Completed,4.2,73,45000,45000,0,2026-01-12 11:52:00,2026-01-16
+LEAD-10112,Dev Reddy,dev.reddy27@example.com,+91-9872962895,Python for AI,youtube_creator_sponsor,Agent-Pooja,Bengaluru,Completed,25.1,80,25000,20000,5000,2026-02-12 20:09:00,2026-02-14
+LEAD-10113,Neha Kapoor,neha.kapoor25@example.com,+91-9816408822,Python for AI,google_search_q1,Agent-Vikram,Delhi,Completed,10.2,56,60000,60000,0,2026-03-12 19:38:00,2026-03-17
+LEAD-10114,Dev Reddy,dev.reddy10@example.com,+91-9892518345,UI/UX Design Masterclass,organic_referral,Agent-Sneha,Ahmedabad,Completed,12.0,38,75000,73000,2000,2026-03-10 08:40:00,2026-03-15
+LEAD-10115,Kavya Mehta,kavya.mehta74@example.com,+91-9884377016,Cloud DevOps Pro,linkedin_professionals,Agent-Pooja,Bengaluru,Callback Requested,4.3,89,75000,0,0,2026-03-09 13:04:00,
+LEAD-10116,Aarav Reddy,aarav.reddy94@example.com,+91-9894323222,Machine Learning Mastery,google_search_q1,Agent-Sneha,Pune,Invalid Number,2.3,6,25000,0,0,2026-01-03 13:50:00,
+LEAD-10117,Aditi Chopra,aditi.chopra68@example.com,+91-9814963880,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Pooja,Jaipur,Completed,4.6,37,60000,58000,2000,2026-02-13 18:11:00,2026-02-17
+LEAD-10118,Ishaan Mehta,ishaan.mehta34@example.com,+91-9848401154,Python for AI,meta_leads_spring,Agent-Vikram,Pune,Completed,27.0,24,60000,55000,5000,2026-03-07 14:52:00,2026-03-12
+LEAD-10119,Kavya Das,kavya.das73@example.com,+91-9859304469,Python for AI,youtube_creator_sponsor,Agent-Amit,Chennai,Completed,18.6,43,60000,55000,5000,2026-02-25 14:47:00,2026-03-01
+LEAD-10120,Zoya Chopra,zoya.chopra23@example.com,+91-9820746667,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Vikram,Bengaluru,Callback Requested,2.7,89,35000,0,0,2026-02-25 17:52:00,
+LEAD-10121,Kavya Bhatia,kavya.bhatia55@example.com,+91-9892523968,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Sneha,Kolkata,Callback Requested,0.8,77,45000,0,0,2026-01-22 19:28:00,
+LEAD-10122,Mira Iyer,mira.iyer87@example.com,+91-9868810561,UI/UX Design Masterclass,google_search_q1,Agent-Vikram,Kolkata,Callback Requested,1.6,23,35000,0,0,2026-02-16 16:51:00,
+LEAD-10123,Aarav Patel,aarav.patel83@example.com,+91-9828481124,Python for AI,meta_leads_spring,Agent-Amit,Chandigarh,Trial Booked,27.3,76,45000,1000,0,2026-01-05 17:09:00,2026-01-09
+LEAD-10124,Rahul Nair,rahul.nair43@example.com,+91-9869897763,Machine Learning Mastery,youtube_creator_sponsor,Agent-Amit,Bengaluru,Completed,6.3,91,75000,65000,10000,2026-01-04 19:11:00,2026-01-08
+LEAD-10125,Dev Kapoor,dev.kapoor80@example.com,+91-9882769008,Full-Stack Web Dev,linkedin_professionals,Agent-Pooja,Bengaluru,Completed,25.6,64,25000,20000,5000,2026-02-27 10:57:00,2026-03-03
+LEAD-10126,Ishaan Iyer,ishaan.iyer57@example.com,+91-9872734149,Data Science Bootcamp,meta_leads_spring,Agent-Amit,Bengaluru,Trial Booked,20.5,66,60000,0,0,2026-01-26 20:08:00,2026-01-28
+LEAD-10127,Tanvi Malhotra,tanvi.malhotra92@example.com,+91-9819954260,Data Science Bootcamp,organic_referral,Agent-Vikram,Kolkata,Completed,34.1,36,75000,75000,0,2026-03-03 16:26:00,2026-03-07
+LEAD-10128,Neha Gupta,neha.gupta48@example.com,+91-9832099899,UI/UX Design Masterclass,organic_referral,Agent-Amit,Jaipur,Completed,19.3,35,60000,60000,0,2026-03-17 10:49:00,2026-03-19
+LEAD-10129,Ananya Nair,ananya.nair90@example.com,+91-9850644430,UI/UX Design Masterclass,meta_leads_spring,Agent-Amit,Jaipur,Lost,2.6,90,35000,0,0,2026-02-06 09:16:00,
+LEAD-10130,Riya Malhotra,riya.malhotra13@example.com,+91-9820901547,Python for AI,organic_referral,Agent-Pooja,Chandigarh,Trial Booked,3.8,92,75000,1000,0,2026-01-20 10:42:00,2026-01-25
+LEAD-10131,Aarav Bhatia,aarav.bhatia48@example.com,+91-9874819756,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Pooja,Kolkata,Not Interested,5.3,57,75000,0,0,2026-01-04 15:56:00,
+LEAD-10132,Dev Chopra,dev.chopra50@example.com,+91-9852857920,UI/UX Design Masterclass,linkedin_professionals,Agent-Amit,Mumbai,Trial Booked,22.2,63,60000,0,0,2026-01-21 15:26:00,2026-01-25
+LEAD-10133,Sanya Das,sanya.das67@example.com,+91-9843275109,Full-Stack Web Dev,linkedin_professionals,Agent-Pooja,Jaipur,Not Interested,1.4,79,35000,0,0,2026-03-13 09:20:00,
+LEAD-10134,Ananya Verma,ananya.verma34@example.com,+91-9831386576,Python for AI,youtube_creator_sponsor,Agent-Sneha,Kolkata,Not Interested,5.9,93,45000,0,0,2026-02-01 10:52:00,
+LEAD-10135,Neha Malhotra,neha.malhotra46@example.com,+91-9876423575,Machine Learning Mastery,linkedin_professionals,Agent-Amit,Bengaluru,Trial Booked,4.1,65,35000,2000,0,2026-02-20 16:29:00,2026-02-22
+LEAD-10136,Riya Das,riya.das16@example.com,+91-9886541906,UI/UX Design Masterclass,linkedin_professionals,Agent-Amit,Bengaluru,Trial Booked,4.0,66,45000,1000,0,2026-02-25 10:56:00,2026-02-28
+LEAD-10137,Rahul Mehta,rahul.mehta60@example.com,+91-9860089832,Full-Stack Web Dev,organic_referral,Agent-Amit,Jaipur,Completed,34.2,36,75000,75000,0,2026-02-27 20:35:00,2026-03-02
+LEAD-10138,Tanvi Nair,tanvi.nair76@example.com,+91-9871335966,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Pooja,Jaipur,Completed,28.6,62,25000,23000,2000,2026-02-21 16:02:00,2026-02-22
+LEAD-10139,Ananya Kapoor,ananya.kapoor75@example.com,+91-9881449442,Cloud DevOps Pro,meta_leads_spring,Agent-Amit,Chennai,Lost,3.0,95,45000,0,0,2026-01-21 14:39:00,
+LEAD-10140,Neha Joshi,neha.joshi98@example.com,+91-9894457912,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Sneha,Chennai,Not Interested,2.8,94,60000,0,0,2026-02-12 18:07:00,
+LEAD-10141,Aarav Kapoor,aarav.kapoor41@example.com,+91-9814237322,Machine Learning Mastery,youtube_creator_sponsor,Agent-Karan,Mumbai,Trial Booked,29.2,38,75000,1000,0,2026-03-16 15:10:00,2026-03-21
+LEAD-10142,Riya Joshi,riya.joshi17@example.com,+91-9828533117,Python for AI,meta_leads_spring,Agent-Vikram,Kolkata,Trial Booked,32.4,98,60000,2000,0,2026-01-20 14:44:00,2026-01-22
+LEAD-10143,Rahul Mehta,rahul.mehta97@example.com,+91-9896343485,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Sneha,Chennai,Trial Booked,24.5,65,45000,2000,0,2026-01-23 15:58:00,2026-01-28
+LEAD-10144,Tanvi Joshi,tanvi.joshi72@example.com,+91-9852552488,Full-Stack Web Dev,organic_referral,Agent-Sneha,Hyderabad,Completed,24.9,46,45000,40000,5000,2026-02-05 16:19:00,2026-02-07
+LEAD-10145,Neha Nair,neha.nair20@example.com,+91-9856488123,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Amit,Jaipur,Completed,11.8,25,35000,30000,5000,2026-02-18 14:52:00,2026-02-21
+LEAD-10146,Zoya Gupta,zoya.gupta40@example.com,+91-9842542167,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Sneha,Jaipur,Completed,26.6,98,35000,35000,0,2026-02-04 16:44:00,2026-02-07
+LEAD-10147,Aarav Bhatia,aarav.bhatia30@example.com,+91-9864614193,Cloud DevOps Pro,meta_leads_spring,Agent-Pooja,Kolkata,Completed,34.3,90,35000,35000,0,2026-02-12 19:30:00,2026-02-13
+LEAD-10148,Rohan Gupta,rohan.gupta32@example.com,+91-9814877451,Machine Learning Mastery,meta_leads_spring,Agent-Amit,Mumbai,Completed,16.1,42,75000,75000,0,2026-01-12 18:36:00,2026-01-14
+LEAD-10149,Varun Reddy,varun.reddy92@example.com,+91-9882920556,Machine Learning Mastery,meta_leads_spring,Agent-Amit,Mumbai,Lost,2.6,62,25000,0,0,2026-02-08 17:38:00,
+LEAD-10150,Rahul Gupta,rahul.gupta47@example.com,+91-9886206305,Data Science Bootcamp,organic_referral,Agent-Sneha,Bengaluru,Completed,26.4,21,45000,43000,2000,2026-02-12 10:46:00,2026-02-16
+LEAD-10151,Rohan Chopra,rohan.chopra33@example.com,+91-9828872606,Data Science Bootcamp,meta_leads_spring,Agent-Karan,Kolkata,Not Interested,5.5,71,25000,0,0,2026-02-24 16:20:00,
+LEAD-10152,Neha Nair,neha.nair98@example.com,+91-9841715995,Data Science Bootcamp,google_search_q1,Agent-Amit,Ahmedabad,Trial Booked,23.7,53,75000,0,0,2026-02-04 13:19:00,2026-02-09
+LEAD-10153,Aarav Bhatia,aarav.bhatia71@example.com,+91-9830560218,Python for AI,linkedin_professionals,Agent-Amit,Jaipur,Completed,33.6,48,45000,43000,2000,2026-02-09 19:07:00,2026-02-12
+LEAD-10154,Neha Joshi,neha.joshi86@example.com,+91-9820988446,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Sneha,Ahmedabad,Callback Requested,5.6,51,35000,0,0,2026-03-10 20:42:00,
+LEAD-10155,Rahul Gupta,rahul.gupta29@example.com,+91-9832083803,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Vikram,Bengaluru,Lost,4.8,45,75000,0,0,2026-01-08 16:57:00,
+LEAD-10156,Kavya Das,kavya.das68@example.com,+91-9827709269,Cloud DevOps Pro,linkedin_professionals,Agent-Vikram,Chandigarh,Callback Requested,6.6,77,75000,0,0,2026-03-04 09:57:00,
+LEAD-10157,Rahul Reddy,rahul.reddy54@example.com,+91-9818557710,Machine Learning Mastery,organic_referral,Agent-Vikram,Pune,Trial Booked,4.0,29,35000,2000,0,2026-01-03 14:16:00,2026-01-04
+LEAD-10158,Rahul Sharma,rahul.sharma58@example.com,+91-9860418290,Python for AI,linkedin_professionals,Agent-Vikram,Delhi,Completed,30.8,77,45000,35000,10000,2026-01-18 20:41:00,2026-01-22
+LEAD-10159,Aditi Bhatia,aditi.bhatia38@example.com,+91-9810466177,UI/UX Design Masterclass,organic_referral,Agent-Pooja,Chennai,Callback Requested,1.5,87,60000,0,0,2026-01-16 10:34:00,
+LEAD-10160,Tanvi Sharma,tanvi.sharma24@example.com,+91-9814324134,Full-Stack Web Dev,linkedin_professionals,Agent-Karan,Kolkata,Trial Booked,33.0,44,35000,1000,0,2026-01-30 11:29:00,2026-02-02
+LEAD-10161,Tanvi Bhatia,tanvi.bhatia61@example.com,+91-9868916591,Machine Learning Mastery,organic_referral,Agent-Vikram,Bengaluru,Completed,26.6,51,75000,75000,0,2026-01-13 17:02:00,2026-01-17
+LEAD-10162,Dev Malhotra,dev.malhotra28@example.com,+91-9898612211,Data Science Bootcamp,google_search_q1,Agent-Pooja,Pune,Trial Booked,10.2,61,75000,2000,0,2026-01-30 19:36:00,2026-02-02
+LEAD-10163,Rahul Mehta,rahul.mehta92@example.com,+91-9861157708,Machine Learning Mastery,youtube_creator_sponsor,Agent-Amit,Chandigarh,Completed,34.1,26,75000,65000,10000,2026-01-23 18:43:00,2026-01-27
+LEAD-10164,Tanvi Malhotra,tanvi.malhotra28@example.com,+91-9872146184,Full-Stack Web Dev,linkedin_professionals,Agent-Sneha,Kolkata,Completed,30.4,58,35000,33000,2000,2026-01-24 20:34:00,2026-01-28
+LEAD-10165,Zoya Sharma,zoya.sharma57@example.com,+91-9822410307,Cloud DevOps Pro,linkedin_professionals,Agent-Sneha,Delhi,Trial Booked,32.5,30,45000,2000,0,2026-02-19 11:16:00,2026-02-21
+LEAD-10166,Rahul Joshi,rahul.joshi52@example.com,+91-9850693207,Data Science Bootcamp,google_search_q1,Agent-Amit,Chandigarh,Trial Booked,9.3,81,75000,0,0,2026-01-06 09:12:00,2026-01-11
+LEAD-10167,Zoya Sharma,zoya.sharma80@example.com,+91-9853166435,Data Science Bootcamp,meta_leads_spring,Agent-Vikram,Ahmedabad,Callback Requested,7.4,70,35000,0,0,2026-02-01 19:38:00,
+LEAD-10168,Tanvi Iyer,tanvi.iyer70@example.com,+91-9852980983,Machine Learning Mastery,linkedin_professionals,Agent-Karan,Pune,Callback Requested,1.2,79,60000,0,0,2026-02-03 13:32:00,
+LEAD-10169,Zoya Mehta,zoya.mehta52@example.com,+91-9840872577,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Sneha,Hyderabad,Completed,7.5,57,75000,65000,10000,2026-01-19 08:16:00,2026-01-24
+LEAD-10170,Mira Kapoor,mira.kapoor55@example.com,+91-9832718459,Data Science Bootcamp,linkedin_professionals,Agent-Karan,Chennai,Callback Requested,4.0,82,60000,0,0,2026-02-02 20:52:00,
+LEAD-10171,Ananya Joshi,ananya.joshi62@example.com,+91-9828453800,Cloud DevOps Pro,linkedin_professionals,Agent-Pooja,Jaipur,Lost,6.2,26,25000,0,0,2026-01-08 16:02:00,
+LEAD-10172,Varun Bhatia,varun.bhatia78@example.com,+91-9884040345,Data Science Bootcamp,google_search_q1,Agent-Pooja,Jaipur,Completed,3.0,82,75000,65000,10000,2026-02-28 13:03:00,2026-03-05
+LEAD-10173,Mira Sharma,mira.sharma40@example.com,+91-9835760684,Python for AI,organic_referral,Agent-Amit,Pune,Trial Booked,19.5,32,35000,0,0,2026-01-03 16:52:00,2026-01-07
+LEAD-10174,Riya Malhotra,riya.malhotra38@example.com,+91-9850261914,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Amit,Bengaluru,Not Interested,7.9,51,75000,0,0,2026-02-17 14:29:00,
+LEAD-10175,Rohan Das,rohan.das92@example.com,+91-9854462389,Python for AI,google_search_q1,Agent-Vikram,Kolkata,Trial Booked,30.0,83,35000,0,0,2026-03-12 15:03:00,2026-03-13
+LEAD-10176,Riya Das,riya.das50@example.com,+91-9812101593,Python for AI,organic_referral,Agent-Vikram,Chandigarh,Completed,32.7,42,45000,45000,0,2026-03-02 12:02:00,2026-03-03
+LEAD-10177,Dev Kapoor,dev.kapoor27@example.com,+91-9820526386,Data Science Bootcamp,linkedin_professionals,Agent-Vikram,Chandigarh,Completed,27.1,69,75000,70000,5000,2026-01-31 17:53:00,2026-02-04
+LEAD-10178,Rahul Joshi,rahul.joshi44@example.com,+91-9870471823,Full-Stack Web Dev,google_search_q1,Agent-Vikram,Bengaluru,Trial Booked,3.5,61,75000,1000,0,2026-02-13 17:49:00,2026-02-18
+LEAD-10179,Neha Mehta,neha.mehta29@example.com,+91-9861002735,Full-Stack Web Dev,organic_referral,Agent-Sneha,Chandigarh,Trial Booked,5.2,29,45000,0,0,2026-02-18 09:49:00,2026-02-23
+LEAD-10180,Sanya Chopra,sanya.chopra33@example.com,+91-9867845091,UI/UX Design Masterclass,meta_leads_spring,Agent-Sneha,Bengaluru,Completed,6.8,33,45000,40000,5000,2026-01-12 08:19:00,2026-01-16
+LEAD-10181,Neha Malhotra,neha.malhotra62@example.com,+91-9862049575,Cloud DevOps Pro,organic_referral,Agent-Sneha,Bengaluru,Completed,2.9,69,75000,70000,5000,2026-02-15 16:05:00,2026-02-20
+LEAD-10182,Tanvi Verma,tanvi.verma31@example.com,+91-9868341261,UI/UX Design Masterclass,organic_referral,Agent-Pooja,Delhi,Trial Booked,7.2,83,45000,1000,0,2026-02-18 10:08:00,2026-02-21
+LEAD-10183,Ishaan Reddy,ishaan.reddy60@example.com,+91-9854589439,Full-Stack Web Dev,linkedin_professionals,Agent-Vikram,Hyderabad,Trial Booked,12.4,37,60000,0,0,2026-03-05 17:39:00,2026-03-07
+LEAD-10184,Varun Kapoor,varun.kapoor60@example.com,+91-9852833932,Machine Learning Mastery,youtube_creator_sponsor,Agent-Sneha,Chandigarh,Completed,8.3,60,35000,25000,10000,2026-01-18 12:20:00,2026-01-23
+LEAD-10185,Ishaan Joshi,ishaan.joshi82@example.com,+91-9836816708,UI/UX Design Masterclass,linkedin_professionals,Agent-Karan,Chennai,Not Interested,1.4,66,60000,0,0,2026-02-18 12:52:00,
+LEAD-10186,Riya Malhotra,riya.malhotra62@example.com,+91-9877015343,Data Science Bootcamp,organic_referral,Agent-Vikram,Ahmedabad,Invalid Number,5.7,14,45000,0,0,2026-01-27 15:51:00,
+LEAD-10187,Ananya Bhatia,ananya.bhatia78@example.com,+91-9877996397,Full-Stack Web Dev,meta_leads_spring,Agent-Amit,Kolkata,Callback Requested,4.9,81,75000,0,0,2026-02-18 09:28:00,
+LEAD-10188,Zoya Das,zoya.das88@example.com,+91-9815945401,UI/UX Design Masterclass,linkedin_professionals,Agent-Karan,Chennai,Completed,7.9,65,25000,23000,2000,2026-03-10 17:40:00,2026-03-11
+LEAD-10189,Riya Bhatia,riya.bhatia76@example.com,+91-9884892608,UI/UX Design Masterclass,linkedin_professionals,Agent-Amit,Kolkata,Invalid Number,4.3,4,45000,0,0,2026-01-14 08:06:00,
+LEAD-10190,Riya Joshi,riya.joshi63@example.com,+91-9821523236,Cloud DevOps Pro,meta_leads_spring,Agent-Sneha,Ahmedabad,Trial Booked,5.9,81,45000,0,0,2026-03-17 19:32:00,2026-03-19
+LEAD-10191,Aditi Das,aditi.das67@example.com,+91-9852803305,UI/UX Design Masterclass,meta_leads_spring,Agent-Amit,Ahmedabad,Completed,26.0,76,60000,60000,0,2026-01-27 16:30:00,2026-01-30
+LEAD-10192,Aditi Iyer,aditi.iyer52@example.com,+91-9885141654,Python for AI,google_search_q1,Agent-Vikram,Bengaluru,Not Interested,4.6,42,75000,0,0,2026-01-22 19:15:00,
+LEAD-10193,Mira Gupta,mira.gupta10@example.com,+91-9838829445,Data Science Bootcamp,linkedin_professionals,Agent-Pooja,Kolkata,Completed,16.5,95,35000,25000,10000,2026-02-20 08:47:00,2026-02-25
+LEAD-10194,Dev Iyer,dev.iyer72@example.com,+91-9880828710,UI/UX Design Masterclass,google_search_q1,Agent-Karan,Jaipur,Completed,24.3,53,60000,60000,0,2026-01-24 13:20:00,2026-01-26
+LEAD-10195,Rohan Nair,rohan.nair85@example.com,+91-9821375216,Cloud DevOps Pro,linkedin_professionals,Agent-Karan,Bengaluru,Trial Booked,32.4,58,75000,0,0,2026-02-14 13:54:00,2026-02-18
+LEAD-10196,Rohan Patel,rohan.patel59@example.com,+91-9866779304,Full-Stack Web Dev,google_search_q1,Agent-Pooja,Delhi,Completed,7.0,96,60000,50000,10000,2026-02-17 19:09:00,2026-02-22
+LEAD-10197,Ananya Gupta,ananya.gupta11@example.com,+91-9875043108,UI/UX Design Masterclass,organic_referral,Agent-Pooja,Ahmedabad,Trial Booked,30.6,26,60000,2000,0,2026-02-06 10:11:00,2026-02-09
+LEAD-10198,Ananya Mehta,ananya.mehta82@example.com,+91-9814142053,Machine Learning Mastery,organic_referral,Agent-Karan,Kolkata,Callback Requested,1.8,82,60000,0,0,2026-03-04 14:45:00,
+LEAD-10199,Tanvi Chopra,tanvi.chopra83@example.com,+91-9825328557,Data Science Bootcamp,youtube_creator_sponsor,Agent-Vikram,Jaipur,Completed,19.1,90,75000,65000,10000,2026-02-06 10:49:00,2026-02-10
+LEAD-10200,Ishaan Chopra,ishaan.chopra93@example.com,+91-9843223132,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Karan,Mumbai,Not Interested,6.0,33,60000,0,0,2026-02-26 16:13:00,
+LEAD-10201,Ishaan Das,ishaan.das31@example.com,+91-9892698414,Python for AI,linkedin_professionals,Agent-Amit,Bengaluru,Completed,23.1,98,35000,30000,5000,2026-02-26 09:49:00,2026-02-28
+LEAD-10202,Ananya Chopra,ananya.chopra44@example.com,+91-9879043610,Data Science Bootcamp,meta_leads_spring,Agent-Vikram,Jaipur,Trial Booked,11.9,57,45000,2000,0,2026-02-05 17:34:00,2026-02-07
+LEAD-10203,Zoya Bhatia,zoya.bhatia51@example.com,+91-9843226234,Python for AI,meta_leads_spring,Agent-Sneha,Pune,Lost,1.6,51,35000,0,0,2026-01-17 19:55:00,
+LEAD-10204,Tanvi Das,tanvi.das98@example.com,+91-9859535894,UI/UX Design Masterclass,linkedin_professionals,Agent-Sneha,Pune,Completed,26.9,85,25000,15000,10000,2026-02-23 14:28:00,2026-02-24
+LEAD-10205,Neha Gupta,neha.gupta60@example.com,+91-9839236638,Full-Stack Web Dev,organic_referral,Agent-Vikram,Bengaluru,Not Interested,6.5,28,45000,0,0,2026-02-28 18:42:00,
+LEAD-10206,Mira Das,mira.das16@example.com,+91-9816166355,Data Science Bootcamp,linkedin_professionals,Agent-Amit,Pune,Completed,31.6,63,75000,65000,10000,2026-02-13 16:36:00,2026-02-15
+LEAD-10207,Aditi Bhatia,aditi.bhatia26@example.com,+91-9897241147,Machine Learning Mastery,google_search_q1,Agent-Vikram,Delhi,Lost,8.0,45,60000,0,0,2026-02-26 15:00:00,
+LEAD-10208,Ishaan Patel,ishaan.patel10@example.com,+91-9838644905,Full-Stack Web Dev,google_search_q1,Agent-Amit,Chennai,Completed,25.4,31,35000,25000,10000,2026-01-22 08:25:00,2026-01-25
+LEAD-10209,Neha Verma,neha.verma39@example.com,+91-9861414775,Data Science Bootcamp,organic_referral,Agent-Pooja,Ahmedabad,Trial Booked,18.0,36,25000,1000,0,2026-01-02 08:44:00,2026-01-05
+LEAD-10210,Aditi Joshi,aditi.joshi88@example.com,+91-9897244236,Python for AI,google_search_q1,Agent-Amit,Pune,Trial Booked,20.8,87,35000,0,0,2026-01-18 14:49:00,2026-01-20
+LEAD-10211,Ananya Gupta,ananya.gupta85@example.com,+91-9861543890,Full-Stack Web Dev,meta_leads_spring,Agent-Pooja,Chandigarh,Lost,6.1,37,25000,0,0,2026-02-26 11:05:00,
+LEAD-10212,Kavya Reddy,kavya.reddy94@example.com,+91-9850486688,Full-Stack Web Dev,meta_leads_spring,Agent-Pooja,Bengaluru,Completed,30.1,23,75000,70000,5000,2026-02-01 16:38:00,2026-02-06
+LEAD-10213,Dev Malhotra,dev.malhotra40@example.com,+91-9877052833,Cloud DevOps Pro,organic_referral,Agent-Pooja,Pune,Callback Requested,3.4,83,35000,0,0,2026-01-07 20:57:00,
+LEAD-10214,Rohan Kapoor,rohan.kapoor97@example.com,+91-9833188838,Python for AI,organic_referral,Agent-Vikram,Chennai,Invalid Number,3.2,7,75000,0,0,2026-01-17 14:55:00,
+LEAD-10215,Tanvi Gupta,tanvi.gupta64@example.com,+91-9863992760,Python for AI,google_search_q1,Agent-Karan,Pune,Completed,27.4,84,60000,55000,5000,2026-01-28 08:59:00,2026-01-29
+LEAD-10216,Aditi Bhatia,aditi.bhatia93@example.com,+91-9896322745,Cloud DevOps Pro,organic_referral,Agent-Karan,Bengaluru,Completed,21.6,70,35000,30000,5000,2026-02-09 09:32:00,2026-02-11
+LEAD-10217,Aditi Iyer,aditi.iyer94@example.com,+91-9833574794,UI/UX Design Masterclass,linkedin_professionals,Agent-Pooja,Bengaluru,Completed,24.1,59,75000,75000,0,2026-02-25 09:29:00,2026-03-02
+LEAD-10218,Aditi Sharma,aditi.sharma44@example.com,+91-9825845304,UI/UX Design Masterclass,meta_leads_spring,Agent-Vikram,Chennai,Completed,26.9,36,35000,30000,5000,2026-03-08 16:50:00,2026-03-11
+LEAD-10219,Tanvi Sharma,tanvi.sharma82@example.com,+91-9832398441,Full-Stack Web Dev,linkedin_professionals,Agent-Amit,Pune,Trial Booked,4.3,66,60000,2000,0,2026-03-15 18:04:00,2026-03-19
+LEAD-10220,Kavya Patel,kavya.patel11@example.com,+91-9842823140,Full-Stack Web Dev,google_search_q1,Agent-Karan,Bengaluru,Callback Requested,6.9,25,25000,0,0,2026-01-30 19:32:00,
+LEAD-10221,Aarav Gupta,aarav.gupta50@example.com,+91-9846407626,Full-Stack Web Dev,linkedin_professionals,Agent-Pooja,Mumbai,Completed,16.0,51,35000,30000,5000,2026-03-12 20:58:00,2026-03-16
+LEAD-10222,Varun Verma,varun.verma46@example.com,+91-9851701149,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Vikram,Mumbai,Trial Booked,31.0,28,25000,1000,0,2026-01-23 11:51:00,2026-01-28
+LEAD-10223,Kavya Verma,kavya.verma73@example.com,+91-9836229153,Cloud DevOps Pro,linkedin_professionals,Agent-Vikram,Pune,Trial Booked,21.7,67,35000,1000,0,2026-03-14 20:19:00,2026-03-19
+LEAD-10224,Sanya Malhotra,sanya.malhotra94@example.com,+91-9860502752,Data Science Bootcamp,meta_leads_spring,Agent-Vikram,Mumbai,Lost,0.5,62,25000,0,0,2026-01-30 16:22:00,
+LEAD-10225,Varun Joshi,varun.joshi76@example.com,+91-9865439545,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Vikram,Hyderabad,Completed,32.4,25,45000,45000,0,2026-02-23 15:03:00,2026-02-25
+LEAD-10226,Sanya Nair,sanya.nair43@example.com,+91-9852279780,Machine Learning Mastery,google_search_q1,Agent-Karan,Delhi,Completed,10.2,36,25000,15000,10000,2026-02-20 09:37:00,2026-02-25
+LEAD-10227,Zoya Chopra,zoya.chopra69@example.com,+91-9852148834,Machine Learning Mastery,youtube_creator_sponsor,Agent-Amit,Hyderabad,Trial Booked,7.8,33,25000,0,0,2026-01-10 11:08:00,2026-01-15
+LEAD-10228,Mira Verma,mira.verma51@example.com,+91-9829907683,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Pooja,Ahmedabad,Trial Booked,3.8,97,45000,2000,0,2026-02-03 09:05:00,2026-02-05
+LEAD-10229,Aditi Joshi,aditi.joshi69@example.com,+91-9823677772,Data Science Bootcamp,youtube_creator_sponsor,Agent-Sneha,Pune,Trial Booked,10.6,90,60000,2000,0,2026-02-03 10:01:00,2026-02-07
+LEAD-10230,Tanvi Chopra,tanvi.chopra19@example.com,+91-9812925970,Data Science Bootcamp,google_search_q1,Agent-Vikram,Hyderabad,Completed,21.5,94,45000,45000,0,2026-01-17 11:52:00,2026-01-21
+LEAD-10231,Aditi Mehta,aditi.mehta58@example.com,+91-9867265875,UI/UX Design Masterclass,linkedin_professionals,Agent-Pooja,Chennai,Completed,18.6,70,35000,25000,10000,2026-01-16 08:29:00,2026-01-17
+LEAD-10232,Ananya Nair,ananya.nair80@example.com,+91-9874294443,Data Science Bootcamp,meta_leads_spring,Agent-Amit,Delhi,Completed,15.9,83,35000,30000,5000,2026-01-05 17:39:00,2026-01-10
+LEAD-10233,Aarav Verma,aarav.verma72@example.com,+91-9856175477,Full-Stack Web Dev,linkedin_professionals,Agent-Pooja,Jaipur,Trial Booked,18.1,65,25000,1000,0,2026-02-01 18:51:00,2026-02-06
+LEAD-10234,Zoya Kapoor,zoya.kapoor84@example.com,+91-9841240803,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Sneha,Mumbai,Completed,19.7,80,45000,45000,0,2026-02-10 17:14:00,2026-02-11
+LEAD-10235,Ananya Verma,ananya.verma50@example.com,+91-9858155056,Data Science Bootcamp,meta_leads_spring,Agent-Amit,Mumbai,Trial Booked,10.2,42,45000,0,0,2026-01-29 17:54:00,2026-02-02
+LEAD-10236,Zoya Kapoor,zoya.kapoor21@example.com,+91-9817538738,Python for AI,youtube_creator_sponsor,Agent-Karan,Chandigarh,Trial Booked,18.4,42,75000,1000,0,2026-01-25 20:56:00,2026-01-29
+LEAD-10237,Dev Kapoor,dev.kapoor85@example.com,+91-9829012298,Data Science Bootcamp,google_search_q1,Agent-Karan,Chennai,Trial Booked,3.2,27,35000,1000,0,2026-01-26 20:08:00,2026-01-29
+LEAD-10238,Tanvi Verma,tanvi.verma65@example.com,+91-9895800828,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Vikram,Kolkata,Trial Booked,26.3,40,45000,0,0,2026-03-17 09:21:00,2026-03-20
+LEAD-10239,Neha Bhatia,neha.bhatia98@example.com,+91-9849529438,Full-Stack Web Dev,meta_leads_spring,Agent-Karan,Chandigarh,Callback Requested,3.3,42,75000,0,0,2026-02-15 11:42:00,
+LEAD-10240,Ananya Patel,ananya.patel73@example.com,+91-9828876833,UI/UX Design Masterclass,google_search_q1,Agent-Karan,Chandigarh,Trial Booked,5.9,92,75000,0,0,2026-01-05 10:38:00,2026-01-08
+LEAD-10241,Kavya Joshi,kavya.joshi36@example.com,+91-9843492807,Python for AI,meta_leads_spring,Agent-Amit,Delhi,Invalid Number,0.6,8,45000,0,0,2026-01-12 19:42:00,
+LEAD-10242,Sanya Verma,sanya.verma73@example.com,+91-9860829941,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Vikram,Mumbai,Callback Requested,7.1,41,60000,0,0,2026-02-19 15:46:00,
+LEAD-10243,Kavya Malhotra,kavya.malhotra50@example.com,+91-9845047967,Machine Learning Mastery,google_search_q1,Agent-Sneha,Chandigarh,Not Interested,2.7,24,25000,0,0,2026-01-29 10:28:00,
+LEAD-10244,Aditi Verma,aditi.verma93@example.com,+91-9832145548,Full-Stack Web Dev,meta_leads_spring,Agent-Sneha,Bengaluru,Completed,16.5,23,75000,65000,10000,2026-03-12 09:21:00,2026-03-17
+LEAD-10245,Riya Reddy,riya.reddy16@example.com,+91-9862734442,Data Science Bootcamp,google_search_q1,Agent-Vikram,Hyderabad,Completed,10.2,58,45000,40000,5000,2026-02-22 19:35:00,2026-02-27
+LEAD-10246,Riya Malhotra,riya.malhotra31@example.com,+91-9895656500,Machine Learning Mastery,meta_leads_spring,Agent-Vikram,Kolkata,Trial Booked,3.3,32,60000,0,0,2026-01-12 12:52:00,2026-01-17
+LEAD-10247,Ishaan Verma,ishaan.verma57@example.com,+91-9861196706,Machine Learning Mastery,google_search_q1,Agent-Amit,Ahmedabad,Not Interested,3.4,89,25000,0,0,2026-03-04 18:16:00,
+LEAD-10248,Kavya Patel,kavya.patel54@example.com,+91-9882672055,Machine Learning Mastery,google_search_q1,Agent-Amit,Pune,Trial Booked,5.3,32,35000,2000,0,2026-01-29 12:36:00,2026-01-30
+LEAD-10249,Mira Chopra,mira.chopra60@example.com,+91-9814661179,Cloud DevOps Pro,meta_leads_spring,Agent-Karan,Kolkata,Completed,12.2,80,75000,73000,2000,2026-03-08 14:34:00,2026-03-12
+LEAD-10250,Rahul Kapoor,rahul.kapoor97@example.com,+91-9868437492,Cloud DevOps Pro,organic_referral,Agent-Karan,Ahmedabad,Completed,5.0,74,35000,35000,0,2026-01-23 10:13:00,2026-01-25
+LEAD-10251,Dev Das,dev.das11@example.com,+91-9893625419,UI/UX Design Masterclass,meta_leads_spring,Agent-Karan,Bengaluru,Completed,19.4,55,75000,70000,5000,2026-01-12 14:35:00,2026-01-16
+LEAD-10252,Riya Malhotra,riya.malhotra54@example.com,+91-9865148727,Machine Learning Mastery,google_search_q1,Agent-Sneha,Chandigarh,Completed,30.7,56,25000,25000,0,2026-03-17 17:48:00,2026-03-18
+LEAD-10253,Ishaan Reddy,ishaan.reddy98@example.com,+91-9863917932,UI/UX Design Masterclass,linkedin_professionals,Agent-Karan,Mumbai,Callback Requested,5.1,99,35000,0,0,2026-01-23 12:25:00,
+LEAD-10254,Aarav Reddy,aarav.reddy72@example.com,+91-9823182514,Full-Stack Web Dev,meta_leads_spring,Agent-Vikram,Pune,Callback Requested,2.6,59,45000,0,0,2026-02-17 08:21:00,
+LEAD-10255,Varun Mehta,varun.mehta37@example.com,+91-9864649480,Data Science Bootcamp,youtube_creator_sponsor,Agent-Sneha,Chennai,Not Interested,1.9,31,75000,0,0,2026-02-04 19:26:00,
+LEAD-10256,Sanya Gupta,sanya.gupta13@example.com,+91-9833318633,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Vikram,Delhi,Trial Booked,31.1,87,60000,0,0,2026-01-09 12:45:00,2026-01-14
+LEAD-10257,Dev Das,dev.das25@example.com,+91-9814102122,Data Science Bootcamp,google_search_q1,Agent-Pooja,Mumbai,Completed,15.4,84,45000,35000,10000,2026-02-16 19:12:00,2026-02-19
+LEAD-10258,Dev Nair,dev.nair59@example.com,+91-9816664050,Machine Learning Mastery,organic_referral,Agent-Sneha,Ahmedabad,Completed,11.8,31,35000,30000,5000,2026-03-17 16:22:00,2026-03-20
+LEAD-10259,Ananya Das,ananya.das97@example.com,+91-9811194267,Cloud DevOps Pro,meta_leads_spring,Agent-Pooja,Hyderabad,Callback Requested,7.0,22,75000,0,0,2026-02-04 18:26:00,
+LEAD-10260,Neha Patel,neha.patel58@example.com,+91-9856802956,UI/UX Design Masterclass,meta_leads_spring,Agent-Karan,Hyderabad,Not Interested,3.7,55,45000,0,0,2026-02-02 17:51:00,
+LEAD-10261,Neha Iyer,neha.iyer57@example.com,+91-9885357498,Data Science Bootcamp,linkedin_professionals,Agent-Amit,Chandigarh,Callback Requested,8.0,85,25000,0,0,2026-02-20 17:06:00,
+LEAD-10262,Rohan Kapoor,rohan.kapoor93@example.com,+91-9850103064,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Amit,Ahmedabad,Callback Requested,2.5,55,45000,0,0,2026-01-09 13:17:00,
+LEAD-10263,Dev Patel,dev.patel47@example.com,+91-9844819604,Cloud DevOps Pro,meta_leads_spring,Agent-Vikram,Chandigarh,Not Interested,5.4,23,35000,0,0,2026-02-21 18:20:00,
+LEAD-10264,Zoya Reddy,zoya.reddy95@example.com,+91-9858116670,Machine Learning Mastery,linkedin_professionals,Agent-Vikram,Chandigarh,Trial Booked,32.0,80,75000,2000,0,2026-01-25 13:46:00,2026-01-27
+LEAD-10265,Rahul Iyer,rahul.iyer38@example.com,+91-9851216287,Data Science Bootcamp,organic_referral,Agent-Pooja,Ahmedabad,Completed,9.7,31,35000,30000,5000,2026-01-17 19:16:00,2026-01-22
+LEAD-10266,Mira Chopra,mira.chopra34@example.com,+91-9877172936,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Amit,Ahmedabad,Trial Booked,17.8,29,75000,2000,0,2026-01-16 15:03:00,2026-01-21
+LEAD-10267,Aditi Das,aditi.das33@example.com,+91-9820846331,UI/UX Design Masterclass,linkedin_professionals,Agent-Karan,Mumbai,Completed,12.8,38,60000,50000,10000,2026-01-20 10:12:00,2026-01-23
+LEAD-10268,Neha Nair,neha.nair72@example.com,+91-9821816709,UI/UX Design Masterclass,meta_leads_spring,Agent-Amit,Mumbai,Callback Requested,6.2,93,35000,0,0,2026-02-27 12:13:00,
+LEAD-10269,Ananya Kapoor,ananya.kapoor51@example.com,+91-9881274148,Machine Learning Mastery,linkedin_professionals,Agent-Sneha,Ahmedabad,Trial Booked,33.4,67,35000,2000,0,2026-02-19 08:02:00,2026-02-24
+LEAD-10270,Dev Sharma,dev.sharma15@example.com,+91-9850024028,UI/UX Design Masterclass,google_search_q1,Agent-Pooja,Chennai,Completed,4.6,41,75000,70000,5000,2026-02-09 10:06:00,2026-02-13
+LEAD-10271,Ishaan Gupta,ishaan.gupta61@example.com,+91-9812566878,UI/UX Design Masterclass,organic_referral,Agent-Karan,Kolkata,Trial Booked,33.3,41,45000,0,0,2026-01-18 13:57:00,2026-01-22
+LEAD-10272,Dev Mehta,dev.mehta91@example.com,+91-9844331441,UI/UX Design Masterclass,meta_leads_spring,Agent-Pooja,Chandigarh,Callback Requested,3.3,24,45000,0,0,2026-03-06 10:07:00,
+LEAD-10273,Tanvi Malhotra,tanvi.malhotra25@example.com,+91-9883454998,Cloud DevOps Pro,google_search_q1,Agent-Karan,Bengaluru,Invalid Number,3.8,7,25000,0,0,2026-01-03 08:44:00,
+LEAD-10274,Ishaan Gupta,ishaan.gupta87@example.com,+91-9828409776,UI/UX Design Masterclass,meta_leads_spring,Agent-Pooja,Mumbai,Callback Requested,2.5,86,25000,0,0,2026-02-08 14:42:00,
+LEAD-10275,Mira Das,mira.das55@example.com,+91-9864996550,Python for AI,organic_referral,Agent-Karan,Bengaluru,Completed,34.1,86,35000,30000,5000,2026-01-14 15:12:00,2026-01-19
+LEAD-10276,Ishaan Patel,ishaan.patel83@example.com,+91-9899794603,Python for AI,organic_referral,Agent-Sneha,Ahmedabad,Lost,7.3,31,25000,0,0,2026-02-12 11:00:00,
+LEAD-10277,Neha Patel,neha.patel16@example.com,+91-9823396125,Python for AI,organic_referral,Agent-Vikram,Bengaluru,Callback Requested,2.5,57,60000,0,0,2026-02-02 18:14:00,
+LEAD-10278,Varun Patel,varun.patel27@example.com,+91-9899034004,Python for AI,youtube_creator_sponsor,Agent-Amit,Chennai,Not Interested,0.6,25,25000,0,0,2026-02-24 19:07:00,
+LEAD-10279,Rohan Patel,rohan.patel61@example.com,+91-9871275585,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Sneha,Pune,Invalid Number,1.4,3,45000,0,0,2026-01-12 13:52:00,
+LEAD-10280,Ishaan Das,ishaan.das85@example.com,+91-9874783521,Machine Learning Mastery,linkedin_professionals,Agent-Sneha,Delhi,Callback Requested,1.3,40,25000,0,0,2026-01-15 10:44:00,
+LEAD-10281,Tanvi Kapoor,tanvi.kapoor24@example.com,+91-9865201639,UI/UX Design Masterclass,linkedin_professionals,Agent-Pooja,Chennai,Callback Requested,7.4,81,35000,0,0,2026-01-04 18:56:00,
+LEAD-10282,Neha Sharma,neha.sharma41@example.com,+91-9874683506,Python for AI,youtube_creator_sponsor,Agent-Amit,Jaipur,Completed,24.0,75,45000,45000,0,2026-03-15 19:36:00,2026-03-17
+LEAD-10283,Kavya Bhatia,kavya.bhatia73@example.com,+91-9832200132,UI/UX Design Masterclass,linkedin_professionals,Agent-Pooja,Jaipur,Not Interested,6.9,84,35000,0,0,2026-01-07 08:41:00,
+LEAD-10284,Aditi Chopra,aditi.chopra66@example.com,+91-9886911446,Machine Learning Mastery,youtube_creator_sponsor,Agent-Pooja,Pune,Completed,5.1,50,60000,50000,10000,2026-01-07 16:14:00,2026-01-12
+LEAD-10285,Neha Verma,neha.verma89@example.com,+91-9895568918,Machine Learning Mastery,linkedin_professionals,Agent-Amit,Ahmedabad,Completed,28.2,31,25000,25000,0,2026-01-03 09:25:00,2026-01-07
+LEAD-10286,Ishaan Malhotra,ishaan.malhotra89@example.com,+91-9890524080,Cloud DevOps Pro,meta_leads_spring,Agent-Sneha,Chennai,Invalid Number,4.7,6,60000,0,0,2026-01-07 11:54:00,
+LEAD-10287,Neha Joshi,neha.joshi31@example.com,+91-9876091781,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Sneha,Hyderabad,Completed,4.0,33,75000,70000,5000,2026-01-01 13:22:00,2026-01-04
+LEAD-10288,Ananya Das,ananya.das23@example.com,+91-9865629268,UI/UX Design Masterclass,linkedin_professionals,Agent-Vikram,Hyderabad,Completed,25.8,44,35000,25000,10000,2026-01-25 09:59:00,2026-01-29
+LEAD-10289,Aarav Bhatia,aarav.bhatia10@example.com,+91-9881184297,UI/UX Design Masterclass,organic_referral,Agent-Vikram,Ahmedabad,Not Interested,7.7,37,75000,0,0,2026-02-28 18:37:00,
+LEAD-10290,Sanya Sharma,sanya.sharma87@example.com,+91-9853197138,Cloud DevOps Pro,linkedin_professionals,Agent-Karan,Jaipur,Trial Booked,23.9,69,35000,0,0,2026-01-23 19:37:00,2026-01-25
+LEAD-10291,Rahul Reddy,rahul.reddy75@example.com,+91-9850119441,Machine Learning Mastery,organic_referral,Agent-Pooja,Chennai,Completed,25.3,97,35000,25000,10000,2026-02-07 15:51:00,2026-02-09
+LEAD-10292,Varun Joshi,varun.joshi26@example.com,+91-9897253117,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Karan,Hyderabad,Callback Requested,7.4,64,45000,0,0,2026-01-27 17:45:00,
+LEAD-10293,Ananya Malhotra,ananya.malhotra64@example.com,+91-9811714029,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Vikram,Jaipur,Not Interested,2.6,88,60000,0,0,2026-03-03 17:36:00,
+LEAD-10294,Rahul Verma,rahul.verma98@example.com,+91-9849613096,Python for AI,linkedin_professionals,Agent-Pooja,Mumbai,Completed,29.8,38,45000,40000,5000,2026-01-26 12:48:00,2026-01-28
+LEAD-10295,Dev Chopra,dev.chopra99@example.com,+91-9848606206,Cloud DevOps Pro,google_search_q1,Agent-Amit,Bengaluru,Not Interested,2.3,69,75000,0,0,2026-03-13 11:47:00,
+LEAD-10296,Sanya Bhatia,sanya.bhatia91@example.com,+91-9896923747,Python for AI,linkedin_professionals,Agent-Sneha,Chennai,Trial Booked,29.5,76,35000,2000,0,2026-03-12 08:00:00,2026-03-15
+LEAD-10297,Kavya Chopra,kavya.chopra15@example.com,+91-9867513345,Cloud DevOps Pro,organic_referral,Agent-Karan,Hyderabad,Completed,6.4,85,35000,33000,2000,2026-02-07 15:11:00,2026-02-08
+LEAD-10298,Ishaan Malhotra,ishaan.malhotra90@example.com,+91-9892625597,Full-Stack Web Dev,meta_leads_spring,Agent-Pooja,Pune,Trial Booked,21.9,61,25000,0,0,2026-01-01 13:29:00,2026-01-03
+LEAD-10299,Varun Bhatia,varun.bhatia79@example.com,+91-9882079745,Full-Stack Web Dev,linkedin_professionals,Agent-Karan,Bengaluru,Trial Booked,7.7,84,75000,0,0,2026-02-10 16:14:00,2026-02-12
+LEAD-10300,Mira Verma,mira.verma81@example.com,+91-9897147586,Full-Stack Web Dev,meta_leads_spring,Agent-Pooja,Chennai,Callback Requested,4.1,87,75000,0,0,2026-02-16 12:13:00,
+LEAD-10301,Aarav Verma,aarav.verma46@example.com,+91-9813315946,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Sneha,Chandigarh,Completed,10.8,69,60000,60000,0,2026-02-01 08:43:00,2026-02-04
+LEAD-10302,Zoya Malhotra,zoya.malhotra78@example.com,+91-9881565674,Full-Stack Web Dev,organic_referral,Agent-Karan,Mumbai,Trial Booked,7.9,32,75000,0,0,2026-02-07 18:12:00,2026-02-10
+LEAD-10303,Aarav Bhatia,aarav.bhatia29@example.com,+91-9813188066,Python for AI,meta_leads_spring,Agent-Pooja,Kolkata,Not Interested,6.1,29,60000,0,0,2026-01-14 11:34:00,
+LEAD-10304,Neha Joshi,neha.joshi90@example.com,+91-9864284094,Full-Stack Web Dev,google_search_q1,Agent-Vikram,Delhi,Completed,15.1,72,35000,30000,5000,2026-02-02 16:04:00,2026-02-07
+LEAD-10305,Mira Nair,mira.nair74@example.com,+91-9824245271,Python for AI,linkedin_professionals,Agent-Vikram,Chandigarh,Trial Booked,14.1,29,25000,2000,0,2026-01-09 20:47:00,2026-01-14
+LEAD-10306,Ishaan Chopra,ishaan.chopra60@example.com,+91-9883245898,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Karan,Ahmedabad,Completed,9.6,88,60000,58000,2000,2026-02-18 14:52:00,2026-02-19
+LEAD-10307,Ishaan Bhatia,ishaan.bhatia86@example.com,+91-9862892750,Data Science Bootcamp,youtube_creator_sponsor,Agent-Amit,Mumbai,Invalid Number,0.5,1,25000,0,0,2026-03-12 16:09:00,
+LEAD-10308,Rahul Malhotra,rahul.malhotra38@example.com,+91-9892796892,Python for AI,youtube_creator_sponsor,Agent-Pooja,Chennai,Callback Requested,1.7,38,75000,0,0,2026-01-28 14:57:00,
+LEAD-10309,Varun Iyer,varun.iyer19@example.com,+91-9849010740,Data Science Bootcamp,google_search_q1,Agent-Pooja,Chandigarh,Callback Requested,5.3,79,75000,0,0,2026-01-07 20:59:00,
+LEAD-10310,Rohan Verma,rohan.verma18@example.com,+91-9835970938,Full-Stack Web Dev,google_search_q1,Agent-Pooja,Ahmedabad,Callback Requested,2.6,32,35000,0,0,2026-02-12 13:08:00,
+LEAD-10311,Kavya Gupta,kavya.gupta31@example.com,+91-9810648524,Machine Learning Mastery,youtube_creator_sponsor,Agent-Karan,Chandigarh,Callback Requested,7.7,60,45000,0,0,2026-01-20 17:36:00,
+LEAD-10312,Kavya Mehta,kavya.mehta72@example.com,+91-9884044139,Data Science Bootcamp,linkedin_professionals,Agent-Amit,Delhi,Not Interested,6.3,65,60000,0,0,2026-02-12 15:29:00,
+LEAD-10313,Aditi Patel,aditi.patel74@example.com,+91-9894775473,UI/UX Design Masterclass,organic_referral,Agent-Vikram,Delhi,Not Interested,7.2,29,25000,0,0,2026-03-10 11:16:00,
+LEAD-10314,Aarav Das,aarav.das29@example.com,+91-9859099345,Cloud DevOps Pro,organic_referral,Agent-Sneha,Hyderabad,Not Interested,4.0,89,75000,0,0,2026-01-05 16:16:00,
+LEAD-10315,Mira Mehta,mira.mehta88@example.com,+91-9832259144,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Pooja,Jaipur,Trial Booked,30.1,50,25000,2000,0,2026-01-12 14:23:00,2026-01-17
+LEAD-10316,Tanvi Malhotra,tanvi.malhotra39@example.com,+91-9818437082,Data Science Bootcamp,linkedin_professionals,Agent-Pooja,Chandigarh,Completed,27.2,48,45000,45000,0,2026-01-19 19:46:00,2026-01-23
+LEAD-10317,Ishaan Nair,ishaan.nair76@example.com,+91-9895035920,Data Science Bootcamp,google_search_q1,Agent-Pooja,Chennai,Trial Booked,5.9,61,25000,0,0,2026-02-19 15:58:00,2026-02-23
+LEAD-10318,Varun Iyer,varun.iyer58@example.com,+91-9839917031,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Karan,Delhi,Trial Booked,19.3,29,75000,2000,0,2026-02-18 18:24:00,2026-02-21
+LEAD-10319,Rahul Reddy,rahul.reddy19@example.com,+91-9879060560,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Sneha,Chandigarh,Not Interested,1.7,76,35000,0,0,2026-01-01 16:56:00,
+LEAD-10320,Rohan Iyer,rohan.iyer71@example.com,+91-9838280205,Data Science Bootcamp,meta_leads_spring,Agent-Pooja,Chandigarh,Completed,24.4,81,45000,45000,0,2026-01-16 18:14:00,2026-01-20
+LEAD-10321,Riya Patel,riya.patel31@example.com,+91-9844663022,UI/UX Design Masterclass,linkedin_professionals,Agent-Vikram,Delhi,Completed,7.3,93,75000,75000,0,2026-03-15 17:10:00,2026-03-17
+LEAD-10322,Zoya Patel,zoya.patel71@example.com,+91-9832893086,Cloud DevOps Pro,linkedin_professionals,Agent-Karan,Mumbai,Invalid Number,7.9,10,60000,0,0,2026-02-06 09:13:00,
+LEAD-10323,Dev Das,dev.das18@example.com,+91-9840845084,Machine Learning Mastery,organic_referral,Agent-Pooja,Delhi,Not Interested,5.0,78,45000,0,0,2026-03-07 12:10:00,
+LEAD-10324,Mira Reddy,mira.reddy78@example.com,+91-9877555702,Data Science Bootcamp,google_search_q1,Agent-Vikram,Jaipur,Completed,22.0,98,35000,25000,10000,2026-02-23 10:38:00,2026-02-24
+LEAD-10325,Tanvi Verma,tanvi.verma15@example.com,+91-9881110769,Python for AI,linkedin_professionals,Agent-Pooja,Jaipur,Lost,3.7,86,60000,0,0,2026-01-01 20:43:00,
+LEAD-10326,Mira Mehta,mira.mehta79@example.com,+91-9864847632,Machine Learning Mastery,linkedin_professionals,Agent-Amit,Chandigarh,Trial Booked,11.7,30,60000,0,0,2026-01-13 14:08:00,2026-01-16
+LEAD-10327,Ishaan Mehta,ishaan.mehta64@example.com,+91-9897453041,Python for AI,google_search_q1,Agent-Karan,Jaipur,Trial Booked,6.0,66,45000,1000,0,2026-01-01 14:41:00,2026-01-03
+LEAD-10328,Riya Iyer,riya.iyer57@example.com,+91-9885040303,Full-Stack Web Dev,organic_referral,Agent-Sneha,Chandigarh,Trial Booked,18.2,91,60000,2000,0,2026-02-05 18:25:00,2026-02-07
+LEAD-10329,Rahul Gupta,rahul.gupta61@example.com,+91-9855424358,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Karan,Kolkata,Completed,9.5,32,60000,58000,2000,2026-01-18 18:07:00,2026-01-20
+LEAD-10330,Tanvi Malhotra,tanvi.malhotra57@example.com,+91-9820742751,Cloud DevOps Pro,google_search_q1,Agent-Pooja,Mumbai,Trial Booked,11.1,28,60000,0,0,2026-01-12 10:30:00,2026-01-17
+LEAD-10331,Riya Sharma,riya.sharma66@example.com,+91-9811437525,UI/UX Design Masterclass,linkedin_professionals,Agent-Sneha,Jaipur,Callback Requested,5.3,42,25000,0,0,2026-02-06 19:38:00,
+LEAD-10332,Dev Das,dev.das93@example.com,+91-9810038556,UI/UX Design Masterclass,organic_referral,Agent-Amit,Chandigarh,Completed,14.2,24,75000,73000,2000,2026-03-07 16:44:00,2026-03-09
+LEAD-10333,Ananya Verma,ananya.verma80@example.com,+91-9848184109,Full-Stack Web Dev,linkedin_professionals,Agent-Amit,Kolkata,Callback Requested,7.4,28,25000,0,0,2026-03-17 11:33:00,
+LEAD-10334,Sanya Das,sanya.das74@example.com,+91-9824289484,Cloud DevOps Pro,organic_referral,Agent-Amit,Pune,Completed,8.2,53,60000,60000,0,2026-01-29 17:12:00,2026-02-02
+LEAD-10335,Rahul Verma,rahul.verma58@example.com,+91-9885587210,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Amit,Jaipur,Lost,5.7,52,75000,0,0,2026-02-02 16:52:00,
+LEAD-10336,Neha Chopra,neha.chopra38@example.com,+91-9840860700,Data Science Bootcamp,youtube_creator_sponsor,Agent-Sneha,Chandigarh,Callback Requested,3.4,28,45000,0,0,2026-01-04 15:07:00,
+LEAD-10337,Tanvi Nair,tanvi.nair70@example.com,+91-9852127291,Machine Learning Mastery,youtube_creator_sponsor,Agent-Karan,Pune,Trial Booked,32.8,90,45000,0,0,2026-02-01 12:05:00,2026-02-05
+LEAD-10338,Kavya Mehta,kavya.mehta36@example.com,+91-9840763714,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Pooja,Hyderabad,Lost,7.0,50,35000,0,0,2026-03-05 19:12:00,
+LEAD-10339,Dev Das,dev.das71@example.com,+91-9859821155,Data Science Bootcamp,organic_referral,Agent-Amit,Bengaluru,Completed,33.6,89,75000,75000,0,2026-01-16 09:43:00,2026-01-20
+LEAD-10340,Riya Nair,riya.nair71@example.com,+91-9882580645,Machine Learning Mastery,organic_referral,Agent-Amit,Jaipur,Trial Booked,28.5,87,35000,0,0,2026-02-05 14:14:00,2026-02-10
+LEAD-10341,Aarav Malhotra,aarav.malhotra22@example.com,+91-9853679307,Full-Stack Web Dev,linkedin_professionals,Agent-Pooja,Bengaluru,Trial Booked,14.8,46,25000,2000,0,2026-03-08 15:20:00,2026-03-09
+LEAD-10342,Kavya Kapoor,kavya.kapoor99@example.com,+91-9859970552,Full-Stack Web Dev,meta_leads_spring,Agent-Karan,Pune,Completed,9.3,74,35000,25000,10000,2026-03-02 17:21:00,2026-03-05
+LEAD-10343,Kavya Das,kavya.das58@example.com,+91-9836315159,Machine Learning Mastery,youtube_creator_sponsor,Agent-Sneha,Delhi,Completed,16.5,91,45000,43000,2000,2026-03-15 18:14:00,2026-03-16
+LEAD-10344,Ananya Chopra,ananya.chopra72@example.com,+91-9850269906,UI/UX Design Masterclass,meta_leads_spring,Agent-Sneha,Delhi,Not Interested,5.9,88,75000,0,0,2026-02-23 15:08:00,
+LEAD-10345,Ishaan Malhotra,ishaan.malhotra43@example.com,+91-9858447502,Cloud DevOps Pro,google_search_q1,Agent-Sneha,Delhi,Completed,26.7,77,60000,60000,0,2026-01-08 11:52:00,2026-01-11
+LEAD-10346,Kavya Malhotra,kavya.malhotra96@example.com,+91-9878510704,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Amit,Bengaluru,Completed,14.0,56,75000,73000,2000,2026-02-14 18:38:00,2026-02-16
+LEAD-10347,Neha Chopra,neha.chopra19@example.com,+91-9820618223,UI/UX Design Masterclass,linkedin_professionals,Agent-Vikram,Pune,Trial Booked,21.1,98,45000,1000,0,2026-03-01 18:09:00,2026-03-03
+LEAD-10348,Ananya Nair,ananya.nair76@example.com,+91-9870436720,Data Science Bootcamp,youtube_creator_sponsor,Agent-Amit,Pune,Callback Requested,6.1,66,60000,0,0,2026-02-20 12:56:00,
+LEAD-10349,Mira Patel,mira.patel70@example.com,+91-9883609531,Data Science Bootcamp,google_search_q1,Agent-Pooja,Pune,Callback Requested,1.2,33,60000,0,0,2026-01-11 11:10:00,
+LEAD-10350,Aarav Sharma,aarav.sharma66@example.com,+91-9894084814,Machine Learning Mastery,organic_referral,Agent-Vikram,Chandigarh,Completed,26.5,51,45000,43000,2000,2026-01-20 09:41:00,2026-01-24
+LEAD-10351,Ananya Patel,ananya.patel99@example.com,+91-9882381952,Cloud DevOps Pro,meta_leads_spring,Agent-Vikram,Chennai,Completed,34.0,37,45000,35000,10000,2026-02-11 15:29:00,2026-02-16
+LEAD-10352,Ananya Kapoor,ananya.kapoor62@example.com,+91-9844870711,Cloud DevOps Pro,linkedin_professionals,Agent-Karan,Jaipur,Trial Booked,12.5,76,35000,0,0,2026-02-09 13:30:00,2026-02-14
+LEAD-10353,Ananya Iyer,ananya.iyer72@example.com,+91-9874030858,Python for AI,google_search_q1,Agent-Karan,Delhi,Not Interested,5.7,21,75000,0,0,2026-02-14 12:30:00,
+LEAD-10354,Ishaan Sharma,ishaan.sharma92@example.com,+91-9862307771,Machine Learning Mastery,youtube_creator_sponsor,Agent-Karan,Mumbai,Completed,10.6,70,75000,65000,10000,2026-03-12 13:12:00,2026-03-16
+LEAD-10355,Varun Reddy,varun.reddy62@example.com,+91-9835233016,Data Science Bootcamp,youtube_creator_sponsor,Agent-Vikram,Hyderabad,Trial Booked,28.8,88,45000,1000,0,2026-03-08 20:51:00,2026-03-13
+LEAD-10356,Varun Verma,varun.verma16@example.com,+91-9881802559,Data Science Bootcamp,meta_leads_spring,Agent-Amit,Ahmedabad,Completed,3.1,61,60000,58000,2000,2026-02-27 12:44:00,2026-03-04
+LEAD-10357,Aarav Patel,aarav.patel49@example.com,+91-9876893545,Python for AI,youtube_creator_sponsor,Agent-Amit,Ahmedabad,Completed,13.6,47,25000,15000,10000,2026-01-02 11:05:00,2026-01-04
+LEAD-10358,Kavya Gupta,kavya.gupta42@example.com,+91-9861214452,UI/UX Design Masterclass,google_search_q1,Agent-Amit,Delhi,Completed,8.7,43,25000,15000,10000,2026-01-08 12:49:00,2026-01-12
+LEAD-10359,Varun Sharma,varun.sharma22@example.com,+91-9879946108,Python for AI,meta_leads_spring,Agent-Sneha,Ahmedabad,Not Interested,6.0,78,35000,0,0,2026-02-01 19:02:00,
+LEAD-10360,Rohan Mehta,rohan.mehta71@example.com,+91-9895700705,Machine Learning Mastery,linkedin_professionals,Agent-Amit,Delhi,Lost,1.4,86,75000,0,0,2026-01-06 19:59:00,
+LEAD-10361,Ishaan Mehta,ishaan.mehta25@example.com,+91-9863124490,Full-Stack Web Dev,google_search_q1,Agent-Pooja,Hyderabad,Invalid Number,2.6,13,35000,0,0,2026-02-25 13:00:00,
+LEAD-10362,Tanvi Mehta,tanvi.mehta21@example.com,+91-9893033107,Python for AI,google_search_q1,Agent-Karan,Ahmedabad,Not Interested,1.7,51,25000,0,0,2026-01-20 13:49:00,
+LEAD-10363,Kavya Chopra,kavya.chopra92@example.com,+91-9856616197,UI/UX Design Masterclass,google_search_q1,Agent-Vikram,Delhi,Trial Booked,34.4,60,60000,0,0,2026-03-10 20:06:00,2026-03-12
+LEAD-10364,Tanvi Gupta,tanvi.gupta81@example.com,+91-9849555923,UI/UX Design Masterclass,meta_leads_spring,Agent-Vikram,Chennai,Callback Requested,5.8,82,25000,0,0,2026-01-18 12:57:00,
+LEAD-10365,Rahul Joshi,rahul.joshi67@example.com,+91-9849684512,Machine Learning Mastery,meta_leads_spring,Agent-Karan,Chennai,Completed,19.8,28,75000,73000,2000,2026-02-11 19:29:00,2026-02-14
+LEAD-10366,Varun Iyer,varun.iyer18@example.com,+91-9898354109,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Sneha,Jaipur,Completed,10.3,99,75000,70000,5000,2026-02-18 19:11:00,2026-02-19
+LEAD-10367,Rahul Das,rahul.das24@example.com,+91-9822919301,Machine Learning Mastery,meta_leads_spring,Agent-Karan,Jaipur,Callback Requested,5.3,72,45000,0,0,2026-01-20 17:18:00,
+LEAD-10368,Rahul Bhatia,rahul.bhatia59@example.com,+91-9898304696,Python for AI,google_search_q1,Agent-Pooja,Mumbai,Completed,23.4,93,25000,25000,0,2026-01-26 09:31:00,2026-01-28
+LEAD-10369,Neha Malhotra,neha.malhotra17@example.com,+91-9858442674,Cloud DevOps Pro,organic_referral,Agent-Amit,Hyderabad,Completed,28.5,79,60000,60000,0,2026-01-10 08:59:00,2026-01-12
+LEAD-10370,Rahul Joshi,rahul.joshi37@example.com,+91-9879724133,Machine Learning Mastery,youtube_creator_sponsor,Agent-Vikram,Pune,Not Interested,1.1,58,25000,0,0,2026-03-09 08:46:00,
+LEAD-10371,Aditi Verma,aditi.verma23@example.com,+91-9895714702,UI/UX Design Masterclass,meta_leads_spring,Agent-Karan,Hyderabad,Trial Booked,16.0,91,35000,2000,0,2026-03-09 18:15:00,2026-03-14
+LEAD-10372,Riya Nair,riya.nair78@example.com,+91-9890519326,UI/UX Design Masterclass,linkedin_professionals,Agent-Sneha,Delhi,Lost,5.4,63,75000,0,0,2026-01-24 16:25:00,
+LEAD-10373,Neha Nair,neha.nair37@example.com,+91-9860340113,Full-Stack Web Dev,organic_referral,Agent-Amit,Kolkata,Not Interested,4.7,50,75000,0,0,2026-02-25 19:20:00,
+LEAD-10374,Tanvi Malhotra,tanvi.malhotra76@example.com,+91-9828130896,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Amit,Ahmedabad,Invalid Number,5.0,5,25000,0,0,2026-02-20 08:46:00,
+LEAD-10375,Zoya Iyer,zoya.iyer55@example.com,+91-9830952341,Python for AI,youtube_creator_sponsor,Agent-Pooja,Chennai,Completed,3.7,32,75000,73000,2000,2026-01-03 20:52:00,2026-01-06
+LEAD-10376,Ananya Iyer,ananya.iyer32@example.com,+91-9875535348,Full-Stack Web Dev,organic_referral,Agent-Pooja,Pune,Completed,28.3,61,35000,35000,0,2026-01-12 17:25:00,2026-01-17
+LEAD-10377,Varun Joshi,varun.joshi52@example.com,+91-9856698401,UI/UX Design Masterclass,organic_referral,Agent-Vikram,Pune,Trial Booked,32.5,27,60000,0,0,2026-01-05 19:51:00,2026-01-10
+LEAD-10378,Zoya Das,zoya.das15@example.com,+91-9852857940,Machine Learning Mastery,linkedin_professionals,Agent-Vikram,Hyderabad,Not Interested,2.8,26,60000,0,0,2026-01-02 18:49:00,
+LEAD-10379,Rahul Kapoor,rahul.kapoor83@example.com,+91-9877743626,Data Science Bootcamp,youtube_creator_sponsor,Agent-Karan,Delhi,Callback Requested,6.1,77,60000,0,0,2026-01-07 18:46:00,
+LEAD-10380,Aditi Mehta,aditi.mehta74@example.com,+91-9868316409,Machine Learning Mastery,youtube_creator_sponsor,Agent-Sneha,Chennai,Completed,5.3,53,75000,65000,10000,2026-01-11 15:36:00,2026-01-12
+LEAD-10381,Tanvi Joshi,tanvi.joshi19@example.com,+91-9845736421,Data Science Bootcamp,meta_leads_spring,Agent-Sneha,Ahmedabad,Trial Booked,10.5,87,75000,2000,0,2026-02-20 18:36:00,2026-02-22
+LEAD-10382,Tanvi Reddy,tanvi.reddy49@example.com,+91-9832717056,Full-Stack Web Dev,organic_referral,Agent-Vikram,Kolkata,Completed,23.8,96,45000,40000,5000,2026-02-24 13:22:00,2026-02-26
+LEAD-10383,Kavya Kapoor,kavya.kapoor89@example.com,+91-9829820881,Machine Learning Mastery,organic_referral,Agent-Pooja,Hyderabad,Trial Booked,10.4,26,25000,0,0,2026-01-26 18:23:00,2026-01-28
+LEAD-10384,Varun Das,varun.das78@example.com,+91-9838437423,Full-Stack Web Dev,google_search_q1,Agent-Amit,Bengaluru,Callback Requested,2.1,62,25000,0,0,2026-02-09 15:30:00,
+LEAD-10385,Dev Malhotra,dev.malhotra35@example.com,+91-9892941828,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Karan,Delhi,Trial Booked,4.5,41,25000,1000,0,2026-01-03 14:37:00,2026-01-08
+LEAD-10386,Ishaan Sharma,ishaan.sharma22@example.com,+91-9852339783,Machine Learning Mastery,google_search_q1,Agent-Vikram,Pune,Trial Booked,19.0,68,60000,0,0,2026-02-16 09:01:00,2026-02-19
+LEAD-10387,Neha Das,neha.das72@example.com,+91-9862801229,Cloud DevOps Pro,organic_referral,Agent-Vikram,Jaipur,Completed,12.4,87,25000,23000,2000,2026-02-28 16:59:00,2026-03-01
+LEAD-10388,Sanya Patel,sanya.patel45@example.com,+91-9840277197,Python for AI,youtube_creator_sponsor,Agent-Amit,Pune,Trial Booked,33.2,23,45000,1000,0,2026-01-31 16:17:00,2026-02-01
+LEAD-10389,Ananya Nair,ananya.nair49@example.com,+91-9891251236,Machine Learning Mastery,meta_leads_spring,Agent-Vikram,Jaipur,Callback Requested,3.7,39,75000,0,0,2026-01-30 14:15:00,
+LEAD-10390,Kavya Gupta,kavya.gupta77@example.com,+91-9828153282,Cloud DevOps Pro,meta_leads_spring,Agent-Pooja,Chandigarh,Callback Requested,2.8,37,35000,0,0,2026-03-11 18:51:00,
+LEAD-10391,Mira Chopra,mira.chopra62@example.com,+91-9865197277,Data Science Bootcamp,organic_referral,Agent-Pooja,Jaipur,Completed,27.4,23,45000,43000,2000,2026-03-10 19:07:00,2026-03-12
+LEAD-10392,Ishaan Gupta,ishaan.gupta82@example.com,+91-9892189839,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Pooja,Bengaluru,Not Interested,2.5,98,75000,0,0,2026-01-17 10:01:00,
+LEAD-10393,Dev Kapoor,dev.kapoor59@example.com,+91-9875960711,Data Science Bootcamp,meta_leads_spring,Agent-Vikram,Ahmedabad,Trial Booked,8.5,67,60000,2000,0,2026-01-18 16:54:00,2026-01-23
+LEAD-10394,Neha Patel,neha.patel66@example.com,+91-9892820305,Data Science Bootcamp,meta_leads_spring,Agent-Pooja,Mumbai,Completed,32.6,42,35000,35000,0,2026-02-04 14:14:00,2026-02-06
+LEAD-10395,Neha Joshi,neha.joshi77@example.com,+91-9896086421,Full-Stack Web Dev,linkedin_professionals,Agent-Pooja,Mumbai,Trial Booked,21.8,93,75000,2000,0,2026-02-18 19:20:00,2026-02-22
+LEAD-10396,Zoya Joshi,zoya.joshi90@example.com,+91-9816616323,Python for AI,organic_referral,Agent-Vikram,Mumbai,Trial Booked,19.3,69,25000,2000,0,2026-02-01 16:34:00,2026-02-05
+LEAD-10397,Dev Iyer,dev.iyer98@example.com,+91-9879386491,Machine Learning Mastery,linkedin_professionals,Agent-Amit,Pune,Not Interested,7.4,98,45000,0,0,2026-03-01 10:27:00,
+LEAD-10398,Zoya Patel,zoya.patel51@example.com,+91-9870516875,Machine Learning Mastery,linkedin_professionals,Agent-Vikram,Bengaluru,Callback Requested,3.4,37,75000,0,0,2026-01-24 20:37:00,
+LEAD-10399,Aarav Patel,aarav.patel67@example.com,+91-9895103759,Machine Learning Mastery,organic_referral,Agent-Pooja,Bengaluru,Lost,1.2,35,35000,0,0,2026-02-02 13:44:00,
+LEAD-10400,Kavya Verma,kavya.verma82@example.com,+91-9898520663,Cloud DevOps Pro,linkedin_professionals,Agent-Karan,Delhi,Callback Requested,7.3,41,25000,0,0,2026-02-18 16:24:00,
+LEAD-10401,Varun Patel,varun.patel25@example.com,+91-9827659164,Data Science Bootcamp,meta_leads_spring,Agent-Pooja,Mumbai,Not Interested,5.2,56,60000,0,0,2026-02-23 12:19:00,
+LEAD-10402,Dev Sharma,dev.sharma70@example.com,+91-9870899748,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Vikram,Ahmedabad,Trial Booked,21.6,47,60000,0,0,2026-03-11 20:00:00,2026-03-16
+LEAD-10403,Mira Gupta,mira.gupta93@example.com,+91-9856844649,Python for AI,organic_referral,Agent-Karan,Jaipur,Completed,7.3,43,35000,35000,0,2026-02-05 17:40:00,2026-02-10
+LEAD-10404,Aarav Patel,aarav.patel99@example.com,+91-9889855385,Python for AI,organic_referral,Agent-Karan,Bengaluru,Completed,24.0,98,35000,30000,5000,2026-01-07 09:26:00,2026-01-09
+LEAD-10405,Riya Chopra,riya.chopra58@example.com,+91-9819082067,Cloud DevOps Pro,meta_leads_spring,Agent-Sneha,Chennai,Callback Requested,3.3,61,45000,0,0,2026-01-05 09:49:00,
+LEAD-10406,Tanvi Reddy,tanvi.reddy23@example.com,+91-9886687590,Cloud DevOps Pro,google_search_q1,Agent-Amit,Bengaluru,Trial Booked,22.4,46,75000,0,0,2026-02-05 13:33:00,2026-02-09
+LEAD-10407,Sanya Bhatia,sanya.bhatia89@example.com,+91-9857493391,Cloud DevOps Pro,google_search_q1,Agent-Sneha,Chandigarh,Callback Requested,4.4,53,45000,0,0,2026-02-06 14:38:00,
+LEAD-10408,Zoya Patel,zoya.patel10@example.com,+91-9825865493,Cloud DevOps Pro,organic_referral,Agent-Sneha,Ahmedabad,Trial Booked,34.3,57,35000,2000,0,2026-03-05 20:11:00,2026-03-10
+LEAD-10409,Aarav Gupta,aarav.gupta37@example.com,+91-9811516293,UI/UX Design Masterclass,google_search_q1,Agent-Pooja,Kolkata,Not Interested,6.5,91,45000,0,0,2026-02-22 08:21:00,
+LEAD-10410,Rohan Mehta,rohan.mehta52@example.com,+91-9855816776,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Amit,Pune,Not Interested,1.4,20,45000,0,0,2026-02-08 16:35:00,
+LEAD-10411,Mira Joshi,mira.joshi92@example.com,+91-9828220579,Cloud DevOps Pro,organic_referral,Agent-Vikram,Hyderabad,Not Interested,6.5,80,60000,0,0,2026-02-12 13:59:00,
+LEAD-10412,Neha Patel,neha.patel96@example.com,+91-9852346074,UI/UX Design Masterclass,linkedin_professionals,Agent-Karan,Ahmedabad,Lost,4.7,58,75000,0,0,2026-02-22 19:03:00,
+LEAD-10413,Rahul Malhotra,rahul.malhotra90@example.com,+91-9881708931,Python for AI,meta_leads_spring,Agent-Karan,Chennai,Callback Requested,7.9,63,25000,0,0,2026-01-09 10:17:00,
+LEAD-10414,Varun Patel,varun.patel40@example.com,+91-9859873103,Cloud DevOps Pro,organic_referral,Agent-Sneha,Bengaluru,Completed,5.3,72,25000,20000,5000,2026-02-09 19:54:00,2026-02-12
+LEAD-10415,Neha Das,neha.das71@example.com,+91-9877116153,Full-Stack Web Dev,meta_leads_spring,Agent-Karan,Bengaluru,Completed,3.3,84,25000,15000,10000,2026-02-17 20:02:00,2026-02-19
+LEAD-10416,Ananya Mehta,ananya.mehta68@example.com,+91-9862021209,Full-Stack Web Dev,linkedin_professionals,Agent-Karan,Chennai,Completed,26.0,46,75000,73000,2000,2026-01-19 20:55:00,2026-01-20
+LEAD-10417,Sanya Das,sanya.das49@example.com,+91-9895745109,Cloud DevOps Pro,google_search_q1,Agent-Vikram,Mumbai,Completed,21.3,22,25000,20000,5000,2026-01-12 13:29:00,2026-01-13
+LEAD-10418,Zoya Mehta,zoya.mehta11@example.com,+91-9893610257,Full-Stack Web Dev,meta_leads_spring,Agent-Pooja,Jaipur,Completed,11.4,40,45000,43000,2000,2026-02-10 20:28:00,2026-02-11
+LEAD-10419,Rahul Malhotra,rahul.malhotra88@example.com,+91-9855464764,Python for AI,meta_leads_spring,Agent-Karan,Chennai,Trial Booked,4.8,41,75000,0,0,2026-02-04 10:45:00,2026-02-07
+LEAD-10420,Rahul Gupta,rahul.gupta85@example.com,+91-9894486125,Python for AI,meta_leads_spring,Agent-Vikram,Mumbai,Trial Booked,25.4,42,60000,1000,0,2026-01-14 14:03:00,2026-01-15
+LEAD-10421,Varun Joshi,varun.joshi99@example.com,+91-9872850928,UI/UX Design Masterclass,linkedin_professionals,Agent-Karan,Chennai,Trial Booked,6.8,92,25000,1000,0,2026-01-26 19:48:00,2026-01-31
+LEAD-10422,Aditi Gupta,aditi.gupta51@example.com,+91-9870838623,Full-Stack Web Dev,linkedin_professionals,Agent-Sneha,Hyderabad,Completed,28.1,62,60000,58000,2000,2026-01-19 17:16:00,2026-01-22
+LEAD-10423,Neha Sharma,neha.sharma61@example.com,+91-9824358786,Python for AI,linkedin_professionals,Agent-Vikram,Ahmedabad,Trial Booked,19.0,36,75000,2000,0,2026-01-22 12:49:00,2026-01-25
+LEAD-10424,Kavya Malhotra,kavya.malhotra59@example.com,+91-9818866414,UI/UX Design Masterclass,google_search_q1,Agent-Amit,Kolkata,Trial Booked,34.2,40,35000,2000,0,2026-03-17 14:15:00,2026-03-22
+LEAD-10425,Kavya Mehta,kavya.mehta95@example.com,+91-9820454809,UI/UX Design Masterclass,organic_referral,Agent-Sneha,Kolkata,Not Interested,1.8,50,75000,0,0,2026-03-14 20:21:00,
+LEAD-10426,Sanya Joshi,sanya.joshi23@example.com,+91-9890048179,Cloud DevOps Pro,linkedin_professionals,Agent-Vikram,Ahmedabad,Trial Booked,4.8,71,35000,1000,0,2026-02-11 16:06:00,2026-02-15
+LEAD-10427,Tanvi Das,tanvi.das91@example.com,+91-9810024741,Machine Learning Mastery,youtube_creator_sponsor,Agent-Sneha,Mumbai,Callback Requested,7.3,94,35000,0,0,2026-01-12 11:52:00,
+LEAD-10428,Tanvi Patel,tanvi.patel96@example.com,+91-9850876026,UI/UX Design Masterclass,meta_leads_spring,Agent-Sneha,Kolkata,Trial Booked,28.3,92,45000,1000,0,2026-03-15 15:12:00,2026-03-17
+LEAD-10429,Zoya Reddy,zoya.reddy16@example.com,+91-9810113187,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Vikram,Chandigarh,Trial Booked,31.8,67,45000,0,0,2026-03-07 14:54:00,2026-03-09
+LEAD-10430,Sanya Malhotra,sanya.malhotra61@example.com,+91-9861212793,Full-Stack Web Dev,google_search_q1,Agent-Amit,Hyderabad,Not Interested,5.8,60,60000,0,0,2026-02-25 19:37:00,
+LEAD-10431,Mira Malhotra,mira.malhotra19@example.com,+91-9897025331,Data Science Bootcamp,meta_leads_spring,Agent-Sneha,Jaipur,Completed,6.9,36,35000,30000,5000,2026-02-19 13:53:00,2026-02-23
+LEAD-10432,Aarav Patel,aarav.patel99@example.com,+91-9891125155,UI/UX Design Masterclass,linkedin_professionals,Agent-Sneha,Delhi,Invalid Number,3.9,14,60000,0,0,2026-01-11 10:41:00,
+LEAD-10433,Zoya Reddy,zoya.reddy73@example.com,+91-9841776042,Cloud DevOps Pro,meta_leads_spring,Agent-Sneha,Jaipur,Trial Booked,2.7,97,35000,1000,0,2026-02-27 14:22:00,2026-03-01
+LEAD-10434,Sanya Malhotra,sanya.malhotra20@example.com,+91-9829070658,Full-Stack Web Dev,linkedin_professionals,Agent-Karan,Mumbai,Trial Booked,33.8,81,25000,2000,0,2026-01-05 17:30:00,2026-01-08
+LEAD-10435,Sanya Joshi,sanya.joshi53@example.com,+91-9881810948,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Sneha,Jaipur,Trial Booked,22.4,59,75000,2000,0,2026-01-12 11:30:00,2026-01-13
+LEAD-10436,Tanvi Sharma,tanvi.sharma98@example.com,+91-9890213415,Machine Learning Mastery,linkedin_professionals,Agent-Karan,Chandigarh,Lost,1.8,57,45000,0,0,2026-02-12 14:22:00,
+LEAD-10437,Sanya Iyer,sanya.iyer26@example.com,+91-9877859961,UI/UX Design Masterclass,organic_referral,Agent-Amit,Ahmedabad,Completed,18.3,56,45000,45000,0,2026-03-16 10:36:00,2026-03-17
+LEAD-10438,Aditi Das,aditi.das85@example.com,+91-9830285078,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Pooja,Pune,Callback Requested,1.8,97,25000,0,0,2026-02-02 08:47:00,
+LEAD-10439,Rohan Gupta,rohan.gupta20@example.com,+91-9829470999,Full-Stack Web Dev,meta_leads_spring,Agent-Amit,Hyderabad,Not Interested,3.1,24,75000,0,0,2026-03-04 10:51:00,
+LEAD-10440,Riya Das,riya.das54@example.com,+91-9817291483,Data Science Bootcamp,linkedin_professionals,Agent-Sneha,Hyderabad,Not Interested,4.8,46,35000,0,0,2026-02-26 19:40:00,
+LEAD-10441,Rohan Iyer,rohan.iyer28@example.com,+91-9881194737,Python for AI,google_search_q1,Agent-Pooja,Ahmedabad,Trial Booked,17.9,69,35000,1000,0,2026-02-08 15:47:00,2026-02-13
+LEAD-10442,Varun Reddy,varun.reddy65@example.com,+91-9891937985,Python for AI,youtube_creator_sponsor,Agent-Sneha,Chennai,Trial Booked,33.6,65,75000,2000,0,2026-03-09 18:02:00,2026-03-10
+LEAD-10443,Zoya Bhatia,zoya.bhatia76@example.com,+91-9855285947,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Amit,Bengaluru,Completed,27.5,95,60000,58000,2000,2026-02-02 18:37:00,2026-02-06
+LEAD-10444,Rohan Joshi,rohan.joshi46@example.com,+91-9843808923,Data Science Bootcamp,youtube_creator_sponsor,Agent-Karan,Mumbai,Completed,13.9,77,75000,75000,0,2026-01-09 08:26:00,2026-01-10
+LEAD-10445,Dev Sharma,dev.sharma94@example.com,+91-9896960449,Python for AI,organic_referral,Agent-Vikram,Chandigarh,Completed,6.7,97,25000,25000,0,2026-01-28 17:40:00,2026-01-29
+LEAD-10446,Riya Chopra,riya.chopra19@example.com,+91-9847216895,Data Science Bootcamp,google_search_q1,Agent-Pooja,Ahmedabad,Completed,7.8,52,60000,55000,5000,2026-01-10 18:29:00,2026-01-13
+LEAD-10447,Tanvi Sharma,tanvi.sharma35@example.com,+91-9891913332,Machine Learning Mastery,linkedin_professionals,Agent-Amit,Pune,Invalid Number,7.8,8,25000,0,0,2026-02-03 10:28:00,
+LEAD-10448,Mira Patel,mira.patel19@example.com,+91-9886684568,UI/UX Design Masterclass,linkedin_professionals,Agent-Vikram,Kolkata,Completed,3.6,33,60000,55000,5000,2026-01-28 17:41:00,2026-01-29
+LEAD-10449,Sanya Iyer,sanya.iyer75@example.com,+91-9875857881,Machine Learning Mastery,google_search_q1,Agent-Sneha,Mumbai,Completed,21.2,70,35000,30000,5000,2026-01-05 18:24:00,2026-01-08
+LEAD-10450,Neha Reddy,neha.reddy90@example.com,+91-9896848857,Machine Learning Mastery,google_search_q1,Agent-Karan,Kolkata,Completed,15.5,58,45000,40000,5000,2026-03-03 09:36:00,2026-03-08
+LEAD-10451,Aditi Nair,aditi.nair48@example.com,+91-9862358969,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Vikram,Pune,Not Interested,5.5,69,25000,0,0,2026-01-26 10:35:00,
+LEAD-10452,Zoya Verma,zoya.verma79@example.com,+91-9896356711,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Sneha,Ahmedabad,Completed,15.1,82,25000,23000,2000,2026-01-25 10:02:00,2026-01-27
+LEAD-10453,Ishaan Gupta,ishaan.gupta95@example.com,+91-9880211929,Cloud DevOps Pro,linkedin_professionals,Agent-Vikram,Mumbai,Completed,28.7,47,60000,60000,0,2026-02-13 20:46:00,2026-02-14
+LEAD-10454,Neha Bhatia,neha.bhatia99@example.com,+91-9897078639,Cloud DevOps Pro,meta_leads_spring,Agent-Karan,Bengaluru,Completed,4.0,99,25000,15000,10000,2026-01-05 19:09:00,2026-01-09
+LEAD-10455,Ananya Sharma,ananya.sharma23@example.com,+91-9825324937,Data Science Bootcamp,google_search_q1,Agent-Amit,Bengaluru,Not Interested,6.6,28,75000,0,0,2026-02-28 17:10:00,
+LEAD-10456,Neha Kapoor,neha.kapoor97@example.com,+91-9887304983,Cloud DevOps Pro,meta_leads_spring,Agent-Vikram,Kolkata,Not Interested,1.4,61,60000,0,0,2026-02-13 20:53:00,
+LEAD-10457,Rahul Patel,rahul.patel66@example.com,+91-9842701425,Full-Stack Web Dev,meta_leads_spring,Agent-Vikram,Chennai,Trial Booked,20.5,67,60000,0,0,2026-01-09 09:17:00,2026-01-11
+LEAD-10458,Zoya Kapoor,zoya.kapoor10@example.com,+91-9834080385,Python for AI,meta_leads_spring,Agent-Vikram,Chandigarh,Not Interested,1.1,82,25000,0,0,2026-02-18 20:10:00,
+LEAD-10459,Zoya Verma,zoya.verma32@example.com,+91-9891945021,UI/UX Design Masterclass,organic_referral,Agent-Amit,Ahmedabad,Trial Booked,10.3,72,75000,1000,0,2026-01-17 11:09:00,2026-01-20
+LEAD-10460,Sanya Sharma,sanya.sharma25@example.com,+91-9881162107,Cloud DevOps Pro,meta_leads_spring,Agent-Sneha,Bengaluru,Callback Requested,2.3,91,25000,0,0,2026-02-08 13:26:00,
+LEAD-10461,Aditi Kapoor,aditi.kapoor95@example.com,+91-9815786878,Full-Stack Web Dev,organic_referral,Agent-Karan,Hyderabad,Completed,8.2,83,35000,25000,10000,2026-02-05 08:12:00,2026-02-06
+LEAD-10462,Aarav Bhatia,aarav.bhatia72@example.com,+91-9879109207,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Pooja,Chennai,Trial Booked,28.0,40,75000,0,0,2026-02-28 08:06:00,2026-03-01
+LEAD-10463,Aditi Verma,aditi.verma40@example.com,+91-9865377624,Data Science Bootcamp,linkedin_professionals,Agent-Karan,Kolkata,Trial Booked,9.9,61,35000,0,0,2026-01-26 19:43:00,2026-01-29
+LEAD-10464,Varun Mehta,varun.mehta27@example.com,+91-9871436848,Machine Learning Mastery,meta_leads_spring,Agent-Vikram,Ahmedabad,Trial Booked,15.1,42,75000,1000,0,2026-01-07 14:09:00,2026-01-09
+LEAD-10465,Sanya Mehta,sanya.mehta68@example.com,+91-9866133052,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Amit,Delhi,Completed,30.2,34,45000,43000,2000,2026-01-05 19:36:00,2026-01-06
+LEAD-10466,Ananya Chopra,ananya.chopra76@example.com,+91-9875661110,Full-Stack Web Dev,meta_leads_spring,Agent-Amit,Chandigarh,Callback Requested,3.6,31,35000,0,0,2026-01-22 17:35:00,
+LEAD-10467,Varun Mehta,varun.mehta83@example.com,+91-9810681501,Cloud DevOps Pro,linkedin_professionals,Agent-Sneha,Kolkata,Completed,33.3,95,75000,73000,2000,2026-02-01 11:20:00,2026-02-05
+LEAD-10468,Mira Sharma,mira.sharma11@example.com,+91-9864575354,Python for AI,linkedin_professionals,Agent-Karan,Jaipur,Completed,5.2,50,60000,50000,10000,2026-02-20 15:51:00,2026-02-21
+LEAD-10469,Dev Patel,dev.patel83@example.com,+91-9888337534,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Pooja,Bengaluru,Callback Requested,5.8,40,45000,0,0,2026-01-03 15:42:00,
+LEAD-10470,Aarav Gupta,aarav.gupta47@example.com,+91-9867163632,Machine Learning Mastery,meta_leads_spring,Agent-Sneha,Chennai,Completed,19.8,62,25000,15000,10000,2026-03-01 19:40:00,2026-03-02
+LEAD-10471,Tanvi Iyer,tanvi.iyer24@example.com,+91-9861399349,UI/UX Design Masterclass,organic_referral,Agent-Karan,Hyderabad,Trial Booked,31.4,66,25000,2000,0,2026-01-11 17:56:00,2026-01-14
+LEAD-10472,Kavya Gupta,kavya.gupta93@example.com,+91-9874222305,Cloud DevOps Pro,google_search_q1,Agent-Amit,Jaipur,Trial Booked,20.0,50,35000,1000,0,2026-01-09 16:45:00,2026-01-11
+LEAD-10473,Sanya Chopra,sanya.chopra72@example.com,+91-9877303492,Cloud DevOps Pro,meta_leads_spring,Agent-Pooja,Pune,Completed,13.7,67,25000,25000,0,2026-03-06 18:27:00,2026-03-09
+LEAD-10474,Rahul Das,rahul.das68@example.com,+91-9821718382,Python for AI,linkedin_professionals,Agent-Karan,Jaipur,Callback Requested,1.9,28,45000,0,0,2026-02-07 15:39:00,
+LEAD-10475,Aditi Reddy,aditi.reddy12@example.com,+91-9849348536,Data Science Bootcamp,youtube_creator_sponsor,Agent-Vikram,Pune,Completed,33.4,86,35000,33000,2000,2026-01-15 19:09:00,2026-01-19
+LEAD-10476,Mira Bhatia,mira.bhatia62@example.com,+91-9887672417,Cloud DevOps Pro,meta_leads_spring,Agent-Sneha,Ahmedabad,Completed,23.5,86,25000,23000,2000,2026-01-03 12:12:00,2026-01-04
+LEAD-10477,Kavya Bhatia,kavya.bhatia43@example.com,+91-9840438156,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Sneha,Jaipur,Trial Booked,8.1,59,75000,0,0,2026-03-12 15:29:00,2026-03-15
+LEAD-10478,Neha Nair,neha.nair98@example.com,+91-9899436783,Full-Stack Web Dev,google_search_q1,Agent-Pooja,Ahmedabad,Trial Booked,34.1,43,75000,1000,0,2026-01-22 17:59:00,2026-01-24
+LEAD-10479,Tanvi Patel,tanvi.patel14@example.com,+91-9899329049,Data Science Bootcamp,meta_leads_spring,Agent-Vikram,Chennai,Completed,20.8,46,45000,43000,2000,2026-03-15 10:28:00,2026-03-18
+LEAD-10480,Kavya Nair,kavya.nair50@example.com,+91-9830945115,Data Science Bootcamp,youtube_creator_sponsor,Agent-Sneha,Delhi,Trial Booked,33.3,38,60000,1000,0,2026-03-10 12:07:00,2026-03-11
+LEAD-10481,Aarav Joshi,aarav.joshi66@example.com,+91-9855457454,Cloud DevOps Pro,organic_referral,Agent-Amit,Pune,Callback Requested,6.5,38,75000,0,0,2026-03-02 12:48:00,
+LEAD-10482,Sanya Verma,sanya.verma51@example.com,+91-9817386489,UI/UX Design Masterclass,linkedin_professionals,Agent-Vikram,Jaipur,Completed,14.1,77,75000,73000,2000,2026-01-15 12:01:00,2026-01-19
+LEAD-10483,Riya Bhatia,riya.bhatia72@example.com,+91-9852648731,Data Science Bootcamp,organic_referral,Agent-Karan,Pune,Completed,15.3,85,60000,60000,0,2026-01-26 08:05:00,2026-01-31
+LEAD-10484,Riya Kapoor,riya.kapoor67@example.com,+91-9885300576,Cloud DevOps Pro,google_search_q1,Agent-Amit,Kolkata,Trial Booked,12.5,64,45000,1000,0,2026-02-17 14:23:00,2026-02-18
+LEAD-10485,Aditi Mehta,aditi.mehta85@example.com,+91-9890253572,UI/UX Design Masterclass,linkedin_professionals,Agent-Sneha,Pune,Not Interested,1.5,73,60000,0,0,2026-01-21 20:46:00,
+LEAD-10486,Aditi Patel,aditi.patel10@example.com,+91-9864956876,Data Science Bootcamp,youtube_creator_sponsor,Agent-Sneha,Jaipur,Invalid Number,3.3,13,75000,0,0,2026-02-12 09:59:00,
+LEAD-10487,Rohan Iyer,rohan.iyer48@example.com,+91-9888545322,Machine Learning Mastery,meta_leads_spring,Agent-Karan,Chandigarh,Trial Booked,3.9,82,45000,2000,0,2026-01-18 11:11:00,2026-01-22
+LEAD-10488,Ishaan Gupta,ishaan.gupta98@example.com,+91-9896541691,Cloud DevOps Pro,linkedin_professionals,Agent-Pooja,Mumbai,Completed,8.3,73,25000,20000,5000,2026-01-20 12:19:00,2026-01-24
+LEAD-10489,Dev Sharma,dev.sharma90@example.com,+91-9873893102,Python for AI,youtube_creator_sponsor,Agent-Sneha,Bengaluru,Invalid Number,7.0,7,75000,0,0,2026-02-16 17:30:00,
+LEAD-10490,Sanya Das,sanya.das98@example.com,+91-9828186152,Python for AI,youtube_creator_sponsor,Agent-Karan,Mumbai,Callback Requested,2.9,38,25000,0,0,2026-02-03 10:37:00,
+LEAD-10491,Kavya Patel,kavya.patel33@example.com,+91-9822684736,Python for AI,youtube_creator_sponsor,Agent-Amit,Chennai,Trial Booked,27.4,44,25000,2000,0,2026-01-07 12:18:00,2026-01-12
+LEAD-10492,Riya Chopra,riya.chopra55@example.com,+91-9829289438,Data Science Bootcamp,organic_referral,Agent-Amit,Pune,Lost,4.5,32,45000,0,0,2026-02-04 18:44:00,
+LEAD-10493,Aarav Patel,aarav.patel34@example.com,+91-9884981433,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Amit,Kolkata,Not Interested,4.3,39,35000,0,0,2026-02-13 10:06:00,
+LEAD-10494,Riya Joshi,riya.joshi12@example.com,+91-9874359847,Cloud DevOps Pro,organic_referral,Agent-Karan,Bengaluru,Callback Requested,6.6,34,25000,0,0,2026-02-23 15:58:00,
+LEAD-10495,Kavya Iyer,kavya.iyer25@example.com,+91-9839844365,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Pooja,Chandigarh,Not Interested,0.7,58,35000,0,0,2026-03-08 20:21:00,
+LEAD-10496,Ananya Das,ananya.das15@example.com,+91-9836353784,UI/UX Design Masterclass,meta_leads_spring,Agent-Pooja,Hyderabad,Completed,27.1,81,25000,25000,0,2026-01-17 09:27:00,2026-01-18
+LEAD-10497,Aditi Sharma,aditi.sharma36@example.com,+91-9888866745,UI/UX Design Masterclass,organic_referral,Agent-Karan,Bengaluru,Completed,32.4,35,25000,25000,0,2026-02-02 08:04:00,2026-02-05
+LEAD-10498,Zoya Mehta,zoya.mehta22@example.com,+91-9887595788,Data Science Bootcamp,youtube_creator_sponsor,Agent-Vikram,Pune,Completed,21.0,84,75000,73000,2000,2026-03-16 13:22:00,2026-03-18
+LEAD-10499,Tanvi Sharma,tanvi.sharma74@example.com,+91-9873715236,Cloud DevOps Pro,meta_leads_spring,Agent-Pooja,Delhi,Invalid Number,2.1,15,25000,0,0,2026-03-10 08:46:00,
+LEAD-10500,Kavya Joshi,kavya.joshi62@example.com,+91-9825145863,Cloud DevOps Pro,meta_leads_spring,Agent-Sneha,Bengaluru,Callback Requested,4.4,47,60000,0,0,2026-01-24 13:24:00,
+LEAD-10501,Tanvi Nair,tanvi.nair59@example.com,+91-9848065683,Python for AI,linkedin_professionals,Agent-Vikram,Ahmedabad,Trial Booked,18.5,61,25000,0,0,2026-02-16 19:18:00,2026-02-21
+LEAD-10502,Neha Kapoor,neha.kapoor96@example.com,+91-9875987927,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Sneha,Kolkata,Completed,2.9,42,60000,55000,5000,2026-02-07 14:12:00,2026-02-08
+LEAD-10503,Rohan Verma,rohan.verma31@example.com,+91-9818685284,Machine Learning Mastery,linkedin_professionals,Agent-Karan,Bengaluru,Callback Requested,7.8,95,60000,0,0,2026-01-16 10:25:00,
+LEAD-10504,Kavya Mehta,kavya.mehta84@example.com,+91-9889678350,Full-Stack Web Dev,meta_leads_spring,Agent-Karan,Kolkata,Not Interested,2.6,83,60000,0,0,2026-01-16 11:53:00,
+LEAD-10505,Ishaan Chopra,ishaan.chopra72@example.com,+91-9876742957,UI/UX Design Masterclass,linkedin_professionals,Agent-Amit,Chandigarh,Trial Booked,6.5,33,35000,1000,0,2026-02-21 15:32:00,2026-02-24
+LEAD-10506,Dev Bhatia,dev.bhatia51@example.com,+91-9830499966,Data Science Bootcamp,google_search_q1,Agent-Vikram,Bengaluru,Callback Requested,5.0,68,35000,0,0,2026-03-05 18:01:00,
+LEAD-10507,Ishaan Kapoor,ishaan.kapoor72@example.com,+91-9877752405,Cloud DevOps Pro,google_search_q1,Agent-Vikram,Jaipur,Callback Requested,5.5,57,35000,0,0,2026-03-05 20:29:00,
+LEAD-10508,Ishaan Malhotra,ishaan.malhotra14@example.com,+91-9833738978,Full-Stack Web Dev,organic_referral,Agent-Karan,Mumbai,Completed,17.4,76,45000,35000,10000,2026-02-25 09:24:00,2026-03-01
+LEAD-10509,Rahul Bhatia,rahul.bhatia97@example.com,+91-9882396020,Full-Stack Web Dev,meta_leads_spring,Agent-Sneha,Pune,Trial Booked,24.0,82,75000,2000,0,2026-02-19 15:48:00,2026-02-20
+LEAD-10510,Riya Gupta,riya.gupta46@example.com,+91-9853014471,Machine Learning Mastery,organic_referral,Agent-Pooja,Kolkata,Trial Booked,27.4,65,75000,2000,0,2026-02-03 15:37:00,2026-02-07
+LEAD-10511,Aarav Sharma,aarav.sharma54@example.com,+91-9857964863,Cloud DevOps Pro,google_search_q1,Agent-Pooja,Chennai,Not Interested,1.2,68,45000,0,0,2026-03-16 08:48:00,
+LEAD-10512,Mira Nair,mira.nair78@example.com,+91-9853770661,Python for AI,meta_leads_spring,Agent-Pooja,Pune,Completed,8.0,63,45000,45000,0,2026-03-17 09:58:00,2026-03-18
+LEAD-10513,Aarav Gupta,aarav.gupta59@example.com,+91-9853274663,UI/UX Design Masterclass,linkedin_professionals,Agent-Karan,Kolkata,Trial Booked,14.8,60,75000,0,0,2026-02-04 08:44:00,2026-02-08
+LEAD-10514,Riya Verma,riya.verma19@example.com,+91-9881918425,Machine Learning Mastery,google_search_q1,Agent-Pooja,Jaipur,Completed,18.7,45,45000,35000,10000,2026-02-13 10:39:00,2026-02-16
+LEAD-10515,Dev Iyer,dev.iyer22@example.com,+91-9889438729,Full-Stack Web Dev,google_search_q1,Agent-Amit,Kolkata,Invalid Number,6.8,12,25000,0,0,2026-01-29 17:47:00,
+LEAD-10516,Kavya Iyer,kavya.iyer50@example.com,+91-9836853878,Python for AI,organic_referral,Agent-Karan,Hyderabad,Trial Booked,24.1,75,75000,1000,0,2026-02-14 20:04:00,2026-02-17
+LEAD-10517,Mira Reddy,mira.reddy69@example.com,+91-9845961754,Full-Stack Web Dev,organic_referral,Agent-Karan,Jaipur,Trial Booked,9.4,83,35000,2000,0,2026-01-24 08:40:00,2026-01-29
+LEAD-10518,Zoya Bhatia,zoya.bhatia97@example.com,+91-9850302318,Cloud DevOps Pro,organic_referral,Agent-Sneha,Mumbai,Lost,2.3,38,60000,0,0,2026-03-08 11:23:00,
+LEAD-10519,Varun Reddy,varun.reddy40@example.com,+91-9864474404,Machine Learning Mastery,youtube_creator_sponsor,Agent-Vikram,Kolkata,Callback Requested,5.7,52,35000,0,0,2026-02-04 12:41:00,
+LEAD-10520,Dev Verma,dev.verma27@example.com,+91-9813911355,Data Science Bootcamp,meta_leads_spring,Agent-Vikram,Pune,Completed,7.7,45,60000,60000,0,2026-03-01 15:35:00,2026-03-05
+LEAD-10521,Ishaan Chopra,ishaan.chopra48@example.com,+91-9818533790,Full-Stack Web Dev,organic_referral,Agent-Pooja,Mumbai,Callback Requested,2.9,30,25000,0,0,2026-03-04 20:01:00,
+LEAD-10522,Zoya Reddy,zoya.reddy84@example.com,+91-9880499222,Full-Stack Web Dev,google_search_q1,Agent-Sneha,Delhi,Lost,4.4,35,75000,0,0,2026-01-31 09:36:00,
+LEAD-10523,Ishaan Gupta,ishaan.gupta32@example.com,+91-9838737174,Python for AI,meta_leads_spring,Agent-Karan,Chennai,Completed,7.2,47,35000,25000,10000,2026-02-12 17:47:00,2026-02-16
+LEAD-10524,Ishaan Gupta,ishaan.gupta45@example.com,+91-9829449696,Machine Learning Mastery,youtube_creator_sponsor,Agent-Karan,Jaipur,Completed,24.7,80,75000,65000,10000,2026-02-17 19:07:00,2026-02-20
+LEAD-10525,Kavya Gupta,kavya.gupta91@example.com,+91-9858701586,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Amit,Chandigarh,Completed,15.0,90,35000,30000,5000,2026-01-05 19:42:00,2026-01-06
+LEAD-10526,Zoya Chopra,zoya.chopra40@example.com,+91-9849919426,UI/UX Design Masterclass,google_search_q1,Agent-Karan,Ahmedabad,Not Interested,2.8,52,60000,0,0,2026-02-19 08:58:00,
+LEAD-10527,Dev Das,dev.das62@example.com,+91-9854657219,Data Science Bootcamp,linkedin_professionals,Agent-Amit,Kolkata,Lost,4.0,82,25000,0,0,2026-01-05 12:55:00,
+LEAD-10528,Sanya Reddy,sanya.reddy92@example.com,+91-9896113089,Python for AI,meta_leads_spring,Agent-Amit,Chennai,Trial Booked,27.3,23,45000,1000,0,2026-02-23 17:46:00,2026-02-28
+LEAD-10529,Ananya Bhatia,ananya.bhatia93@example.com,+91-9827460780,Machine Learning Mastery,meta_leads_spring,Agent-Vikram,Pune,Trial Booked,25.7,86,35000,0,0,2026-02-10 17:05:00,2026-02-11
+LEAD-10530,Varun Kapoor,varun.kapoor57@example.com,+91-9834412762,UI/UX Design Masterclass,linkedin_professionals,Agent-Amit,Delhi,Trial Booked,5.2,45,45000,1000,0,2026-02-03 10:43:00,2026-02-08
+LEAD-10531,Mira Reddy,mira.reddy31@example.com,+91-9816681756,Cloud DevOps Pro,meta_leads_spring,Agent-Vikram,Jaipur,Lost,5.8,53,35000,0,0,2026-01-30 09:29:00,
+LEAD-10532,Mira Kapoor,mira.kapoor73@example.com,+91-9825906458,Machine Learning Mastery,organic_referral,Agent-Amit,Chennai,Completed,29.4,78,75000,65000,10000,2026-01-22 17:07:00,2026-01-23
+LEAD-10533,Dev Joshi,dev.joshi34@example.com,+91-9866147435,Data Science Bootcamp,meta_leads_spring,Agent-Amit,Ahmedabad,Completed,26.1,56,75000,73000,2000,2026-02-18 10:27:00,2026-02-20
+LEAD-10534,Ananya Reddy,ananya.reddy20@example.com,+91-9811385159,Data Science Bootcamp,google_search_q1,Agent-Amit,Hyderabad,Invalid Number,5.4,11,75000,0,0,2026-02-27 11:23:00,
+LEAD-10535,Neha Patel,neha.patel40@example.com,+91-9873207479,Full-Stack Web Dev,linkedin_professionals,Agent-Pooja,Kolkata,Callback Requested,0.9,27,75000,0,0,2026-02-02 09:06:00,
+LEAD-10536,Zoya Nair,zoya.nair31@example.com,+91-9877611740,Cloud DevOps Pro,organic_referral,Agent-Vikram,Jaipur,Completed,8.3,94,35000,35000,0,2026-02-18 12:25:00,2026-02-21
+LEAD-10537,Neha Nair,neha.nair45@example.com,+91-9858397866,Machine Learning Mastery,meta_leads_spring,Agent-Vikram,Jaipur,Completed,18.7,36,45000,45000,0,2026-02-25 10:16:00,2026-02-26
+LEAD-10538,Zoya Reddy,zoya.reddy72@example.com,+91-9830302410,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Karan,Pune,Not Interested,6.0,60,35000,0,0,2026-03-08 13:27:00,
+LEAD-10539,Rahul Das,rahul.das73@example.com,+91-9815474970,UI/UX Design Masterclass,linkedin_professionals,Agent-Vikram,Mumbai,Completed,16.7,79,45000,43000,2000,2026-01-30 10:02:00,2026-02-03
+LEAD-10540,Neha Nair,neha.nair75@example.com,+91-9846613462,UI/UX Design Masterclass,organic_referral,Agent-Sneha,Bengaluru,Trial Booked,29.6,43,35000,1000,0,2026-01-19 09:22:00,2026-01-20
+LEAD-10541,Riya Bhatia,riya.bhatia41@example.com,+91-9876855296,Cloud DevOps Pro,meta_leads_spring,Agent-Karan,Mumbai,Invalid Number,7.4,7,35000,0,0,2026-03-09 20:36:00,
+LEAD-10542,Rohan Verma,rohan.verma20@example.com,+91-9871771451,Full-Stack Web Dev,google_search_q1,Agent-Amit,Bengaluru,Callback Requested,1.7,61,25000,0,0,2026-02-20 13:37:00,
+LEAD-10543,Varun Joshi,varun.joshi82@example.com,+91-9827357063,UI/UX Design Masterclass,linkedin_professionals,Agent-Sneha,Pune,Callback Requested,2.9,77,75000,0,0,2026-01-01 13:02:00,
+LEAD-10544,Dev Das,dev.das40@example.com,+91-9863541768,Python for AI,youtube_creator_sponsor,Agent-Amit,Bengaluru,Not Interested,2.4,71,25000,0,0,2026-03-12 17:24:00,
+LEAD-10545,Aditi Sharma,aditi.sharma49@example.com,+91-9891002225,Data Science Bootcamp,meta_leads_spring,Agent-Sneha,Pune,Not Interested,6.0,75,60000,0,0,2026-01-20 09:19:00,
+LEAD-10546,Ananya Nair,ananya.nair64@example.com,+91-9859423803,UI/UX Design Masterclass,google_search_q1,Agent-Amit,Ahmedabad,Trial Booked,5.4,74,75000,2000,0,2026-02-27 14:30:00,2026-03-02
+LEAD-10547,Riya Patel,riya.patel20@example.com,+91-9874103912,Machine Learning Mastery,linkedin_professionals,Agent-Vikram,Chennai,Completed,17.7,57,60000,60000,0,2026-03-01 18:14:00,2026-03-03
+LEAD-10548,Ishaan Patel,ishaan.patel62@example.com,+91-9822681476,Data Science Bootcamp,youtube_creator_sponsor,Agent-Pooja,Pune,Trial Booked,19.1,33,25000,2000,0,2026-03-14 08:35:00,2026-03-15
+LEAD-10549,Neha Bhatia,neha.bhatia33@example.com,+91-9862741841,UI/UX Design Masterclass,organic_referral,Agent-Amit,Chandigarh,Trial Booked,8.3,79,25000,2000,0,2026-01-11 20:32:00,2026-01-12
+LEAD-10550,Aarav Verma,aarav.verma87@example.com,+91-9844805028,Machine Learning Mastery,youtube_creator_sponsor,Agent-Amit,Ahmedabad,Trial Booked,8.5,47,45000,0,0,2026-02-27 17:51:00,2026-03-02
+LEAD-10551,Varun Bhatia,varun.bhatia48@example.com,+91-9893013580,Python for AI,linkedin_professionals,Agent-Karan,Kolkata,Completed,26.1,97,60000,50000,10000,2026-01-15 08:10:00,2026-01-19
+LEAD-10552,Varun Kapoor,varun.kapoor28@example.com,+91-9897206603,Full-Stack Web Dev,linkedin_professionals,Agent-Amit,Delhi,Completed,18.1,46,35000,35000,0,2026-01-02 11:07:00,2026-01-03
+LEAD-10553,Dev Reddy,dev.reddy66@example.com,+91-9875101884,UI/UX Design Masterclass,organic_referral,Agent-Pooja,Ahmedabad,Completed,26.5,39,25000,23000,2000,2026-01-19 15:27:00,2026-01-20
+LEAD-10554,Neha Sharma,neha.sharma84@example.com,+91-9889972230,Machine Learning Mastery,organic_referral,Agent-Pooja,Chandigarh,Completed,30.1,73,25000,15000,10000,2026-02-20 08:21:00,2026-02-21
+LEAD-10555,Sanya Malhotra,sanya.malhotra64@example.com,+91-9887363548,Full-Stack Web Dev,google_search_q1,Agent-Sneha,Jaipur,Trial Booked,19.7,27,35000,2000,0,2026-03-17 19:39:00,2026-03-21
+LEAD-10556,Kavya Malhotra,kavya.malhotra12@example.com,+91-9831653807,Python for AI,youtube_creator_sponsor,Agent-Sneha,Bengaluru,Lost,5.7,77,45000,0,0,2026-03-05 17:41:00,
+LEAD-10557,Ishaan Joshi,ishaan.joshi47@example.com,+91-9862394739,Data Science Bootcamp,linkedin_professionals,Agent-Amit,Jaipur,Trial Booked,6.8,79,75000,2000,0,2026-01-29 17:58:00,2026-02-01
+LEAD-10558,Mira Das,mira.das35@example.com,+91-9830980122,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Sneha,Delhi,Not Interested,1.5,81,25000,0,0,2026-01-27 12:44:00,
+LEAD-10559,Riya Gupta,riya.gupta74@example.com,+91-9814290941,Python for AI,linkedin_professionals,Agent-Sneha,Hyderabad,Completed,8.2,40,45000,40000,5000,2026-03-13 08:01:00,2026-03-16
+LEAD-10560,Tanvi Verma,tanvi.verma15@example.com,+91-9884762274,Full-Stack Web Dev,linkedin_professionals,Agent-Vikram,Bengaluru,Callback Requested,6.4,63,45000,0,0,2026-03-13 11:31:00,
+LEAD-10561,Ishaan Patel,ishaan.patel88@example.com,+91-9823672496,UI/UX Design Masterclass,organic_referral,Agent-Karan,Mumbai,Callback Requested,6.4,33,25000,0,0,2026-02-26 20:29:00,
+LEAD-10562,Varun Malhotra,varun.malhotra56@example.com,+91-9854910261,Python for AI,organic_referral,Agent-Vikram,Bengaluru,Completed,7.5,32,60000,50000,10000,2026-01-27 13:10:00,2026-01-30
+LEAD-10563,Varun Patel,varun.patel20@example.com,+91-9845704013,Python for AI,meta_leads_spring,Agent-Sneha,Mumbai,Invalid Number,4.3,5,45000,0,0,2026-02-01 20:30:00,
+LEAD-10564,Kavya Joshi,kavya.joshi76@example.com,+91-9858556533,Machine Learning Mastery,youtube_creator_sponsor,Agent-Pooja,Jaipur,Completed,31.7,72,60000,50000,10000,2026-02-23 20:14:00,2026-02-25
+LEAD-10565,Aarav Gupta,aarav.gupta14@example.com,+91-9898607345,Data Science Bootcamp,google_search_q1,Agent-Karan,Bengaluru,Lost,1.0,75,35000,0,0,2026-02-13 13:25:00,
+LEAD-10566,Zoya Bhatia,zoya.bhatia50@example.com,+91-9856192019,Data Science Bootcamp,organic_referral,Agent-Vikram,Jaipur,Invalid Number,2.8,14,75000,0,0,2026-02-07 14:25:00,
+LEAD-10567,Aarav Das,aarav.das93@example.com,+91-9869343538,Full-Stack Web Dev,organic_referral,Agent-Karan,Kolkata,Lost,6.4,99,75000,0,0,2026-02-27 18:13:00,
+LEAD-10568,Sanya Nair,sanya.nair79@example.com,+91-9848108152,UI/UX Design Masterclass,linkedin_professionals,Agent-Pooja,Bengaluru,Lost,4.4,36,60000,0,0,2026-01-05 16:21:00,
+LEAD-10569,Dev Verma,dev.verma48@example.com,+91-9866739991,Cloud DevOps Pro,organic_referral,Agent-Amit,Delhi,Trial Booked,29.5,50,75000,1000,0,2026-01-03 08:56:00,2026-01-08
+LEAD-10570,Rahul Verma,rahul.verma68@example.com,+91-9855497164,UI/UX Design Masterclass,google_search_q1,Agent-Amit,Jaipur,Completed,26.4,93,60000,55000,5000,2026-02-15 09:03:00,2026-02-16
+LEAD-10571,Dev Chopra,dev.chopra58@example.com,+91-9879748476,UI/UX Design Masterclass,organic_referral,Agent-Karan,Jaipur,Callback Requested,5.5,93,45000,0,0,2026-01-30 13:19:00,
+LEAD-10572,Sanya Mehta,sanya.mehta26@example.com,+91-9873921605,Python for AI,youtube_creator_sponsor,Agent-Karan,Chennai,Trial Booked,4.5,31,60000,0,0,2026-02-28 09:09:00,2026-03-04
+LEAD-10573,Dev Gupta,dev.gupta98@example.com,+91-9875705089,Python for AI,youtube_creator_sponsor,Agent-Karan,Jaipur,Trial Booked,34.9,74,75000,1000,0,2026-03-08 20:25:00,2026-03-11
+LEAD-10574,Sanya Reddy,sanya.reddy30@example.com,+91-9885031292,Data Science Bootcamp,meta_leads_spring,Agent-Karan,Ahmedabad,Completed,17.9,78,25000,23000,2000,2026-01-17 19:32:00,2026-01-22
+LEAD-10575,Kavya Verma,kavya.verma48@example.com,+91-9849457501,Cloud DevOps Pro,linkedin_professionals,Agent-Vikram,Chandigarh,Completed,34.7,59,25000,20000,5000,2026-02-07 08:33:00,2026-02-09
+LEAD-10576,Neha Sharma,neha.sharma15@example.com,+91-9866045988,Data Science Bootcamp,meta_leads_spring,Agent-Karan,Pune,Trial Booked,13.8,90,25000,0,0,2026-02-06 11:11:00,2026-02-10
+LEAD-10577,Neha Kapoor,neha.kapoor74@example.com,+91-9895424250,Full-Stack Web Dev,organic_referral,Agent-Sneha,Kolkata,Lost,6.2,36,75000,0,0,2026-03-02 19:53:00,
+LEAD-10578,Neha Chopra,neha.chopra60@example.com,+91-9855499525,Machine Learning Mastery,linkedin_professionals,Agent-Pooja,Chennai,Not Interested,3.4,72,75000,0,0,2026-01-12 20:39:00,
+LEAD-10579,Rahul Sharma,rahul.sharma92@example.com,+91-9885075065,UI/UX Design Masterclass,linkedin_professionals,Agent-Amit,Delhi,Callback Requested,5.3,91,45000,0,0,2026-01-04 17:40:00,
+LEAD-10580,Aditi Mehta,aditi.mehta25@example.com,+91-9898349411,Cloud DevOps Pro,organic_referral,Agent-Karan,Chandigarh,Not Interested,7.2,84,60000,0,0,2026-03-08 11:48:00,
+LEAD-10581,Zoya Malhotra,zoya.malhotra85@example.com,+91-9816037602,Data Science Bootcamp,google_search_q1,Agent-Amit,Hyderabad,Not Interested,2.9,97,75000,0,0,2026-03-16 15:05:00,
+LEAD-10582,Neha Das,neha.das46@example.com,+91-9829331950,Python for AI,youtube_creator_sponsor,Agent-Sneha,Mumbai,Completed,20.1,32,25000,25000,0,2026-03-09 13:24:00,2026-03-12
+LEAD-10583,Ananya Iyer,ananya.iyer48@example.com,+91-9862336822,Python for AI,meta_leads_spring,Agent-Amit,Delhi,Invalid Number,5.8,1,35000,0,0,2026-01-08 17:20:00,
+LEAD-10584,Aditi Nair,aditi.nair74@example.com,+91-9861680358,Data Science Bootcamp,linkedin_professionals,Agent-Amit,Bengaluru,Completed,19.0,83,75000,73000,2000,2026-01-07 11:15:00,2026-01-12
+LEAD-10585,Aditi Iyer,aditi.iyer96@example.com,+91-9823624363,Python for AI,youtube_creator_sponsor,Agent-Sneha,Bengaluru,Trial Booked,33.8,90,25000,1000,0,2026-03-03 08:26:00,2026-03-05
+LEAD-10586,Dev Chopra,dev.chopra41@example.com,+91-9882146810,Cloud DevOps Pro,meta_leads_spring,Agent-Amit,Ahmedabad,Trial Booked,34.5,89,35000,1000,0,2026-01-11 18:32:00,2026-01-13
+LEAD-10587,Mira Malhotra,mira.malhotra71@example.com,+91-9846682099,Machine Learning Mastery,google_search_q1,Agent-Vikram,Chandigarh,Not Interested,7.5,27,25000,0,0,2026-02-07 18:10:00,
+LEAD-10588,Riya Iyer,riya.iyer82@example.com,+91-9819386546,UI/UX Design Masterclass,linkedin_professionals,Agent-Amit,Hyderabad,Not Interested,6.0,40,25000,0,0,2026-03-16 16:18:00,
+LEAD-10589,Ishaan Verma,ishaan.verma53@example.com,+91-9895251058,Machine Learning Mastery,google_search_q1,Agent-Pooja,Pune,Callback Requested,7.1,60,75000,0,0,2026-02-25 11:39:00,
+LEAD-10590,Ishaan Chopra,ishaan.chopra10@example.com,+91-9891709974,UI/UX Design Masterclass,linkedin_professionals,Agent-Amit,Chennai,Completed,23.5,37,45000,45000,0,2026-02-13 11:29:00,2026-02-18
+LEAD-10591,Neha Sharma,neha.sharma55@example.com,+91-9860516391,Python for AI,meta_leads_spring,Agent-Sneha,Ahmedabad,Trial Booked,24.3,76,75000,0,0,2026-02-20 16:05:00,2026-02-21
+LEAD-10592,Varun Kapoor,varun.kapoor12@example.com,+91-9847733231,Full-Stack Web Dev,linkedin_professionals,Agent-Pooja,Mumbai,Not Interested,0.6,76,35000,0,0,2026-01-16 15:23:00,
+LEAD-10593,Rohan Joshi,rohan.joshi87@example.com,+91-9838063091,Full-Stack Web Dev,meta_leads_spring,Agent-Vikram,Pune,Not Interested,2.6,24,45000,0,0,2026-01-29 11:31:00,
+LEAD-10594,Aarav Mehta,aarav.mehta82@example.com,+91-9890929605,UI/UX Design Masterclass,linkedin_professionals,Agent-Vikram,Chandigarh,Not Interested,5.4,44,75000,0,0,2026-03-06 15:10:00,
+LEAD-10595,Riya Patel,riya.patel45@example.com,+91-9835749878,Python for AI,organic_referral,Agent-Pooja,Delhi,Callback Requested,6.0,86,35000,0,0,2026-02-03 17:54:00,
+LEAD-10596,Varun Bhatia,varun.bhatia97@example.com,+91-9879564413,Python for AI,organic_referral,Agent-Karan,Jaipur,Completed,11.4,72,45000,35000,10000,2026-02-28 08:27:00,2026-03-01
+LEAD-10597,Neha Gupta,neha.gupta10@example.com,+91-9862594409,Full-Stack Web Dev,organic_referral,Agent-Vikram,Hyderabad,Lost,3.9,88,60000,0,0,2026-01-07 12:58:00,
+LEAD-10598,Dev Nair,dev.nair49@example.com,+91-9818434795,Python for AI,organic_referral,Agent-Vikram,Hyderabad,Invalid Number,1.7,4,35000,0,0,2026-02-24 09:58:00,
+LEAD-10599,Rohan Bhatia,rohan.bhatia53@example.com,+91-9817305854,Python for AI,google_search_q1,Agent-Sneha,Mumbai,Trial Booked,17.9,33,45000,0,0,2026-03-17 20:40:00,2026-03-20
+LEAD-10600,Varun Nair,varun.nair17@example.com,+91-9814475312,Cloud DevOps Pro,meta_leads_spring,Agent-Vikram,Chandigarh,Not Interested,1.4,94,60000,0,0,2026-02-26 20:06:00,
+LEAD-10601,Mira Nair,mira.nair47@example.com,+91-9861198088,UI/UX Design Masterclass,google_search_q1,Agent-Pooja,Ahmedabad,Completed,20.7,27,25000,25000,0,2026-01-08 12:39:00,2026-01-12
+LEAD-10602,Mira Verma,mira.verma89@example.com,+91-9823593293,Cloud DevOps Pro,linkedin_professionals,Agent-Pooja,Chandigarh,Not Interested,7.1,74,60000,0,0,2026-01-02 15:24:00,
+LEAD-10603,Kavya Bhatia,kavya.bhatia34@example.com,+91-9886935230,UI/UX Design Masterclass,google_search_q1,Agent-Sneha,Chandigarh,Trial Booked,21.8,28,75000,2000,0,2026-01-25 09:06:00,2026-01-26
+LEAD-10604,Ananya Bhatia,ananya.bhatia65@example.com,+91-9878870570,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Amit,Chandigarh,Trial Booked,12.6,36,25000,0,0,2026-02-26 10:15:00,2026-02-28
+LEAD-10605,Rohan Chopra,rohan.chopra11@example.com,+91-9879481912,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Karan,Delhi,Lost,2.7,63,75000,0,0,2026-01-19 15:19:00,
+LEAD-10606,Riya Bhatia,riya.bhatia95@example.com,+91-9873850736,UI/UX Design Masterclass,meta_leads_spring,Agent-Vikram,Jaipur,Completed,13.6,28,35000,33000,2000,2026-01-07 14:22:00,2026-01-09
+LEAD-10607,Sanya Joshi,sanya.joshi68@example.com,+91-9815662934,Machine Learning Mastery,organic_referral,Agent-Amit,Chandigarh,Not Interested,1.7,62,60000,0,0,2026-02-12 17:19:00,
+LEAD-10608,Neha Mehta,neha.mehta10@example.com,+91-9858696493,Python for AI,meta_leads_spring,Agent-Pooja,Hyderabad,Trial Booked,8.5,71,60000,0,0,2026-01-31 15:47:00,2026-02-03
+LEAD-10609,Aarav Verma,aarav.verma46@example.com,+91-9833373562,Full-Stack Web Dev,google_search_q1,Agent-Karan,Pune,Completed,9.0,23,45000,45000,0,2026-02-26 11:40:00,2026-03-03
+LEAD-10610,Dev Iyer,dev.iyer12@example.com,+91-9828420515,UI/UX Design Masterclass,meta_leads_spring,Agent-Amit,Hyderabad,Not Interested,7.3,53,35000,0,0,2026-01-23 11:01:00,
+LEAD-10611,Mira Bhatia,mira.bhatia26@example.com,+91-9835453201,Python for AI,youtube_creator_sponsor,Agent-Pooja,Hyderabad,Completed,6.4,28,75000,65000,10000,2026-02-17 20:23:00,2026-02-19
+LEAD-10612,Dev Malhotra,dev.malhotra51@example.com,+91-9843174817,Machine Learning Mastery,youtube_creator_sponsor,Agent-Amit,Hyderabad,Trial Booked,28.2,57,35000,2000,0,2026-01-06 20:39:00,2026-01-11
+LEAD-10613,Aarav Bhatia,aarav.bhatia18@example.com,+91-9832472549,Full-Stack Web Dev,meta_leads_spring,Agent-Karan,Ahmedabad,Invalid Number,5.5,13,60000,0,0,2026-01-27 19:05:00,
+LEAD-10614,Rahul Reddy,rahul.reddy73@example.com,+91-9873586743,UI/UX Design Masterclass,organic_referral,Agent-Amit,Ahmedabad,Trial Booked,25.8,81,75000,2000,0,2026-01-23 13:45:00,2026-01-26
+LEAD-10615,Ishaan Kapoor,ishaan.kapoor57@example.com,+91-9844162336,Machine Learning Mastery,organic_referral,Agent-Vikram,Hyderabad,Completed,21.1,68,45000,35000,10000,2026-02-27 11:25:00,2026-03-01
+LEAD-10616,Rahul Verma,rahul.verma69@example.com,+91-9868049927,Data Science Bootcamp,google_search_q1,Agent-Amit,Chennai,Trial Booked,16.3,63,75000,2000,0,2026-01-30 17:02:00,2026-02-03
+LEAD-10617,Mira Nair,mira.nair75@example.com,+91-9883370374,Machine Learning Mastery,youtube_creator_sponsor,Agent-Amit,Delhi,Trial Booked,29.9,57,45000,0,0,2026-02-26 11:16:00,2026-02-27
+LEAD-10618,Rohan Verma,rohan.verma97@example.com,+91-9846838009,Full-Stack Web Dev,meta_leads_spring,Agent-Vikram,Chennai,Completed,12.3,52,35000,30000,5000,2026-01-05 16:12:00,2026-01-08
+LEAD-10619,Dev Joshi,dev.joshi84@example.com,+91-9897954019,Cloud DevOps Pro,meta_leads_spring,Agent-Karan,Mumbai,Lost,7.6,71,45000,0,0,2026-02-08 12:52:00,
+LEAD-10620,Aarav Gupta,aarav.gupta85@example.com,+91-9884170763,UI/UX Design Masterclass,organic_referral,Agent-Pooja,Hyderabad,Not Interested,2.3,80,35000,0,0,2026-01-30 19:47:00,
+LEAD-10621,Tanvi Gupta,tanvi.gupta81@example.com,+91-9814040500,UI/UX Design Masterclass,linkedin_professionals,Agent-Amit,Chennai,Not Interested,3.8,46,60000,0,0,2026-01-25 14:49:00,
+LEAD-10622,Kavya Patel,kavya.patel64@example.com,+91-9864139232,Cloud DevOps Pro,meta_leads_spring,Agent-Amit,Mumbai,Lost,2.2,63,45000,0,0,2026-03-05 20:42:00,
+LEAD-10623,Tanvi Chopra,tanvi.chopra87@example.com,+91-9891582537,UI/UX Design Masterclass,organic_referral,Agent-Amit,Mumbai,Completed,23.0,92,35000,30000,5000,2026-03-14 20:02:00,2026-03-16
+LEAD-10624,Riya Das,riya.das67@example.com,+91-9895765571,Machine Learning Mastery,linkedin_professionals,Agent-Pooja,Bengaluru,Lost,3.0,33,60000,0,0,2026-03-10 14:12:00,
+LEAD-10625,Zoya Iyer,zoya.iyer18@example.com,+91-9861793831,Python for AI,meta_leads_spring,Agent-Vikram,Delhi,Callback Requested,1.9,23,60000,0,0,2026-01-05 19:38:00,
+LEAD-10626,Ishaan Mehta,ishaan.mehta24@example.com,+91-9827332564,Data Science Bootcamp,youtube_creator_sponsor,Agent-Karan,Mumbai,Completed,7.6,70,45000,35000,10000,2026-02-17 16:00:00,2026-02-19
+LEAD-10627,Rahul Reddy,rahul.reddy70@example.com,+91-9831311258,Machine Learning Mastery,google_search_q1,Agent-Sneha,Hyderabad,Invalid Number,5.8,14,60000,0,0,2026-01-17 11:19:00,
+LEAD-10628,Riya Kapoor,riya.kapoor41@example.com,+91-9880579265,Full-Stack Web Dev,organic_referral,Agent-Pooja,Ahmedabad,Trial Booked,22.2,71,60000,0,0,2026-02-05 11:00:00,2026-02-07
+LEAD-10629,Kavya Kapoor,kavya.kapoor32@example.com,+91-9865707438,Machine Learning Mastery,linkedin_professionals,Agent-Sneha,Bengaluru,Trial Booked,15.2,58,45000,2000,0,2026-02-06 18:56:00,2026-02-10
+LEAD-10630,Dev Patel,dev.patel78@example.com,+91-9849176757,Cloud DevOps Pro,linkedin_professionals,Agent-Sneha,Delhi,Trial Booked,31.2,55,35000,0,0,2026-03-14 09:25:00,2026-03-15
+LEAD-10631,Rohan Verma,rohan.verma42@example.com,+91-9837833011,UI/UX Design Masterclass,meta_leads_spring,Agent-Sneha,Jaipur,Trial Booked,17.2,72,75000,1000,0,2026-01-16 13:04:00,2026-01-17
+LEAD-10632,Rahul Sharma,rahul.sharma11@example.com,+91-9843635732,Machine Learning Mastery,google_search_q1,Agent-Vikram,Ahmedabad,Callback Requested,3.5,44,60000,0,0,2026-02-18 13:47:00,
+LEAD-10633,Aditi Joshi,aditi.joshi30@example.com,+91-9832896080,Data Science Bootcamp,youtube_creator_sponsor,Agent-Sneha,Bengaluru,Trial Booked,29.2,80,60000,0,0,2026-01-11 16:42:00,2026-01-13
+LEAD-10634,Varun Sharma,varun.sharma37@example.com,+91-9814623108,Cloud DevOps Pro,google_search_q1,Agent-Pooja,Jaipur,Completed,14.1,76,45000,43000,2000,2026-02-20 10:04:00,2026-02-21
+LEAD-10635,Zoya Bhatia,zoya.bhatia10@example.com,+91-9816531664,Cloud DevOps Pro,meta_leads_spring,Agent-Sneha,Jaipur,Callback Requested,0.9,76,45000,0,0,2026-01-14 14:44:00,
+LEAD-10636,Tanvi Reddy,tanvi.reddy34@example.com,+91-9899784876,Data Science Bootcamp,meta_leads_spring,Agent-Amit,Hyderabad,Lost,3.0,21,25000,0,0,2026-01-12 08:26:00,
+LEAD-10637,Aditi Mehta,aditi.mehta64@example.com,+91-9826214033,Python for AI,meta_leads_spring,Agent-Pooja,Jaipur,Completed,15.3,89,35000,33000,2000,2026-01-14 13:20:00,2026-01-19
+LEAD-10638,Dev Mehta,dev.mehta45@example.com,+91-9897234140,Python for AI,youtube_creator_sponsor,Agent-Amit,Kolkata,Completed,23.9,28,60000,58000,2000,2026-02-10 08:24:00,2026-02-12
+LEAD-10639,Riya Nair,riya.nair86@example.com,+91-9853534095,Python for AI,google_search_q1,Agent-Pooja,Chandigarh,Trial Booked,33.7,52,75000,0,0,2026-03-05 09:45:00,2026-03-10
+LEAD-10640,Rohan Joshi,rohan.joshi39@example.com,+91-9877567894,Machine Learning Mastery,meta_leads_spring,Agent-Amit,Chennai,Completed,19.1,68,75000,65000,10000,2026-03-03 09:21:00,2026-03-04
+LEAD-10641,Riya Joshi,riya.joshi17@example.com,+91-9828462384,Python for AI,meta_leads_spring,Agent-Vikram,Bengaluru,Callback Requested,5.1,51,60000,0,0,2026-02-09 11:47:00,
+LEAD-10642,Kavya Gupta,kavya.gupta15@example.com,+91-9879910371,Full-Stack Web Dev,meta_leads_spring,Agent-Pooja,Mumbai,Trial Booked,12.8,55,45000,0,0,2026-01-31 19:38:00,2026-02-04
+LEAD-10643,Tanvi Reddy,tanvi.reddy58@example.com,+91-9879990777,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Vikram,Chennai,Completed,22.3,48,25000,23000,2000,2026-02-13 11:13:00,2026-02-18
+LEAD-10644,Kavya Patel,kavya.patel32@example.com,+91-9889541539,Machine Learning Mastery,google_search_q1,Agent-Vikram,Bengaluru,Not Interested,1.4,46,35000,0,0,2026-01-25 08:40:00,
+LEAD-10645,Rahul Das,rahul.das48@example.com,+91-9848299416,Data Science Bootcamp,meta_leads_spring,Agent-Karan,Ahmedabad,Completed,22.2,42,35000,25000,10000,2026-02-09 10:46:00,2026-02-11
+LEAD-10646,Riya Gupta,riya.gupta64@example.com,+91-9877819218,UI/UX Design Masterclass,meta_leads_spring,Agent-Amit,Ahmedabad,Not Interested,4.0,41,60000,0,0,2026-01-11 13:25:00,
+LEAD-10647,Riya Joshi,riya.joshi42@example.com,+91-9861063166,Machine Learning Mastery,meta_leads_spring,Agent-Sneha,Kolkata,Completed,26.1,90,75000,73000,2000,2026-02-24 09:48:00,2026-02-27
+LEAD-10648,Neha Iyer,neha.iyer74@example.com,+91-9860232033,Machine Learning Mastery,youtube_creator_sponsor,Agent-Sneha,Ahmedabad,Trial Booked,2.6,44,35000,0,0,2026-01-10 13:08:00,2026-01-14
+LEAD-10649,Neha Reddy,neha.reddy65@example.com,+91-9844260204,Machine Learning Mastery,linkedin_professionals,Agent-Amit,Pune,Trial Booked,7.8,92,25000,1000,0,2026-03-17 09:26:00,2026-03-18
+LEAD-10650,Tanvi Chopra,tanvi.chopra14@example.com,+91-9858508204,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Karan,Chennai,Callback Requested,2.3,51,60000,0,0,2026-01-08 18:24:00,
+LEAD-10651,Rohan Joshi,rohan.joshi21@example.com,+91-9896489553,UI/UX Design Masterclass,google_search_q1,Agent-Pooja,Ahmedabad,Completed,6.3,21,75000,73000,2000,2026-01-19 12:15:00,2026-01-24
+LEAD-10652,Sanya Reddy,sanya.reddy78@example.com,+91-9898380502,Machine Learning Mastery,organic_referral,Agent-Vikram,Hyderabad,Trial Booked,18.8,58,45000,2000,0,2026-02-24 10:53:00,2026-02-28
+LEAD-10653,Zoya Reddy,zoya.reddy36@example.com,+91-9863414658,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Sneha,Bengaluru,Not Interested,2.5,38,45000,0,0,2026-01-14 18:36:00,
+LEAD-10654,Sanya Iyer,sanya.iyer27@example.com,+91-9836577865,Python for AI,meta_leads_spring,Agent-Sneha,Bengaluru,Completed,14.7,42,60000,58000,2000,2026-02-23 16:26:00,2026-02-26
+LEAD-10655,Neha Patel,neha.patel89@example.com,+91-9824655964,Cloud DevOps Pro,google_search_q1,Agent-Sneha,Hyderabad,Trial Booked,16.8,72,35000,1000,0,2026-01-24 11:03:00,2026-01-26
+LEAD-10656,Varun Bhatia,varun.bhatia22@example.com,+91-9811275951,Data Science Bootcamp,google_search_q1,Agent-Amit,Bengaluru,Completed,18.3,81,75000,73000,2000,2026-02-05 09:21:00,2026-02-06
+LEAD-10657,Aarav Iyer,aarav.iyer87@example.com,+91-9867640289,Python for AI,organic_referral,Agent-Vikram,Jaipur,Completed,27.1,80,45000,35000,10000,2026-01-01 14:38:00,2026-01-06
+LEAD-10658,Kavya Nair,kavya.nair22@example.com,+91-9810414016,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Amit,Chennai,Not Interested,7.0,65,25000,0,0,2026-02-21 14:39:00,
+LEAD-10659,Neha Das,neha.das70@example.com,+91-9879110587,UI/UX Design Masterclass,linkedin_professionals,Agent-Pooja,Bengaluru,Completed,24.8,99,45000,35000,10000,2026-03-09 12:44:00,2026-03-11
+LEAD-10660,Mira Bhatia,mira.bhatia88@example.com,+91-9820921193,Data Science Bootcamp,google_search_q1,Agent-Amit,Chennai,Completed,18.2,97,60000,58000,2000,2026-01-06 20:47:00,2026-01-09
+LEAD-10661,Kavya Reddy,kavya.reddy21@example.com,+91-9850446284,Machine Learning Mastery,google_search_q1,Agent-Sneha,Hyderabad,Completed,18.7,36,75000,75000,0,2026-01-19 16:56:00,2026-01-24
+LEAD-10662,Varun Bhatia,varun.bhatia94@example.com,+91-9822003335,Cloud DevOps Pro,linkedin_professionals,Agent-Pooja,Bengaluru,Lost,2.1,51,35000,0,0,2026-03-03 18:34:00,
+LEAD-10663,Aditi Reddy,aditi.reddy95@example.com,+91-9826521948,UI/UX Design Masterclass,google_search_q1,Agent-Pooja,Chennai,Lost,5.5,52,35000,0,0,2026-02-19 20:17:00,
+LEAD-10664,Rohan Patel,rohan.patel58@example.com,+91-9861224263,Cloud DevOps Pro,linkedin_professionals,Agent-Vikram,Chennai,Not Interested,5.3,28,75000,0,0,2026-01-29 17:49:00,
+LEAD-10665,Rohan Bhatia,rohan.bhatia26@example.com,+91-9852060116,Cloud DevOps Pro,linkedin_professionals,Agent-Pooja,Bengaluru,Completed,21.1,34,45000,43000,2000,2026-02-07 09:07:00,2026-02-08
+LEAD-10666,Mira Kapoor,mira.kapoor85@example.com,+91-9839815335,UI/UX Design Masterclass,google_search_q1,Agent-Amit,Jaipur,Completed,24.1,86,45000,43000,2000,2026-01-25 14:27:00,2026-01-28
+LEAD-10667,Aditi Reddy,aditi.reddy99@example.com,+91-9814609555,Python for AI,organic_referral,Agent-Sneha,Pune,Completed,26.8,38,35000,30000,5000,2026-01-29 15:43:00,2026-02-02
+LEAD-10668,Riya Nair,riya.nair52@example.com,+91-9830495346,Full-Stack Web Dev,organic_referral,Agent-Vikram,Chandigarh,Completed,4.4,68,60000,55000,5000,2026-03-03 18:53:00,2026-03-05
+LEAD-10669,Varun Joshi,varun.joshi80@example.com,+91-9862651678,Data Science Bootcamp,meta_leads_spring,Agent-Vikram,Delhi,Lost,7.9,40,45000,0,0,2026-03-04 19:25:00,
+LEAD-10670,Kavya Reddy,kavya.reddy34@example.com,+91-9883552661,UI/UX Design Masterclass,linkedin_professionals,Agent-Amit,Kolkata,Not Interested,5.7,56,45000,0,0,2026-01-10 16:46:00,
+LEAD-10671,Mira Verma,mira.verma99@example.com,+91-9874752231,Data Science Bootcamp,youtube_creator_sponsor,Agent-Karan,Mumbai,Not Interested,1.5,93,35000,0,0,2026-02-08 15:41:00,
+LEAD-10672,Ishaan Patel,ishaan.patel28@example.com,+91-9860540462,Data Science Bootcamp,meta_leads_spring,Agent-Pooja,Mumbai,Callback Requested,5.6,33,75000,0,0,2026-02-16 19:54:00,
+LEAD-10673,Mira Bhatia,mira.bhatia90@example.com,+91-9864223156,Data Science Bootcamp,google_search_q1,Agent-Vikram,Ahmedabad,Trial Booked,34.0,75,45000,2000,0,2026-01-23 08:07:00,2026-01-28
+LEAD-10674,Dev Sharma,dev.sharma93@example.com,+91-9869742764,Python for AI,meta_leads_spring,Agent-Sneha,Chandigarh,Trial Booked,11.4,68,25000,1000,0,2026-01-23 18:47:00,2026-01-27
+LEAD-10675,Kavya Sharma,kavya.sharma22@example.com,+91-9889574873,Python for AI,google_search_q1,Agent-Vikram,Jaipur,Completed,25.0,55,75000,65000,10000,2026-01-29 08:37:00,2026-02-03
+LEAD-10676,Ananya Reddy,ananya.reddy78@example.com,+91-9881147161,Machine Learning Mastery,linkedin_professionals,Agent-Amit,Bengaluru,Trial Booked,15.3,22,35000,1000,0,2026-02-11 09:45:00,2026-02-16
+LEAD-10677,Neha Verma,neha.verma98@example.com,+91-9834150810,Cloud DevOps Pro,organic_referral,Agent-Karan,Bengaluru,Callback Requested,7.0,43,25000,0,0,2026-01-27 18:57:00,
+LEAD-10678,Aarav Malhotra,aarav.malhotra25@example.com,+91-9877934076,Machine Learning Mastery,youtube_creator_sponsor,Agent-Vikram,Chandigarh,Completed,5.2,24,75000,70000,5000,2026-01-27 18:10:00,2026-01-28
+LEAD-10679,Ishaan Nair,ishaan.nair94@example.com,+91-9881686010,Cloud DevOps Pro,meta_leads_spring,Agent-Sneha,Mumbai,Invalid Number,6.4,15,75000,0,0,2026-02-01 12:02:00,
+LEAD-10680,Neha Patel,neha.patel48@example.com,+91-9838885391,Cloud DevOps Pro,linkedin_professionals,Agent-Amit,Chennai,Trial Booked,8.6,24,25000,0,0,2026-03-10 16:13:00,2026-03-11
+LEAD-10681,Ananya Kapoor,ananya.kapoor20@example.com,+91-9844115380,Cloud DevOps Pro,meta_leads_spring,Agent-Karan,Delhi,Trial Booked,15.5,40,45000,1000,0,2026-02-24 09:35:00,2026-02-27
+LEAD-10682,Rohan Reddy,rohan.reddy50@example.com,+91-9868200448,UI/UX Design Masterclass,meta_leads_spring,Agent-Karan,Pune,Completed,29.2,73,75000,73000,2000,2026-01-25 19:23:00,2026-01-30
+LEAD-10683,Mira Sharma,mira.sharma52@example.com,+91-9846675397,Cloud DevOps Pro,meta_leads_spring,Agent-Vikram,Jaipur,Completed,14.3,31,25000,20000,5000,2026-01-15 18:35:00,2026-01-19
+LEAD-10684,Ananya Das,ananya.das72@example.com,+91-9822823236,Data Science Bootcamp,youtube_creator_sponsor,Agent-Vikram,Hyderabad,Completed,29.2,95,35000,30000,5000,2026-02-18 09:50:00,2026-02-19
+LEAD-10685,Rahul Nair,rahul.nair96@example.com,+91-9881361168,UI/UX Design Masterclass,organic_referral,Agent-Amit,Chandigarh,Trial Booked,28.7,64,60000,0,0,2026-01-13 08:10:00,2026-01-16
+LEAD-10686,Rahul Kapoor,rahul.kapoor16@example.com,+91-9895791097,Machine Learning Mastery,linkedin_professionals,Agent-Karan,Mumbai,Completed,26.4,92,35000,25000,10000,2026-03-07 19:09:00,2026-03-09
+LEAD-10687,Kavya Joshi,kavya.joshi64@example.com,+91-9879873032,Data Science Bootcamp,organic_referral,Agent-Sneha,Delhi,Callback Requested,2.7,84,60000,0,0,2026-02-26 13:51:00,
+LEAD-10688,Sanya Das,sanya.das21@example.com,+91-9832161108,Data Science Bootcamp,youtube_creator_sponsor,Agent-Vikram,Kolkata,Lost,6.0,29,25000,0,0,2026-02-10 09:40:00,
+LEAD-10689,Riya Sharma,riya.sharma97@example.com,+91-9881458772,Python for AI,youtube_creator_sponsor,Agent-Karan,Mumbai,Lost,4.2,81,35000,0,0,2026-02-24 18:32:00,
+LEAD-10690,Sanya Verma,sanya.verma31@example.com,+91-9880265183,Machine Learning Mastery,google_search_q1,Agent-Karan,Mumbai,Completed,17.1,97,35000,35000,0,2026-02-24 19:34:00,2026-02-27
+LEAD-10691,Zoya Mehta,zoya.mehta24@example.com,+91-9855360034,Data Science Bootcamp,google_search_q1,Agent-Amit,Jaipur,Not Interested,1.8,68,60000,0,0,2026-02-15 08:27:00,
+LEAD-10692,Zoya Bhatia,zoya.bhatia92@example.com,+91-9879193132,Data Science Bootcamp,organic_referral,Agent-Vikram,Ahmedabad,Completed,32.5,47,75000,65000,10000,2026-02-07 12:13:00,2026-02-08
+LEAD-10693,Varun Sharma,varun.sharma33@example.com,+91-9863964665,Machine Learning Mastery,organic_referral,Agent-Sneha,Mumbai,Completed,31.4,64,25000,25000,0,2026-02-28 13:19:00,2026-03-03
+LEAD-10694,Kavya Sharma,kavya.sharma42@example.com,+91-9840345988,Python for AI,linkedin_professionals,Agent-Sneha,Jaipur,Completed,27.5,39,60000,60000,0,2026-03-07 10:26:00,2026-03-08
+LEAD-10695,Neha Reddy,neha.reddy55@example.com,+91-9868245146,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Amit,Delhi,Trial Booked,7.8,76,60000,2000,0,2026-03-10 20:17:00,2026-03-11
+LEAD-10696,Aarav Nair,aarav.nair95@example.com,+91-9845675021,UI/UX Design Masterclass,meta_leads_spring,Agent-Vikram,Mumbai,Completed,33.3,45,25000,23000,2000,2026-01-18 14:26:00,2026-01-21
+LEAD-10697,Aditi Reddy,aditi.reddy59@example.com,+91-9827638581,Machine Learning Mastery,organic_referral,Agent-Sneha,Delhi,Not Interested,5.9,84,60000,0,0,2026-02-11 20:48:00,
+LEAD-10698,Aditi Verma,aditi.verma46@example.com,+91-9875220319,Python for AI,meta_leads_spring,Agent-Pooja,Mumbai,Completed,18.1,75,60000,60000,0,2026-01-31 08:43:00,2026-02-03
+LEAD-10699,Aditi Chopra,aditi.chopra23@example.com,+91-9877422120,Machine Learning Mastery,meta_leads_spring,Agent-Karan,Jaipur,Completed,8.9,74,45000,43000,2000,2026-01-24 11:17:00,2026-01-25
+LEAD-10700,Riya Patel,riya.patel21@example.com,+91-9816839113,Data Science Bootcamp,organic_referral,Agent-Pooja,Delhi,Completed,22.5,22,35000,25000,10000,2026-02-21 08:17:00,2026-02-23
+LEAD-10701,Mira Reddy,mira.reddy45@example.com,+91-9857113712,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Pooja,Kolkata,Completed,11.3,34,25000,20000,5000,2026-03-03 08:32:00,2026-03-07
+LEAD-10702,Sanya Reddy,sanya.reddy87@example.com,+91-9823524006,Data Science Bootcamp,youtube_creator_sponsor,Agent-Vikram,Mumbai,Completed,11.6,80,35000,30000,5000,2026-01-07 18:47:00,2026-01-10
+LEAD-10703,Mira Patel,mira.patel56@example.com,+91-9889042306,Full-Stack Web Dev,linkedin_professionals,Agent-Amit,Bengaluru,Completed,26.6,66,35000,30000,5000,2026-01-13 18:00:00,2026-01-18
+LEAD-10704,Rahul Kapoor,rahul.kapoor93@example.com,+91-9835559565,Full-Stack Web Dev,meta_leads_spring,Agent-Amit,Kolkata,Completed,34.0,95,25000,25000,0,2026-01-12 09:08:00,2026-01-17
+LEAD-10705,Dev Joshi,dev.joshi29@example.com,+91-9815880227,Machine Learning Mastery,google_search_q1,Agent-Vikram,Chandigarh,Lost,4.5,45,60000,0,0,2026-02-13 12:46:00,
+LEAD-10706,Ananya Mehta,ananya.mehta63@example.com,+91-9880298247,Machine Learning Mastery,organic_referral,Agent-Amit,Jaipur,Lost,1.0,75,25000,0,0,2026-02-14 13:28:00,
+LEAD-10707,Zoya Malhotra,zoya.malhotra75@example.com,+91-9820064387,Python for AI,meta_leads_spring,Agent-Karan,Delhi,Completed,24.8,83,35000,25000,10000,2026-02-07 08:36:00,2026-02-08
+LEAD-10708,Ananya Gupta,ananya.gupta85@example.com,+91-9811189346,Cloud DevOps Pro,linkedin_professionals,Agent-Karan,Kolkata,Not Interested,4.8,40,25000,0,0,2026-02-04 11:11:00,
+LEAD-10709,Zoya Chopra,zoya.chopra80@example.com,+91-9825985787,Cloud DevOps Pro,linkedin_professionals,Agent-Karan,Jaipur,Callback Requested,5.8,57,35000,0,0,2026-02-03 12:54:00,
+LEAD-10710,Ananya Mehta,ananya.mehta93@example.com,+91-9856635546,Python for AI,organic_referral,Agent-Pooja,Delhi,Completed,6.3,88,35000,33000,2000,2026-02-05 10:17:00,2026-02-06
+LEAD-10711,Rohan Kapoor,rohan.kapoor17@example.com,+91-9894014298,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Vikram,Jaipur,Lost,2.7,98,60000,0,0,2026-02-03 19:08:00,
+LEAD-10712,Varun Sharma,varun.sharma91@example.com,+91-9891113368,Full-Stack Web Dev,meta_leads_spring,Agent-Amit,Mumbai,Completed,30.8,52,25000,15000,10000,2026-03-10 18:55:00,2026-03-15
+LEAD-10713,Rahul Mehta,rahul.mehta21@example.com,+91-9876566782,Machine Learning Mastery,meta_leads_spring,Agent-Amit,Chandigarh,Completed,31.8,38,60000,55000,5000,2026-02-20 10:28:00,2026-02-22
+LEAD-10714,Ananya Gupta,ananya.gupta28@example.com,+91-9819670211,Data Science Bootcamp,meta_leads_spring,Agent-Pooja,Delhi,Trial Booked,8.6,97,35000,1000,0,2026-02-06 08:19:00,2026-02-08
+LEAD-10715,Mira Mehta,mira.mehta11@example.com,+91-9896500924,Machine Learning Mastery,linkedin_professionals,Agent-Vikram,Delhi,Callback Requested,0.7,69,60000,0,0,2026-01-02 17:06:00,
+LEAD-10716,Zoya Sharma,zoya.sharma71@example.com,+91-9885544613,Data Science Bootcamp,meta_leads_spring,Agent-Vikram,Chandigarh,Completed,9.1,30,75000,70000,5000,2026-01-02 20:00:00,2026-01-03
+LEAD-10717,Zoya Gupta,zoya.gupta23@example.com,+91-9883100625,Data Science Bootcamp,youtube_creator_sponsor,Agent-Amit,Hyderabad,Trial Booked,29.3,22,75000,0,0,2026-01-08 16:44:00,2026-01-11
+LEAD-10718,Ishaan Verma,ishaan.verma97@example.com,+91-9861639439,Cloud DevOps Pro,linkedin_professionals,Agent-Pooja,Hyderabad,Completed,9.8,56,35000,30000,5000,2026-01-04 11:27:00,2026-01-08
+LEAD-10719,Rohan Joshi,rohan.joshi56@example.com,+91-9821382241,Python for AI,linkedin_professionals,Agent-Pooja,Hyderabad,Invalid Number,3.0,10,25000,0,0,2026-01-14 12:22:00,
+LEAD-10720,Zoya Sharma,zoya.sharma23@example.com,+91-9846385523,Cloud DevOps Pro,meta_leads_spring,Agent-Pooja,Chennai,Trial Booked,13.8,56,45000,2000,0,2026-01-24 18:27:00,2026-01-26
+LEAD-10721,Zoya Gupta,zoya.gupta67@example.com,+91-9874214057,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Amit,Bengaluru,Not Interested,1.6,60,35000,0,0,2026-01-01 10:49:00,
+LEAD-10722,Varun Verma,varun.verma55@example.com,+91-9852857838,Python for AI,organic_referral,Agent-Sneha,Pune,Invalid Number,6.3,3,35000,0,0,2026-01-19 09:20:00,
+LEAD-10723,Neha Reddy,neha.reddy73@example.com,+91-9882309430,Machine Learning Mastery,linkedin_professionals,Agent-Karan,Chennai,Not Interested,3.6,69,35000,0,0,2026-01-18 20:41:00,
+LEAD-10724,Rahul Gupta,rahul.gupta12@example.com,+91-9858640295,Cloud DevOps Pro,organic_referral,Agent-Pooja,Chandigarh,Trial Booked,2.6,66,25000,0,0,2026-02-23 16:36:00,2026-02-25
+LEAD-10725,Rahul Gupta,rahul.gupta63@example.com,+91-9842547451,Data Science Bootcamp,google_search_q1,Agent-Vikram,Chennai,Lost,7.8,90,35000,0,0,2026-01-18 12:29:00,
+LEAD-10726,Dev Das,dev.das19@example.com,+91-9873998578,Data Science Bootcamp,google_search_q1,Agent-Pooja,Delhi,Completed,24.0,33,45000,45000,0,2026-02-18 19:01:00,2026-02-22
+LEAD-10727,Varun Kapoor,varun.kapoor27@example.com,+91-9880793145,Data Science Bootcamp,google_search_q1,Agent-Pooja,Bengaluru,Trial Booked,17.8,43,60000,0,0,2026-02-01 09:00:00,2026-02-06
+LEAD-10728,Sanya Iyer,sanya.iyer11@example.com,+91-9863202657,Machine Learning Mastery,linkedin_professionals,Agent-Amit,Mumbai,Trial Booked,18.9,42,25000,2000,0,2026-02-06 09:09:00,2026-02-07
+LEAD-10729,Varun Reddy,varun.reddy44@example.com,+91-9822339511,UI/UX Design Masterclass,linkedin_professionals,Agent-Karan,Pune,Callback Requested,7.5,74,35000,0,0,2026-03-15 16:19:00,
+LEAD-10730,Rahul Reddy,rahul.reddy98@example.com,+91-9872872428,Data Science Bootcamp,meta_leads_spring,Agent-Sneha,Hyderabad,Callback Requested,6.8,97,75000,0,0,2026-02-20 10:52:00,
+LEAD-10731,Neha Nair,neha.nair52@example.com,+91-9813764654,UI/UX Design Masterclass,linkedin_professionals,Agent-Sneha,Chennai,Completed,22.1,66,25000,25000,0,2026-02-24 11:17:00,2026-02-25
+LEAD-10732,Dev Iyer,dev.iyer20@example.com,+91-9886520583,Data Science Bootcamp,organic_referral,Agent-Vikram,Chandigarh,Completed,10.3,24,35000,33000,2000,2026-01-02 20:58:00,2026-01-05
+LEAD-10733,Riya Sharma,riya.sharma55@example.com,+91-9827383462,Cloud DevOps Pro,linkedin_professionals,Agent-Vikram,Bengaluru,Completed,26.9,60,60000,58000,2000,2026-02-09 08:22:00,2026-02-12
+LEAD-10734,Sanya Bhatia,sanya.bhatia58@example.com,+91-9874015552,Python for AI,youtube_creator_sponsor,Agent-Sneha,Jaipur,Lost,4.9,23,35000,0,0,2026-01-13 16:51:00,
+LEAD-10735,Riya Das,riya.das74@example.com,+91-9879296719,Python for AI,youtube_creator_sponsor,Agent-Pooja,Ahmedabad,Completed,34.8,40,35000,33000,2000,2026-01-11 18:05:00,2026-01-13
+LEAD-10736,Sanya Kapoor,sanya.kapoor88@example.com,+91-9891453658,UI/UX Design Masterclass,organic_referral,Agent-Amit,Delhi,Trial Booked,10.3,69,60000,0,0,2026-02-13 12:23:00,2026-02-18
+LEAD-10737,Aditi Patel,aditi.patel50@example.com,+91-9832779115,Cloud DevOps Pro,linkedin_professionals,Agent-Vikram,Delhi,Not Interested,1.2,83,25000,0,0,2026-02-09 16:55:00,
+LEAD-10738,Zoya Iyer,zoya.iyer66@example.com,+91-9897280725,Data Science Bootcamp,google_search_q1,Agent-Amit,Chennai,Trial Booked,27.3,52,45000,1000,0,2026-01-12 09:11:00,2026-01-16
+LEAD-10739,Zoya Patel,zoya.patel89@example.com,+91-9852096774,Python for AI,organic_referral,Agent-Sneha,Pune,Completed,19.2,66,35000,25000,10000,2026-02-21 14:54:00,2026-02-26
+LEAD-10740,Kavya Verma,kavya.verma47@example.com,+91-9860441933,UI/UX Design Masterclass,linkedin_professionals,Agent-Karan,Mumbai,Trial Booked,30.2,39,75000,0,0,2026-01-08 19:50:00,2026-01-10
+LEAD-10741,Ananya Kapoor,ananya.kapoor23@example.com,+91-9863277039,Machine Learning Mastery,google_search_q1,Agent-Pooja,Ahmedabad,Trial Booked,5.3,33,75000,1000,0,2026-01-12 13:29:00,2026-01-16
+LEAD-10742,Tanvi Reddy,tanvi.reddy29@example.com,+91-9873077976,Data Science Bootcamp,linkedin_professionals,Agent-Amit,Chennai,Completed,3.7,78,25000,20000,5000,2026-03-04 11:44:00,2026-03-08
+LEAD-10743,Ananya Bhatia,ananya.bhatia12@example.com,+91-9866763408,Data Science Bootcamp,youtube_creator_sponsor,Agent-Karan,Chandigarh,Completed,4.3,47,60000,50000,10000,2026-02-18 08:59:00,2026-02-21
+LEAD-10744,Ishaan Iyer,ishaan.iyer16@example.com,+91-9822407255,UI/UX Design Masterclass,meta_leads_spring,Agent-Vikram,Pune,Completed,8.5,53,60000,58000,2000,2026-02-21 09:19:00,2026-02-25
+LEAD-10745,Zoya Reddy,zoya.reddy11@example.com,+91-9885283856,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Pooja,Kolkata,Completed,15.1,93,60000,55000,5000,2026-03-03 15:34:00,2026-03-05
+LEAD-10746,Tanvi Kapoor,tanvi.kapoor50@example.com,+91-9825248056,Data Science Bootcamp,google_search_q1,Agent-Karan,Chennai,Callback Requested,4.2,38,60000,0,0,2026-02-10 08:09:00,
+LEAD-10747,Tanvi Bhatia,tanvi.bhatia34@example.com,+91-9866395082,Machine Learning Mastery,youtube_creator_sponsor,Agent-Karan,Ahmedabad,Callback Requested,0.8,32,75000,0,0,2026-01-17 18:28:00,
+LEAD-10748,Sanya Malhotra,sanya.malhotra49@example.com,+91-9877388734,Data Science Bootcamp,organic_referral,Agent-Sneha,Hyderabad,Completed,12.3,22,45000,40000,5000,2026-01-25 18:36:00,2026-01-26
+LEAD-10749,Varun Das,varun.das57@example.com,+91-9833742466,Python for AI,linkedin_professionals,Agent-Sneha,Chennai,Trial Booked,17.4,42,45000,0,0,2026-02-15 16:27:00,2026-02-20
+LEAD-10750,Rahul Kapoor,rahul.kapoor88@example.com,+91-9865201022,Data Science Bootcamp,organic_referral,Agent-Sneha,Kolkata,Trial Booked,23.6,31,25000,0,0,2026-02-06 19:39:00,2026-02-07
+LEAD-10751,Aditi Gupta,aditi.gupta68@example.com,+91-9884032876,UI/UX Design Masterclass,organic_referral,Agent-Karan,Ahmedabad,Completed,9.7,47,45000,35000,10000,2026-03-06 17:51:00,2026-03-07
+LEAD-10752,Mira Verma,mira.verma44@example.com,+91-9898406780,Data Science Bootcamp,linkedin_professionals,Agent-Vikram,Ahmedabad,Trial Booked,19.0,48,25000,1000,0,2026-02-22 18:45:00,2026-02-26
+LEAD-10753,Ishaan Iyer,ishaan.iyer76@example.com,+91-9890523345,Machine Learning Mastery,meta_leads_spring,Agent-Vikram,Kolkata,Lost,6.8,67,35000,0,0,2026-01-05 08:01:00,
+LEAD-10754,Kavya Nair,kavya.nair59@example.com,+91-9833315937,Data Science Bootcamp,organic_referral,Agent-Sneha,Kolkata,Completed,33.0,36,25000,15000,10000,2026-01-25 17:41:00,2026-01-29
+LEAD-10755,Mira Nair,mira.nair51@example.com,+91-9837348550,Cloud DevOps Pro,meta_leads_spring,Agent-Sneha,Delhi,Completed,7.7,90,60000,55000,5000,2026-03-06 09:40:00,2026-03-11
+LEAD-10756,Aditi Verma,aditi.verma13@example.com,+91-9827521857,Python for AI,linkedin_professionals,Agent-Vikram,Chandigarh,Callback Requested,4.8,30,75000,0,0,2026-01-20 08:39:00,
+LEAD-10757,Neha Bhatia,neha.bhatia28@example.com,+91-9894213304,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Pooja,Hyderabad,Completed,11.4,26,60000,55000,5000,2026-02-08 11:34:00,2026-02-10
+LEAD-10758,Aarav Bhatia,aarav.bhatia56@example.com,+91-9837913590,Cloud DevOps Pro,google_search_q1,Agent-Vikram,Chandigarh,Trial Booked,5.0,31,45000,0,0,2026-01-16 09:09:00,2026-01-19
+LEAD-10759,Mira Verma,mira.verma11@example.com,+91-9833981630,Machine Learning Mastery,google_search_q1,Agent-Sneha,Bengaluru,Completed,8.3,40,45000,35000,10000,2026-01-27 18:26:00,2026-01-31
+LEAD-10760,Rohan Kapoor,rohan.kapoor42@example.com,+91-9826320018,UI/UX Design Masterclass,organic_referral,Agent-Vikram,Chennai,Completed,19.5,40,75000,75000,0,2026-02-14 15:39:00,2026-02-19
+LEAD-10761,Dev Kapoor,dev.kapoor98@example.com,+91-9826989313,Python for AI,organic_referral,Agent-Vikram,Delhi,Trial Booked,9.6,37,25000,1000,0,2026-01-28 13:07:00,2026-01-30
+LEAD-10762,Ishaan Iyer,ishaan.iyer35@example.com,+91-9847726289,Machine Learning Mastery,meta_leads_spring,Agent-Vikram,Jaipur,Completed,10.6,44,60000,50000,10000,2026-02-07 15:47:00,2026-02-11
+LEAD-10763,Mira Verma,mira.verma87@example.com,+91-9861411543,Cloud DevOps Pro,organic_referral,Agent-Amit,Hyderabad,Completed,22.7,60,60000,55000,5000,2026-03-04 14:56:00,2026-03-08
+LEAD-10764,Mira Mehta,mira.mehta62@example.com,+91-9849389352,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Amit,Bengaluru,Lost,2.4,85,25000,0,0,2026-02-27 10:56:00,
+LEAD-10765,Riya Das,riya.das94@example.com,+91-9859883400,UI/UX Design Masterclass,organic_referral,Agent-Amit,Bengaluru,Trial Booked,4.9,51,35000,1000,0,2026-01-24 20:20:00,2026-01-28
+LEAD-10766,Kavya Patel,kavya.patel46@example.com,+91-9890772485,Full-Stack Web Dev,google_search_q1,Agent-Vikram,Mumbai,Completed,4.7,91,45000,43000,2000,2026-02-12 11:29:00,2026-02-17
+LEAD-10767,Dev Malhotra,dev.malhotra16@example.com,+91-9876294734,Data Science Bootcamp,google_search_q1,Agent-Karan,Chandigarh,Completed,8.9,60,60000,55000,5000,2026-01-10 17:57:00,2026-01-14
+LEAD-10768,Neha Sharma,neha.sharma83@example.com,+91-9810623711,Full-Stack Web Dev,linkedin_professionals,Agent-Vikram,Delhi,Completed,3.1,56,75000,75000,0,2026-02-11 17:24:00,2026-02-13
+LEAD-10769,Zoya Gupta,zoya.gupta63@example.com,+91-9850399304,Full-Stack Web Dev,meta_leads_spring,Agent-Sneha,Jaipur,Completed,29.5,32,25000,15000,10000,2026-03-09 08:21:00,2026-03-10
+LEAD-10770,Ishaan Nair,ishaan.nair92@example.com,+91-9826295769,Full-Stack Web Dev,linkedin_professionals,Agent-Vikram,Chennai,Trial Booked,18.5,78,45000,2000,0,2026-03-05 17:03:00,2026-03-09
+LEAD-10771,Varun Nair,varun.nair57@example.com,+91-9882149862,Cloud DevOps Pro,google_search_q1,Agent-Vikram,Mumbai,Completed,8.7,31,35000,33000,2000,2026-01-18 09:20:00,2026-01-22
+LEAD-10772,Aarav Joshi,aarav.joshi84@example.com,+91-9871833270,Python for AI,youtube_creator_sponsor,Agent-Vikram,Pune,Completed,32.6,41,60000,55000,5000,2026-01-10 12:21:00,2026-01-15
+LEAD-10773,Aditi Patel,aditi.patel71@example.com,+91-9898754019,Full-Stack Web Dev,meta_leads_spring,Agent-Karan,Kolkata,Lost,2.3,87,75000,0,0,2026-02-27 18:07:00,
+LEAD-10774,Neha Iyer,neha.iyer17@example.com,+91-9838517975,Full-Stack Web Dev,linkedin_professionals,Agent-Pooja,Pune,Completed,34.1,29,35000,35000,0,2026-01-11 13:35:00,2026-01-13
+LEAD-10775,Aarav Bhatia,aarav.bhatia93@example.com,+91-9830669385,Data Science Bootcamp,linkedin_professionals,Agent-Sneha,Bengaluru,Completed,25.5,59,75000,70000,5000,2026-02-13 11:52:00,2026-02-18
+LEAD-10776,Varun Malhotra,varun.malhotra45@example.com,+91-9866786713,Python for AI,meta_leads_spring,Agent-Pooja,Kolkata,Lost,1.9,71,35000,0,0,2026-02-27 17:32:00,
+LEAD-10777,Ananya Bhatia,ananya.bhatia77@example.com,+91-9870752435,Full-Stack Web Dev,organic_referral,Agent-Vikram,Bengaluru,Completed,18.0,23,35000,30000,5000,2026-01-15 11:01:00,2026-01-19
+LEAD-10778,Kavya Iyer,kavya.iyer57@example.com,+91-9823128198,Python for AI,organic_referral,Agent-Vikram,Hyderabad,Trial Booked,16.8,26,75000,1000,0,2026-01-20 14:32:00,2026-01-24
+LEAD-10779,Aarav Bhatia,aarav.bhatia97@example.com,+91-9816693632,Machine Learning Mastery,linkedin_professionals,Agent-Pooja,Kolkata,Completed,16.6,86,75000,65000,10000,2026-01-23 17:17:00,2026-01-28
+LEAD-10780,Rohan Mehta,rohan.mehta89@example.com,+91-9864299043,Python for AI,meta_leads_spring,Agent-Vikram,Mumbai,Completed,9.9,55,75000,75000,0,2026-03-15 12:15:00,2026-03-16
+LEAD-10781,Mira Reddy,mira.reddy74@example.com,+91-9893499311,Python for AI,meta_leads_spring,Agent-Amit,Delhi,Trial Booked,5.6,20,75000,1000,0,2026-01-27 13:40:00,2026-01-30
+LEAD-10782,Neha Joshi,neha.joshi12@example.com,+91-9833825666,Full-Stack Web Dev,meta_leads_spring,Agent-Pooja,Bengaluru,Completed,16.4,80,35000,35000,0,2026-01-22 10:21:00,2026-01-26
+LEAD-10783,Ishaan Verma,ishaan.verma82@example.com,+91-9849011532,Data Science Bootcamp,google_search_q1,Agent-Karan,Ahmedabad,Trial Booked,29.1,25,60000,0,0,2026-03-16 08:31:00,2026-03-18
+LEAD-10784,Varun Mehta,varun.mehta54@example.com,+91-9883244637,Cloud DevOps Pro,organic_referral,Agent-Pooja,Bengaluru,Not Interested,4.2,77,45000,0,0,2026-01-13 12:51:00,
+LEAD-10785,Ishaan Bhatia,ishaan.bhatia76@example.com,+91-9895872544,Machine Learning Mastery,youtube_creator_sponsor,Agent-Amit,Chennai,Trial Booked,11.3,34,75000,1000,0,2026-02-08 19:21:00,2026-02-13
+LEAD-10786,Aarav Patel,aarav.patel58@example.com,+91-9895729393,Machine Learning Mastery,meta_leads_spring,Agent-Pooja,Mumbai,Trial Booked,8.8,31,45000,0,0,2026-02-01 17:47:00,2026-02-05
+LEAD-10787,Aditi Iyer,aditi.iyer85@example.com,+91-9866008290,UI/UX Design Masterclass,organic_referral,Agent-Sneha,Jaipur,Invalid Number,3.0,15,45000,0,0,2026-01-23 12:58:00,
+LEAD-10788,Ishaan Iyer,ishaan.iyer11@example.com,+91-9876964850,Data Science Bootcamp,google_search_q1,Agent-Karan,Chennai,Trial Booked,6.1,56,75000,1000,0,2026-01-16 14:50:00,2026-01-20
+LEAD-10789,Zoya Bhatia,zoya.bhatia11@example.com,+91-9870915814,Data Science Bootcamp,linkedin_professionals,Agent-Pooja,Pune,Trial Booked,28.5,28,60000,1000,0,2026-03-13 18:10:00,2026-03-16
+LEAD-10790,Aarav Mehta,aarav.mehta46@example.com,+91-9877376391,Full-Stack Web Dev,organic_referral,Agent-Vikram,Pune,Completed,13.9,37,25000,20000,5000,2026-01-01 14:22:00,2026-01-02
+LEAD-10791,Rohan Chopra,rohan.chopra70@example.com,+91-9857597933,Cloud DevOps Pro,meta_leads_spring,Agent-Vikram,Delhi,Callback Requested,2.1,57,25000,0,0,2026-01-26 14:37:00,
+LEAD-10792,Dev Chopra,dev.chopra51@example.com,+91-9887600317,UI/UX Design Masterclass,linkedin_professionals,Agent-Sneha,Bengaluru,Trial Booked,24.6,75,35000,2000,0,2026-02-03 12:38:00,2026-02-06
+LEAD-10793,Ananya Bhatia,ananya.bhatia58@example.com,+91-9868638761,Data Science Bootcamp,youtube_creator_sponsor,Agent-Pooja,Hyderabad,Trial Booked,20.2,79,75000,2000,0,2026-02-08 12:05:00,2026-02-11
+LEAD-10794,Aditi Patel,aditi.patel81@example.com,+91-9813546316,Cloud DevOps Pro,linkedin_professionals,Agent-Amit,Chennai,Trial Booked,3.4,79,60000,1000,0,2026-03-01 13:27:00,2026-03-05
+LEAD-10795,Tanvi Reddy,tanvi.reddy82@example.com,+91-9849371856,Python for AI,meta_leads_spring,Agent-Karan,Hyderabad,Lost,4.6,99,35000,0,0,2026-03-16 16:23:00,
+LEAD-10796,Aarav Chopra,aarav.chopra93@example.com,+91-9824367862,Machine Learning Mastery,meta_leads_spring,Agent-Sneha,Ahmedabad,Callback Requested,0.9,30,25000,0,0,2026-03-08 15:53:00,
+LEAD-10797,Kavya Kapoor,kavya.kapoor76@example.com,+91-9829347740,Python for AI,youtube_creator_sponsor,Agent-Karan,Chennai,Trial Booked,25.3,26,75000,2000,0,2026-01-08 09:47:00,2026-01-13
+LEAD-10798,Rahul Joshi,rahul.joshi35@example.com,+91-9825395963,Machine Learning Mastery,meta_leads_spring,Agent-Pooja,Delhi,Lost,5.2,82,25000,0,0,2026-02-08 18:19:00,
+LEAD-10799,Aditi Sharma,aditi.sharma25@example.com,+91-9850255085,Data Science Bootcamp,organic_referral,Agent-Vikram,Hyderabad,Trial Booked,4.3,70,75000,1000,0,2026-01-27 09:30:00,2026-01-28
+LEAD-10800,Mira Gupta,mira.gupta94@example.com,+91-9842303777,Data Science Bootcamp,meta_leads_spring,Agent-Karan,Chandigarh,Completed,8.5,22,60000,58000,2000,2026-02-26 18:39:00,2026-02-27
+LEAD-10801,Ananya Malhotra,ananya.malhotra99@example.com,+91-9824406372,UI/UX Design Masterclass,organic_referral,Agent-Pooja,Pune,Trial Booked,15.2,55,60000,1000,0,2026-02-07 18:06:00,2026-02-12
+LEAD-10802,Neha Reddy,neha.reddy55@example.com,+91-9828697002,Machine Learning Mastery,meta_leads_spring,Agent-Vikram,Bengaluru,Completed,16.9,99,45000,45000,0,2026-03-14 14:00:00,2026-03-19
+LEAD-10803,Neha Joshi,neha.joshi59@example.com,+91-9878859755,Machine Learning Mastery,youtube_creator_sponsor,Agent-Vikram,Chennai,Invalid Number,5.8,15,45000,0,0,2026-03-06 16:13:00,
+LEAD-10804,Aditi Patel,aditi.patel94@example.com,+91-9850658560,UI/UX Design Masterclass,meta_leads_spring,Agent-Amit,Chandigarh,Callback Requested,6.4,55,35000,0,0,2026-02-13 15:45:00,
+LEAD-10805,Zoya Reddy,zoya.reddy43@example.com,+91-9827370722,Python for AI,linkedin_professionals,Agent-Sneha,Chandigarh,Invalid Number,5.4,13,75000,0,0,2026-01-24 17:45:00,
+LEAD-10806,Sanya Nair,sanya.nair96@example.com,+91-9873943071,Cloud DevOps Pro,organic_referral,Agent-Amit,Kolkata,Trial Booked,18.7,33,35000,0,0,2026-01-09 08:01:00,2026-01-11
+LEAD-10807,Kavya Chopra,kavya.chopra24@example.com,+91-9815022195,Data Science Bootcamp,meta_leads_spring,Agent-Vikram,Delhi,Lost,5.1,27,25000,0,0,2026-02-19 20:26:00,
+LEAD-10808,Varun Joshi,varun.joshi91@example.com,+91-9887011402,Python for AI,linkedin_professionals,Agent-Amit,Mumbai,Callback Requested,1.5,68,60000,0,0,2026-01-23 13:06:00,
+LEAD-10809,Rahul Mehta,rahul.mehta13@example.com,+91-9894438474,Data Science Bootcamp,youtube_creator_sponsor,Agent-Sneha,Pune,Trial Booked,5.3,44,60000,2000,0,2026-01-29 11:47:00,2026-01-31
+LEAD-10810,Rohan Verma,rohan.verma92@example.com,+91-9880887697,Data Science Bootcamp,google_search_q1,Agent-Pooja,Chennai,Lost,1.9,63,25000,0,0,2026-02-22 17:34:00,
+LEAD-10811,Neha Mehta,neha.mehta82@example.com,+91-9820488284,Data Science Bootcamp,organic_referral,Agent-Sneha,Chennai,Trial Booked,30.9,68,60000,1000,0,2026-03-13 10:51:00,2026-03-14
+LEAD-10812,Ananya Chopra,ananya.chopra42@example.com,+91-9862402145,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Vikram,Hyderabad,Completed,32.5,57,25000,23000,2000,2026-01-07 17:34:00,2026-01-10
+LEAD-10813,Sanya Nair,sanya.nair79@example.com,+91-9824881319,Python for AI,meta_leads_spring,Agent-Amit,Chandigarh,Completed,22.6,71,75000,70000,5000,2026-01-31 16:59:00,2026-02-05
+LEAD-10814,Riya Gupta,riya.gupta52@example.com,+91-9899031467,Full-Stack Web Dev,google_search_q1,Agent-Vikram,Pune,Completed,29.0,90,35000,33000,2000,2026-01-26 13:56:00,2026-01-27
+LEAD-10815,Zoya Sharma,zoya.sharma20@example.com,+91-9884011044,Data Science Bootcamp,linkedin_professionals,Agent-Vikram,Chandigarh,Not Interested,6.0,96,60000,0,0,2026-01-05 13:04:00,
+LEAD-10816,Neha Patel,neha.patel17@example.com,+91-9813537149,Full-Stack Web Dev,google_search_q1,Agent-Vikram,Jaipur,Completed,3.2,49,60000,55000,5000,2026-01-29 18:22:00,2026-02-02
+LEAD-10817,Tanvi Chopra,tanvi.chopra65@example.com,+91-9867288633,Data Science Bootcamp,organic_referral,Agent-Karan,Mumbai,Not Interested,5.7,68,60000,0,0,2026-03-12 15:03:00,
+LEAD-10818,Rahul Patel,rahul.patel21@example.com,+91-9889002900,Python for AI,linkedin_professionals,Agent-Vikram,Chennai,Lost,2.3,27,60000,0,0,2026-02-15 11:21:00,
+LEAD-10819,Aarav Mehta,aarav.mehta50@example.com,+91-9856931572,Machine Learning Mastery,organic_referral,Agent-Karan,Mumbai,Completed,11.7,43,35000,25000,10000,2026-02-01 08:04:00,2026-02-02
+LEAD-10820,Riya Bhatia,riya.bhatia36@example.com,+91-9876428279,Data Science Bootcamp,youtube_creator_sponsor,Agent-Pooja,Ahmedabad,Callback Requested,7.5,52,25000,0,0,2026-01-16 18:04:00,
+LEAD-10821,Sanya Joshi,sanya.joshi50@example.com,+91-9882668051,Full-Stack Web Dev,meta_leads_spring,Agent-Sneha,Chennai,Callback Requested,7.2,87,35000,0,0,2026-03-12 12:55:00,
+LEAD-10822,Rahul Verma,rahul.verma76@example.com,+91-9840942008,Python for AI,youtube_creator_sponsor,Agent-Sneha,Chandigarh,Callback Requested,6.8,37,35000,0,0,2026-03-04 12:05:00,
+LEAD-10823,Ishaan Joshi,ishaan.joshi14@example.com,+91-9846278860,Cloud DevOps Pro,meta_leads_spring,Agent-Vikram,Delhi,Trial Booked,18.7,22,60000,0,0,2026-01-05 11:44:00,2026-01-09
+LEAD-10824,Ishaan Kapoor,ishaan.kapoor58@example.com,+91-9834753345,Machine Learning Mastery,youtube_creator_sponsor,Agent-Vikram,Chandigarh,Completed,9.8,25,60000,50000,10000,2026-02-19 15:01:00,2026-02-23
+LEAD-10825,Rohan Reddy,rohan.reddy89@example.com,+91-9868260695,Cloud DevOps Pro,google_search_q1,Agent-Amit,Chennai,Completed,13.6,23,45000,43000,2000,2026-01-04 17:48:00,2026-01-07
+LEAD-10826,Varun Reddy,varun.reddy58@example.com,+91-9872724302,UI/UX Design Masterclass,google_search_q1,Agent-Vikram,Pune,Trial Booked,7.8,53,75000,2000,0,2026-03-10 15:27:00,2026-03-15
+LEAD-10827,Sanya Mehta,sanya.mehta60@example.com,+91-9815181637,Data Science Bootcamp,google_search_q1,Agent-Amit,Pune,Not Interested,3.0,57,75000,0,0,2026-01-11 11:49:00,
+LEAD-10828,Riya Iyer,riya.iyer32@example.com,+91-9869566993,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Amit,Chandigarh,Not Interested,6.8,61,75000,0,0,2026-01-02 09:19:00,
+LEAD-10829,Neha Sharma,neha.sharma20@example.com,+91-9847103909,Machine Learning Mastery,google_search_q1,Agent-Sneha,Chennai,Completed,21.3,27,35000,25000,10000,2026-03-03 18:54:00,2026-03-08
+LEAD-10830,Zoya Kapoor,zoya.kapoor89@example.com,+91-9898043897,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Vikram,Pune,Trial Booked,7.3,42,35000,0,0,2026-02-05 12:55:00,2026-02-09
+LEAD-10831,Aarav Mehta,aarav.mehta43@example.com,+91-9844553693,Python for AI,google_search_q1,Agent-Pooja,Ahmedabad,Callback Requested,1.0,49,75000,0,0,2026-03-16 13:02:00,
+LEAD-10832,Aarav Bhatia,aarav.bhatia40@example.com,+91-9837386042,Full-Stack Web Dev,organic_referral,Agent-Vikram,Chennai,Callback Requested,4.3,34,60000,0,0,2026-01-14 09:32:00,
+LEAD-10833,Kavya Kapoor,kavya.kapoor62@example.com,+91-9897507034,Full-Stack Web Dev,linkedin_professionals,Agent-Vikram,Pune,Callback Requested,3.0,66,75000,0,0,2026-01-19 08:20:00,
+LEAD-10834,Kavya Gupta,kavya.gupta50@example.com,+91-9878557897,Full-Stack Web Dev,organic_referral,Agent-Vikram,Mumbai,Completed,9.4,97,25000,25000,0,2026-02-07 10:58:00,2026-02-12
+LEAD-10835,Sanya Chopra,sanya.chopra93@example.com,+91-9820528705,UI/UX Design Masterclass,organic_referral,Agent-Karan,Hyderabad,Callback Requested,6.2,68,35000,0,0,2026-02-18 17:02:00,
+LEAD-10836,Aditi Mehta,aditi.mehta94@example.com,+91-9880390228,Cloud DevOps Pro,organic_referral,Agent-Karan,Kolkata,Callback Requested,5.1,26,75000,0,0,2026-03-10 19:07:00,
+LEAD-10837,Rahul Gupta,rahul.gupta24@example.com,+91-9842352710,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Pooja,Pune,Not Interested,3.9,49,45000,0,0,2026-02-01 13:15:00,
+LEAD-10838,Neha Joshi,neha.joshi39@example.com,+91-9886415823,Machine Learning Mastery,youtube_creator_sponsor,Agent-Vikram,Jaipur,Trial Booked,28.1,77,75000,0,0,2026-01-10 13:41:00,2026-01-14
+LEAD-10839,Varun Das,varun.das53@example.com,+91-9852123474,Data Science Bootcamp,organic_referral,Agent-Pooja,Kolkata,Not Interested,6.5,53,75000,0,0,2026-03-16 18:08:00,
+LEAD-10840,Aditi Verma,aditi.verma68@example.com,+91-9812082019,Machine Learning Mastery,linkedin_professionals,Agent-Karan,Chandigarh,Invalid Number,1.8,15,35000,0,0,2026-03-05 18:56:00,
+LEAD-10841,Ananya Verma,ananya.verma31@example.com,+91-9819799868,Machine Learning Mastery,youtube_creator_sponsor,Agent-Karan,Ahmedabad,Callback Requested,0.7,75,25000,0,0,2026-01-13 10:55:00,
+LEAD-10842,Ananya Malhotra,ananya.malhotra88@example.com,+91-9824464884,Cloud DevOps Pro,linkedin_professionals,Agent-Sneha,Kolkata,Trial Booked,21.7,63,25000,1000,0,2026-03-13 11:45:00,2026-03-16
+LEAD-10843,Sanya Sharma,sanya.sharma85@example.com,+91-9878367019,Python for AI,youtube_creator_sponsor,Agent-Sneha,Ahmedabad,Lost,6.0,37,60000,0,0,2026-02-25 12:48:00,
+LEAD-10844,Aditi Patel,aditi.patel22@example.com,+91-9841173885,Python for AI,organic_referral,Agent-Karan,Ahmedabad,Trial Booked,11.6,95,75000,2000,0,2026-02-18 13:28:00,2026-02-20
+LEAD-10845,Ishaan Gupta,ishaan.gupta32@example.com,+91-9829219517,Full-Stack Web Dev,google_search_q1,Agent-Karan,Jaipur,Trial Booked,12.9,69,45000,1000,0,2026-03-16 16:54:00,2026-03-20
+LEAD-10846,Aarav Das,aarav.das66@example.com,+91-9840015561,UI/UX Design Masterclass,meta_leads_spring,Agent-Sneha,Chandigarh,Trial Booked,11.4,56,35000,0,0,2026-02-10 09:22:00,2026-02-13
+LEAD-10847,Zoya Patel,zoya.patel31@example.com,+91-9813670871,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Karan,Hyderabad,Not Interested,6.8,90,35000,0,0,2026-02-05 10:06:00,
+LEAD-10848,Riya Sharma,riya.sharma68@example.com,+91-9849586388,Cloud DevOps Pro,organic_referral,Agent-Pooja,Mumbai,Completed,6.6,86,60000,50000,10000,2026-02-17 11:18:00,2026-02-22
+LEAD-10849,Zoya Verma,zoya.verma24@example.com,+91-9857475650,UI/UX Design Masterclass,google_search_q1,Agent-Sneha,Ahmedabad,Lost,6.0,55,35000,0,0,2026-02-03 09:55:00,
+LEAD-10850,Tanvi Verma,tanvi.verma76@example.com,+91-9852617779,UI/UX Design Masterclass,meta_leads_spring,Agent-Vikram,Jaipur,Completed,16.6,24,25000,20000,5000,2026-02-12 12:29:00,2026-02-17
+LEAD-10851,Dev Das,dev.das33@example.com,+91-9876669489,Cloud DevOps Pro,google_search_q1,Agent-Vikram,Chandigarh,Completed,18.2,39,45000,35000,10000,2026-02-18 11:43:00,2026-02-20
+LEAD-10852,Ishaan Patel,ishaan.patel32@example.com,+91-9815209356,Data Science Bootcamp,google_search_q1,Agent-Karan,Hyderabad,Not Interested,5.1,91,60000,0,0,2026-01-01 14:04:00,
+LEAD-10853,Mira Joshi,mira.joshi47@example.com,+91-9899654194,Full-Stack Web Dev,organic_referral,Agent-Sneha,Hyderabad,Callback Requested,6.8,58,35000,0,0,2026-02-14 15:33:00,
+LEAD-10854,Neha Gupta,neha.gupta94@example.com,+91-9867024453,UI/UX Design Masterclass,linkedin_professionals,Agent-Karan,Ahmedabad,Trial Booked,13.1,77,45000,1000,0,2026-02-07 09:14:00,2026-02-08
+LEAD-10855,Aditi Patel,aditi.patel44@example.com,+91-9878113806,Machine Learning Mastery,youtube_creator_sponsor,Agent-Vikram,Kolkata,Completed,3.4,50,60000,50000,10000,2026-01-17 20:56:00,2026-01-21
+LEAD-10856,Dev Das,dev.das16@example.com,+91-9846012929,Machine Learning Mastery,google_search_q1,Agent-Karan,Pune,Not Interested,3.5,74,60000,0,0,2026-02-10 14:25:00,
+LEAD-10857,Neha Joshi,neha.joshi88@example.com,+91-9891973665,Data Science Bootcamp,youtube_creator_sponsor,Agent-Vikram,Kolkata,Completed,33.3,34,75000,73000,2000,2026-01-29 17:56:00,2026-01-31
+LEAD-10858,Kavya Patel,kavya.patel80@example.com,+91-9818518098,Cloud DevOps Pro,organic_referral,Agent-Vikram,Mumbai,Invalid Number,3.1,15,45000,0,0,2026-02-18 09:49:00,
+LEAD-10859,Rohan Sharma,rohan.sharma37@example.com,+91-9884215849,Cloud DevOps Pro,meta_leads_spring,Agent-Amit,Delhi,Trial Booked,13.3,67,45000,0,0,2026-03-10 14:55:00,2026-03-12
+LEAD-10860,Sanya Mehta,sanya.mehta48@example.com,+91-9813254023,Python for AI,google_search_q1,Agent-Vikram,Jaipur,Not Interested,1.7,25,60000,0,0,2026-01-14 16:25:00,
+LEAD-10861,Dev Bhatia,dev.bhatia63@example.com,+91-9812705048,UI/UX Design Masterclass,meta_leads_spring,Agent-Vikram,Bengaluru,Completed,4.9,29,45000,45000,0,2026-02-18 18:25:00,2026-02-20
+LEAD-10862,Aarav Joshi,aarav.joshi12@example.com,+91-9850554420,Cloud DevOps Pro,organic_referral,Agent-Pooja,Chandigarh,Completed,19.2,74,45000,40000,5000,2026-02-20 11:53:00,2026-02-25
+LEAD-10863,Ishaan Gupta,ishaan.gupta62@example.com,+91-9885295643,Data Science Bootcamp,google_search_q1,Agent-Amit,Chandigarh,Invalid Number,2.2,2,60000,0,0,2026-03-02 14:18:00,
+LEAD-10864,Ishaan Gupta,ishaan.gupta13@example.com,+91-9863331228,Full-Stack Web Dev,organic_referral,Agent-Karan,Mumbai,Completed,9.8,77,75000,75000,0,2026-03-05 19:25:00,2026-03-08
+LEAD-10865,Tanvi Mehta,tanvi.mehta72@example.com,+91-9889646079,Machine Learning Mastery,youtube_creator_sponsor,Agent-Sneha,Pune,Trial Booked,9.2,41,25000,2000,0,2026-02-12 10:51:00,2026-02-13
+LEAD-10866,Dev Verma,dev.verma49@example.com,+91-9855347939,Data Science Bootcamp,linkedin_professionals,Agent-Karan,Jaipur,Not Interested,2.4,83,25000,0,0,2026-03-14 20:14:00,
+LEAD-10867,Varun Patel,varun.patel93@example.com,+91-9841640398,Python for AI,youtube_creator_sponsor,Agent-Karan,Mumbai,Trial Booked,12.7,83,60000,2000,0,2026-02-04 19:13:00,2026-02-09
+LEAD-10868,Kavya Gupta,kavya.gupta25@example.com,+91-9832306580,UI/UX Design Masterclass,linkedin_professionals,Agent-Karan,Bengaluru,Trial Booked,7.8,21,60000,0,0,2026-01-14 14:44:00,2026-01-15
+LEAD-10869,Dev Gupta,dev.gupta65@example.com,+91-9849490030,Python for AI,google_search_q1,Agent-Sneha,Jaipur,Trial Booked,12.1,21,60000,1000,0,2026-03-04 10:47:00,2026-03-09
+LEAD-10870,Sanya Bhatia,sanya.bhatia36@example.com,+91-9892409660,Full-Stack Web Dev,organic_referral,Agent-Amit,Chennai,Callback Requested,4.4,57,35000,0,0,2026-03-14 18:10:00,
+LEAD-10871,Sanya Nair,sanya.nair63@example.com,+91-9834055277,Cloud DevOps Pro,organic_referral,Agent-Amit,Hyderabad,Trial Booked,2.8,80,35000,2000,0,2026-02-12 19:46:00,2026-02-14
+LEAD-10872,Ananya Gupta,ananya.gupta69@example.com,+91-9889786327,Python for AI,google_search_q1,Agent-Amit,Hyderabad,Callback Requested,1.0,32,45000,0,0,2026-01-13 16:29:00,
+LEAD-10873,Ananya Verma,ananya.verma61@example.com,+91-9844191883,Full-Stack Web Dev,organic_referral,Agent-Pooja,Mumbai,Completed,22.8,67,75000,70000,5000,2026-01-25 12:18:00,2026-01-29
+LEAD-10874,Rahul Malhotra,rahul.malhotra85@example.com,+91-9896547634,UI/UX Design Masterclass,meta_leads_spring,Agent-Vikram,Bengaluru,Trial Booked,28.4,36,75000,0,0,2026-01-28 12:11:00,2026-01-31
+LEAD-10875,Tanvi Reddy,tanvi.reddy21@example.com,+91-9892533661,Full-Stack Web Dev,organic_referral,Agent-Karan,Chandigarh,Callback Requested,7.9,49,25000,0,0,2026-03-02 11:10:00,
+LEAD-10876,Ananya Patel,ananya.patel25@example.com,+91-9842315990,Data Science Bootcamp,linkedin_professionals,Agent-Vikram,Mumbai,Completed,12.3,61,60000,50000,10000,2026-01-18 16:51:00,2026-01-22
+LEAD-10877,Rahul Reddy,rahul.reddy65@example.com,+91-9885227139,Machine Learning Mastery,linkedin_professionals,Agent-Sneha,Jaipur,Trial Booked,25.6,55,35000,0,0,2026-02-10 16:05:00,2026-02-15
+LEAD-10878,Neha Gupta,neha.gupta37@example.com,+91-9892808874,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Vikram,Kolkata,Trial Booked,26.2,64,60000,2000,0,2026-02-14 10:01:00,2026-02-17
+LEAD-10879,Rahul Mehta,rahul.mehta49@example.com,+91-9854084020,Machine Learning Mastery,youtube_creator_sponsor,Agent-Pooja,Mumbai,Lost,0.5,44,75000,0,0,2026-01-26 15:23:00,
+LEAD-10880,Aditi Nair,aditi.nair42@example.com,+91-9846798988,Full-Stack Web Dev,organic_referral,Agent-Vikram,Mumbai,Callback Requested,8.0,25,60000,0,0,2026-02-05 18:30:00,
+LEAD-10881,Rohan Sharma,rohan.sharma57@example.com,+91-9813870432,Cloud DevOps Pro,google_search_q1,Agent-Sneha,Ahmedabad,Invalid Number,1.3,13,75000,0,0,2026-03-04 10:30:00,
+LEAD-10882,Riya Joshi,riya.joshi34@example.com,+91-9897926734,Data Science Bootcamp,meta_leads_spring,Agent-Pooja,Bengaluru,Completed,11.5,89,45000,45000,0,2026-01-08 15:40:00,2026-01-09
+LEAD-10883,Riya Joshi,riya.joshi61@example.com,+91-9865885406,Python for AI,youtube_creator_sponsor,Agent-Amit,Delhi,Lost,7.6,21,75000,0,0,2026-03-17 19:23:00,
+LEAD-10884,Varun Bhatia,varun.bhatia35@example.com,+91-9877842475,UI/UX Design Masterclass,google_search_q1,Agent-Vikram,Jaipur,Completed,11.5,25,35000,25000,10000,2026-01-19 19:17:00,2026-01-20
+LEAD-10885,Mira Patel,mira.patel21@example.com,+91-9834494865,UI/UX Design Masterclass,google_search_q1,Agent-Amit,Chennai,Completed,6.3,31,25000,15000,10000,2026-01-16 13:29:00,2026-01-21
+LEAD-10886,Sanya Verma,sanya.verma41@example.com,+91-9851309843,Data Science Bootcamp,youtube_creator_sponsor,Agent-Karan,Mumbai,Callback Requested,4.0,67,35000,0,0,2026-01-22 20:00:00,
+LEAD-10887,Varun Bhatia,varun.bhatia34@example.com,+91-9846614518,UI/UX Design Masterclass,meta_leads_spring,Agent-Pooja,Kolkata,Completed,9.8,72,75000,70000,5000,2026-02-06 10:17:00,2026-02-08
+LEAD-10888,Zoya Mehta,zoya.mehta92@example.com,+91-9880201607,Data Science Bootcamp,youtube_creator_sponsor,Agent-Amit,Pune,Callback Requested,3.1,66,75000,0,0,2026-01-12 15:22:00,
+LEAD-10889,Neha Das,neha.das65@example.com,+91-9856563019,UI/UX Design Masterclass,meta_leads_spring,Agent-Vikram,Chandigarh,Lost,8.0,46,75000,0,0,2026-02-19 10:34:00,
+LEAD-10890,Rohan Chopra,rohan.chopra43@example.com,+91-9814220885,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Pooja,Jaipur,Completed,9.6,53,25000,23000,2000,2026-03-12 19:50:00,2026-03-15
+LEAD-10891,Zoya Verma,zoya.verma90@example.com,+91-9858168614,Cloud DevOps Pro,meta_leads_spring,Agent-Sneha,Chandigarh,Completed,25.3,61,75000,75000,0,2026-02-11 13:36:00,2026-02-15
+LEAD-10892,Varun Sharma,varun.sharma88@example.com,+91-9871263101,Data Science Bootcamp,linkedin_professionals,Agent-Sneha,Bengaluru,Completed,16.8,22,60000,58000,2000,2026-01-24 13:19:00,2026-01-26
+LEAD-10893,Riya Kapoor,riya.kapoor39@example.com,+91-9878043121,UI/UX Design Masterclass,linkedin_professionals,Agent-Sneha,Hyderabad,Trial Booked,12.3,71,45000,1000,0,2026-02-02 19:23:00,2026-02-07
+LEAD-10894,Aditi Reddy,aditi.reddy82@example.com,+91-9828729977,Machine Learning Mastery,youtube_creator_sponsor,Agent-Karan,Mumbai,Trial Booked,9.0,87,75000,2000,0,2026-01-21 16:10:00,2026-01-24
+LEAD-10895,Ananya Bhatia,ananya.bhatia32@example.com,+91-9850437430,Full-Stack Web Dev,google_search_q1,Agent-Vikram,Delhi,Completed,9.0,38,60000,60000,0,2026-02-14 15:25:00,2026-02-16
+LEAD-10896,Ishaan Verma,ishaan.verma70@example.com,+91-9883796808,Data Science Bootcamp,meta_leads_spring,Agent-Pooja,Hyderabad,Trial Booked,13.7,40,25000,1000,0,2026-01-20 18:35:00,2026-01-23
+LEAD-10897,Rohan Reddy,rohan.reddy27@example.com,+91-9863671462,UI/UX Design Masterclass,meta_leads_spring,Agent-Sneha,Ahmedabad,Callback Requested,1.5,69,25000,0,0,2026-02-01 20:58:00,
+LEAD-10898,Tanvi Nair,tanvi.nair40@example.com,+91-9859544134,Full-Stack Web Dev,linkedin_professionals,Agent-Karan,Bengaluru,Trial Booked,8.3,97,25000,0,0,2026-02-14 15:42:00,2026-02-19
+LEAD-10899,Kavya Nair,kavya.nair65@example.com,+91-9822462163,Cloud DevOps Pro,google_search_q1,Agent-Karan,Kolkata,Trial Booked,9.4,25,60000,0,0,2026-01-10 18:14:00,2026-01-12
+LEAD-10900,Kavya Reddy,kavya.reddy60@example.com,+91-9879437349,UI/UX Design Masterclass,meta_leads_spring,Agent-Sneha,Pune,Completed,8.3,73,25000,20000,5000,2026-02-19 18:52:00,2026-02-23
+LEAD-10901,Varun Verma,varun.verma83@example.com,+91-9878044419,Machine Learning Mastery,google_search_q1,Agent-Amit,Bengaluru,Callback Requested,2.9,40,25000,0,0,2026-02-21 20:51:00,
+LEAD-10902,Mira Bhatia,mira.bhatia91@example.com,+91-9825563675,Machine Learning Mastery,google_search_q1,Agent-Sneha,Kolkata,Callback Requested,2.4,74,45000,0,0,2026-02-24 20:03:00,
+LEAD-10903,Riya Chopra,riya.chopra59@example.com,+91-9820738641,Machine Learning Mastery,organic_referral,Agent-Amit,Chennai,Not Interested,4.5,74,35000,0,0,2026-03-10 13:07:00,
+LEAD-10904,Ananya Sharma,ananya.sharma68@example.com,+91-9859271881,Full-Stack Web Dev,organic_referral,Agent-Amit,Chandigarh,Completed,30.7,35,45000,45000,0,2026-02-28 14:03:00,2026-03-04
+LEAD-10905,Aarav Kapoor,aarav.kapoor51@example.com,+91-9849954382,UI/UX Design Masterclass,youtube_creator_sponsor,Agent-Amit,Pune,Trial Booked,3.1,73,45000,1000,0,2026-01-04 16:17:00,2026-01-06
+LEAD-10906,Rohan Sharma,rohan.sharma28@example.com,+91-9894949087,Cloud DevOps Pro,google_search_q1,Agent-Amit,Jaipur,Callback Requested,1.2,88,25000,0,0,2026-02-20 11:11:00,
+LEAD-10907,Neha Reddy,neha.reddy14@example.com,+91-9829696511,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Sneha,Hyderabad,Callback Requested,2.9,29,25000,0,0,2026-03-09 17:29:00,
+LEAD-10908,Riya Joshi,riya.joshi42@example.com,+91-9897630141,UI/UX Design Masterclass,google_search_q1,Agent-Sneha,Bengaluru,Trial Booked,8.5,22,60000,1000,0,2026-02-13 18:47:00,2026-02-16
+LEAD-10909,Sanya Verma,sanya.verma65@example.com,+91-9846881253,Machine Learning Mastery,google_search_q1,Agent-Pooja,Pune,Trial Booked,17.9,93,25000,1000,0,2026-03-07 16:54:00,2026-03-09
+LEAD-10910,Sanya Joshi,sanya.joshi36@example.com,+91-9812512414,Data Science Bootcamp,youtube_creator_sponsor,Agent-Karan,Chandigarh,Callback Requested,0.5,54,45000,0,0,2026-02-21 10:43:00,
+LEAD-10911,Tanvi Reddy,tanvi.reddy46@example.com,+91-9891781029,UI/UX Design Masterclass,meta_leads_spring,Agent-Amit,Chandigarh,Completed,4.6,48,25000,20000,5000,2026-02-10 09:14:00,2026-02-12
+LEAD-10912,Varun Gupta,varun.gupta29@example.com,+91-9872001550,Cloud DevOps Pro,linkedin_professionals,Agent-Karan,Kolkata,Completed,29.2,64,45000,40000,5000,2026-03-02 16:00:00,2026-03-05
+LEAD-10913,Varun Joshi,varun.joshi81@example.com,+91-9856345273,Machine Learning Mastery,meta_leads_spring,Agent-Karan,Kolkata,Callback Requested,5.2,30,75000,0,0,2026-02-02 14:02:00,
+LEAD-10914,Aditi Mehta,aditi.mehta65@example.com,+91-9865753103,UI/UX Design Masterclass,organic_referral,Agent-Amit,Chennai,Completed,13.9,99,35000,33000,2000,2026-02-27 18:29:00,2026-02-28
+LEAD-10915,Tanvi Sharma,tanvi.sharma60@example.com,+91-9839300452,Full-Stack Web Dev,organic_referral,Agent-Sneha,Kolkata,Invalid Number,1.4,14,75000,0,0,2026-03-10 10:24:00,
+LEAD-10916,Dev Verma,dev.verma45@example.com,+91-9852869611,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Pooja,Kolkata,Not Interested,7.3,73,35000,0,0,2026-03-12 14:22:00,
+LEAD-10917,Tanvi Nair,tanvi.nair67@example.com,+91-9831067861,UI/UX Design Masterclass,google_search_q1,Agent-Amit,Jaipur,Trial Booked,29.3,56,60000,1000,0,2026-02-20 11:54:00,2026-02-24
+LEAD-10918,Zoya Das,zoya.das91@example.com,+91-9813897816,Data Science Bootcamp,linkedin_professionals,Agent-Amit,Chennai,Completed,15.8,73,60000,50000,10000,2026-03-01 18:11:00,2026-03-02
+LEAD-10919,Riya Mehta,riya.mehta90@example.com,+91-9873339163,Data Science Bootcamp,organic_referral,Agent-Karan,Bengaluru,Trial Booked,7.9,51,45000,2000,0,2026-03-15 19:26:00,2026-03-16
+LEAD-10920,Rohan Verma,rohan.verma40@example.com,+91-9833516421,Full-Stack Web Dev,google_search_q1,Agent-Karan,Kolkata,Lost,3.9,40,35000,0,0,2026-03-12 16:55:00,
+LEAD-10921,Neha Joshi,neha.joshi69@example.com,+91-9877137712,Data Science Bootcamp,youtube_creator_sponsor,Agent-Pooja,Mumbai,Completed,28.4,50,35000,25000,10000,2026-01-27 17:29:00,2026-01-31
+LEAD-10922,Rohan Verma,rohan.verma63@example.com,+91-9844900534,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Pooja,Bengaluru,Completed,4.8,69,75000,65000,10000,2026-01-01 19:02:00,2026-01-05
+LEAD-10923,Zoya Joshi,zoya.joshi15@example.com,+91-9858771134,Cloud DevOps Pro,google_search_q1,Agent-Karan,Jaipur,Callback Requested,6.6,57,25000,0,0,2026-01-04 15:30:00,
+LEAD-10924,Mira Joshi,mira.joshi56@example.com,+91-9865417567,Cloud DevOps Pro,linkedin_professionals,Agent-Sneha,Bengaluru,Not Interested,5.9,34,75000,0,0,2026-01-19 12:48:00,
+LEAD-10925,Rohan Nair,rohan.nair53@example.com,+91-9849633430,Data Science Bootcamp,meta_leads_spring,Agent-Sneha,Bengaluru,Completed,27.1,51,60000,50000,10000,2026-02-12 18:44:00,2026-02-13
+LEAD-10926,Sanya Gupta,sanya.gupta57@example.com,+91-9885636982,Full-Stack Web Dev,linkedin_professionals,Agent-Amit,Chandigarh,Trial Booked,9.7,23,75000,1000,0,2026-01-05 20:08:00,2026-01-07
+LEAD-10927,Kavya Joshi,kavya.joshi47@example.com,+91-9861570031,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Pooja,Pune,Trial Booked,7.3,36,35000,2000,0,2026-03-02 19:28:00,2026-03-05
+LEAD-10928,Ishaan Bhatia,ishaan.bhatia89@example.com,+91-9832872059,Data Science Bootcamp,google_search_q1,Agent-Pooja,Delhi,Trial Booked,15.7,86,75000,2000,0,2026-03-16 08:16:00,2026-03-19
+LEAD-10929,Kavya Bhatia,kavya.bhatia58@example.com,+91-9811910266,Data Science Bootcamp,organic_referral,Agent-Karan,Chennai,Completed,18.2,42,75000,65000,10000,2026-02-18 15:41:00,2026-02-20
+LEAD-10930,Rohan Verma,rohan.verma91@example.com,+91-9811637561,Full-Stack Web Dev,meta_leads_spring,Agent-Amit,Delhi,Completed,17.4,83,35000,30000,5000,2026-02-05 17:49:00,2026-02-06
+LEAD-10931,Varun Joshi,varun.joshi78@example.com,+91-9882172776,Cloud DevOps Pro,meta_leads_spring,Agent-Pooja,Mumbai,Trial Booked,20.5,54,75000,0,0,2026-02-21 18:06:00,2026-02-24
+LEAD-10932,Varun Verma,varun.verma87@example.com,+91-9845670151,Python for AI,linkedin_professionals,Agent-Karan,Hyderabad,Trial Booked,8.3,78,35000,0,0,2026-02-02 20:47:00,2026-02-04
+LEAD-10933,Rahul Iyer,rahul.iyer84@example.com,+91-9874059746,Python for AI,meta_leads_spring,Agent-Vikram,Delhi,Lost,2.3,49,35000,0,0,2026-03-08 12:03:00,
+LEAD-10934,Neha Verma,neha.verma22@example.com,+91-9882795512,Cloud DevOps Pro,google_search_q1,Agent-Amit,Bengaluru,Not Interested,4.1,30,60000,0,0,2026-01-26 15:07:00,
+LEAD-10935,Riya Mehta,riya.mehta10@example.com,+91-9843789014,Cloud DevOps Pro,linkedin_professionals,Agent-Amit,Chandigarh,Trial Booked,27.1,98,35000,2000,0,2026-02-25 09:46:00,2026-03-01
+LEAD-10936,Tanvi Reddy,tanvi.reddy78@example.com,+91-9843423167,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Sneha,Chennai,Callback Requested,2.5,58,45000,0,0,2026-03-06 15:32:00,
+LEAD-10937,Kavya Iyer,kavya.iyer30@example.com,+91-9833997481,UI/UX Design Masterclass,organic_referral,Agent-Karan,Ahmedabad,Completed,17.8,85,25000,20000,5000,2026-01-15 20:11:00,2026-01-19
+LEAD-10938,Aditi Chopra,aditi.chopra23@example.com,+91-9841112045,Machine Learning Mastery,youtube_creator_sponsor,Agent-Vikram,Ahmedabad,Lost,2.0,43,75000,0,0,2026-02-13 18:43:00,
+LEAD-10939,Dev Iyer,dev.iyer29@example.com,+91-9853455060,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Amit,Ahmedabad,Not Interested,4.8,46,75000,0,0,2026-01-14 18:19:00,
+LEAD-10940,Ananya Mehta,ananya.mehta44@example.com,+91-9840698761,Machine Learning Mastery,meta_leads_spring,Agent-Pooja,Delhi,Callback Requested,6.3,73,75000,0,0,2026-02-11 16:30:00,
+LEAD-10941,Zoya Iyer,zoya.iyer63@example.com,+91-9810761353,Machine Learning Mastery,youtube_creator_sponsor,Agent-Amit,Chennai,Completed,15.3,92,45000,35000,10000,2026-02-15 19:20:00,2026-02-19
+LEAD-10942,Tanvi Reddy,tanvi.reddy42@example.com,+91-9849566968,Python for AI,linkedin_professionals,Agent-Amit,Delhi,Callback Requested,2.1,45,25000,0,0,2026-02-28 20:17:00,
+LEAD-10943,Varun Nair,varun.nair66@example.com,+91-9846770694,Python for AI,youtube_creator_sponsor,Agent-Sneha,Chennai,Not Interested,5.1,47,35000,0,0,2026-03-13 16:47:00,
+LEAD-10944,Aditi Verma,aditi.verma87@example.com,+91-9888666938,Data Science Bootcamp,meta_leads_spring,Agent-Amit,Chandigarh,Callback Requested,2.4,82,60000,0,0,2026-03-02 08:49:00,
+LEAD-10945,Mira Sharma,mira.sharma62@example.com,+91-9830370571,Python for AI,google_search_q1,Agent-Amit,Chennai,Completed,34.3,61,35000,35000,0,2026-02-26 12:07:00,2026-03-02
+LEAD-10946,Varun Patel,varun.patel47@example.com,+91-9812932900,Cloud DevOps Pro,youtube_creator_sponsor,Agent-Karan,Bengaluru,Completed,19.8,91,75000,70000,5000,2026-02-26 11:20:00,2026-03-03
+LEAD-10947,Ananya Chopra,ananya.chopra52@example.com,+91-9836707338,Python for AI,youtube_creator_sponsor,Agent-Amit,Ahmedabad,Lost,4.0,49,60000,0,0,2026-01-28 10:20:00,
+LEAD-10948,Rohan Joshi,rohan.joshi72@example.com,+91-9816446622,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Karan,Mumbai,Callback Requested,3.5,74,60000,0,0,2026-01-18 09:41:00,
+LEAD-10949,Varun Malhotra,varun.malhotra91@example.com,+91-9819007281,Python for AI,organic_referral,Agent-Amit,Kolkata,Completed,21.2,56,75000,65000,10000,2026-01-05 16:55:00,2026-01-08
+LEAD-10950,Sanya Verma,sanya.verma88@example.com,+91-9897264876,Cloud DevOps Pro,google_search_q1,Agent-Karan,Jaipur,Not Interested,7.4,93,25000,0,0,2026-01-21 20:32:00,
+LEAD-10951,Dev Chopra,dev.chopra65@example.com,+91-9812883470,Python for AI,linkedin_professionals,Agent-Amit,Delhi,Trial Booked,27.9,87,45000,1000,0,2026-02-12 09:11:00,2026-02-17
+LEAD-10952,Mira Kapoor,mira.kapoor38@example.com,+91-9888433683,Full-Stack Web Dev,google_search_q1,Agent-Karan,Mumbai,Not Interested,2.4,39,60000,0,0,2026-01-02 11:20:00,
+LEAD-10953,Rohan Chopra,rohan.chopra28@example.com,+91-9837668202,Full-Stack Web Dev,organic_referral,Agent-Sneha,Hyderabad,Callback Requested,1.9,39,75000,0,0,2026-03-15 13:57:00,
+LEAD-10954,Ishaan Patel,ishaan.patel39@example.com,+91-9898337685,Python for AI,google_search_q1,Agent-Karan,Mumbai,Callback Requested,7.0,61,25000,0,0,2026-01-17 16:22:00,
+LEAD-10955,Dev Mehta,dev.mehta66@example.com,+91-9826523557,Full-Stack Web Dev,meta_leads_spring,Agent-Sneha,Hyderabad,Invalid Number,7.1,3,25000,0,0,2026-01-28 20:22:00,
+LEAD-10956,Varun Reddy,varun.reddy32@example.com,+91-9878008569,Python for AI,linkedin_professionals,Agent-Pooja,Ahmedabad,Trial Booked,5.5,35,60000,2000,0,2026-02-26 14:12:00,2026-02-28
+LEAD-10957,Zoya Kapoor,zoya.kapoor21@example.com,+91-9878036333,UI/UX Design Masterclass,organic_referral,Agent-Vikram,Hyderabad,Completed,8.7,73,45000,40000,5000,2026-01-16 15:47:00,2026-01-21
+LEAD-10958,Kavya Gupta,kavya.gupta22@example.com,+91-9857604491,Full-Stack Web Dev,organic_referral,Agent-Vikram,Mumbai,Lost,7.7,71,60000,0,0,2026-01-01 14:51:00,
+LEAD-10959,Kavya Iyer,kavya.iyer32@example.com,+91-9885776544,Python for AI,linkedin_professionals,Agent-Amit,Bengaluru,Completed,30.0,38,45000,45000,0,2026-02-19 15:01:00,2026-02-22
+LEAD-10960,Aarav Patel,aarav.patel63@example.com,+91-9831136969,Cloud DevOps Pro,meta_leads_spring,Agent-Pooja,Mumbai,Callback Requested,3.3,57,35000,0,0,2026-01-08 17:51:00,
+LEAD-10961,Mira Patel,mira.patel49@example.com,+91-9864177562,Data Science Bootcamp,organic_referral,Agent-Pooja,Delhi,Callback Requested,4.2,23,35000,0,0,2026-02-16 09:50:00,
+LEAD-10962,Rohan Nair,rohan.nair58@example.com,+91-9890330313,Full-Stack Web Dev,organic_referral,Agent-Amit,Mumbai,Completed,4.0,72,25000,23000,2000,2026-02-12 08:56:00,2026-02-16
+LEAD-10963,Sanya Malhotra,sanya.malhotra78@example.com,+91-9869111612,Data Science Bootcamp,meta_leads_spring,Agent-Vikram,Hyderabad,Completed,30.3,73,60000,50000,10000,2026-01-12 14:04:00,2026-01-13
+LEAD-10964,Ananya Das,ananya.das83@example.com,+91-9836345208,Cloud DevOps Pro,google_search_q1,Agent-Amit,Pune,Trial Booked,18.0,32,45000,2000,0,2026-01-17 13:42:00,2026-01-22
+LEAD-10965,Ananya Mehta,ananya.mehta33@example.com,+91-9898499057,Cloud DevOps Pro,meta_leads_spring,Agent-Pooja,Bengaluru,Completed,9.9,51,75000,75000,0,2026-01-13 19:25:00,2026-01-16
+LEAD-10966,Ishaan Nair,ishaan.nair84@example.com,+91-9814593643,UI/UX Design Masterclass,linkedin_professionals,Agent-Karan,Chandigarh,Trial Booked,24.0,67,45000,1000,0,2026-02-04 20:57:00,2026-02-06
+LEAD-10967,Sanya Chopra,sanya.chopra11@example.com,+91-9886784181,Machine Learning Mastery,google_search_q1,Agent-Pooja,Mumbai,Invalid Number,3.5,3,35000,0,0,2026-01-19 18:02:00,
+LEAD-10968,Neha Gupta,neha.gupta75@example.com,+91-9855278396,Full-Stack Web Dev,meta_leads_spring,Agent-Karan,Hyderabad,Trial Booked,23.8,55,60000,0,0,2026-02-28 17:16:00,2026-03-05
+LEAD-10969,Kavya Patel,kavya.patel56@example.com,+91-9867245809,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Sneha,Ahmedabad,Not Interested,2.5,86,45000,0,0,2026-01-13 18:54:00,
+LEAD-10970,Rohan Sharma,rohan.sharma80@example.com,+91-9821135674,Cloud DevOps Pro,meta_leads_spring,Agent-Vikram,Ahmedabad,Completed,17.2,59,35000,30000,5000,2026-01-15 09:35:00,2026-01-18
+LEAD-10971,Varun Malhotra,varun.malhotra77@example.com,+91-9816307591,Data Science Bootcamp,linkedin_professionals,Agent-Karan,Hyderabad,Completed,30.4,92,75000,73000,2000,2026-01-03 11:46:00,2026-01-06
+LEAD-10972,Tanvi Malhotra,tanvi.malhotra89@example.com,+91-9840367766,Full-Stack Web Dev,organic_referral,Agent-Pooja,Jaipur,Callback Requested,5.3,41,25000,0,0,2026-01-22 13:10:00,
+LEAD-10973,Varun Chopra,varun.chopra76@example.com,+91-9866541115,UI/UX Design Masterclass,meta_leads_spring,Agent-Karan,Chandigarh,Lost,2.7,71,25000,0,0,2026-02-24 11:17:00,
+LEAD-10974,Zoya Gupta,zoya.gupta88@example.com,+91-9889723307,Machine Learning Mastery,youtube_creator_sponsor,Agent-Pooja,Pune,Callback Requested,2.1,59,75000,0,0,2026-01-01 09:16:00,
+LEAD-10975,Aditi Sharma,aditi.sharma54@example.com,+91-9819466596,Machine Learning Mastery,meta_leads_spring,Agent-Pooja,Delhi,Trial Booked,8.8,95,60000,1000,0,2026-02-01 14:50:00,2026-02-03
+LEAD-10976,Dev Iyer,dev.iyer11@example.com,+91-9895464025,Data Science Bootcamp,linkedin_professionals,Agent-Vikram,Chandigarh,Callback Requested,6.2,55,35000,0,0,2026-01-20 11:28:00,
+LEAD-10977,Aditi Malhotra,aditi.malhotra79@example.com,+91-9891877605,Full-Stack Web Dev,organic_referral,Agent-Vikram,Chandigarh,Not Interested,6.7,58,60000,0,0,2026-03-02 11:42:00,
+LEAD-10978,Neha Patel,neha.patel98@example.com,+91-9875404850,Python for AI,youtube_creator_sponsor,Agent-Amit,Mumbai,Lost,4.9,74,60000,0,0,2026-02-18 12:07:00,
+LEAD-10979,Tanvi Iyer,tanvi.iyer45@example.com,+91-9847026058,Data Science Bootcamp,organic_referral,Agent-Vikram,Chandigarh,Completed,23.2,27,60000,50000,10000,2026-02-16 11:55:00,2026-02-20
+LEAD-10980,Zoya Iyer,zoya.iyer85@example.com,+91-9868219225,UI/UX Design Masterclass,organic_referral,Agent-Amit,Pune,Trial Booked,18.6,94,60000,0,0,2026-02-15 09:00:00,2026-02-16
+LEAD-10981,Rohan Iyer,rohan.iyer85@example.com,+91-9896258750,Python for AI,linkedin_professionals,Agent-Karan,Chandigarh,Callback Requested,5.0,25,60000,0,0,2026-02-18 17:33:00,
+LEAD-10982,Aditi Kapoor,aditi.kapoor83@example.com,+91-9880164383,Python for AI,google_search_q1,Agent-Pooja,Chandigarh,Trial Booked,30.2,76,45000,2000,0,2026-02-23 14:45:00,2026-02-24
+LEAD-10983,Aarav Reddy,aarav.reddy42@example.com,+91-9858128991,UI/UX Design Masterclass,linkedin_professionals,Agent-Vikram,Delhi,Completed,26.2,23,45000,35000,10000,2026-01-04 18:21:00,2026-01-05
+LEAD-10984,Varun Bhatia,varun.bhatia80@example.com,+91-9897011596,Full-Stack Web Dev,youtube_creator_sponsor,Agent-Pooja,Mumbai,Completed,27.6,91,35000,33000,2000,2026-02-11 15:44:00,2026-02-14
+LEAD-10985,Kavya Joshi,kavya.joshi49@example.com,+91-9823596009,Machine Learning Mastery,youtube_creator_sponsor,Agent-Pooja,Bengaluru,Not Interested,2.9,49,75000,0,0,2026-02-12 13:39:00,
+LEAD-10986,Zoya Joshi,zoya.joshi66@example.com,+91-9858514771,Python for AI,linkedin_professionals,Agent-Amit,Delhi,Callback Requested,3.0,64,60000,0,0,2026-02-18 11:16:00,
+LEAD-10987,Tanvi Patel,tanvi.patel19@example.com,+91-9836658273,Data Science Bootcamp,youtube_creator_sponsor,Agent-Vikram,Chandigarh,Completed,22.6,70,45000,43000,2000,2026-02-09 16:44:00,2026-02-14
+LEAD-10988,Aditi Verma,aditi.verma23@example.com,+91-9849448235,UI/UX Design Masterclass,organic_referral,Agent-Sneha,Delhi,Not Interested,7.4,37,60000,0,0,2026-02-13 16:22:00,
+LEAD-10989,Riya Kapoor,riya.kapoor38@example.com,+91-9842930552,Python for AI,youtube_creator_sponsor,Agent-Pooja,Mumbai,Trial Booked,29.6,48,25000,1000,0,2026-02-01 16:09:00,2026-02-04
+LEAD-10990,Zoya Mehta,zoya.mehta76@example.com,+91-9887966489,Machine Learning Mastery,meta_leads_spring,Agent-Pooja,Hyderabad,Completed,8.5,72,60000,58000,2000,2026-01-03 17:30:00,2026-01-07
+LEAD-10991,Mira Bhatia,mira.bhatia55@example.com,+91-9820340193,Cloud DevOps Pro,linkedin_professionals,Agent-Amit,Chennai,Callback Requested,2.9,50,45000,0,0,2026-02-03 14:23:00,
+LEAD-10992,Sanya Patel,sanya.patel54@example.com,+91-9896565865,Full-Stack Web Dev,meta_leads_spring,Agent-Karan,Bengaluru,Trial Booked,9.9,97,45000,0,0,2026-03-06 19:30:00,2026-03-11
+LEAD-10993,Rahul Das,rahul.das31@example.com,+91-9812968249,Data Science Bootcamp,linkedin_professionals,Agent-Amit,Mumbai,Trial Booked,33.5,28,75000,1000,0,2026-02-28 17:28:00,2026-03-04
+LEAD-10994,Rahul Gupta,rahul.gupta13@example.com,+91-9890227105,Cloud DevOps Pro,google_search_q1,Agent-Amit,Delhi,Trial Booked,33.3,52,45000,2000,0,2026-01-09 18:22:00,2026-01-10
+LEAD-10995,Neha Reddy,neha.reddy75@example.com,+91-9864645674,UI/UX Design Masterclass,meta_leads_spring,Agent-Sneha,Ahmedabad,Completed,28.4,92,45000,43000,2000,2026-02-09 16:44:00,2026-02-12
+LEAD-10996,Ananya Chopra,ananya.chopra19@example.com,+91-9892389614,Cloud DevOps Pro,organic_referral,Agent-Amit,Chandigarh,Not Interested,1.4,95,45000,0,0,2026-01-07 19:48:00,
+LEAD-10997,Aditi Malhotra,aditi.malhotra61@example.com,+91-9887041363,Machine Learning Mastery,meta_leads_spring,Agent-Pooja,Chandigarh,Completed,5.6,31,25000,20000,5000,2026-01-23 10:01:00,2026-01-27
+LEAD-10998,Sanya Bhatia,sanya.bhatia65@example.com,+91-9843824764,Machine Learning Mastery,linkedin_professionals,Agent-Sneha,Delhi,Callback Requested,1.8,65,45000,0,0,2026-02-13 10:06:00,
+LEAD-10999,Neha Verma,neha.verma17@example.com,+91-9884776506,Data Science Bootcamp,youtube_creator_sponsor,Agent-Sneha,Chennai,Completed,31.1,22,75000,70000,5000,2026-01-11 13:28:00,2026-01-12
+LEAD-11000,Aarav Bhatia,aarav.bhatia18@example.com,+91-9833138191,Full-Stack Web Dev,google_search_q1,Agent-Pooja,Jaipur,Completed,20.8,92,45000,45000,0,2026-01-02 08:20:00,2026-01-06

@@ -1,0 +1,1001 @@
+order_id,customer_id,customer_name,customer_email,product_category,sales_channel,region,payment_method,order_status,units_ordered,unit_price_usd,gross_amount_usd,discount_amount_usd,net_revenue_usd,shipping_cost_usd,order_date,delivery_date
+ORD-20001,CUST-327,Noah Martinez,noah.martinez4@testmail.com,Books & Media,Desktop Web,Asia-Pacific,Credit Card,Delivered,3,89.17,267.51,13.38,254.13,4.99,2026-01-20 17:36:00,2026-01-23
+ORD-20002,CUST-198,Lucas Smith,lucas.smith78@testmail.com,Sports & Fitness,Mobile App,Asia-Pacific,PayPal,Processing,1,69.44,69.44,0.0,69.44,14.99,2026-01-14 17:43:00,
+ORD-20003,CUST-222,Olivia Martinez,olivia.martinez63@testmail.com,Home & Kitchen,Affiliate Partner,Middle East,Apple Pay,Cancelled,2,50.53,101.06,10.11,0.0,4.99,2026-02-27 09:42:00,
+ORD-20004,CUST-487,Noah Miller,noah.miller70@testmail.com,Electronics,Direct,Latin America,Cash on Delivery,Delivered,2,782.14,1564.28,312.86,1251.42,14.99,2026-01-13 22:05:00,2026-01-20
+ORD-20005,CUST-264,Noah Jones,noah.jones72@testmail.com,Home & Kitchen,Desktop Web,Europe,PayPal,Delivered,1,66.5,66.5,9.97,56.53,0.0,2026-03-22 19:25:00,2026-03-27
+ORD-20006,CUST-428,Elijah Martinez,elijah.martinez41@testmail.com,Books & Media,Direct,Asia-Pacific,Credit Card,Delivered,1,76.68,76.68,15.34,61.34,4.99,2026-03-09 07:12:00,2026-03-11
+ORD-20007,CUST-360,Emma Rodriguez,emma.rodriguez48@testmail.com,Electronics,Mobile App,Latin America,UPI,Returned,3,648.68,1946.04,389.21,0.0,4.99,2026-02-15 23:03:00,2026-02-22
+ORD-20008,CUST-295,Emma Brown,emma.brown27@testmail.com,Electronics,Affiliate Partner,Europe,PayPal,Cancelled,1,573.12,573.12,0.0,0.0,0.0,2026-01-10 12:31:00,
+ORD-20009,CUST-406,Liam Jones,liam.jones32@testmail.com,Electronics,Desktop Web,Asia-Pacific,UPI,Shipped,3,389.51,1168.53,58.43,1110.1,4.99,2026-02-19 13:23:00,
+ORD-20010,CUST-197,Lucas Jones,lucas.jones63@testmail.com,Books & Media,Instagram Ad,Asia-Pacific,UPI,Shipped,1,101.47,101.47,15.22,86.25,9.99,2026-02-04 19:44:00,
+ORD-20011,CUST-193,Ava Martinez,ava.martinez69@testmail.com,Electronics,Affiliate Partner,Latin America,UPI,Delivered,1,774.71,774.71,116.21,658.5,0.0,2026-01-29 08:40:00,2026-01-31
+ORD-20012,CUST-144,Oliver Williams,oliver.williams72@testmail.com,Beauty & Care,Direct,Latin America,PayPal,Returned,1,94.9,94.9,14.24,0.0,4.99,2026-03-10 15:18:00,2026-03-16
+ORD-20013,CUST-323,Elijah Brown,elijah.brown79@testmail.com,Fashion & Apparel,Instagram Ad,Latin America,Apple Pay,Returned,3,53.59,160.77,0.0,0.0,4.99,2026-01-14 09:14:00,2026-01-16
+ORD-20014,CUST-228,Oliver Davis,oliver.davis23@testmail.com,Beauty & Care,Desktop Web,North America,Cash on Delivery,Delivered,1,16.49,16.49,0.82,15.67,9.99,2026-01-25 12:46:00,2026-01-29
+ORD-20015,CUST-325,Oliver Davis,oliver.davis9@testmail.com,Fashion & Apparel,Mobile App,Europe,PayPal,Delivered,2,77.06,154.12,23.12,131.0,0.0,2026-03-06 08:14:00,2026-03-09
+ORD-20016,CUST-470,Noah Martinez,noah.martinez42@testmail.com,Sports & Fitness,Direct,Europe,Cash on Delivery,Delivered,1,69.39,69.39,0.0,69.39,4.99,2026-02-10 07:07:00,2026-02-17
+ORD-20017,CUST-388,Oliver Smith,oliver.smith70@testmail.com,Fashion & Apparel,Mobile App,North America,Apple Pay,Shipped,1,112.88,112.88,5.64,107.24,0.0,2026-01-01 07:52:00,
+ORD-20018,CUST-276,Liam Smith,liam.smith82@testmail.com,Beauty & Care,Affiliate Partner,Latin America,PayPal,Cancelled,3,39.96,119.88,17.98,0.0,9.99,2026-03-20 18:28:00,
+ORD-20019,CUST-288,Elijah Davis,elijah.davis95@testmail.com,Fashion & Apparel,Affiliate Partner,Asia-Pacific,UPI,Delivered,1,174.94,174.94,17.49,157.45,4.99,2026-01-19 15:40:00,2026-01-26
+ORD-20020,CUST-335,Emma Miller,emma.miller94@testmail.com,Home & Kitchen,Desktop Web,Latin America,Cash on Delivery,Delivered,1,113.9,113.9,17.09,96.81,14.99,2026-01-30 18:08:00,2026-02-06
+ORD-20021,CUST-337,Elijah Davis,elijah.davis71@testmail.com,Books & Media,Affiliate Partner,Asia-Pacific,Apple Pay,Delivered,1,35.05,35.05,1.75,33.3,9.99,2026-01-18 22:13:00,2026-01-21
+ORD-20022,CUST-126,Sophia Garcia,sophia.garcia26@testmail.com,Beauty & Care,Direct,Europe,Apple Pay,Delivered,1,102.45,102.45,20.49,81.96,14.99,2026-01-14 23:41:00,2026-01-19
+ORD-20023,CUST-481,Noah Garcia,noah.garcia88@testmail.com,Sports & Fitness,Desktop Web,Middle East,Apple Pay,Shipped,2,55.53,111.06,5.55,105.51,9.99,2026-01-24 20:01:00,
+ORD-20024,CUST-412,Lucas Williams,lucas.williams98@testmail.com,Beauty & Care,Affiliate Partner,Europe,UPI,Delivered,3,28.71,86.13,12.92,73.21,9.99,2026-02-22 16:29:00,2026-02-25
+ORD-20025,CUST-282,Lucas Rodriguez,lucas.rodriguez26@testmail.com,Beauty & Care,Mobile App,North America,Credit Card,Shipped,3,20.54,61.62,0.0,61.62,9.99,2026-01-03 06:58:00,
+ORD-20026,CUST-177,Olivia Brown,olivia.brown21@testmail.com,Home & Kitchen,Mobile App,Asia-Pacific,Cash on Delivery,Delivered,1,46.84,46.84,9.37,37.47,4.99,2026-02-27 21:21:00,2026-03-06
+ORD-20027,CUST-327,Sophia Johnson,sophia.johnson13@testmail.com,Sports & Fitness,Instagram Ad,Middle East,Cash on Delivery,Delivered,2,109.88,219.76,0.0,219.76,4.99,2026-03-22 21:44:00,2026-03-26
+ORD-20028,CUST-443,Emma Williams,emma.williams73@testmail.com,Books & Media,Affiliate Partner,Europe,Credit Card,Delivered,2,34.09,68.18,0.0,68.18,14.99,2026-03-17 17:59:00,2026-03-22
+ORD-20029,CUST-249,Oliver Garcia,oliver.garcia92@testmail.com,Electronics,Direct,Europe,Cash on Delivery,Delivered,1,799.97,799.97,40.0,759.97,9.99,2026-02-08 18:58:00,2026-02-11
+ORD-20030,CUST-350,Liam Garcia,liam.garcia41@testmail.com,Sports & Fitness,Affiliate Partner,Middle East,Apple Pay,Delivered,1,44.43,44.43,8.89,35.54,0.0,2026-01-22 17:54:00,2026-01-26
+ORD-20031,CUST-270,Olivia Smith,olivia.smith71@testmail.com,Beauty & Care,Desktop Web,Asia-Pacific,Apple Pay,Shipped,1,119.49,119.49,17.92,101.57,0.0,2026-02-25 16:02:00,
+ORD-20032,CUST-271,Emma Williams,emma.williams47@testmail.com,Sports & Fitness,Mobile App,North America,PayPal,Shipped,1,55.78,55.78,5.58,50.2,14.99,2026-02-18 12:57:00,
+ORD-20033,CUST-360,Charlotte Miller,charlotte.miller15@testmail.com,Books & Media,Direct,Asia-Pacific,PayPal,Delivered,1,110.9,110.9,0.0,110.9,9.99,2026-03-12 12:31:00,2026-03-16
+ORD-20034,CUST-416,Emma Williams,emma.williams10@testmail.com,Electronics,Desktop Web,Asia-Pacific,Credit Card,Delivered,3,87.43,262.29,0.0,262.29,9.99,2026-01-20 13:49:00,2026-01-22
+ORD-20035,CUST-146,Olivia Martinez,olivia.martinez92@testmail.com,Beauty & Care,Affiliate Partner,Asia-Pacific,Credit Card,Delivered,1,111.39,111.39,0.0,111.39,4.99,2026-03-20 09:03:00,2026-03-27
+ORD-20036,CUST-340,Liam Smith,liam.smith37@testmail.com,Books & Media,Desktop Web,North America,Apple Pay,Delivered,3,89.36,268.08,40.21,227.87,4.99,2026-02-11 22:12:00,2026-02-16
+ORD-20037,CUST-196,Lucas Smith,lucas.smith24@testmail.com,Books & Media,Desktop Web,North America,UPI,Delivered,2,34.88,69.76,0.0,69.76,0.0,2026-01-26 14:09:00,2026-02-01
+ORD-20038,CUST-371,Oliver Brown,oliver.brown1@testmail.com,Fashion & Apparel,Affiliate Partner,Middle East,PayPal,Delivered,1,91.11,91.11,9.11,82.0,4.99,2026-03-18 19:32:00,2026-03-25
+ORD-20039,CUST-263,Ava Jones,ava.jones76@testmail.com,Fashion & Apparel,Mobile App,Latin America,PayPal,Delivered,2,136.0,272.0,0.0,272.0,0.0,2026-01-08 19:05:00,2026-01-15
+ORD-20040,CUST-216,Oliver Martinez,oliver.martinez76@testmail.com,Beauty & Care,Mobile App,Asia-Pacific,Apple Pay,Delivered,1,66.35,66.35,13.27,53.08,4.99,2026-02-15 21:23:00,2026-02-20
+ORD-20041,CUST-112,Olivia Smith,olivia.smith18@testmail.com,Beauty & Care,Direct,Latin America,PayPal,Delivered,1,29.92,29.92,4.49,25.43,14.99,2026-02-21 20:55:00,2026-02-26
+ORD-20042,CUST-238,Oliver Miller,oliver.miller44@testmail.com,Beauty & Care,Desktop Web,North America,Apple Pay,Delivered,1,16.72,16.72,2.51,14.21,4.99,2026-01-23 10:37:00,2026-01-26
+ORD-20043,CUST-440,Noah Smith,noah.smith8@testmail.com,Books & Media,Affiliate Partner,Middle East,PayPal,Delivered,2,60.45,120.9,6.05,114.85,14.99,2026-01-30 12:31:00,2026-02-05
+ORD-20044,CUST-106,Oliver Johnson,oliver.johnson40@testmail.com,Electronics,Direct,Middle East,PayPal,Shipped,4,698.79,2795.16,419.27,2375.89,14.99,2026-01-19 13:33:00,
+ORD-20045,CUST-389,Olivia Garcia,olivia.garcia61@testmail.com,Beauty & Care,Direct,Latin America,Cash on Delivery,Shipped,1,91.1,91.1,4.55,86.55,9.99,2026-01-16 10:33:00,
+ORD-20046,CUST-457,Liam Smith,liam.smith25@testmail.com,Books & Media,Direct,Europe,PayPal,Delivered,2,73.27,146.54,29.31,117.23,9.99,2026-01-30 16:40:00,2026-02-04
+ORD-20047,CUST-361,Olivia Garcia,olivia.garcia13@testmail.com,Beauty & Care,Instagram Ad,Europe,Cash on Delivery,Returned,1,64.32,64.32,0.0,0.0,9.99,2026-03-20 13:52:00,2026-03-23
+ORD-20048,CUST-286,Sophia Williams,sophia.williams8@testmail.com,Sports & Fitness,Direct,Latin America,Apple Pay,Delivered,1,35.28,35.28,3.53,31.75,4.99,2026-03-19 14:04:00,2026-03-24
+ORD-20049,CUST-430,Elijah Brown,elijah.brown25@testmail.com,Fashion & Apparel,Mobile App,Middle East,Apple Pay,Delivered,4,100.13,400.52,40.05,360.47,4.99,2026-03-13 10:50:00,2026-03-17
+ORD-20050,CUST-233,Lucas Martinez,lucas.martinez27@testmail.com,Electronics,Direct,Europe,Cash on Delivery,Shipped,2,405.7,811.4,0.0,811.4,9.99,2026-03-06 15:15:00,
+ORD-20051,CUST-404,Olivia Jones,olivia.jones57@testmail.com,Electronics,Mobile App,Latin America,Credit Card,Shipped,3,193.66,580.98,87.15,493.83,4.99,2026-02-17 20:49:00,
+ORD-20052,CUST-382,Oliver Johnson,oliver.johnson62@testmail.com,Home & Kitchen,Affiliate Partner,Middle East,Apple Pay,Delivered,1,16.78,16.78,0.0,16.78,9.99,2026-02-06 11:37:00,2026-02-09
+ORD-20053,CUST-389,Oliver Williams,oliver.williams97@testmail.com,Home & Kitchen,Affiliate Partner,Latin America,PayPal,Delivered,3,18.63,55.89,5.59,50.3,9.99,2026-02-20 11:20:00,2026-02-26
+ORD-20054,CUST-486,Lucas Smith,lucas.smith47@testmail.com,Sports & Fitness,Mobile App,Europe,Apple Pay,Shipped,1,69.89,69.89,3.49,66.4,0.0,2026-01-09 08:08:00,
+ORD-20055,CUST-206,Oliver Garcia,oliver.garcia58@testmail.com,Electronics,Affiliate Partner,North America,Apple Pay,Delivered,1,688.09,688.09,34.4,653.69,0.0,2026-02-21 23:03:00,2026-02-27
+ORD-20056,CUST-356,Olivia Johnson,olivia.johnson41@testmail.com,Home & Kitchen,Desktop Web,Middle East,Credit Card,Delivered,1,94.65,94.65,4.73,89.92,4.99,2026-01-07 13:30:00,2026-01-09
+ORD-20057,CUST-398,Oliver Miller,oliver.miller63@testmail.com,Beauty & Care,Affiliate Partner,Asia-Pacific,Apple Pay,Delivered,1,76.92,76.92,3.85,73.07,4.99,2026-01-04 19:35:00,2026-01-06
+ORD-20058,CUST-236,Emma Garcia,emma.garcia72@testmail.com,Beauty & Care,Mobile App,Asia-Pacific,Cash on Delivery,Delivered,1,111.1,111.1,22.22,88.88,9.99,2026-01-22 18:13:00,2026-01-25
+ORD-20059,CUST-114,Oliver Rodriguez,oliver.rodriguez58@testmail.com,Books & Media,Desktop Web,Middle East,PayPal,Processing,3,56.23,168.69,16.87,151.82,14.99,2026-02-12 12:20:00,
+ORD-20060,CUST-284,Lucas Rodriguez,lucas.rodriguez60@testmail.com,Books & Media,Desktop Web,North America,Apple Pay,Delivered,2,46.35,92.7,4.64,88.06,9.99,2026-01-14 12:12:00,2026-01-20
+ORD-20061,CUST-334,Emma Brown,emma.brown51@testmail.com,Sports & Fitness,Direct,North America,PayPal,Delivered,3,36.67,110.01,16.5,93.51,9.99,2026-01-02 12:53:00,2026-01-05
+ORD-20062,CUST-100,Lucas Williams,lucas.williams39@testmail.com,Books & Media,Affiliate Partner,Asia-Pacific,UPI,Delivered,3,80.02,240.06,0.0,240.06,9.99,2026-01-10 09:56:00,2026-01-12
+ORD-20063,CUST-243,Elijah Miller,elijah.miller54@testmail.com,Beauty & Care,Instagram Ad,North America,Credit Card,Returned,5,92.89,464.45,46.45,0.0,0.0,2026-02-17 12:41:00,2026-02-20
+ORD-20064,CUST-189,Emma Jones,emma.jones2@testmail.com,Electronics,Mobile App,Asia-Pacific,Apple Pay,Delivered,2,605.01,1210.02,0.0,1210.02,14.99,2026-01-27 09:58:00,2026-02-03
+ORD-20065,CUST-133,Liam Johnson,liam.johnson51@testmail.com,Beauty & Care,Desktop Web,Middle East,Cash on Delivery,Delivered,2,21.64,43.28,2.16,41.12,4.99,2026-02-04 14:01:00,2026-02-11
+ORD-20066,CUST-468,Sophia Smith,sophia.smith62@testmail.com,Electronics,Affiliate Partner,Latin America,Apple Pay,Delivered,2,818.76,1637.52,163.75,1473.77,9.99,2026-01-23 06:36:00,2026-01-25
+ORD-20067,CUST-218,Noah Jones,noah.jones92@testmail.com,Electronics,Direct,Europe,UPI,Returned,3,723.25,2169.75,325.46,0.0,14.99,2026-02-27 06:41:00,2026-03-01
+ORD-20068,CUST-264,Emma Jones,emma.jones95@testmail.com,Home & Kitchen,Mobile App,Latin America,Apple Pay,Delivered,3,91.25,273.75,54.75,219.0,4.99,2026-03-11 11:23:00,2026-03-18
+ORD-20069,CUST-284,Oliver Miller,oliver.miller56@testmail.com,Fashion & Apparel,Instagram Ad,Latin America,PayPal,Delivered,2,101.65,203.3,40.66,162.64,14.99,2026-02-07 10:52:00,2026-02-14
+ORD-20070,CUST-406,Liam Martinez,liam.martinez44@testmail.com,Home & Kitchen,Desktop Web,Asia-Pacific,Apple Pay,Delivered,1,19.49,19.49,3.9,15.59,4.99,2026-02-27 23:55:00,2026-03-06
+ORD-20071,CUST-394,Charlotte Williams,charlotte.williams1@testmail.com,Sports & Fitness,Desktop Web,Europe,Apple Pay,Returned,5,72.12,360.6,72.12,0.0,0.0,2026-01-11 19:56:00,2026-01-13
+ORD-20072,CUST-212,Ava Rodriguez,ava.rodriguez74@testmail.com,Beauty & Care,Desktop Web,Asia-Pacific,Apple Pay,Shipped,3,54.2,162.6,24.39,138.21,14.99,2026-01-15 16:46:00,
+ORD-20073,CUST-223,Oliver Miller,oliver.miller97@testmail.com,Beauty & Care,Mobile App,Latin America,UPI,Delivered,2,67.0,134.0,0.0,134.0,9.99,2026-01-25 06:57:00,2026-01-31
+ORD-20074,CUST-229,Sophia Jones,sophia.jones58@testmail.com,Fashion & Apparel,Instagram Ad,Europe,Credit Card,Delivered,1,153.29,153.29,0.0,153.29,0.0,2026-01-03 06:18:00,2026-01-05
+ORD-20075,CUST-447,Liam Miller,liam.miller63@testmail.com,Home & Kitchen,Affiliate Partner,Middle East,PayPal,Delivered,1,80.02,80.02,12.0,68.02,0.0,2026-02-13 18:23:00,2026-02-16
+ORD-20076,CUST-294,Emma Davis,emma.davis5@testmail.com,Home & Kitchen,Direct,Latin America,Apple Pay,Delivered,2,107.47,214.94,32.24,182.7,0.0,2026-03-10 09:27:00,2026-03-17
+ORD-20077,CUST-265,Elijah Johnson,elijah.johnson40@testmail.com,Books & Media,Direct,North America,UPI,Delivered,2,40.34,80.68,12.1,68.58,0.0,2026-03-22 09:29:00,2026-03-27
+ORD-20078,CUST-456,Charlotte Davis,charlotte.davis73@testmail.com,Fashion & Apparel,Instagram Ad,North America,UPI,Delivered,1,102.82,102.82,15.42,87.4,9.99,2026-03-17 06:59:00,2026-03-23
+ORD-20079,CUST-318,Sophia Rodriguez,sophia.rodriguez15@testmail.com,Beauty & Care,Mobile App,North America,Cash on Delivery,Delivered,1,32.09,32.09,3.21,28.88,9.99,2026-03-04 11:57:00,2026-03-09
+ORD-20080,CUST-217,Olivia Johnson,olivia.johnson92@testmail.com,Fashion & Apparel,Affiliate Partner,North America,Apple Pay,Delivered,1,77.71,77.71,15.54,62.17,14.99,2026-01-23 18:02:00,2026-01-27
+ORD-20081,CUST-425,Elijah Johnson,elijah.johnson70@testmail.com,Electronics,Desktop Web,Middle East,Cash on Delivery,Delivered,2,411.08,822.16,164.43,657.73,9.99,2026-01-04 20:31:00,2026-01-08
+ORD-20082,CUST-359,Liam Miller,liam.miller32@testmail.com,Books & Media,Mobile App,Middle East,Apple Pay,Delivered,3,84.79,254.37,38.16,216.21,14.99,2026-01-09 08:05:00,2026-01-13
+ORD-20083,CUST-159,Olivia Johnson,olivia.johnson72@testmail.com,Electronics,Desktop Web,Europe,UPI,Delivered,1,131.45,131.45,6.57,124.88,14.99,2026-02-27 23:23:00,2026-03-05
+ORD-20084,CUST-255,Emma Brown,emma.brown18@testmail.com,Fashion & Apparel,Desktop Web,Latin America,Credit Card,Delivered,1,128.22,128.22,25.64,102.58,0.0,2026-02-17 07:32:00,2026-02-19
+ORD-20085,CUST-174,Oliver Brown,oliver.brown86@testmail.com,Books & Media,Desktop Web,Latin America,Apple Pay,Delivered,1,81.51,81.51,16.3,65.21,0.0,2026-03-03 12:06:00,2026-03-06
+ORD-20086,CUST-308,Olivia Rodriguez,olivia.rodriguez8@testmail.com,Fashion & Apparel,Mobile App,North America,Cash on Delivery,Delivered,3,81.07,243.21,12.16,231.05,9.99,2026-01-22 13:40:00,2026-01-27
+ORD-20087,CUST-430,Sophia Smith,sophia.smith97@testmail.com,Home & Kitchen,Affiliate Partner,Asia-Pacific,Apple Pay,Delivered,1,114.69,114.69,22.94,91.75,14.99,2026-02-27 13:47:00,2026-03-02
+ORD-20088,CUST-289,Olivia Brown,olivia.brown36@testmail.com,Sports & Fitness,Instagram Ad,North America,Apple Pay,Delivered,2,88.97,177.94,8.9,169.04,0.0,2026-03-18 06:26:00,2026-03-20
+ORD-20089,CUST-340,Sophia Jones,sophia.jones44@testmail.com,Books & Media,Direct,Middle East,Cash on Delivery,Delivered,1,55.54,55.54,11.11,44.43,4.99,2026-02-11 15:54:00,2026-02-16
+ORD-20090,CUST-265,Liam Davis,liam.davis31@testmail.com,Home & Kitchen,Instagram Ad,North America,PayPal,Delivered,3,77.42,232.26,11.61,220.65,9.99,2026-03-22 14:59:00,2026-03-26
+ORD-20091,CUST-494,Lucas Brown,lucas.brown89@testmail.com,Home & Kitchen,Direct,Asia-Pacific,Cash on Delivery,Delivered,1,84.21,84.21,16.84,67.37,4.99,2026-02-22 14:16:00,2026-02-28
+ORD-20092,CUST-205,Ava Brown,ava.brown77@testmail.com,Beauty & Care,Direct,Middle East,PayPal,Shipped,1,27.31,27.31,2.73,24.58,4.99,2026-01-27 20:37:00,
+ORD-20093,CUST-292,Oliver Williams,oliver.williams71@testmail.com,Beauty & Care,Affiliate Partner,Latin America,Apple Pay,Delivered,1,78.63,78.63,7.86,70.77,0.0,2026-02-04 20:34:00,2026-02-08
+ORD-20094,CUST-236,Sophia Smith,sophia.smith7@testmail.com,Electronics,Desktop Web,Asia-Pacific,Apple Pay,Processing,3,473.56,1420.68,213.1,1207.58,4.99,2026-02-28 23:37:00,
+ORD-20095,CUST-135,Sophia Davis,sophia.davis36@testmail.com,Sports & Fitness,Mobile App,Latin America,PayPal,Delivered,1,99.14,99.14,0.0,99.14,0.0,2026-01-16 10:11:00,2026-01-18
+ORD-20096,CUST-245,Liam Rodriguez,liam.rodriguez56@testmail.com,Sports & Fitness,Direct,North America,Apple Pay,Delivered,2,16.03,32.06,3.21,28.85,9.99,2026-01-27 07:57:00,2026-02-03
+ORD-20097,CUST-296,Noah Brown,noah.brown27@testmail.com,Fashion & Apparel,Instagram Ad,Asia-Pacific,Cash on Delivery,Delivered,2,74.09,148.18,7.41,140.77,4.99,2026-02-15 13:09:00,2026-02-17
+ORD-20098,CUST-188,Charlotte Martinez,charlotte.martinez29@testmail.com,Electronics,Desktop Web,Middle East,PayPal,Delivered,3,250.15,750.45,112.57,637.88,4.99,2026-03-04 09:06:00,2026-03-07
+ORD-20099,CUST-464,Ava Johnson,ava.johnson57@testmail.com,Electronics,Desktop Web,Latin America,Cash on Delivery,Shipped,1,157.28,157.28,0.0,157.28,14.99,2026-03-18 18:28:00,
+ORD-20100,CUST-264,Elijah Williams,elijah.williams3@testmail.com,Beauty & Care,Affiliate Partner,Latin America,Credit Card,Processing,3,66.61,199.83,39.97,159.86,9.99,2026-03-11 14:13:00,
+ORD-20101,CUST-306,Elijah Rodriguez,elijah.rodriguez27@testmail.com,Sports & Fitness,Affiliate Partner,Middle East,UPI,Processing,1,102.88,102.88,15.43,87.45,4.99,2026-02-17 10:45:00,
+ORD-20102,CUST-465,Noah Garcia,noah.garcia3@testmail.com,Home & Kitchen,Affiliate Partner,Asia-Pacific,UPI,Delivered,4,40.63,162.52,0.0,162.52,14.99,2026-02-18 21:01:00,2026-02-25
+ORD-20103,CUST-345,Sophia Martinez,sophia.martinez21@testmail.com,Home & Kitchen,Direct,Latin America,Apple Pay,Delivered,1,39.0,39.0,3.9,35.1,9.99,2026-02-27 19:05:00,2026-03-04
+ORD-20104,CUST-228,Olivia Brown,olivia.brown11@testmail.com,Sports & Fitness,Instagram Ad,Europe,Credit Card,Delivered,1,111.16,111.16,0.0,111.16,0.0,2026-02-18 17:03:00,2026-02-21
+ORD-20105,CUST-393,Charlotte Jones,charlotte.jones84@testmail.com,Books & Media,Desktop Web,Latin America,PayPal,Delivered,1,22.01,22.01,0.0,22.01,0.0,2026-01-24 13:26:00,2026-01-28
+ORD-20106,CUST-500,Olivia Jones,olivia.jones23@testmail.com,Sports & Fitness,Affiliate Partner,Europe,UPI,Cancelled,2,22.08,44.16,0.0,0.0,9.99,2026-01-03 12:38:00,
+ORD-20107,CUST-362,Charlotte Johnson,charlotte.johnson3@testmail.com,Books & Media,Instagram Ad,Europe,UPI,Shipped,2,49.18,98.36,4.92,93.44,9.99,2026-03-10 11:15:00,
+ORD-20108,CUST-225,Charlotte Rodriguez,charlotte.rodriguez59@testmail.com,Electronics,Affiliate Partner,North America,Apple Pay,Delivered,3,521.88,1565.64,156.56,1409.08,14.99,2026-01-20 10:15:00,2026-01-26
+ORD-20109,CUST-381,Olivia Johnson,olivia.johnson70@testmail.com,Beauty & Care,Desktop Web,Middle East,Credit Card,Delivered,1,70.53,70.53,10.58,59.95,14.99,2026-01-09 18:08:00,2026-01-11
+ORD-20110,CUST-205,Sophia Rodriguez,sophia.rodriguez10@testmail.com,Books & Media,Instagram Ad,Middle East,Cash on Delivery,Delivered,1,105.08,105.08,5.25,99.83,0.0,2026-02-21 14:33:00,2026-02-26
+ORD-20111,CUST-322,Lucas Garcia,lucas.garcia82@testmail.com,Home & Kitchen,Mobile App,Latin America,Apple Pay,Delivered,1,35.86,35.86,0.0,35.86,4.99,2026-02-18 15:23:00,2026-02-20
+ORD-20112,CUST-464,Olivia Davis,olivia.davis60@testmail.com,Sports & Fitness,Desktop Web,Asia-Pacific,Apple Pay,Delivered,3,41.56,124.68,18.7,105.98,14.99,2026-02-01 10:01:00,2026-02-04
+ORD-20113,CUST-139,Oliver Brown,oliver.brown77@testmail.com,Books & Media,Desktop Web,North America,UPI,Delivered,1,63.83,63.83,9.57,54.26,14.99,2026-01-19 09:18:00,2026-01-23
+ORD-20114,CUST-481,Ava Garcia,ava.garcia92@testmail.com,Sports & Fitness,Instagram Ad,Latin America,Credit Card,Delivered,4,32.42,129.68,0.0,129.68,4.99,2026-02-15 16:12:00,2026-02-19
+ORD-20115,CUST-245,Charlotte Jones,charlotte.jones48@testmail.com,Electronics,Mobile App,Middle East,PayPal,Delivered,2,434.42,868.84,173.77,695.07,9.99,2026-01-04 20:25:00,2026-01-08
+ORD-20116,CUST-178,Emma Rodriguez,emma.rodriguez49@testmail.com,Sports & Fitness,Mobile App,Latin America,Apple Pay,Cancelled,2,91.51,183.02,36.6,0.0,0.0,2026-03-07 07:42:00,
+ORD-20117,CUST-199,Oliver Davis,oliver.davis54@testmail.com,Beauty & Care,Direct,Europe,Credit Card,Delivered,1,19.62,19.62,0.0,19.62,4.99,2026-03-20 18:17:00,2026-03-25
+ORD-20118,CUST-212,Lucas Brown,lucas.brown60@testmail.com,Books & Media,Desktop Web,Middle East,PayPal,Delivered,3,42.88,128.64,19.3,109.34,0.0,2026-01-27 06:04:00,2026-01-30
+ORD-20119,CUST-369,Olivia Davis,olivia.davis20@testmail.com,Electronics,Mobile App,Asia-Pacific,Cash on Delivery,Shipped,2,501.9,1003.8,100.38,903.42,9.99,2026-02-17 21:16:00,
+ORD-20120,CUST-470,Lucas Rodriguez,lucas.rodriguez52@testmail.com,Beauty & Care,Direct,Europe,UPI,Processing,1,113.69,113.69,11.37,102.32,14.99,2026-01-03 19:30:00,
+ORD-20121,CUST-311,Emma Martinez,emma.martinez96@testmail.com,Home & Kitchen,Direct,Europe,Cash on Delivery,Delivered,1,31.09,31.09,0.0,31.09,9.99,2026-01-29 13:56:00,2026-02-01
+ORD-20122,CUST-307,Sophia Miller,sophia.miller56@testmail.com,Sports & Fitness,Direct,Europe,UPI,Delivered,1,47.97,47.97,0.0,47.97,14.99,2026-03-21 21:59:00,2026-03-28
+ORD-20123,CUST-320,Olivia Miller,olivia.miller31@testmail.com,Books & Media,Mobile App,Asia-Pacific,Credit Card,Delivered,4,56.62,226.48,11.32,215.16,14.99,2026-02-09 13:31:00,2026-02-14
+ORD-20124,CUST-376,Ava Brown,ava.brown55@testmail.com,Sports & Fitness,Desktop Web,Middle East,PayPal,Delivered,1,23.64,23.64,0.0,23.64,4.99,2026-03-17 18:54:00,2026-03-19
+ORD-20125,CUST-120,Elijah Johnson,elijah.johnson22@testmail.com,Beauty & Care,Desktop Web,North America,Apple Pay,Returned,5,53.51,267.55,26.76,0.0,0.0,2026-01-23 07:08:00,2026-01-27
+ORD-20126,CUST-236,Ava Garcia,ava.garcia76@testmail.com,Electronics,Mobile App,North America,Credit Card,Returned,2,770.73,1541.46,231.22,0.0,0.0,2026-03-20 06:52:00,2026-03-23
+ORD-20127,CUST-354,Ava Martinez,ava.martinez78@testmail.com,Sports & Fitness,Mobile App,Asia-Pacific,UPI,Processing,3,31.53,94.59,18.92,75.67,0.0,2026-01-09 20:38:00,
+ORD-20128,CUST-220,Noah Jones,noah.jones40@testmail.com,Electronics,Affiliate Partner,Europe,Apple Pay,Processing,1,583.19,583.19,87.48,495.71,14.99,2026-02-27 17:32:00,
+ORD-20129,CUST-470,Oliver Brown,oliver.brown10@testmail.com,Fashion & Apparel,Affiliate Partner,Europe,Credit Card,Delivered,1,179.72,179.72,8.99,170.73,4.99,2026-01-11 07:37:00,2026-01-13
+ORD-20130,CUST-463,Ava Garcia,ava.garcia27@testmail.com,Beauty & Care,Direct,Latin America,Apple Pay,Delivered,2,85.52,171.04,34.21,136.83,9.99,2026-02-22 09:59:00,2026-03-01
+ORD-20131,CUST-463,Elijah Smith,elijah.smith42@testmail.com,Home & Kitchen,Desktop Web,Asia-Pacific,Credit Card,Delivered,1,100.31,100.31,15.05,85.26,14.99,2026-01-07 07:53:00,2026-01-11
+ORD-20132,CUST-121,Elijah Williams,elijah.williams18@testmail.com,Home & Kitchen,Affiliate Partner,Middle East,UPI,Shipped,1,66.12,66.12,6.61,59.51,4.99,2026-01-01 11:16:00,
+ORD-20133,CUST-272,Noah Rodriguez,noah.rodriguez1@testmail.com,Sports & Fitness,Affiliate Partner,Europe,UPI,Returned,2,89.69,179.38,35.88,0.0,9.99,2026-02-23 07:49:00,2026-02-25
+ORD-20134,CUST-322,Liam Davis,liam.davis99@testmail.com,Sports & Fitness,Desktop Web,Asia-Pacific,Cash on Delivery,Delivered,5,79.31,396.55,79.31,317.24,4.99,2026-02-05 22:25:00,2026-02-11
+ORD-20135,CUST-313,Emma Davis,emma.davis60@testmail.com,Beauty & Care,Instagram Ad,Middle East,Apple Pay,Delivered,1,80.84,80.84,0.0,80.84,14.99,2026-01-06 15:21:00,2026-01-08
+ORD-20136,CUST-302,Lucas Martinez,lucas.martinez34@testmail.com,Fashion & Apparel,Direct,Europe,Apple Pay,Processing,2,31.0,62.0,3.1,58.9,9.99,2026-02-03 15:57:00,
+ORD-20137,CUST-108,Emma Rodriguez,emma.rodriguez65@testmail.com,Fashion & Apparel,Mobile App,Latin America,UPI,Delivered,4,149.37,597.48,59.75,537.73,14.99,2026-02-20 06:27:00,2026-02-22
+ORD-20138,CUST-190,Ava Martinez,ava.martinez70@testmail.com,Beauty & Care,Mobile App,Middle East,UPI,Delivered,3,112.19,336.57,50.49,286.08,9.99,2026-03-10 23:18:00,2026-03-12
+ORD-20139,CUST-312,Noah Smith,noah.smith21@testmail.com,Beauty & Care,Affiliate Partner,Europe,Apple Pay,Delivered,2,32.75,65.5,6.55,58.95,9.99,2026-01-03 09:08:00,2026-01-10
+ORD-20140,CUST-222,Sophia Brown,sophia.brown9@testmail.com,Beauty & Care,Desktop Web,Asia-Pacific,PayPal,Delivered,1,31.33,31.33,0.0,31.33,0.0,2026-03-11 23:40:00,2026-03-13
+ORD-20141,CUST-147,Ava Williams,ava.williams46@testmail.com,Electronics,Affiliate Partner,Middle East,Cash on Delivery,Delivered,2,294.29,588.58,0.0,588.58,9.99,2026-03-01 22:07:00,2026-03-06
+ORD-20142,CUST-345,Olivia Miller,olivia.miller97@testmail.com,Fashion & Apparel,Instagram Ad,North America,Cash on Delivery,Cancelled,1,49.85,49.85,9.97,0.0,4.99,2026-01-12 08:10:00,
+ORD-20143,CUST-481,Oliver Smith,oliver.smith30@testmail.com,Home & Kitchen,Affiliate Partner,Latin America,Credit Card,Shipped,1,80.21,80.21,12.03,68.18,0.0,2026-03-07 18:13:00,
+ORD-20144,CUST-312,Elijah Rodriguez,elijah.rodriguez96@testmail.com,Books & Media,Affiliate Partner,Asia-Pacific,UPI,Delivered,1,52.32,52.32,5.23,47.09,9.99,2026-01-06 07:28:00,2026-01-09
+ORD-20145,CUST-161,Emma Garcia,emma.garcia80@testmail.com,Books & Media,Mobile App,North America,Cash on Delivery,Delivered,2,64.71,129.42,25.88,103.54,9.99,2026-03-08 23:49:00,2026-03-10
+ORD-20146,CUST-178,Emma Garcia,emma.garcia36@testmail.com,Fashion & Apparel,Direct,Latin America,PayPal,Delivered,2,179.75,359.5,35.95,323.55,14.99,2026-01-05 09:03:00,2026-01-09
+ORD-20147,CUST-368,Oliver Miller,oliver.miller78@testmail.com,Electronics,Instagram Ad,Latin America,PayPal,Delivered,5,332.37,1661.85,0.0,1661.85,4.99,2026-02-08 19:01:00,2026-02-10
+ORD-20148,CUST-241,Lucas Johnson,lucas.johnson40@testmail.com,Home & Kitchen,Mobile App,Asia-Pacific,PayPal,Delivered,1,99.04,99.04,4.95,94.09,0.0,2026-02-10 09:11:00,2026-02-16
+ORD-20149,CUST-315,Charlotte Rodriguez,charlotte.rodriguez12@testmail.com,Electronics,Instagram Ad,Middle East,PayPal,Cancelled,3,659.27,1977.81,0.0,0.0,9.99,2026-03-12 15:06:00,
+ORD-20150,CUST-235,Oliver Jones,oliver.jones21@testmail.com,Beauty & Care,Mobile App,North America,Cash on Delivery,Delivered,1,100.0,100.0,15.0,85.0,0.0,2026-01-01 09:57:00,2026-01-06
+ORD-20151,CUST-308,Lucas Rodriguez,lucas.rodriguez1@testmail.com,Fashion & Apparel,Mobile App,Europe,Cash on Delivery,Delivered,2,44.63,89.26,17.85,71.41,4.99,2026-01-14 06:30:00,2026-01-17
+ORD-20152,CUST-169,Charlotte Jones,charlotte.jones52@testmail.com,Sports & Fitness,Desktop Web,Europe,Credit Card,Delivered,1,101.63,101.63,10.16,91.47,9.99,2026-02-25 12:39:00,2026-03-04
+ORD-20153,CUST-482,Lucas Miller,lucas.miller33@testmail.com,Sports & Fitness,Direct,Middle East,Credit Card,Delivered,1,117.67,117.67,17.65,100.02,4.99,2026-02-23 14:41:00,2026-03-01
+ORD-20154,CUST-211,Olivia Martinez,olivia.martinez36@testmail.com,Fashion & Apparel,Instagram Ad,Europe,UPI,Delivered,1,36.19,36.19,5.43,30.76,4.99,2026-01-06 13:15:00,2026-01-13
+ORD-20155,CUST-266,Liam Martinez,liam.martinez53@testmail.com,Electronics,Desktop Web,North America,Apple Pay,Shipped,1,193.18,193.18,0.0,193.18,9.99,2026-01-14 16:13:00,
+ORD-20156,CUST-350,Sophia Rodriguez,sophia.rodriguez36@testmail.com,Beauty & Care,Direct,Europe,UPI,Delivered,3,105.1,315.3,15.77,299.53,14.99,2026-01-27 18:22:00,2026-01-30
+ORD-20157,CUST-245,Sophia Smith,sophia.smith36@testmail.com,Home & Kitchen,Mobile App,Europe,Credit Card,Delivered,1,26.59,26.59,2.66,23.93,4.99,2026-01-08 20:33:00,2026-01-12
+ORD-20158,CUST-344,Olivia Miller,olivia.miller50@testmail.com,Electronics,Affiliate Partner,Middle East,Credit Card,Shipped,1,252.72,252.72,12.64,240.08,9.99,2026-03-17 20:22:00,
+ORD-20159,CUST-237,Ava Williams,ava.williams93@testmail.com,Books & Media,Desktop Web,Europe,Credit Card,Delivered,5,72.93,364.65,18.23,346.42,0.0,2026-01-31 21:24:00,2026-02-03
+ORD-20160,CUST-225,Oliver Rodriguez,oliver.rodriguez97@testmail.com,Home & Kitchen,Mobile App,Middle East,PayPal,Delivered,4,26.25,105.0,10.5,94.5,9.99,2026-02-21 06:04:00,2026-02-27
+ORD-20161,CUST-390,Charlotte Martinez,charlotte.martinez44@testmail.com,Sports & Fitness,Instagram Ad,Latin America,Cash on Delivery,Cancelled,1,87.41,87.41,17.48,0.0,14.99,2026-01-01 10:01:00,
+ORD-20162,CUST-149,Emma Davis,emma.davis49@testmail.com,Fashion & Apparel,Desktop Web,Asia-Pacific,Apple Pay,Delivered,2,128.82,257.64,51.53,206.11,9.99,2026-02-02 14:37:00,2026-02-05
+ORD-20163,CUST-453,Elijah Martinez,elijah.martinez10@testmail.com,Fashion & Apparel,Desktop Web,Asia-Pacific,PayPal,Delivered,1,91.78,91.78,18.36,73.42,0.0,2026-03-02 13:34:00,2026-03-06
+ORD-20164,CUST-467,Liam Martinez,liam.martinez18@testmail.com,Fashion & Apparel,Desktop Web,North America,UPI,Delivered,1,130.55,130.55,26.11,104.44,14.99,2026-03-01 19:34:00,2026-03-08
+ORD-20165,CUST-274,Noah Brown,noah.brown31@testmail.com,Fashion & Apparel,Direct,Asia-Pacific,Credit Card,Delivered,2,162.92,325.84,16.29,309.55,0.0,2026-03-17 19:07:00,2026-03-21
+ORD-20166,CUST-210,Lucas Johnson,lucas.johnson53@testmail.com,Electronics,Direct,Middle East,UPI,Shipped,1,208.62,208.62,0.0,208.62,14.99,2026-01-06 21:44:00,
+ORD-20167,CUST-113,Oliver Johnson,oliver.johnson95@testmail.com,Electronics,Instagram Ad,Middle East,PayPal,Delivered,4,660.06,2640.24,528.05,2112.19,4.99,2026-01-01 19:44:00,2026-01-05
+ORD-20168,CUST-215,Liam Martinez,liam.martinez80@testmail.com,Electronics,Direct,Europe,UPI,Delivered,1,307.15,307.15,0.0,307.15,14.99,2026-01-06 11:12:00,2026-01-09
+ORD-20169,CUST-372,Olivia Smith,olivia.smith23@testmail.com,Electronics,Desktop Web,Asia-Pacific,Apple Pay,Delivered,1,85.87,85.87,8.59,77.28,0.0,2026-01-20 08:53:00,2026-01-23
+ORD-20170,CUST-331,Sophia Johnson,sophia.johnson21@testmail.com,Electronics,Desktop Web,Europe,Apple Pay,Delivered,3,284.93,854.79,170.96,683.83,9.99,2026-01-14 19:14:00,2026-01-21
+ORD-20171,CUST-307,Lucas Rodriguez,lucas.rodriguez38@testmail.com,Beauty & Care,Instagram Ad,Latin America,Apple Pay,Delivered,1,37.49,37.49,0.0,37.49,4.99,2026-01-23 20:17:00,2026-01-27
+ORD-20172,CUST-302,Sophia Rodriguez,sophia.rodriguez84@testmail.com,Books & Media,Mobile App,North America,UPI,Processing,2,114.7,229.4,0.0,229.4,14.99,2026-01-07 13:47:00,
+ORD-20173,CUST-273,Lucas Williams,lucas.williams68@testmail.com,Electronics,Instagram Ad,Europe,UPI,Delivered,1,137.11,137.11,27.42,109.69,0.0,2026-01-31 07:32:00,2026-02-06
+ORD-20174,CUST-419,Charlotte Johnson,charlotte.johnson57@testmail.com,Home & Kitchen,Direct,Europe,UPI,Delivered,1,97.95,97.95,0.0,97.95,4.99,2026-01-06 19:31:00,2026-01-09
+ORD-20175,CUST-470,Liam Miller,liam.miller4@testmail.com,Beauty & Care,Instagram Ad,Asia-Pacific,Apple Pay,Delivered,1,95.38,95.38,0.0,95.38,0.0,2026-01-22 14:54:00,2026-01-26
+ORD-20176,CUST-468,Liam Garcia,liam.garcia20@testmail.com,Fashion & Apparel,Instagram Ad,Europe,Apple Pay,Delivered,2,33.87,67.74,13.55,54.19,0.0,2026-01-13 20:50:00,2026-01-19
+ORD-20177,CUST-247,Oliver Garcia,oliver.garcia63@testmail.com,Books & Media,Mobile App,Middle East,PayPal,Shipped,1,100.34,100.34,20.07,80.27,14.99,2026-02-07 14:10:00,
+ORD-20178,CUST-113,Charlotte Johnson,charlotte.johnson6@testmail.com,Fashion & Apparel,Desktop Web,Asia-Pacific,Cash on Delivery,Processing,1,31.26,31.26,4.69,26.57,14.99,2026-03-21 07:20:00,
+ORD-20179,CUST-293,Lucas Smith,lucas.smith73@testmail.com,Electronics,Direct,Latin America,PayPal,Cancelled,2,291.81,583.62,29.18,0.0,14.99,2026-02-13 08:23:00,
+ORD-20180,CUST-473,Liam Brown,liam.brown6@testmail.com,Books & Media,Desktop Web,Middle East,UPI,Shipped,1,47.56,47.56,2.38,45.18,14.99,2026-02-11 17:42:00,
+ORD-20181,CUST-164,Charlotte Smith,charlotte.smith9@testmail.com,Beauty & Care,Affiliate Partner,Europe,UPI,Delivered,1,119.87,119.87,23.97,95.9,4.99,2026-02-22 23:29:00,2026-02-28
+ORD-20182,CUST-380,Emma Jones,emma.jones61@testmail.com,Electronics,Mobile App,Asia-Pacific,Cash on Delivery,Processing,1,83.83,83.83,8.38,75.45,4.99,2026-01-16 23:58:00,
+ORD-20183,CUST-471,Elijah Brown,elijah.brown22@testmail.com,Sports & Fitness,Desktop Web,Europe,Cash on Delivery,Delivered,1,21.88,21.88,3.28,18.6,9.99,2026-01-09 18:17:00,2026-01-12
+ORD-20184,CUST-209,Charlotte Martinez,charlotte.martinez14@testmail.com,Beauty & Care,Direct,Europe,Credit Card,Delivered,1,90.84,90.84,18.17,72.67,14.99,2026-02-01 19:48:00,2026-02-08
+ORD-20185,CUST-195,Ava Jones,ava.jones52@testmail.com,Electronics,Affiliate Partner,Latin America,PayPal,Processing,1,657.73,657.73,65.77,591.96,0.0,2026-03-22 18:10:00,
+ORD-20186,CUST-362,Noah Garcia,noah.garcia74@testmail.com,Home & Kitchen,Instagram Ad,Asia-Pacific,UPI,Shipped,1,58.18,58.18,5.82,52.36,9.99,2026-01-03 08:30:00,
+ORD-20187,CUST-338,Charlotte Rodriguez,charlotte.rodriguez79@testmail.com,Electronics,Desktop Web,Asia-Pacific,UPI,Shipped,1,836.37,836.37,83.64,752.73,4.99,2026-03-13 22:33:00,
+ORD-20188,CUST-369,Emma Garcia,emma.garcia33@testmail.com,Electronics,Direct,North America,PayPal,Shipped,1,826.69,826.69,82.67,744.02,4.99,2026-01-31 12:58:00,
+ORD-20189,CUST-410,Lucas Garcia,lucas.garcia26@testmail.com,Beauty & Care,Mobile App,Europe,UPI,Delivered,2,70.25,140.5,0.0,140.5,0.0,2026-01-14 08:06:00,2026-01-21
+ORD-20190,CUST-488,Noah Martinez,noah.martinez42@testmail.com,Electronics,Desktop Web,Europe,Apple Pay,Delivered,3,636.99,1910.97,0.0,1910.97,14.99,2026-02-11 13:02:00,2026-02-16
+ORD-20191,CUST-271,Sophia Johnson,sophia.johnson54@testmail.com,Books & Media,Instagram Ad,Middle East,Cash on Delivery,Processing,1,101.14,101.14,0.0,101.14,0.0,2026-01-02 06:58:00,
+ORD-20192,CUST-471,Liam Rodriguez,liam.rodriguez54@testmail.com,Fashion & Apparel,Instagram Ad,North America,UPI,Delivered,2,65.9,131.8,13.18,118.62,0.0,2026-02-18 16:30:00,2026-02-25
+ORD-20193,CUST-155,Emma Martinez,emma.martinez70@testmail.com,Beauty & Care,Desktop Web,Middle East,PayPal,Delivered,2,99.89,199.78,39.96,159.82,9.99,2026-01-18 07:04:00,2026-01-22
+ORD-20194,CUST-410,Ava Brown,ava.brown78@testmail.com,Fashion & Apparel,Affiliate Partner,Asia-Pacific,Credit Card,Delivered,1,151.32,151.32,7.57,143.75,4.99,2026-03-17 10:48:00,2026-03-22
+ORD-20195,CUST-366,Charlotte Williams,charlotte.williams69@testmail.com,Electronics,Desktop Web,Asia-Pacific,PayPal,Delivered,4,615.47,2461.88,246.19,2215.69,4.99,2026-02-23 08:05:00,2026-02-27
+ORD-20196,CUST-159,Sophia Smith,sophia.smith96@testmail.com,Home & Kitchen,Mobile App,Asia-Pacific,UPI,Shipped,1,98.03,98.03,0.0,98.03,0.0,2026-03-05 18:27:00,
+ORD-20197,CUST-178,Olivia Miller,olivia.miller88@testmail.com,Electronics,Mobile App,North America,Cash on Delivery,Cancelled,1,547.72,547.72,0.0,0.0,14.99,2026-01-27 17:24:00,
+ORD-20198,CUST-392,Elijah Johnson,elijah.johnson14@testmail.com,Home & Kitchen,Desktop Web,Europe,UPI,Delivered,3,68.45,205.35,10.27,195.08,14.99,2026-02-02 16:22:00,2026-02-04
+ORD-20199,CUST-255,Elijah Davis,elijah.davis71@testmail.com,Books & Media,Instagram Ad,Europe,Cash on Delivery,Delivered,1,116.13,116.13,0.0,116.13,4.99,2026-01-27 22:53:00,2026-01-31
+ORD-20200,CUST-127,Emma Rodriguez,emma.rodriguez14@testmail.com,Books & Media,Desktop Web,Europe,Apple Pay,Delivered,1,39.54,39.54,3.95,35.59,0.0,2026-03-12 22:08:00,2026-03-17
+ORD-20201,CUST-230,Oliver Davis,oliver.davis75@testmail.com,Beauty & Care,Mobile App,North America,Cash on Delivery,Delivered,1,34.09,34.09,0.0,34.09,14.99,2026-02-17 08:51:00,2026-02-21
+ORD-20202,CUST-145,Olivia Miller,olivia.miller67@testmail.com,Sports & Fitness,Instagram Ad,Latin America,Cash on Delivery,Delivered,1,73.03,73.03,14.61,58.42,14.99,2026-03-15 18:55:00,2026-03-22
+ORD-20203,CUST-189,Ava Williams,ava.williams25@testmail.com,Sports & Fitness,Direct,Middle East,UPI,Delivered,1,96.09,96.09,9.61,86.48,4.99,2026-01-19 16:36:00,2026-01-21
+ORD-20204,CUST-179,Liam Williams,liam.williams51@testmail.com,Fashion & Apparel,Direct,Latin America,Apple Pay,Shipped,1,133.45,133.45,26.69,106.76,14.99,2026-03-14 23:03:00,
+ORD-20205,CUST-432,Liam Davis,liam.davis32@testmail.com,Books & Media,Mobile App,Europe,UPI,Delivered,1,38.14,38.14,7.63,30.51,9.99,2026-02-09 23:46:00,2026-02-12
+ORD-20206,CUST-274,Charlotte Williams,charlotte.williams4@testmail.com,Beauty & Care,Instagram Ad,Asia-Pacific,Credit Card,Shipped,2,118.07,236.14,47.23,188.91,14.99,2026-02-14 19:56:00,
+ORD-20207,CUST-308,Charlotte Williams,charlotte.williams81@testmail.com,Books & Media,Instagram Ad,Middle East,UPI,Shipped,2,55.16,110.32,16.55,93.77,9.99,2026-02-25 14:05:00,
+ORD-20208,CUST-198,Liam Brown,liam.brown35@testmail.com,Electronics,Instagram Ad,Latin America,Credit Card,Delivered,1,339.38,339.38,0.0,339.38,9.99,2026-01-19 12:51:00,2026-01-25
+ORD-20209,CUST-103,Sophia Rodriguez,sophia.rodriguez86@testmail.com,Fashion & Apparel,Desktop Web,Asia-Pacific,Cash on Delivery,Delivered,3,50.46,151.38,7.57,143.81,0.0,2026-02-04 07:54:00,2026-02-06
+ORD-20210,CUST-141,Charlotte Miller,charlotte.miller86@testmail.com,Sports & Fitness,Affiliate Partner,Latin America,Credit Card,Cancelled,5,55.65,278.25,13.91,0.0,0.0,2026-01-08 09:53:00,
+ORD-20211,CUST-477,Noah Martinez,noah.martinez42@testmail.com,Home & Kitchen,Mobile App,North America,Apple Pay,Delivered,1,45.77,45.77,9.15,36.62,0.0,2026-03-09 07:39:00,2026-03-16
+ORD-20212,CUST-426,Emma Davis,emma.davis36@testmail.com,Books & Media,Desktop Web,Middle East,UPI,Processing,1,30.08,30.08,3.01,27.07,4.99,2026-03-16 20:41:00,
+ORD-20213,CUST-405,Ava Smith,ava.smith18@testmail.com,Books & Media,Affiliate Partner,Asia-Pacific,Apple Pay,Delivered,3,91.23,273.69,41.05,232.64,4.99,2026-01-21 07:45:00,2026-01-26
+ORD-20214,CUST-111,Oliver Smith,oliver.smith51@testmail.com,Sports & Fitness,Mobile App,Latin America,Apple Pay,Shipped,2,112.91,225.82,0.0,225.82,9.99,2026-02-19 07:10:00,
+ORD-20215,CUST-276,Charlotte Rodriguez,charlotte.rodriguez52@testmail.com,Home & Kitchen,Mobile App,Europe,UPI,Returned,4,47.99,191.96,9.6,0.0,4.99,2026-02-28 13:05:00,2026-03-03
+ORD-20216,CUST-362,Liam Davis,liam.davis86@testmail.com,Sports & Fitness,Mobile App,Europe,UPI,Delivered,1,26.83,26.83,4.02,22.81,4.99,2026-01-14 08:38:00,2026-01-17
+ORD-20217,CUST-235,Oliver Williams,oliver.williams76@testmail.com,Books & Media,Affiliate Partner,Asia-Pacific,Apple Pay,Delivered,1,85.13,85.13,8.51,76.62,9.99,2026-01-16 12:13:00,2026-01-21
+ORD-20218,CUST-331,Emma Williams,emma.williams27@testmail.com,Sports & Fitness,Direct,Latin America,PayPal,Delivered,1,44.9,44.9,0.0,44.9,4.99,2026-03-07 07:52:00,2026-03-09
+ORD-20219,CUST-401,Ava Johnson,ava.johnson69@testmail.com,Books & Media,Affiliate Partner,Europe,Apple Pay,Delivered,1,102.57,102.57,0.0,102.57,14.99,2026-03-05 22:10:00,2026-03-08
+ORD-20220,CUST-219,Olivia Johnson,olivia.johnson98@testmail.com,Beauty & Care,Desktop Web,Latin America,UPI,Delivered,3,97.36,292.08,58.42,233.66,14.99,2026-03-15 23:21:00,2026-03-22
+ORD-20221,CUST-352,Sophia Brown,sophia.brown90@testmail.com,Sports & Fitness,Desktop Web,Middle East,UPI,Processing,1,39.04,39.04,5.86,33.18,0.0,2026-03-11 16:26:00,
+ORD-20222,CUST-286,Lucas Rodriguez,lucas.rodriguez98@testmail.com,Beauty & Care,Affiliate Partner,North America,Apple Pay,Delivered,1,57.53,57.53,2.88,54.65,0.0,2026-03-03 07:25:00,2026-03-08
+ORD-20223,CUST-497,Emma Miller,emma.miller43@testmail.com,Sports & Fitness,Desktop Web,Europe,UPI,Delivered,1,119.18,119.18,11.92,107.26,0.0,2026-01-29 17:20:00,2026-02-05
+ORD-20224,CUST-385,Charlotte Davis,charlotte.davis76@testmail.com,Electronics,Direct,Europe,Credit Card,Delivered,1,517.26,517.26,77.59,439.67,0.0,2026-03-08 11:04:00,2026-03-14
+ORD-20225,CUST-409,Charlotte Jones,charlotte.jones89@testmail.com,Fashion & Apparel,Affiliate Partner,Middle East,PayPal,Delivered,3,30.86,92.58,9.26,83.32,0.0,2026-03-11 06:10:00,2026-03-14
+ORD-20226,CUST-431,Noah Rodriguez,noah.rodriguez11@testmail.com,Books & Media,Instagram Ad,Asia-Pacific,Cash on Delivery,Shipped,3,50.46,151.38,30.28,121.1,0.0,2026-02-07 10:19:00,
+ORD-20227,CUST-344,Ava Garcia,ava.garcia26@testmail.com,Books & Media,Instagram Ad,North America,Apple Pay,Delivered,1,72.12,72.12,10.82,61.3,14.99,2026-01-12 17:59:00,2026-01-15
+ORD-20228,CUST-296,Charlotte Williams,charlotte.williams70@testmail.com,Electronics,Instagram Ad,Latin America,Credit Card,Delivered,2,435.28,870.56,174.11,696.45,14.99,2026-03-20 08:46:00,2026-03-27
+ORD-20229,CUST-448,Olivia Martinez,olivia.martinez68@testmail.com,Sports & Fitness,Affiliate Partner,Europe,UPI,Delivered,1,93.73,93.73,18.75,74.98,9.99,2026-02-10 22:36:00,2026-02-13
+ORD-20230,CUST-295,Emma Miller,emma.miller94@testmail.com,Beauty & Care,Desktop Web,Europe,PayPal,Shipped,1,108.95,108.95,10.9,98.05,14.99,2026-01-07 14:56:00,
+ORD-20231,CUST-228,Lucas Garcia,lucas.garcia24@testmail.com,Beauty & Care,Affiliate Partner,North America,Credit Card,Delivered,1,93.38,93.38,9.34,84.04,9.99,2026-01-22 14:57:00,2026-01-28
+ORD-20232,CUST-300,Charlotte Miller,charlotte.miller29@testmail.com,Books & Media,Instagram Ad,Europe,PayPal,Delivered,1,114.92,114.92,22.98,91.94,9.99,2026-03-20 15:11:00,2026-03-27
+ORD-20233,CUST-275,Noah Rodriguez,noah.rodriguez50@testmail.com,Sports & Fitness,Mobile App,Europe,PayPal,Delivered,2,90.85,181.7,27.25,154.45,4.99,2026-01-11 16:11:00,2026-01-17
+ORD-20234,CUST-386,Olivia Martinez,olivia.martinez91@testmail.com,Fashion & Apparel,Affiliate Partner,Europe,UPI,Cancelled,2,82.36,164.72,8.24,0.0,0.0,2026-02-13 22:38:00,
+ORD-20235,CUST-233,Sophia Garcia,sophia.garcia29@testmail.com,Home & Kitchen,Mobile App,Latin America,Cash on Delivery,Returned,1,79.04,79.04,11.86,0.0,9.99,2026-02-03 18:54:00,2026-02-09
+ORD-20236,CUST-397,Emma Brown,emma.brown31@testmail.com,Home & Kitchen,Instagram Ad,Middle East,Cash on Delivery,Delivered,2,32.31,64.62,3.23,61.39,9.99,2026-01-10 09:58:00,2026-01-15
+ORD-20237,CUST-473,Ava Smith,ava.smith23@testmail.com,Electronics,Direct,Asia-Pacific,Credit Card,Delivered,1,332.38,332.38,0.0,332.38,4.99,2026-02-11 15:29:00,2026-02-13
+ORD-20238,CUST-456,Oliver Martinez,oliver.martinez83@testmail.com,Fashion & Apparel,Affiliate Partner,Middle East,Credit Card,Delivered,1,173.77,173.77,17.38,156.39,4.99,2026-01-31 19:28:00,2026-02-04
+ORD-20239,CUST-409,Liam Jones,liam.jones94@testmail.com,Electronics,Mobile App,Europe,Apple Pay,Shipped,2,483.27,966.54,193.31,773.23,0.0,2026-02-19 22:07:00,
+ORD-20240,CUST-313,Olivia Davis,olivia.davis8@testmail.com,Electronics,Direct,Europe,Cash on Delivery,Delivered,1,765.44,765.44,76.54,688.9,14.99,2026-03-09 23:54:00,2026-03-13
+ORD-20241,CUST-479,Oliver Martinez,oliver.martinez86@testmail.com,Sports & Fitness,Affiliate Partner,Latin America,Cash on Delivery,Shipped,3,29.51,88.53,8.85,79.68,9.99,2026-02-26 14:19:00,
+ORD-20242,CUST-142,Ava Rodriguez,ava.rodriguez89@testmail.com,Beauty & Care,Direct,Latin America,PayPal,Shipped,1,46.98,46.98,9.4,37.58,0.0,2026-02-10 15:11:00,
+ORD-20243,CUST-137,Sophia Garcia,sophia.garcia31@testmail.com,Electronics,Desktop Web,North America,Credit Card,Cancelled,1,572.16,572.16,114.43,0.0,4.99,2026-01-06 10:51:00,
+ORD-20244,CUST-449,Olivia Johnson,olivia.johnson13@testmail.com,Home & Kitchen,Direct,North America,PayPal,Delivered,1,81.47,81.47,16.29,65.18,4.99,2026-02-13 21:02:00,2026-02-19
+ORD-20245,CUST-329,Ava Jones,ava.jones82@testmail.com,Home & Kitchen,Instagram Ad,Latin America,Apple Pay,Delivered,4,87.49,349.96,17.5,332.46,14.99,2026-03-17 21:09:00,2026-03-22
+ORD-20246,CUST-369,Elijah Jones,elijah.jones28@testmail.com,Beauty & Care,Affiliate Partner,North America,UPI,Delivered,1,53.73,53.73,2.69,51.04,0.0,2026-02-16 22:47:00,2026-02-23
+ORD-20247,CUST-293,Olivia Rodriguez,olivia.rodriguez95@testmail.com,Electronics,Desktop Web,North America,UPI,Delivered,1,314.75,314.75,0.0,314.75,0.0,2026-01-26 10:56:00,2026-02-02
+ORD-20248,CUST-365,Emma Johnson,emma.johnson91@testmail.com,Sports & Fitness,Desktop Web,Latin America,UPI,Delivered,1,32.33,32.33,4.85,27.48,14.99,2026-01-27 23:29:00,2026-01-31
+ORD-20249,CUST-169,Liam Davis,liam.davis49@testmail.com,Fashion & Apparel,Desktop Web,Latin America,Apple Pay,Cancelled,5,112.12,560.6,56.06,0.0,14.99,2026-02-11 14:47:00,
+ORD-20250,CUST-381,Olivia Martinez,olivia.martinez24@testmail.com,Electronics,Direct,North America,Cash on Delivery,Delivered,2,641.76,1283.52,192.53,1090.99,0.0,2026-02-28 18:57:00,2026-03-07
+ORD-20251,CUST-114,Elijah Johnson,elijah.johnson42@testmail.com,Beauty & Care,Affiliate Partner,Latin America,UPI,Delivered,2,112.21,224.42,44.88,179.54,4.99,2026-01-26 20:50:00,2026-02-02
+ORD-20252,CUST-427,Olivia Williams,olivia.williams39@testmail.com,Fashion & Apparel,Instagram Ad,Middle East,UPI,Returned,1,75.68,75.68,15.14,0.0,0.0,2026-02-22 11:06:00,2026-03-01
+ORD-20253,CUST-236,Noah Rodriguez,noah.rodriguez54@testmail.com,Sports & Fitness,Desktop Web,Europe,PayPal,Delivered,3,71.72,215.16,21.52,193.64,9.99,2026-02-16 13:50:00,2026-02-22
+ORD-20254,CUST-229,Liam Davis,liam.davis74@testmail.com,Beauty & Care,Affiliate Partner,Latin America,UPI,Shipped,1,17.05,17.05,1.71,15.34,9.99,2026-01-21 18:18:00,
+ORD-20255,CUST-269,Elijah Martinez,elijah.martinez32@testmail.com,Beauty & Care,Mobile App,Latin America,Cash on Delivery,Delivered,2,61.21,122.42,6.12,116.3,0.0,2026-03-16 20:00:00,2026-03-19
+ORD-20256,CUST-166,Lucas Davis,lucas.davis20@testmail.com,Sports & Fitness,Affiliate Partner,Europe,Apple Pay,Shipped,4,114.31,457.24,91.45,365.79,4.99,2026-02-11 10:37:00,
+ORD-20257,CUST-365,Emma Johnson,emma.johnson65@testmail.com,Fashion & Apparel,Direct,North America,Cash on Delivery,Delivered,1,110.9,110.9,22.18,88.72,14.99,2026-01-25 11:02:00,2026-01-27
+ORD-20258,CUST-203,Charlotte Martinez,charlotte.martinez3@testmail.com,Books & Media,Direct,Asia-Pacific,Cash on Delivery,Shipped,2,56.41,112.82,0.0,112.82,0.0,2026-02-15 11:15:00,
+ORD-20259,CUST-111,Ava Jones,ava.jones20@testmail.com,Fashion & Apparel,Affiliate Partner,Middle East,Cash on Delivery,Delivered,1,160.13,160.13,8.01,152.12,0.0,2026-02-11 09:29:00,2026-02-13
+ORD-20260,CUST-129,Lucas Williams,lucas.williams79@testmail.com,Beauty & Care,Instagram Ad,North America,Credit Card,Shipped,1,106.12,106.12,21.22,84.9,4.99,2026-02-08 12:30:00,
+ORD-20261,CUST-474,Noah Smith,noah.smith20@testmail.com,Sports & Fitness,Affiliate Partner,North America,UPI,Returned,4,30.24,120.96,0.0,0.0,4.99,2026-03-17 21:05:00,2026-03-23
+ORD-20262,CUST-157,Liam Brown,liam.brown49@testmail.com,Fashion & Apparel,Mobile App,Latin America,Apple Pay,Processing,1,144.56,144.56,0.0,144.56,0.0,2026-03-01 10:03:00,
+ORD-20263,CUST-201,Sophia Johnson,sophia.johnson80@testmail.com,Fashion & Apparel,Desktop Web,Middle East,Credit Card,Delivered,2,168.46,336.92,50.54,286.38,4.99,2026-02-27 10:46:00,2026-03-03
+ORD-20264,CUST-176,Noah Smith,noah.smith98@testmail.com,Home & Kitchen,Instagram Ad,Latin America,PayPal,Delivered,1,83.32,83.32,8.33,74.99,0.0,2026-01-27 23:00:00,2026-02-03
+ORD-20265,CUST-176,Ava Williams,ava.williams77@testmail.com,Electronics,Mobile App,Middle East,Apple Pay,Delivered,3,523.85,1571.55,157.16,1414.39,4.99,2026-03-22 22:08:00,2026-03-26
+ORD-20266,CUST-466,Ava Miller,ava.miller86@testmail.com,Fashion & Apparel,Mobile App,Middle East,UPI,Processing,1,147.6,147.6,0.0,147.6,4.99,2026-02-16 17:46:00,
+ORD-20267,CUST-317,Lucas Martinez,lucas.martinez46@testmail.com,Home & Kitchen,Desktop Web,Middle East,Apple Pay,Shipped,4,27.46,109.84,10.98,98.86,4.99,2026-01-03 09:14:00,
+ORD-20268,CUST-316,Charlotte Garcia,charlotte.garcia16@testmail.com,Sports & Fitness,Direct,Europe,UPI,Delivered,2,17.69,35.38,5.31,30.07,0.0,2026-01-04 14:04:00,2026-01-11
+ORD-20269,CUST-318,Oliver Martinez,oliver.martinez76@testmail.com,Fashion & Apparel,Affiliate Partner,Latin America,PayPal,Delivered,1,136.42,136.42,0.0,136.42,14.99,2026-01-08 11:38:00,2026-01-14
+ORD-20270,CUST-459,Emma Miller,emma.miller91@testmail.com,Fashion & Apparel,Desktop Web,Asia-Pacific,Cash on Delivery,Delivered,4,49.58,198.32,0.0,198.32,4.99,2026-01-14 16:20:00,2026-01-18
+ORD-20271,CUST-289,Ava Smith,ava.smith57@testmail.com,Fashion & Apparel,Mobile App,Middle East,PayPal,Delivered,1,90.59,90.59,9.06,81.53,0.0,2026-02-21 21:36:00,2026-02-28
+ORD-20272,CUST-101,Lucas Garcia,lucas.garcia15@testmail.com,Home & Kitchen,Direct,Europe,UPI,Delivered,1,100.06,100.06,15.01,85.05,14.99,2026-02-02 21:53:00,2026-02-04
+ORD-20273,CUST-151,Emma Rodriguez,emma.rodriguez58@testmail.com,Electronics,Mobile App,Middle East,Credit Card,Shipped,3,647.25,1941.75,291.26,1650.49,4.99,2026-01-05 12:01:00,
+ORD-20274,CUST-175,Sophia Jones,sophia.jones76@testmail.com,Electronics,Affiliate Partner,Middle East,Credit Card,Delivered,3,596.05,1788.15,268.22,1519.93,0.0,2026-03-11 06:33:00,2026-03-13
+ORD-20275,CUST-140,Emma Johnson,emma.johnson7@testmail.com,Home & Kitchen,Mobile App,Europe,Cash on Delivery,Delivered,1,63.5,63.5,3.18,60.32,9.99,2026-01-06 19:28:00,2026-01-08
+ORD-20276,CUST-372,Ava Garcia,ava.garcia68@testmail.com,Sports & Fitness,Direct,Europe,Apple Pay,Delivered,1,74.34,74.34,3.72,70.62,9.99,2026-01-23 09:45:00,2026-01-26
+ORD-20277,CUST-180,Oliver Davis,oliver.davis57@testmail.com,Books & Media,Affiliate Partner,Latin America,Credit Card,Delivered,1,119.97,119.97,6.0,113.97,14.99,2026-01-27 09:35:00,2026-01-29
+ORD-20278,CUST-116,Ava Miller,ava.miller8@testmail.com,Books & Media,Affiliate Partner,North America,PayPal,Processing,1,29.51,29.51,4.43,25.08,0.0,2026-03-16 08:33:00,
+ORD-20279,CUST-229,Ava Miller,ava.miller5@testmail.com,Books & Media,Affiliate Partner,Asia-Pacific,Cash on Delivery,Delivered,1,76.79,76.79,11.52,65.27,0.0,2026-01-04 08:50:00,2026-01-06
+ORD-20280,CUST-188,Emma Jones,emma.jones6@testmail.com,Sports & Fitness,Desktop Web,Middle East,Credit Card,Delivered,1,85.11,85.11,0.0,85.11,9.99,2026-03-14 14:36:00,2026-03-16
+ORD-20281,CUST-431,Ava Martinez,ava.martinez9@testmail.com,Sports & Fitness,Instagram Ad,Middle East,PayPal,Delivered,2,70.56,141.12,21.17,119.95,4.99,2026-03-18 21:59:00,2026-03-23
+ORD-20282,CUST-176,Noah Davis,noah.davis28@testmail.com,Sports & Fitness,Affiliate Partner,Latin America,Apple Pay,Shipped,1,58.14,58.14,8.72,49.42,0.0,2026-03-19 23:47:00,
+ORD-20283,CUST-398,Elijah Jones,elijah.jones73@testmail.com,Electronics,Affiliate Partner,Asia-Pacific,UPI,Delivered,1,242.42,242.42,48.48,193.94,9.99,2026-01-30 11:48:00,2026-02-03
+ORD-20284,CUST-154,Liam Martinez,liam.martinez12@testmail.com,Books & Media,Mobile App,Asia-Pacific,UPI,Delivered,1,69.13,69.13,13.83,55.3,4.99,2026-02-25 10:01:00,2026-02-28
+ORD-20285,CUST-175,Sophia Smith,sophia.smith15@testmail.com,Fashion & Apparel,Mobile App,Asia-Pacific,Credit Card,Delivered,2,141.39,282.78,56.56,226.22,14.99,2026-03-11 08:15:00,2026-03-15
+ORD-20286,CUST-373,Liam Davis,liam.davis18@testmail.com,Electronics,Instagram Ad,Middle East,PayPal,Delivered,5,794.62,3973.1,397.31,3575.79,9.99,2026-03-07 06:52:00,2026-03-09
+ORD-20287,CUST-232,Olivia Johnson,olivia.johnson70@testmail.com,Books & Media,Direct,Europe,Cash on Delivery,Delivered,4,71.61,286.44,0.0,286.44,0.0,2026-02-26 22:23:00,2026-03-03
+ORD-20288,CUST-361,Emma Miller,emma.miller64@testmail.com,Books & Media,Direct,North America,UPI,Delivered,1,57.34,57.34,0.0,57.34,4.99,2026-01-25 18:36:00,2026-01-27
+ORD-20289,CUST-236,Lucas Jones,lucas.jones6@testmail.com,Fashion & Apparel,Instagram Ad,Middle East,Cash on Delivery,Shipped,2,114.68,229.36,34.4,194.96,0.0,2026-01-20 20:46:00,
+ORD-20290,CUST-349,Lucas Garcia,lucas.garcia37@testmail.com,Fashion & Apparel,Mobile App,North America,Cash on Delivery,Delivered,1,164.44,164.44,8.22,156.22,4.99,2026-02-24 09:22:00,2026-03-01
+ORD-20291,CUST-459,Charlotte Rodriguez,charlotte.rodriguez82@testmail.com,Fashion & Apparel,Direct,Asia-Pacific,Credit Card,Shipped,1,32.0,32.0,6.4,25.6,14.99,2026-02-28 18:11:00,
+ORD-20292,CUST-178,Ava Martinez,ava.martinez72@testmail.com,Books & Media,Affiliate Partner,Asia-Pacific,Cash on Delivery,Delivered,1,30.93,30.93,4.64,26.29,0.0,2026-02-24 06:17:00,2026-03-01
+ORD-20293,CUST-236,Oliver Johnson,oliver.johnson69@testmail.com,Books & Media,Desktop Web,Asia-Pacific,Cash on Delivery,Delivered,1,15.04,15.04,3.01,12.03,4.99,2026-02-01 19:17:00,2026-02-07
+ORD-20294,CUST-408,Sophia Rodriguez,sophia.rodriguez74@testmail.com,Beauty & Care,Instagram Ad,North America,Apple Pay,Delivered,1,118.69,118.69,23.74,94.95,14.99,2026-01-18 14:25:00,2026-01-23
+ORD-20295,CUST-438,Liam Miller,liam.miller97@testmail.com,Electronics,Instagram Ad,North America,PayPal,Processing,1,769.97,769.97,38.5,731.47,9.99,2026-01-10 12:53:00,
+ORD-20296,CUST-384,Lucas Williams,lucas.williams66@testmail.com,Fashion & Apparel,Affiliate Partner,Europe,Apple Pay,Delivered,5,31.79,158.95,15.89,143.06,9.99,2026-02-22 06:21:00,2026-02-25
+ORD-20297,CUST-432,Liam Miller,liam.miller5@testmail.com,Home & Kitchen,Mobile App,Asia-Pacific,PayPal,Cancelled,1,79.71,79.71,11.96,0.0,9.99,2026-02-08 21:09:00,
+ORD-20298,CUST-458,Noah Jones,noah.jones34@testmail.com,Home & Kitchen,Mobile App,Latin America,Apple Pay,Shipped,2,109.14,218.28,0.0,218.28,4.99,2026-01-09 21:48:00,
+ORD-20299,CUST-311,Lucas Rodriguez,lucas.rodriguez67@testmail.com,Sports & Fitness,Instagram Ad,Middle East,Cash on Delivery,Delivered,1,43.51,43.51,6.53,36.98,9.99,2026-01-01 18:29:00,2026-01-07
+ORD-20300,CUST-456,Liam Brown,liam.brown80@testmail.com,Home & Kitchen,Instagram Ad,Latin America,Apple Pay,Delivered,2,79.83,159.66,7.98,151.68,14.99,2026-02-03 23:27:00,2026-02-09
+ORD-20301,CUST-163,Charlotte Davis,charlotte.davis79@testmail.com,Home & Kitchen,Instagram Ad,Asia-Pacific,Credit Card,Delivered,5,99.38,496.9,0.0,496.9,0.0,2026-02-11 16:37:00,2026-02-15
+ORD-20302,CUST-316,Olivia Martinez,olivia.martinez88@testmail.com,Beauty & Care,Desktop Web,Latin America,PayPal,Delivered,1,26.91,26.91,4.04,22.87,0.0,2026-02-01 18:56:00,2026-02-08
+ORD-20303,CUST-363,Emma Brown,emma.brown75@testmail.com,Sports & Fitness,Instagram Ad,Middle East,Apple Pay,Shipped,1,117.47,117.47,5.87,111.6,0.0,2026-01-27 19:20:00,
+ORD-20304,CUST-371,Ava Garcia,ava.garcia75@testmail.com,Home & Kitchen,Instagram Ad,Latin America,Credit Card,Delivered,2,46.62,93.24,4.66,88.58,9.99,2026-01-07 06:38:00,2026-01-14
+ORD-20305,CUST-182,Ava Williams,ava.williams2@testmail.com,Electronics,Direct,Latin America,PayPal,Cancelled,1,118.5,118.5,17.77,0.0,9.99,2026-03-13 19:27:00,
+ORD-20306,CUST-198,Ava Garcia,ava.garcia65@testmail.com,Books & Media,Direct,Latin America,PayPal,Delivered,2,47.39,94.78,9.48,85.3,4.99,2026-03-10 06:36:00,2026-03-15
+ORD-20307,CUST-458,Lucas Smith,lucas.smith38@testmail.com,Books & Media,Desktop Web,Asia-Pacific,PayPal,Delivered,3,34.35,103.05,15.46,87.59,9.99,2026-02-21 18:50:00,2026-02-24
+ORD-20308,CUST-177,Emma Johnson,emma.johnson38@testmail.com,Books & Media,Direct,Asia-Pacific,UPI,Delivered,1,104.84,104.84,0.0,104.84,4.99,2026-01-07 06:44:00,2026-01-14
+ORD-20309,CUST-140,Olivia Davis,olivia.davis23@testmail.com,Books & Media,Affiliate Partner,Latin America,PayPal,Shipped,1,22.07,22.07,0.0,22.07,0.0,2026-02-21 10:48:00,
+ORD-20310,CUST-155,Ava Johnson,ava.johnson61@testmail.com,Electronics,Direct,Middle East,PayPal,Cancelled,1,126.18,126.18,25.24,0.0,0.0,2026-03-10 22:40:00,
+ORD-20311,CUST-106,Lucas Rodriguez,lucas.rodriguez35@testmail.com,Books & Media,Affiliate Partner,Middle East,UPI,Shipped,2,107.66,215.32,21.53,193.79,14.99,2026-01-26 08:11:00,
+ORD-20312,CUST-217,Elijah Williams,elijah.williams95@testmail.com,Beauty & Care,Affiliate Partner,Europe,Apple Pay,Shipped,1,32.29,32.29,1.61,30.68,9.99,2026-01-10 10:46:00,
+ORD-20313,CUST-235,Elijah Garcia,elijah.garcia66@testmail.com,Fashion & Apparel,Affiliate Partner,Middle East,Apple Pay,Delivered,1,151.95,151.95,7.6,144.35,9.99,2026-03-10 07:29:00,2026-03-16
+ORD-20314,CUST-116,Olivia Jones,olivia.jones87@testmail.com,Fashion & Apparel,Mobile App,Europe,Cash on Delivery,Shipped,2,176.89,353.78,35.38,318.4,0.0,2026-02-11 14:23:00,
+ORD-20315,CUST-246,Sophia Jones,sophia.jones99@testmail.com,Home & Kitchen,Direct,Latin America,PayPal,Delivered,1,114.17,114.17,5.71,108.46,14.99,2026-01-19 12:54:00,2026-01-21
+ORD-20316,CUST-430,Charlotte Martinez,charlotte.martinez83@testmail.com,Beauty & Care,Affiliate Partner,Middle East,Credit Card,Shipped,2,95.24,190.48,9.52,180.96,9.99,2026-02-27 20:57:00,
+ORD-20317,CUST-134,Olivia Davis,olivia.davis78@testmail.com,Fashion & Apparel,Mobile App,Middle East,Cash on Delivery,Delivered,3,79.81,239.43,0.0,239.43,0.0,2026-02-18 11:52:00,2026-02-20
+ORD-20318,CUST-269,Sophia Brown,sophia.brown30@testmail.com,Electronics,Direct,Europe,Credit Card,Delivered,1,718.9,718.9,71.89,647.01,4.99,2026-02-19 13:20:00,2026-02-26
+ORD-20319,CUST-242,Ava Smith,ava.smith33@testmail.com,Electronics,Mobile App,Latin America,Apple Pay,Delivered,3,728.77,2186.31,218.63,1967.68,4.99,2026-03-02 22:18:00,2026-03-08
+ORD-20320,CUST-107,Ava Garcia,ava.garcia83@testmail.com,Home & Kitchen,Direct,Middle East,UPI,Delivered,1,80.05,80.05,12.01,68.04,0.0,2026-03-10 17:44:00,2026-03-12
+ORD-20321,CUST-400,Oliver Brown,oliver.brown68@testmail.com,Beauty & Care,Instagram Ad,Middle East,Apple Pay,Delivered,3,92.21,276.63,55.33,221.3,14.99,2026-03-06 22:42:00,2026-03-10
+ORD-20322,CUST-292,Charlotte Williams,charlotte.williams30@testmail.com,Beauty & Care,Instagram Ad,Asia-Pacific,Apple Pay,Delivered,1,103.17,103.17,5.16,98.01,9.99,2026-03-16 10:53:00,2026-03-21
+ORD-20323,CUST-183,Emma Johnson,emma.johnson67@testmail.com,Beauty & Care,Instagram Ad,Latin America,PayPal,Delivered,3,83.11,249.33,49.87,199.46,14.99,2026-01-23 14:08:00,2026-01-26
+ORD-20324,CUST-464,Noah Brown,noah.brown74@testmail.com,Sports & Fitness,Mobile App,North America,Cash on Delivery,Delivered,4,74.49,297.96,14.9,283.06,0.0,2026-03-05 06:25:00,2026-03-08
+ORD-20325,CUST-322,Charlotte Brown,charlotte.brown49@testmail.com,Fashion & Apparel,Desktop Web,North America,Credit Card,Delivered,1,132.21,132.21,19.83,112.38,14.99,2026-01-24 13:11:00,2026-01-26
+ORD-20326,CUST-290,Liam Smith,liam.smith50@testmail.com,Electronics,Instagram Ad,Middle East,Cash on Delivery,Processing,1,144.38,144.38,14.44,129.94,4.99,2026-03-03 18:07:00,
+ORD-20327,CUST-315,Liam Jones,liam.jones97@testmail.com,Electronics,Desktop Web,Asia-Pacific,PayPal,Cancelled,1,116.47,116.47,17.47,0.0,9.99,2026-02-01 08:37:00,
+ORD-20328,CUST-193,Charlotte Williams,charlotte.williams1@testmail.com,Fashion & Apparel,Direct,Middle East,PayPal,Delivered,2,179.16,358.32,53.75,304.57,14.99,2026-01-13 07:00:00,2026-01-16
+ORD-20329,CUST-147,Oliver Jones,oliver.jones10@testmail.com,Home & Kitchen,Instagram Ad,North America,PayPal,Delivered,5,85.19,425.95,63.89,362.06,9.99,2026-01-03 07:27:00,2026-01-08
+ORD-20330,CUST-495,Emma Miller,emma.miller80@testmail.com,Home & Kitchen,Direct,North America,UPI,Processing,1,49.01,49.01,7.35,41.66,9.99,2026-02-06 06:51:00,
+ORD-20331,CUST-181,Elijah Smith,elijah.smith50@testmail.com,Sports & Fitness,Instagram Ad,Middle East,UPI,Delivered,1,29.79,29.79,5.96,23.83,14.99,2026-02-25 19:35:00,2026-02-28
+ORD-20332,CUST-286,Lucas Davis,lucas.davis4@testmail.com,Electronics,Instagram Ad,Latin America,Cash on Delivery,Delivered,2,443.81,887.62,133.14,754.48,0.0,2026-03-13 22:57:00,2026-03-20
+ORD-20333,CUST-320,Oliver Martinez,oliver.martinez90@testmail.com,Books & Media,Desktop Web,North America,Cash on Delivery,Delivered,2,28.28,56.56,0.0,56.56,4.99,2026-02-28 18:01:00,2026-03-07
+ORD-20334,CUST-171,Oliver Davis,oliver.davis10@testmail.com,Beauty & Care,Instagram Ad,Europe,Apple Pay,Delivered,3,94.91,284.73,56.95,227.78,9.99,2026-01-02 15:05:00,2026-01-08
+ORD-20335,CUST-297,Elijah Garcia,elijah.garcia78@testmail.com,Home & Kitchen,Instagram Ad,North America,Apple Pay,Delivered,1,93.54,93.54,14.03,79.51,9.99,2026-03-04 20:18:00,2026-03-11
+ORD-20336,CUST-236,Olivia Johnson,olivia.johnson23@testmail.com,Electronics,Instagram Ad,Middle East,UPI,Shipped,2,390.17,780.34,39.02,741.32,14.99,2026-02-05 08:38:00,
+ORD-20337,CUST-236,Olivia Williams,olivia.williams17@testmail.com,Sports & Fitness,Affiliate Partner,Middle East,Credit Card,Delivered,3,110.91,332.73,33.27,299.46,9.99,2026-02-27 07:51:00,2026-03-06
+ORD-20338,CUST-100,Liam Rodriguez,liam.rodriguez91@testmail.com,Home & Kitchen,Direct,North America,PayPal,Delivered,3,29.86,89.58,8.96,80.62,14.99,2026-02-25 22:08:00,2026-02-27
+ORD-20339,CUST-340,Lucas Smith,lucas.smith23@testmail.com,Beauty & Care,Mobile App,Latin America,UPI,Delivered,1,37.18,37.18,1.86,35.32,9.99,2026-02-13 19:17:00,2026-02-15
+ORD-20340,CUST-182,Charlotte Williams,charlotte.williams89@testmail.com,Sports & Fitness,Instagram Ad,Asia-Pacific,Credit Card,Delivered,2,110.8,221.6,44.32,177.28,4.99,2026-01-08 08:31:00,2026-01-14
+ORD-20341,CUST-146,Ava Davis,ava.davis15@testmail.com,Fashion & Apparel,Mobile App,Latin America,Credit Card,Delivered,1,35.22,35.22,3.52,31.7,0.0,2026-02-19 23:59:00,2026-02-23
+ORD-20342,CUST-325,Lucas Garcia,lucas.garcia7@testmail.com,Electronics,Instagram Ad,Latin America,Credit Card,Delivered,1,757.69,757.69,75.77,681.92,4.99,2026-01-12 16:11:00,2026-01-17
+ORD-20343,CUST-387,Lucas Williams,lucas.williams92@testmail.com,Fashion & Apparel,Mobile App,North America,Apple Pay,Delivered,1,100.0,100.0,0.0,100.0,9.99,2026-03-17 16:43:00,2026-03-19
+ORD-20344,CUST-404,Oliver Jones,oliver.jones33@testmail.com,Fashion & Apparel,Desktop Web,Middle East,Apple Pay,Shipped,1,157.91,157.91,15.79,142.12,4.99,2026-02-22 23:36:00,
+ORD-20345,CUST-209,Ava Davis,ava.davis99@testmail.com,Electronics,Affiliate Partner,North America,Cash on Delivery,Processing,1,319.36,319.36,63.87,255.49,0.0,2026-03-07 10:30:00,
+ORD-20346,CUST-472,Liam Smith,liam.smith47@testmail.com,Home & Kitchen,Direct,Asia-Pacific,Cash on Delivery,Delivered,1,64.17,64.17,6.42,57.75,4.99,2026-03-20 18:14:00,2026-03-27
+ORD-20347,CUST-199,Elijah Jones,elijah.jones76@testmail.com,Sports & Fitness,Desktop Web,Europe,Apple Pay,Delivered,5,60.72,303.6,45.54,258.06,14.99,2026-03-09 07:25:00,2026-03-13
+ORD-20348,CUST-422,Charlotte Brown,charlotte.brown39@testmail.com,Beauty & Care,Direct,Middle East,Cash on Delivery,Cancelled,4,48.38,193.52,9.68,0.0,14.99,2026-01-25 23:19:00,
+ORD-20349,CUST-140,Sophia Williams,sophia.williams47@testmail.com,Sports & Fitness,Mobile App,North America,Apple Pay,Delivered,1,62.14,62.14,6.21,55.93,9.99,2026-02-26 14:45:00,2026-02-28
+ORD-20350,CUST-422,Sophia Williams,sophia.williams90@testmail.com,Fashion & Apparel,Instagram Ad,North America,Cash on Delivery,Delivered,3,75.31,225.93,0.0,225.93,14.99,2026-01-05 23:59:00,2026-01-09
+ORD-20351,CUST-268,Ava Smith,ava.smith38@testmail.com,Beauty & Care,Instagram Ad,Europe,Credit Card,Delivered,4,24.95,99.8,0.0,99.8,4.99,2026-01-11 09:29:00,2026-01-17
+ORD-20352,CUST-449,Elijah Miller,elijah.miller23@testmail.com,Electronics,Desktop Web,North America,Apple Pay,Delivered,1,788.34,788.34,78.83,709.51,0.0,2026-03-21 17:58:00,2026-03-24
+ORD-20353,CUST-263,Emma Johnson,emma.johnson15@testmail.com,Beauty & Care,Desktop Web,Asia-Pacific,Cash on Delivery,Delivered,3,94.75,284.25,0.0,284.25,0.0,2026-02-15 07:00:00,2026-02-18
+ORD-20354,CUST-122,Oliver Brown,oliver.brown64@testmail.com,Beauty & Care,Desktop Web,Asia-Pacific,Cash on Delivery,Cancelled,3,50.68,152.04,22.81,0.0,9.99,2026-02-03 20:40:00,
+ORD-20355,CUST-218,Liam Davis,liam.davis86@testmail.com,Beauty & Care,Desktop Web,Latin America,Cash on Delivery,Processing,1,93.03,93.03,9.3,83.73,0.0,2026-03-12 07:59:00,
+ORD-20356,CUST-164,Liam Smith,liam.smith5@testmail.com,Electronics,Affiliate Partner,Middle East,UPI,Delivered,3,171.26,513.78,51.38,462.4,9.99,2026-02-08 06:13:00,2026-02-15
+ORD-20357,CUST-415,Noah Miller,noah.miller79@testmail.com,Electronics,Instagram Ad,Asia-Pacific,Credit Card,Delivered,2,152.22,304.44,15.22,289.22,9.99,2026-01-10 23:19:00,2026-01-17
+ORD-20358,CUST-308,Olivia Rodriguez,olivia.rodriguez63@testmail.com,Home & Kitchen,Direct,Europe,PayPal,Shipped,1,55.73,55.73,0.0,55.73,0.0,2026-03-14 16:09:00,
+ORD-20359,CUST-345,Lucas Martinez,lucas.martinez65@testmail.com,Electronics,Mobile App,Latin America,Cash on Delivery,Delivered,2,447.68,895.36,0.0,895.36,4.99,2026-01-08 08:34:00,2026-01-13
+ORD-20360,CUST-293,Ava Williams,ava.williams98@testmail.com,Beauty & Care,Desktop Web,Middle East,PayPal,Shipped,1,15.29,15.29,2.29,13.0,14.99,2026-02-09 17:55:00,
+ORD-20361,CUST-246,Olivia Garcia,olivia.garcia14@testmail.com,Home & Kitchen,Mobile App,Asia-Pacific,Credit Card,Delivered,1,28.65,28.65,4.3,24.35,4.99,2026-01-10 21:13:00,2026-01-15
+ORD-20362,CUST-477,Elijah Rodriguez,elijah.rodriguez5@testmail.com,Home & Kitchen,Desktop Web,Europe,Cash on Delivery,Delivered,1,104.88,104.88,0.0,104.88,0.0,2026-01-20 13:50:00,2026-01-23
+ORD-20363,CUST-224,Lucas Smith,lucas.smith2@testmail.com,Beauty & Care,Affiliate Partner,North America,PayPal,Processing,2,71.81,143.62,21.54,122.08,9.99,2026-02-01 06:40:00,
+ORD-20364,CUST-486,Olivia Johnson,olivia.johnson73@testmail.com,Electronics,Affiliate Partner,Europe,UPI,Delivered,1,830.96,830.96,124.64,706.32,9.99,2026-03-20 06:18:00,2026-03-27
+ORD-20365,CUST-443,Charlotte Rodriguez,charlotte.rodriguez23@testmail.com,Books & Media,Direct,Europe,Credit Card,Processing,1,19.87,19.87,0.99,18.88,14.99,2026-01-22 19:19:00,
+ORD-20366,CUST-146,Emma Williams,emma.williams45@testmail.com,Books & Media,Direct,Europe,Credit Card,Delivered,2,28.24,56.48,8.47,48.01,0.0,2026-02-02 20:29:00,2026-02-04
+ORD-20367,CUST-367,Olivia Brown,olivia.brown74@testmail.com,Beauty & Care,Instagram Ad,Europe,Apple Pay,Delivered,2,32.95,65.9,6.59,59.31,0.0,2026-01-22 09:41:00,2026-01-28
+ORD-20368,CUST-473,Elijah Smith,elijah.smith76@testmail.com,Beauty & Care,Direct,Latin America,Credit Card,Delivered,1,49.89,49.89,9.98,39.91,0.0,2026-01-15 22:27:00,2026-01-18
+ORD-20369,CUST-345,Oliver Martinez,oliver.martinez69@testmail.com,Beauty & Care,Affiliate Partner,Latin America,UPI,Shipped,1,89.43,89.43,8.94,80.49,4.99,2026-01-13 18:35:00,
+ORD-20370,CUST-436,Lucas Brown,lucas.brown13@testmail.com,Electronics,Instagram Ad,Middle East,UPI,Returned,3,292.61,877.83,87.78,0.0,0.0,2026-03-07 21:57:00,2026-03-10
+ORD-20371,CUST-439,Charlotte Williams,charlotte.williams20@testmail.com,Fashion & Apparel,Affiliate Partner,North America,UPI,Delivered,1,121.92,121.92,6.1,115.82,4.99,2026-03-12 12:39:00,2026-03-16
+ORD-20372,CUST-458,Emma Jones,emma.jones2@testmail.com,Electronics,Direct,Asia-Pacific,UPI,Delivered,1,829.93,829.93,82.99,746.94,4.99,2026-01-17 22:47:00,2026-01-19
+ORD-20373,CUST-456,Olivia Smith,olivia.smith14@testmail.com,Fashion & Apparel,Mobile App,North America,PayPal,Delivered,1,93.03,93.03,9.3,83.73,4.99,2026-01-20 13:54:00,2026-01-23
+ORD-20374,CUST-276,Noah Garcia,noah.garcia92@testmail.com,Beauty & Care,Desktop Web,Europe,Cash on Delivery,Delivered,1,56.57,56.57,0.0,56.57,0.0,2026-01-12 19:21:00,2026-01-14
+ORD-20375,CUST-312,Lucas Brown,lucas.brown88@testmail.com,Books & Media,Affiliate Partner,Latin America,Cash on Delivery,Delivered,2,86.8,173.6,8.68,164.92,0.0,2026-01-13 23:14:00,2026-01-16
+ORD-20376,CUST-479,Liam Davis,liam.davis70@testmail.com,Home & Kitchen,Affiliate Partner,North America,UPI,Processing,1,97.44,97.44,9.74,87.7,4.99,2026-03-16 22:13:00,
+ORD-20377,CUST-385,Ava Johnson,ava.johnson48@testmail.com,Sports & Fitness,Affiliate Partner,Europe,Cash on Delivery,Delivered,1,67.61,67.61,6.76,60.85,14.99,2026-01-11 12:07:00,2026-01-16
+ORD-20378,CUST-498,Sophia Miller,sophia.miller98@testmail.com,Books & Media,Mobile App,Latin America,UPI,Delivered,1,21.35,21.35,4.27,17.08,9.99,2026-01-11 22:51:00,2026-01-16
+ORD-20379,CUST-254,Ava Jones,ava.jones83@testmail.com,Beauty & Care,Mobile App,Latin America,Apple Pay,Delivered,2,74.59,149.18,14.92,134.26,0.0,2026-01-26 15:38:00,2026-01-29
+ORD-20380,CUST-310,Lucas Miller,lucas.miller86@testmail.com,Fashion & Apparel,Affiliate Partner,Europe,Apple Pay,Delivered,1,175.14,175.14,17.51,157.63,4.99,2026-01-18 19:56:00,2026-01-20
+ORD-20381,CUST-404,Olivia Garcia,olivia.garcia88@testmail.com,Beauty & Care,Instagram Ad,Asia-Pacific,UPI,Shipped,1,108.06,108.06,0.0,108.06,14.99,2026-01-13 22:54:00,
+ORD-20382,CUST-202,Lucas Johnson,lucas.johnson72@testmail.com,Beauty & Care,Instagram Ad,Europe,UPI,Cancelled,2,86.68,173.36,17.34,0.0,4.99,2026-02-09 08:42:00,
+ORD-20383,CUST-453,Oliver Brown,oliver.brown31@testmail.com,Fashion & Apparel,Direct,Europe,PayPal,Cancelled,1,63.06,63.06,3.15,0.0,0.0,2026-01-08 17:34:00,
+ORD-20384,CUST-453,Liam Johnson,liam.johnson73@testmail.com,Beauty & Care,Direct,Middle East,Apple Pay,Processing,5,43.04,215.2,32.28,182.92,14.99,2026-02-21 06:23:00,
+ORD-20385,CUST-297,Ava Davis,ava.davis94@testmail.com,Home & Kitchen,Affiliate Partner,Asia-Pacific,PayPal,Delivered,1,64.58,64.58,6.46,58.12,14.99,2026-01-26 17:15:00,2026-01-31
+ORD-20386,CUST-416,Lucas Rodriguez,lucas.rodriguez40@testmail.com,Books & Media,Mobile App,Asia-Pacific,UPI,Delivered,1,71.23,71.23,0.0,71.23,9.99,2026-01-11 11:21:00,2026-01-15
+ORD-20387,CUST-157,Charlotte Johnson,charlotte.johnson31@testmail.com,Home & Kitchen,Desktop Web,Middle East,UPI,Shipped,1,46.72,46.72,7.01,39.71,4.99,2026-02-11 17:36:00,
+ORD-20388,CUST-226,Emma Davis,emma.davis21@testmail.com,Home & Kitchen,Desktop Web,Middle East,Credit Card,Delivered,4,45.02,180.08,18.01,162.07,4.99,2026-02-04 11:24:00,2026-02-06
+ORD-20389,CUST-115,Sophia Johnson,sophia.johnson69@testmail.com,Home & Kitchen,Direct,Europe,Credit Card,Cancelled,2,63.08,126.16,0.0,0.0,0.0,2026-02-27 19:14:00,
+ORD-20390,CUST-262,Liam Davis,liam.davis21@testmail.com,Sports & Fitness,Direct,Europe,Credit Card,Cancelled,1,24.7,24.7,4.94,0.0,9.99,2026-01-11 17:46:00,
+ORD-20391,CUST-157,Noah Garcia,noah.garcia64@testmail.com,Beauty & Care,Direct,Europe,Apple Pay,Shipped,1,86.43,86.43,12.96,73.47,0.0,2026-03-06 20:16:00,
+ORD-20392,CUST-304,Noah Williams,noah.williams88@testmail.com,Beauty & Care,Mobile App,Latin America,PayPal,Shipped,1,62.56,62.56,12.51,50.05,14.99,2026-01-19 13:57:00,
+ORD-20393,CUST-112,Oliver Miller,oliver.miller48@testmail.com,Fashion & Apparel,Desktop Web,North America,PayPal,Delivered,2,151.37,302.74,45.41,257.33,0.0,2026-01-08 07:59:00,2026-01-15
+ORD-20394,CUST-317,Oliver Rodriguez,oliver.rodriguez4@testmail.com,Beauty & Care,Mobile App,Europe,Apple Pay,Delivered,1,63.63,63.63,3.18,60.45,0.0,2026-01-23 10:04:00,2026-01-27
+ORD-20395,CUST-201,Lucas Jones,lucas.jones16@testmail.com,Fashion & Apparel,Instagram Ad,North America,UPI,Shipped,2,38.46,76.92,3.85,73.07,0.0,2026-02-20 22:51:00,
+ORD-20396,CUST-226,Noah Miller,noah.miller45@testmail.com,Sports & Fitness,Direct,Europe,Cash on Delivery,Delivered,1,82.71,82.71,16.54,66.17,14.99,2026-02-20 11:58:00,2026-02-27
+ORD-20397,CUST-458,Olivia Garcia,olivia.garcia79@testmail.com,Sports & Fitness,Direct,Europe,UPI,Processing,2,95.94,191.88,28.78,163.1,4.99,2026-01-19 11:09:00,
+ORD-20398,CUST-359,Noah Rodriguez,noah.rodriguez45@testmail.com,Sports & Fitness,Instagram Ad,Asia-Pacific,PayPal,Delivered,1,38.8,38.8,5.82,32.98,0.0,2026-03-02 13:50:00,2026-03-06
+ORD-20399,CUST-202,Emma Davis,emma.davis49@testmail.com,Books & Media,Mobile App,Middle East,Apple Pay,Cancelled,1,67.27,67.27,0.0,0.0,4.99,2026-01-06 22:11:00,
+ORD-20400,CUST-352,Emma Johnson,emma.johnson86@testmail.com,Electronics,Affiliate Partner,Latin America,Credit Card,Delivered,2,566.73,1133.46,56.67,1076.79,0.0,2026-02-15 23:14:00,2026-02-21
+ORD-20401,CUST-172,Sophia Jones,sophia.jones21@testmail.com,Sports & Fitness,Direct,Latin America,UPI,Shipped,1,30.24,30.24,1.51,28.73,4.99,2026-02-11 20:48:00,
+ORD-20402,CUST-467,Charlotte Smith,charlotte.smith86@testmail.com,Beauty & Care,Mobile App,Asia-Pacific,PayPal,Shipped,5,105.1,525.5,105.1,420.4,4.99,2026-01-20 17:35:00,
+ORD-20403,CUST-225,Olivia Williams,olivia.williams9@testmail.com,Beauty & Care,Direct,Latin America,UPI,Delivered,2,109.52,219.04,10.95,208.09,14.99,2026-03-21 16:13:00,2026-03-25
+ORD-20404,CUST-495,Liam Rodriguez,liam.rodriguez16@testmail.com,Electronics,Direct,Latin America,PayPal,Delivered,2,256.42,512.84,102.57,410.27,9.99,2026-01-14 13:00:00,2026-01-19
+ORD-20405,CUST-217,Charlotte Garcia,charlotte.garcia74@testmail.com,Fashion & Apparel,Mobile App,North America,UPI,Cancelled,2,103.85,207.7,20.77,0.0,14.99,2026-02-19 11:25:00,
+ORD-20406,CUST-144,Elijah Garcia,elijah.garcia55@testmail.com,Books & Media,Mobile App,Asia-Pacific,Apple Pay,Delivered,2,98.92,197.84,0.0,197.84,9.99,2026-01-06 17:20:00,2026-01-10
+ORD-20407,CUST-403,Ava Johnson,ava.johnson28@testmail.com,Electronics,Instagram Ad,Asia-Pacific,PayPal,Shipped,2,596.3,1192.6,238.52,954.08,14.99,2026-02-24 14:01:00,
+ORD-20408,CUST-136,Lucas Garcia,lucas.garcia80@testmail.com,Books & Media,Instagram Ad,Europe,Credit Card,Delivered,1,32.72,32.72,1.64,31.08,0.0,2026-03-03 06:51:00,2026-03-06
+ORD-20409,CUST-372,Elijah Johnson,elijah.johnson73@testmail.com,Fashion & Apparel,Mobile App,North America,UPI,Delivered,1,171.73,171.73,25.76,145.97,14.99,2026-03-15 13:48:00,2026-03-22
+ORD-20410,CUST-167,Elijah Miller,elijah.miller57@testmail.com,Electronics,Instagram Ad,Latin America,UPI,Returned,3,258.12,774.36,154.87,0.0,4.99,2026-01-10 11:27:00,2026-01-15
+ORD-20411,CUST-203,Sophia Smith,sophia.smith15@testmail.com,Books & Media,Direct,Middle East,Cash on Delivery,Shipped,1,52.0,52.0,2.6,49.4,9.99,2026-03-21 21:41:00,
+ORD-20412,CUST-280,Lucas Johnson,lucas.johnson4@testmail.com,Beauty & Care,Affiliate Partner,Europe,Credit Card,Delivered,1,19.8,19.8,0.0,19.8,0.0,2026-03-07 16:11:00,2026-03-10
+ORD-20413,CUST-302,Oliver Davis,oliver.davis40@testmail.com,Books & Media,Direct,Middle East,Apple Pay,Returned,1,29.73,29.73,5.95,0.0,14.99,2026-02-06 21:00:00,2026-02-13
+ORD-20414,CUST-277,Ava Rodriguez,ava.rodriguez55@testmail.com,Beauty & Care,Affiliate Partner,Asia-Pacific,Cash on Delivery,Delivered,3,24.35,73.05,3.65,69.4,14.99,2026-02-27 20:59:00,2026-03-03
+ORD-20415,CUST-415,Emma Jones,emma.jones24@testmail.com,Home & Kitchen,Mobile App,Europe,PayPal,Delivered,1,92.61,92.61,9.26,83.35,14.99,2026-02-10 13:30:00,2026-02-13
+ORD-20416,CUST-468,Elijah Davis,elijah.davis2@testmail.com,Electronics,Mobile App,Middle East,PayPal,Cancelled,1,118.15,118.15,11.82,0.0,14.99,2026-01-18 18:14:00,
+ORD-20417,CUST-368,Olivia Garcia,olivia.garcia80@testmail.com,Home & Kitchen,Mobile App,Europe,Apple Pay,Delivered,1,23.23,23.23,2.32,20.91,9.99,2026-02-22 12:27:00,2026-02-26
+ORD-20418,CUST-257,Charlotte Martinez,charlotte.martinez91@testmail.com,Home & Kitchen,Instagram Ad,Asia-Pacific,Apple Pay,Delivered,2,106.84,213.68,21.37,192.31,4.99,2026-02-25 13:19:00,2026-03-01
+ORD-20419,CUST-396,Ava Johnson,ava.johnson58@testmail.com,Home & Kitchen,Instagram Ad,Middle East,Cash on Delivery,Delivered,1,89.1,89.1,8.91,80.19,9.99,2026-03-17 13:48:00,2026-03-23
+ORD-20420,CUST-165,Ava Brown,ava.brown78@testmail.com,Sports & Fitness,Direct,Asia-Pacific,Credit Card,Processing,1,20.01,20.01,2.0,18.01,14.99,2026-03-09 23:10:00,
+ORD-20421,CUST-166,Elijah Brown,elijah.brown8@testmail.com,Sports & Fitness,Instagram Ad,Middle East,Cash on Delivery,Delivered,1,15.84,15.84,3.17,12.67,14.99,2026-02-04 09:15:00,2026-02-07
+ORD-20422,CUST-399,Olivia Johnson,olivia.johnson17@testmail.com,Books & Media,Mobile App,Asia-Pacific,Cash on Delivery,Delivered,2,58.34,116.68,11.67,105.01,14.99,2026-02-14 12:18:00,2026-02-21
+ORD-20423,CUST-114,Olivia Smith,olivia.smith19@testmail.com,Fashion & Apparel,Mobile App,Asia-Pacific,Cash on Delivery,Delivered,1,119.7,119.7,23.94,95.76,0.0,2026-02-25 15:24:00,2026-02-27
+ORD-20424,CUST-421,Oliver Johnson,oliver.johnson87@testmail.com,Fashion & Apparel,Mobile App,Latin America,PayPal,Delivered,2,54.5,109.0,21.8,87.2,9.99,2026-02-20 17:33:00,2026-02-27
+ORD-20425,CUST-456,Elijah Smith,elijah.smith42@testmail.com,Sports & Fitness,Affiliate Partner,North America,Cash on Delivery,Returned,2,73.02,146.04,7.3,0.0,9.99,2026-03-20 12:04:00,2026-03-24
+ORD-20426,CUST-443,Sophia Miller,sophia.miller95@testmail.com,Fashion & Apparel,Mobile App,Middle East,Cash on Delivery,Delivered,1,53.45,53.45,8.02,45.43,4.99,2026-02-17 07:56:00,2026-02-20
+ORD-20427,CUST-358,Olivia Smith,olivia.smith95@testmail.com,Fashion & Apparel,Desktop Web,Asia-Pacific,UPI,Delivered,1,71.69,71.69,10.75,60.94,14.99,2026-02-03 19:13:00,2026-02-10
+ORD-20428,CUST-324,Sophia Rodriguez,sophia.rodriguez37@testmail.com,Electronics,Mobile App,Asia-Pacific,UPI,Delivered,4,197.8,791.2,0.0,791.2,14.99,2026-03-14 14:24:00,2026-03-20
+ORD-20429,CUST-183,Liam Davis,liam.davis21@testmail.com,Home & Kitchen,Desktop Web,Asia-Pacific,UPI,Returned,1,98.09,98.09,9.81,0.0,0.0,2026-02-10 07:09:00,2026-02-13
+ORD-20430,CUST-104,Charlotte Martinez,charlotte.martinez18@testmail.com,Home & Kitchen,Affiliate Partner,Europe,Apple Pay,Delivered,1,119.37,119.37,23.87,95.5,4.99,2026-02-13 11:12:00,2026-02-16
+ORD-20431,CUST-134,Emma Williams,emma.williams94@testmail.com,Home & Kitchen,Affiliate Partner,North America,UPI,Delivered,1,41.63,41.63,6.24,35.39,14.99,2026-01-27 06:14:00,2026-01-29
+ORD-20432,CUST-483,Liam Miller,liam.miller8@testmail.com,Books & Media,Direct,North America,Apple Pay,Cancelled,1,79.05,79.05,7.91,0.0,4.99,2026-02-24 10:49:00,
+ORD-20433,CUST-238,Olivia Jones,olivia.jones92@testmail.com,Beauty & Care,Direct,North America,UPI,Delivered,3,32.92,98.76,0.0,98.76,4.99,2026-01-30 23:49:00,2026-02-03
+ORD-20434,CUST-126,Olivia Smith,olivia.smith48@testmail.com,Fashion & Apparel,Instagram Ad,North America,Cash on Delivery,Delivered,1,50.33,50.33,2.52,47.81,9.99,2026-01-03 08:29:00,2026-01-10
+ORD-20435,CUST-233,Emma Davis,emma.davis53@testmail.com,Beauty & Care,Affiliate Partner,Asia-Pacific,Cash on Delivery,Cancelled,3,82.43,247.29,37.09,0.0,9.99,2026-03-01 09:53:00,
+ORD-20436,CUST-422,Liam Martinez,liam.martinez19@testmail.com,Sports & Fitness,Desktop Web,North America,Apple Pay,Cancelled,1,111.65,111.65,5.58,0.0,14.99,2026-02-16 23:14:00,
+ORD-20437,CUST-226,Oliver Rodriguez,oliver.rodriguez63@testmail.com,Electronics,Desktop Web,Middle East,Credit Card,Delivered,2,296.95,593.9,59.39,534.51,4.99,2026-03-16 16:24:00,2026-03-21
+ORD-20438,CUST-362,Noah Brown,noah.brown6@testmail.com,Books & Media,Instagram Ad,North America,UPI,Shipped,1,19.95,19.95,3.99,15.96,14.99,2026-01-13 10:05:00,
+ORD-20439,CUST-406,Noah Garcia,noah.garcia20@testmail.com,Beauty & Care,Instagram Ad,Middle East,Credit Card,Delivered,3,65.9,197.7,0.0,197.7,4.99,2026-01-10 20:54:00,2026-01-12
+ORD-20440,CUST-298,Oliver Johnson,oliver.johnson96@testmail.com,Sports & Fitness,Instagram Ad,Asia-Pacific,UPI,Delivered,1,33.13,33.13,1.66,31.47,14.99,2026-03-18 16:47:00,2026-03-20
+ORD-20441,CUST-402,Ava Brown,ava.brown83@testmail.com,Fashion & Apparel,Instagram Ad,Europe,Credit Card,Delivered,1,52.3,52.3,5.23,47.07,9.99,2026-02-16 15:09:00,2026-02-19
+ORD-20442,CUST-357,Sophia Brown,sophia.brown67@testmail.com,Fashion & Apparel,Mobile App,Europe,UPI,Shipped,1,165.25,165.25,0.0,165.25,9.99,2026-02-07 15:19:00,
+ORD-20443,CUST-492,Elijah Rodriguez,elijah.rodriguez65@testmail.com,Sports & Fitness,Instagram Ad,North America,PayPal,Cancelled,1,105.32,105.32,21.06,0.0,14.99,2026-03-01 06:51:00,
+ORD-20444,CUST-312,Oliver Johnson,oliver.johnson30@testmail.com,Sports & Fitness,Direct,Latin America,Apple Pay,Delivered,2,36.97,73.94,14.79,59.15,9.99,2026-02-02 11:25:00,2026-02-07
+ORD-20445,CUST-172,Ava Williams,ava.williams78@testmail.com,Books & Media,Affiliate Partner,Europe,UPI,Delivered,1,56.93,56.93,11.39,45.54,0.0,2026-02-15 10:01:00,2026-02-20
+ORD-20446,CUST-121,Olivia Smith,olivia.smith20@testmail.com,Beauty & Care,Direct,Europe,UPI,Delivered,1,105.79,105.79,15.87,89.92,4.99,2026-03-17 15:07:00,2026-03-19
+ORD-20447,CUST-121,Lucas Garcia,lucas.garcia56@testmail.com,Home & Kitchen,Instagram Ad,Latin America,UPI,Delivered,1,80.35,80.35,8.04,72.31,4.99,2026-03-01 10:41:00,2026-03-06
+ORD-20448,CUST-122,Sophia Johnson,sophia.johnson35@testmail.com,Home & Kitchen,Direct,North America,Cash on Delivery,Delivered,2,38.42,76.84,15.37,61.47,0.0,2026-02-13 09:12:00,2026-02-16
+ORD-20449,CUST-464,Lucas Rodriguez,lucas.rodriguez48@testmail.com,Fashion & Apparel,Desktop Web,North America,UPI,Delivered,2,82.68,165.36,16.54,148.82,0.0,2026-01-20 09:53:00,2026-01-23
+ORD-20450,CUST-299,Charlotte Williams,charlotte.williams40@testmail.com,Books & Media,Instagram Ad,Latin America,Apple Pay,Delivered,1,49.31,49.31,9.86,39.45,0.0,2026-02-08 06:06:00,2026-02-14
+ORD-20451,CUST-366,Ava Williams,ava.williams42@testmail.com,Beauty & Care,Mobile App,Latin America,UPI,Delivered,1,70.06,70.06,3.5,66.56,9.99,2026-03-14 22:58:00,2026-03-19
+ORD-20452,CUST-466,Sophia Miller,sophia.miller56@testmail.com,Home & Kitchen,Affiliate Partner,North America,Cash on Delivery,Shipped,1,33.93,33.93,6.79,27.14,4.99,2026-02-25 10:13:00,
+ORD-20453,CUST-475,Olivia Williams,olivia.williams63@testmail.com,Electronics,Desktop Web,Asia-Pacific,Credit Card,Delivered,1,247.06,247.06,0.0,247.06,9.99,2026-01-06 15:10:00,2026-01-12
+ORD-20454,CUST-433,Charlotte Martinez,charlotte.martinez21@testmail.com,Beauty & Care,Mobile App,Middle East,Apple Pay,Delivered,2,79.36,158.72,31.74,126.98,0.0,2026-01-20 19:37:00,2026-01-26
+ORD-20455,CUST-102,Charlotte Brown,charlotte.brown45@testmail.com,Electronics,Instagram Ad,Europe,Apple Pay,Delivered,2,209.43,418.86,0.0,418.86,0.0,2026-02-24 19:01:00,2026-03-03
+ORD-20456,CUST-371,Noah Williams,noah.williams31@testmail.com,Sports & Fitness,Direct,Latin America,UPI,Delivered,1,100.01,100.01,10.0,90.01,4.99,2026-01-13 06:20:00,2026-01-20
+ORD-20457,CUST-334,Charlotte Smith,charlotte.smith97@testmail.com,Home & Kitchen,Instagram Ad,Latin America,Cash on Delivery,Shipped,1,71.07,71.07,10.66,60.41,4.99,2026-01-22 07:03:00,
+ORD-20458,CUST-308,Sophia Brown,sophia.brown96@testmail.com,Fashion & Apparel,Desktop Web,Europe,Cash on Delivery,Processing,2,173.76,347.52,17.38,330.14,14.99,2026-03-20 18:43:00,
+ORD-20459,CUST-100,Liam Rodriguez,liam.rodriguez10@testmail.com,Home & Kitchen,Mobile App,Middle East,Apple Pay,Cancelled,1,60.58,60.58,6.06,0.0,0.0,2026-01-23 18:29:00,
+ORD-20460,CUST-195,Noah Williams,noah.williams60@testmail.com,Beauty & Care,Instagram Ad,Europe,UPI,Shipped,2,104.16,208.32,10.42,197.9,9.99,2026-03-19 10:06:00,
+ORD-20461,CUST-103,Lucas Johnson,lucas.johnson82@testmail.com,Sports & Fitness,Affiliate Partner,North America,Apple Pay,Delivered,2,59.36,118.72,11.87,106.85,4.99,2026-03-03 21:24:00,2026-03-05
+ORD-20462,CUST-280,Charlotte Rodriguez,charlotte.rodriguez76@testmail.com,Electronics,Direct,North America,Cash on Delivery,Delivered,4,169.92,679.68,135.94,543.74,0.0,2026-01-17 20:38:00,2026-01-22
+ORD-20463,CUST-292,Sophia Martinez,sophia.martinez48@testmail.com,Sports & Fitness,Desktop Web,Asia-Pacific,PayPal,Delivered,1,90.2,90.2,4.51,85.69,14.99,2026-03-05 11:47:00,2026-03-12
+ORD-20464,CUST-275,Sophia Rodriguez,sophia.rodriguez42@testmail.com,Books & Media,Desktop Web,Asia-Pacific,Cash on Delivery,Delivered,1,79.76,79.76,15.95,63.81,4.99,2026-01-13 10:20:00,2026-01-18
+ORD-20465,CUST-491,Noah Martinez,noah.martinez80@testmail.com,Home & Kitchen,Affiliate Partner,North America,Apple Pay,Delivered,1,43.15,43.15,6.47,36.68,4.99,2026-02-08 10:37:00,2026-02-14
+ORD-20466,CUST-257,Sophia Miller,sophia.miller88@testmail.com,Sports & Fitness,Direct,Latin America,Cash on Delivery,Delivered,2,73.09,146.18,29.24,116.94,14.99,2026-03-21 18:31:00,2026-03-23
+ORD-20467,CUST-157,Elijah Jones,elijah.jones53@testmail.com,Sports & Fitness,Direct,Middle East,PayPal,Shipped,4,35.32,141.28,28.26,113.02,9.99,2026-02-21 14:04:00,
+ORD-20468,CUST-235,Elijah Brown,elijah.brown38@testmail.com,Home & Kitchen,Affiliate Partner,Asia-Pacific,UPI,Delivered,1,54.99,54.99,11.0,43.99,0.0,2026-02-21 23:51:00,2026-02-27
+ORD-20469,CUST-304,Oliver Smith,oliver.smith18@testmail.com,Sports & Fitness,Desktop Web,Middle East,Apple Pay,Shipped,1,108.2,108.2,0.0,108.2,4.99,2026-01-02 16:10:00,
+ORD-20470,CUST-494,Elijah Smith,elijah.smith29@testmail.com,Books & Media,Affiliate Partner,Middle East,Credit Card,Delivered,1,41.53,41.53,8.31,33.22,0.0,2026-01-03 23:11:00,2026-01-07
+ORD-20471,CUST-480,Emma Rodriguez,emma.rodriguez14@testmail.com,Sports & Fitness,Instagram Ad,North America,PayPal,Delivered,2,79.98,159.96,23.99,135.97,9.99,2026-03-03 15:42:00,2026-03-09
+ORD-20472,CUST-152,Charlotte Garcia,charlotte.garcia76@testmail.com,Books & Media,Desktop Web,Latin America,PayPal,Delivered,1,51.22,51.22,7.68,43.54,14.99,2026-01-02 07:00:00,2026-01-05
+ORD-20473,CUST-321,Lucas Garcia,lucas.garcia58@testmail.com,Beauty & Care,Desktop Web,Asia-Pacific,Apple Pay,Delivered,2,35.12,70.24,10.54,59.7,9.99,2026-02-07 09:35:00,2026-02-11
+ORD-20474,CUST-157,Lucas Smith,lucas.smith81@testmail.com,Sports & Fitness,Affiliate Partner,North America,Credit Card,Cancelled,1,82.49,82.49,0.0,0.0,0.0,2026-03-09 21:10:00,
+ORD-20475,CUST-440,Noah Miller,noah.miller44@testmail.com,Home & Kitchen,Mobile App,Asia-Pacific,PayPal,Delivered,2,19.54,39.08,5.86,33.22,9.99,2026-02-08 14:08:00,2026-02-14
+ORD-20476,CUST-170,Sophia Rodriguez,sophia.rodriguez41@testmail.com,Books & Media,Direct,North America,Apple Pay,Delivered,3,79.18,237.54,35.63,201.91,14.99,2026-01-19 10:07:00,2026-01-23
+ORD-20477,CUST-355,Sophia Williams,sophia.williams40@testmail.com,Fashion & Apparel,Desktop Web,North America,PayPal,Delivered,2,70.71,141.42,0.0,141.42,9.99,2026-01-31 12:59:00,2026-02-07
+ORD-20478,CUST-260,Elijah Miller,elijah.miller1@testmail.com,Home & Kitchen,Instagram Ad,Asia-Pacific,PayPal,Delivered,1,25.12,25.12,1.26,23.86,4.99,2026-03-18 13:38:00,2026-03-23
+ORD-20479,CUST-437,Elijah Johnson,elijah.johnson24@testmail.com,Fashion & Apparel,Direct,Asia-Pacific,UPI,Delivered,1,139.86,139.86,20.98,118.88,4.99,2026-01-14 11:44:00,2026-01-20
+ORD-20480,CUST-384,Liam Johnson,liam.johnson42@testmail.com,Beauty & Care,Affiliate Partner,Europe,Apple Pay,Delivered,1,72.29,72.29,3.61,68.68,9.99,2026-03-05 11:27:00,2026-03-09
+ORD-20481,CUST-350,Oliver Rodriguez,oliver.rodriguez48@testmail.com,Home & Kitchen,Desktop Web,Asia-Pacific,UPI,Delivered,1,27.14,27.14,5.43,21.71,9.99,2026-02-14 10:45:00,2026-02-18
+ORD-20482,CUST-341,Lucas Johnson,lucas.johnson30@testmail.com,Books & Media,Mobile App,North America,Cash on Delivery,Delivered,1,62.06,62.06,6.21,55.85,9.99,2026-01-07 17:19:00,2026-01-13
+ORD-20483,CUST-202,Oliver Brown,oliver.brown34@testmail.com,Home & Kitchen,Desktop Web,Middle East,PayPal,Delivered,2,88.74,177.48,35.5,141.98,14.99,2026-01-15 20:07:00,2026-01-19
+ORD-20484,CUST-452,Ava Martinez,ava.martinez26@testmail.com,Fashion & Apparel,Mobile App,Latin America,Cash on Delivery,Delivered,1,58.75,58.75,0.0,58.75,0.0,2026-03-10 06:14:00,2026-03-13
+ORD-20485,CUST-345,Noah Rodriguez,noah.rodriguez70@testmail.com,Sports & Fitness,Desktop Web,North America,Cash on Delivery,Delivered,3,73.47,220.41,22.04,198.37,4.99,2026-03-02 22:34:00,2026-03-05
+ORD-20486,CUST-267,Elijah Brown,elijah.brown85@testmail.com,Electronics,Direct,Latin America,UPI,Processing,1,422.78,422.78,42.28,380.5,14.99,2026-02-10 08:20:00,
+ORD-20487,CUST-242,Noah Garcia,noah.garcia49@testmail.com,Beauty & Care,Desktop Web,Middle East,Credit Card,Delivered,1,86.98,86.98,4.35,82.63,9.99,2026-01-13 22:36:00,2026-01-15
+ORD-20488,CUST-400,Elijah Johnson,elijah.johnson78@testmail.com,Beauty & Care,Affiliate Partner,Latin America,UPI,Delivered,5,38.57,192.85,28.93,163.92,4.99,2026-03-17 18:37:00,2026-03-19
+ORD-20489,CUST-345,Lucas Jones,lucas.jones30@testmail.com,Books & Media,Affiliate Partner,Asia-Pacific,Credit Card,Delivered,1,70.89,70.89,14.18,56.71,9.99,2026-03-20 06:44:00,2026-03-22
+ORD-20490,CUST-187,Lucas Smith,lucas.smith84@testmail.com,Sports & Fitness,Desktop Web,Asia-Pacific,UPI,Processing,2,84.67,169.34,16.93,152.41,9.99,2026-01-13 08:34:00,
+ORD-20491,CUST-268,Ava Miller,ava.miller82@testmail.com,Home & Kitchen,Instagram Ad,Asia-Pacific,Cash on Delivery,Shipped,1,32.92,32.92,3.29,29.63,14.99,2026-03-20 20:37:00,
+ORD-20492,CUST-170,Lucas Garcia,lucas.garcia39@testmail.com,Sports & Fitness,Desktop Web,North America,Cash on Delivery,Cancelled,1,93.25,93.25,13.99,0.0,0.0,2026-01-07 11:09:00,
+ORD-20493,CUST-268,Charlotte Rodriguez,charlotte.rodriguez13@testmail.com,Fashion & Apparel,Instagram Ad,Latin America,Credit Card,Cancelled,1,114.99,114.99,11.5,0.0,9.99,2026-03-01 06:59:00,
+ORD-20494,CUST-370,Ava Brown,ava.brown65@testmail.com,Books & Media,Affiliate Partner,Europe,Cash on Delivery,Shipped,1,91.24,91.24,0.0,91.24,4.99,2026-02-20 22:06:00,
+ORD-20495,CUST-111,Oliver Miller,oliver.miller95@testmail.com,Sports & Fitness,Mobile App,Middle East,UPI,Shipped,1,43.89,43.89,4.39,39.5,0.0,2026-03-20 21:53:00,
+ORD-20496,CUST-399,Lucas Martinez,lucas.martinez27@testmail.com,Beauty & Care,Desktop Web,Latin America,Apple Pay,Processing,1,73.83,73.83,11.07,62.76,14.99,2026-03-15 07:23:00,
+ORD-20497,CUST-110,Noah Garcia,noah.garcia96@testmail.com,Electronics,Direct,Middle East,Credit Card,Shipped,3,325.18,975.54,48.78,926.76,14.99,2026-03-01 06:49:00,
+ORD-20498,CUST-430,Liam Johnson,liam.johnson41@testmail.com,Sports & Fitness,Desktop Web,North America,Credit Card,Shipped,3,118.4,355.2,35.52,319.68,4.99,2026-02-01 23:08:00,
+ORD-20499,CUST-267,Oliver Johnson,oliver.johnson8@testmail.com,Fashion & Apparel,Affiliate Partner,North America,Cash on Delivery,Delivered,3,136.16,408.48,0.0,408.48,9.99,2026-02-11 23:51:00,2026-02-13
+ORD-20500,CUST-211,Olivia Jones,olivia.jones89@testmail.com,Fashion & Apparel,Affiliate Partner,North America,PayPal,Delivered,2,46.68,93.36,14.0,79.36,0.0,2026-03-09 21:13:00,2026-03-14
+ORD-20501,CUST-484,Oliver Rodriguez,oliver.rodriguez56@testmail.com,Beauty & Care,Instagram Ad,Europe,UPI,Delivered,1,15.75,15.75,1.58,14.17,9.99,2026-02-15 13:51:00,2026-02-21
+ORD-20502,CUST-277,Liam Garcia,liam.garcia15@testmail.com,Beauty & Care,Direct,Europe,Credit Card,Delivered,1,66.17,66.17,3.31,62.86,9.99,2026-02-12 18:52:00,2026-02-17
+ORD-20503,CUST-378,Liam Miller,liam.miller77@testmail.com,Home & Kitchen,Desktop Web,Middle East,Credit Card,Delivered,1,34.08,34.08,0.0,34.08,4.99,2026-01-18 22:58:00,2026-01-21
+ORD-20504,CUST-117,Sophia Miller,sophia.miller14@testmail.com,Books & Media,Mobile App,Europe,PayPal,Delivered,3,41.92,125.76,18.86,106.9,0.0,2026-01-23 22:05:00,2026-01-28
+ORD-20505,CUST-169,Lucas Davis,lucas.davis63@testmail.com,Home & Kitchen,Desktop Web,Asia-Pacific,Apple Pay,Delivered,1,85.27,85.27,17.05,68.22,0.0,2026-02-03 07:23:00,2026-02-05
+ORD-20506,CUST-159,Noah Smith,noah.smith68@testmail.com,Home & Kitchen,Desktop Web,Europe,Apple Pay,Delivered,1,42.21,42.21,4.22,37.99,14.99,2026-01-18 22:55:00,2026-01-20
+ORD-20507,CUST-391,Lucas Brown,lucas.brown23@testmail.com,Sports & Fitness,Direct,North America,Cash on Delivery,Shipped,1,42.31,42.31,8.46,33.85,0.0,2026-02-22 07:26:00,
+ORD-20508,CUST-375,Olivia Rodriguez,olivia.rodriguez96@testmail.com,Sports & Fitness,Direct,Middle East,Apple Pay,Cancelled,4,26.75,107.0,5.35,0.0,9.99,2026-02-04 16:48:00,
+ORD-20509,CUST-203,Elijah Williams,elijah.williams40@testmail.com,Books & Media,Mobile App,Europe,Credit Card,Delivered,2,94.54,189.08,18.91,170.17,0.0,2026-02-24 23:35:00,2026-02-26
+ORD-20510,CUST-474,Noah Martinez,noah.martinez30@testmail.com,Sports & Fitness,Instagram Ad,Middle East,Apple Pay,Cancelled,1,93.48,93.48,18.7,0.0,4.99,2026-01-27 23:30:00,
+ORD-20511,CUST-362,Noah Miller,noah.miller82@testmail.com,Home & Kitchen,Affiliate Partner,Asia-Pacific,Credit Card,Delivered,2,26.84,53.68,5.37,48.31,4.99,2026-01-30 06:38:00,2026-02-01
+ORD-20512,CUST-412,Sophia Smith,sophia.smith5@testmail.com,Fashion & Apparel,Instagram Ad,Europe,PayPal,Delivered,1,156.34,156.34,7.82,148.52,0.0,2026-02-03 11:02:00,2026-02-07
+ORD-20513,CUST-389,Oliver Davis,oliver.davis28@testmail.com,Books & Media,Desktop Web,Asia-Pacific,Credit Card,Delivered,1,77.11,77.11,7.71,69.4,0.0,2026-01-03 07:45:00,2026-01-10
+ORD-20514,CUST-484,Olivia Jones,olivia.jones36@testmail.com,Home & Kitchen,Desktop Web,North America,Credit Card,Processing,2,25.37,50.74,2.54,48.2,4.99,2026-03-21 21:45:00,
+ORD-20515,CUST-190,Charlotte Davis,charlotte.davis48@testmail.com,Electronics,Instagram Ad,Middle East,Apple Pay,Shipped,3,522.24,1566.72,78.34,1488.38,4.99,2026-01-20 18:16:00,
+ORD-20516,CUST-198,Liam Davis,liam.davis40@testmail.com,Home & Kitchen,Desktop Web,North America,PayPal,Delivered,1,101.99,101.99,0.0,101.99,0.0,2026-01-28 11:26:00,2026-01-30
+ORD-20517,CUST-177,Sophia Rodriguez,sophia.rodriguez5@testmail.com,Books & Media,Mobile App,Europe,Credit Card,Shipped,1,62.11,62.11,3.11,59.0,0.0,2026-03-02 06:09:00,
+ORD-20518,CUST-338,Emma Martinez,emma.martinez61@testmail.com,Home & Kitchen,Desktop Web,Latin America,UPI,Delivered,4,76.26,305.04,0.0,305.04,9.99,2026-01-09 17:12:00,2026-01-14
+ORD-20519,CUST-435,Lucas Garcia,lucas.garcia58@testmail.com,Electronics,Mobile App,Europe,UPI,Delivered,1,435.34,435.34,21.77,413.57,0.0,2026-02-12 06:01:00,2026-02-17
+ORD-20520,CUST-112,Olivia Williams,olivia.williams33@testmail.com,Electronics,Mobile App,Latin America,Cash on Delivery,Delivered,2,461.62,923.24,46.16,877.08,0.0,2026-01-06 22:30:00,2026-01-08
+ORD-20521,CUST-332,Oliver Jones,oliver.jones33@testmail.com,Beauty & Care,Affiliate Partner,Latin America,Credit Card,Shipped,3,116.26,348.78,52.32,296.46,0.0,2026-03-14 11:35:00,
+ORD-20522,CUST-173,Ava Brown,ava.brown44@testmail.com,Books & Media,Mobile App,Europe,UPI,Returned,1,30.14,30.14,4.52,0.0,0.0,2026-02-08 15:54:00,2026-02-11
+ORD-20523,CUST-292,Olivia Brown,olivia.brown79@testmail.com,Sports & Fitness,Direct,Europe,Credit Card,Shipped,2,61.84,123.68,18.55,105.13,4.99,2026-03-16 14:19:00,
+ORD-20524,CUST-468,Emma Brown,emma.brown72@testmail.com,Beauty & Care,Desktop Web,Asia-Pacific,PayPal,Delivered,1,23.28,23.28,3.49,19.79,9.99,2026-01-13 13:59:00,2026-01-16
+ORD-20525,CUST-263,Emma Williams,emma.williams69@testmail.com,Home & Kitchen,Direct,Asia-Pacific,Cash on Delivery,Processing,1,28.8,28.8,0.0,28.8,0.0,2026-03-11 17:07:00,
+ORD-20526,CUST-164,Lucas Johnson,lucas.johnson28@testmail.com,Fashion & Apparel,Affiliate Partner,Latin America,PayPal,Delivered,1,111.18,111.18,22.24,88.94,14.99,2026-03-19 23:56:00,2026-03-24
+ORD-20527,CUST-389,Elijah Miller,elijah.miller15@testmail.com,Electronics,Mobile App,Asia-Pacific,PayPal,Delivered,2,417.51,835.02,167.0,668.02,0.0,2026-02-28 14:01:00,2026-03-06
+ORD-20528,CUST-301,Lucas Smith,lucas.smith78@testmail.com,Books & Media,Direct,Middle East,UPI,Delivered,1,74.98,74.98,15.0,59.98,4.99,2026-01-11 19:19:00,2026-01-13
+ORD-20529,CUST-263,Olivia Brown,olivia.brown36@testmail.com,Home & Kitchen,Desktop Web,Asia-Pacific,Cash on Delivery,Delivered,1,27.31,27.31,5.46,21.85,14.99,2026-02-25 14:28:00,2026-02-27
+ORD-20530,CUST-101,Sophia Williams,sophia.williams8@testmail.com,Fashion & Apparel,Mobile App,Europe,UPI,Delivered,1,75.97,75.97,3.8,72.17,4.99,2026-03-04 10:55:00,2026-03-06
+ORD-20531,CUST-162,Emma Smith,emma.smith33@testmail.com,Sports & Fitness,Instagram Ad,Asia-Pacific,Apple Pay,Delivered,2,15.35,30.7,6.14,24.56,0.0,2026-02-28 13:37:00,2026-03-02
+ORD-20532,CUST-478,Liam Miller,liam.miller92@testmail.com,Electronics,Mobile App,North America,Apple Pay,Delivered,1,460.74,460.74,69.11,391.63,14.99,2026-03-14 10:52:00,2026-03-17
+ORD-20533,CUST-120,Lucas Smith,lucas.smith7@testmail.com,Books & Media,Mobile App,Asia-Pacific,PayPal,Delivered,1,120.0,120.0,18.0,102.0,4.99,2026-03-11 08:54:00,2026-03-17
+ORD-20534,CUST-149,Emma Martinez,emma.martinez67@testmail.com,Sports & Fitness,Instagram Ad,Europe,UPI,Delivered,2,40.65,81.3,12.19,69.11,0.0,2026-02-25 09:56:00,2026-02-27
+ORD-20535,CUST-425,Liam Garcia,liam.garcia34@testmail.com,Electronics,Instagram Ad,Asia-Pacific,PayPal,Delivered,4,317.97,1271.88,0.0,1271.88,4.99,2026-02-12 22:09:00,2026-02-18
+ORD-20536,CUST-245,Emma Johnson,emma.johnson75@testmail.com,Home & Kitchen,Desktop Web,Europe,PayPal,Delivered,1,114.06,114.06,22.81,91.25,9.99,2026-02-22 19:01:00,2026-02-27
+ORD-20537,CUST-452,Ava Miller,ava.miller65@testmail.com,Books & Media,Affiliate Partner,North America,Credit Card,Delivered,3,90.71,272.13,13.61,258.52,0.0,2026-01-08 23:08:00,2026-01-12
+ORD-20538,CUST-354,Olivia Williams,olivia.williams34@testmail.com,Beauty & Care,Desktop Web,Middle East,PayPal,Delivered,1,70.74,70.74,14.15,56.59,0.0,2026-01-01 10:57:00,2026-01-06
+ORD-20539,CUST-104,Oliver Williams,oliver.williams38@testmail.com,Books & Media,Desktop Web,Asia-Pacific,UPI,Shipped,4,38.34,153.36,23.0,130.36,0.0,2026-02-22 15:10:00,
+ORD-20540,CUST-423,Liam Williams,liam.williams42@testmail.com,Sports & Fitness,Mobile App,Middle East,UPI,Returned,1,58.96,58.96,0.0,0.0,4.99,2026-03-12 16:06:00,2026-03-18
+ORD-20541,CUST-309,Oliver Martinez,oliver.martinez4@testmail.com,Electronics,Direct,Latin America,Credit Card,Shipped,2,248.68,497.36,49.74,447.62,14.99,2026-01-05 07:29:00,
+ORD-20542,CUST-390,Emma Johnson,emma.johnson95@testmail.com,Fashion & Apparel,Instagram Ad,Europe,Apple Pay,Delivered,3,165.64,496.92,24.85,472.07,4.99,2026-01-12 06:05:00,2026-01-19
+ORD-20543,CUST-259,Sophia Johnson,sophia.johnson49@testmail.com,Home & Kitchen,Mobile App,Asia-Pacific,Cash on Delivery,Delivered,1,93.9,93.9,4.7,89.2,9.99,2026-02-17 06:31:00,2026-02-24
+ORD-20544,CUST-270,Emma Jones,emma.jones31@testmail.com,Beauty & Care,Desktop Web,Latin America,Apple Pay,Cancelled,3,17.64,52.92,10.58,0.0,0.0,2026-01-29 15:24:00,
+ORD-20545,CUST-373,Emma Garcia,emma.garcia22@testmail.com,Books & Media,Desktop Web,Asia-Pacific,Apple Pay,Returned,2,59.29,118.58,17.79,0.0,14.99,2026-01-20 14:15:00,2026-01-24
+ORD-20546,CUST-457,Olivia Garcia,olivia.garcia52@testmail.com,Electronics,Desktop Web,Europe,Apple Pay,Processing,1,402.1,402.1,60.31,341.79,9.99,2026-02-27 06:32:00,
+ORD-20547,CUST-342,Olivia Williams,olivia.williams60@testmail.com,Home & Kitchen,Mobile App,Middle East,Apple Pay,Returned,3,43.3,129.9,25.98,0.0,9.99,2026-02-22 23:28:00,2026-02-28
+ORD-20548,CUST-254,Liam Williams,liam.williams19@testmail.com,Sports & Fitness,Mobile App,Asia-Pacific,Credit Card,Delivered,3,46.85,140.55,28.11,112.44,14.99,2026-01-05 19:59:00,2026-01-07
+ORD-20549,CUST-177,Olivia Brown,olivia.brown12@testmail.com,Home & Kitchen,Direct,Asia-Pacific,Credit Card,Processing,2,54.73,109.46,5.47,103.99,0.0,2026-02-09 19:56:00,
+ORD-20550,CUST-244,Oliver Miller,oliver.miller83@testmail.com,Home & Kitchen,Instagram Ad,Asia-Pacific,UPI,Shipped,2,16.81,33.62,5.04,28.58,9.99,2026-02-15 14:36:00,
+ORD-20551,CUST-257,Liam Johnson,liam.johnson29@testmail.com,Electronics,Instagram Ad,Europe,Cash on Delivery,Delivered,1,81.94,81.94,12.29,69.65,4.99,2026-03-12 08:33:00,2026-03-15
+ORD-20552,CUST-307,Oliver Martinez,oliver.martinez52@testmail.com,Home & Kitchen,Instagram Ad,Middle East,UPI,Processing,1,99.14,99.14,19.83,79.31,0.0,2026-01-09 22:33:00,
+ORD-20553,CUST-471,Ava Smith,ava.smith24@testmail.com,Home & Kitchen,Mobile App,North America,UPI,Processing,3,47.66,142.98,14.3,128.68,0.0,2026-01-12 11:52:00,
+ORD-20554,CUST-127,Noah Smith,noah.smith8@testmail.com,Electronics,Affiliate Partner,Middle East,Cash on Delivery,Delivered,1,157.37,157.37,31.47,125.9,14.99,2026-02-24 06:52:00,2026-02-27
+ORD-20555,CUST-252,Noah Williams,noah.williams61@testmail.com,Electronics,Desktop Web,Latin America,Cash on Delivery,Delivered,3,104.97,314.91,0.0,314.91,4.99,2026-03-17 07:05:00,2026-03-19
+ORD-20556,CUST-489,Liam Brown,liam.brown46@testmail.com,Electronics,Affiliate Partner,Middle East,Apple Pay,Shipped,2,160.82,321.64,48.25,273.39,4.99,2026-03-13 19:02:00,
+ORD-20557,CUST-324,Lucas Smith,lucas.smith44@testmail.com,Beauty & Care,Instagram Ad,Middle East,PayPal,Delivered,4,81.01,324.04,0.0,324.04,4.99,2026-03-01 22:21:00,2026-03-05
+ORD-20558,CUST-341,Noah Garcia,noah.garcia18@testmail.com,Sports & Fitness,Desktop Web,North America,Apple Pay,Shipped,2,102.9,205.8,41.16,164.64,0.0,2026-01-22 23:33:00,
+ORD-20559,CUST-166,Elijah Martinez,elijah.martinez26@testmail.com,Electronics,Desktop Web,Latin America,Credit Card,Delivered,1,679.98,679.98,102.0,577.98,4.99,2026-02-24 06:35:00,2026-03-03
+ORD-20560,CUST-103,Lucas Martinez,lucas.martinez24@testmail.com,Beauty & Care,Affiliate Partner,Latin America,Credit Card,Delivered,3,19.23,57.69,8.65,49.04,0.0,2026-03-10 12:31:00,2026-03-14
+ORD-20561,CUST-493,Ava Rodriguez,ava.rodriguez18@testmail.com,Electronics,Instagram Ad,Asia-Pacific,Apple Pay,Delivered,2,595.23,1190.46,119.05,1071.41,4.99,2026-03-06 07:00:00,2026-03-09
+ORD-20562,CUST-333,Noah Miller,noah.miller34@testmail.com,Fashion & Apparel,Desktop Web,North America,Apple Pay,Returned,2,143.33,286.66,57.33,0.0,9.99,2026-03-16 07:50:00,2026-03-21
+ORD-20563,CUST-145,Sophia Davis,sophia.davis42@testmail.com,Electronics,Affiliate Partner,Asia-Pacific,Credit Card,Processing,2,836.56,1673.12,167.31,1505.81,4.99,2026-02-25 09:15:00,
+ORD-20564,CUST-500,Emma Johnson,emma.johnson21@testmail.com,Books & Media,Direct,Latin America,Credit Card,Processing,1,35.75,35.75,0.0,35.75,9.99,2026-01-01 21:59:00,
+ORD-20565,CUST-154,Ava Brown,ava.brown95@testmail.com,Beauty & Care,Mobile App,Europe,Cash on Delivery,Delivered,1,38.14,38.14,0.0,38.14,9.99,2026-01-18 15:34:00,2026-01-22
+ORD-20566,CUST-457,Sophia Martinez,sophia.martinez38@testmail.com,Electronics,Mobile App,Europe,Credit Card,Delivered,1,634.17,634.17,126.83,507.34,14.99,2026-01-19 09:23:00,2026-01-21
+ORD-20567,CUST-355,Sophia Brown,sophia.brown54@testmail.com,Fashion & Apparel,Instagram Ad,Europe,PayPal,Processing,1,27.65,27.65,0.0,27.65,9.99,2026-03-12 08:05:00,
+ORD-20568,CUST-379,Ava Williams,ava.williams99@testmail.com,Books & Media,Instagram Ad,Middle East,Apple Pay,Processing,1,50.38,50.38,0.0,50.38,4.99,2026-01-16 16:30:00,
+ORD-20569,CUST-232,Liam Davis,liam.davis20@testmail.com,Books & Media,Direct,Europe,UPI,Processing,2,68.2,136.4,13.64,122.76,9.99,2026-03-17 17:48:00,
+ORD-20570,CUST-316,Sophia Smith,sophia.smith99@testmail.com,Beauty & Care,Instagram Ad,Europe,Apple Pay,Delivered,1,92.51,92.51,9.25,83.26,9.99,2026-01-03 10:18:00,2026-01-07
+ORD-20571,CUST-234,Elijah Davis,elijah.davis97@testmail.com,Fashion & Apparel,Mobile App,Latin America,Credit Card,Delivered,3,96.9,290.7,29.07,261.63,14.99,2026-01-04 20:13:00,2026-01-06
+ORD-20572,CUST-251,Elijah Rodriguez,elijah.rodriguez10@testmail.com,Beauty & Care,Desktop Web,North America,UPI,Delivered,5,70.66,353.3,17.67,335.63,14.99,2026-01-13 21:20:00,2026-01-17
+ORD-20573,CUST-175,Ava Rodriguez,ava.rodriguez58@testmail.com,Home & Kitchen,Affiliate Partner,Latin America,Credit Card,Shipped,1,93.93,93.93,18.79,75.14,14.99,2026-01-21 11:21:00,
+ORD-20574,CUST-344,Olivia Rodriguez,olivia.rodriguez9@testmail.com,Sports & Fitness,Direct,Latin America,Apple Pay,Returned,1,108.7,108.7,5.44,0.0,4.99,2026-02-24 14:08:00,2026-02-26
+ORD-20575,CUST-410,Noah Garcia,noah.garcia7@testmail.com,Fashion & Apparel,Instagram Ad,Latin America,Apple Pay,Returned,1,163.43,163.43,24.51,0.0,14.99,2026-02-23 10:22:00,2026-03-01
+ORD-20576,CUST-232,Sophia Smith,sophia.smith1@testmail.com,Home & Kitchen,Instagram Ad,Middle East,Apple Pay,Cancelled,1,50.13,50.13,5.01,0.0,4.99,2026-03-17 13:11:00,
+ORD-20577,CUST-319,Oliver Smith,oliver.smith33@testmail.com,Beauty & Care,Instagram Ad,Middle East,UPI,Cancelled,1,23.8,23.8,2.38,0.0,14.99,2026-03-02 12:36:00,
+ORD-20578,CUST-400,Emma Garcia,emma.garcia91@testmail.com,Fashion & Apparel,Direct,North America,Apple Pay,Delivered,1,64.48,64.48,9.67,54.81,0.0,2026-03-06 20:31:00,2026-03-13
+ORD-20579,CUST-189,Emma Brown,emma.brown83@testmail.com,Sports & Fitness,Direct,Europe,Apple Pay,Delivered,1,36.66,36.66,0.0,36.66,4.99,2026-01-27 18:47:00,2026-01-30
+ORD-20580,CUST-129,Olivia Davis,olivia.davis38@testmail.com,Electronics,Mobile App,Latin America,PayPal,Shipped,1,458.7,458.7,68.8,389.9,4.99,2026-03-04 19:38:00,
+ORD-20581,CUST-206,Olivia Martinez,olivia.martinez75@testmail.com,Sports & Fitness,Direct,Asia-Pacific,Cash on Delivery,Delivered,1,113.7,113.7,17.05,96.65,0.0,2026-02-21 23:14:00,2026-02-23
+ORD-20582,CUST-139,Olivia Williams,olivia.williams8@testmail.com,Electronics,Desktop Web,Middle East,Cash on Delivery,Shipped,1,602.53,602.53,60.25,542.28,14.99,2026-01-02 09:56:00,
+ORD-20583,CUST-116,Sophia Rodriguez,sophia.rodriguez38@testmail.com,Electronics,Mobile App,North America,UPI,Delivered,1,679.47,679.47,67.95,611.52,0.0,2026-01-11 18:59:00,2026-01-14
+ORD-20584,CUST-388,Lucas Brown,lucas.brown36@testmail.com,Fashion & Apparel,Desktop Web,Latin America,UPI,Delivered,1,42.54,42.54,6.38,36.16,4.99,2026-02-02 14:24:00,2026-02-08
+ORD-20585,CUST-155,Elijah Miller,elijah.miller90@testmail.com,Fashion & Apparel,Instagram Ad,Europe,Cash on Delivery,Delivered,1,49.22,49.22,4.92,44.3,9.99,2026-01-05 18:48:00,2026-01-09
+ORD-20586,CUST-278,Lucas Brown,lucas.brown84@testmail.com,Beauty & Care,Instagram Ad,Latin America,UPI,Delivered,1,75.12,75.12,11.27,63.85,4.99,2026-03-05 11:34:00,2026-03-07
+ORD-20587,CUST-282,Emma Jones,emma.jones27@testmail.com,Sports & Fitness,Affiliate Partner,Latin America,Apple Pay,Delivered,3,62.63,187.89,9.39,178.5,9.99,2026-02-27 18:41:00,2026-03-03
+ORD-20588,CUST-101,Lucas Davis,lucas.davis54@testmail.com,Home & Kitchen,Instagram Ad,Middle East,PayPal,Shipped,1,105.21,105.21,15.78,89.43,9.99,2026-01-03 20:46:00,
+ORD-20589,CUST-221,Elijah Garcia,elijah.garcia80@testmail.com,Books & Media,Mobile App,Middle East,Credit Card,Delivered,1,96.02,96.02,9.6,86.42,9.99,2026-01-14 11:38:00,2026-01-16
+ORD-20590,CUST-103,Emma Jones,emma.jones22@testmail.com,Home & Kitchen,Instagram Ad,North America,Cash on Delivery,Delivered,1,35.2,35.2,1.76,33.44,4.99,2026-01-29 11:57:00,2026-02-01
+ORD-20591,CUST-268,Noah Garcia,noah.garcia92@testmail.com,Electronics,Mobile App,Asia-Pacific,PayPal,Delivered,3,254.21,762.63,76.26,686.37,9.99,2026-02-14 07:07:00,2026-02-20
+ORD-20592,CUST-226,Emma Brown,emma.brown51@testmail.com,Books & Media,Instagram Ad,Middle East,Cash on Delivery,Delivered,2,40.79,81.58,4.08,77.5,9.99,2026-02-06 12:39:00,2026-02-09
+ORD-20593,CUST-146,Olivia Martinez,olivia.martinez21@testmail.com,Books & Media,Desktop Web,Middle East,Credit Card,Delivered,1,102.32,102.32,10.23,92.09,9.99,2026-02-14 23:41:00,2026-02-17
+ORD-20594,CUST-201,Lucas Smith,lucas.smith10@testmail.com,Books & Media,Direct,Latin America,PayPal,Shipped,1,40.49,40.49,6.07,34.42,14.99,2026-03-20 10:03:00,
+ORD-20595,CUST-329,Elijah Davis,elijah.davis44@testmail.com,Home & Kitchen,Instagram Ad,Europe,Credit Card,Delivered,2,43.16,86.32,0.0,86.32,4.99,2026-01-02 18:11:00,2026-01-08
+ORD-20596,CUST-342,Lucas Johnson,lucas.johnson41@testmail.com,Sports & Fitness,Desktop Web,Latin America,Credit Card,Delivered,1,57.08,57.08,8.56,48.52,9.99,2026-01-30 09:30:00,2026-02-03
+ORD-20597,CUST-437,Olivia Rodriguez,olivia.rodriguez95@testmail.com,Beauty & Care,Affiliate Partner,North America,UPI,Delivered,3,39.0,117.0,0.0,117.0,4.99,2026-01-04 19:07:00,2026-01-09
+ORD-20598,CUST-148,Charlotte Jones,charlotte.jones35@testmail.com,Home & Kitchen,Desktop Web,Europe,UPI,Delivered,1,49.85,49.85,0.0,49.85,9.99,2026-01-14 08:22:00,2026-01-21
+ORD-20599,CUST-338,Noah Williams,noah.williams78@testmail.com,Electronics,Instagram Ad,Asia-Pacific,UPI,Delivered,1,535.29,535.29,26.76,508.53,9.99,2026-01-07 22:54:00,2026-01-12
+ORD-20600,CUST-402,Olivia Garcia,olivia.garcia24@testmail.com,Beauty & Care,Direct,Europe,Credit Card,Processing,2,41.71,83.42,8.34,75.08,0.0,2026-03-06 23:15:00,
+ORD-20601,CUST-281,Emma Jones,emma.jones13@testmail.com,Sports & Fitness,Affiliate Partner,Latin America,Apple Pay,Delivered,2,76.84,153.68,30.74,122.94,14.99,2026-02-18 12:13:00,2026-02-21
+ORD-20602,CUST-478,Oliver Martinez,oliver.martinez70@testmail.com,Electronics,Desktop Web,Middle East,PayPal,Delivered,1,467.66,467.66,46.77,420.89,4.99,2026-02-25 14:03:00,2026-03-03
+ORD-20603,CUST-437,Olivia Garcia,olivia.garcia75@testmail.com,Beauty & Care,Affiliate Partner,Latin America,UPI,Shipped,2,42.94,85.88,12.88,73.0,4.99,2026-02-21 11:01:00,
+ORD-20604,CUST-486,Olivia Garcia,olivia.garcia14@testmail.com,Home & Kitchen,Desktop Web,Asia-Pacific,PayPal,Processing,2,33.12,66.24,6.62,59.62,0.0,2026-01-11 18:10:00,
+ORD-20605,CUST-146,Charlotte Williams,charlotte.williams22@testmail.com,Home & Kitchen,Affiliate Partner,Asia-Pacific,Apple Pay,Delivered,2,41.45,82.9,4.15,78.75,0.0,2026-01-23 23:26:00,2026-01-26
+ORD-20606,CUST-455,Olivia Brown,olivia.brown57@testmail.com,Home & Kitchen,Mobile App,Middle East,UPI,Delivered,2,83.79,167.58,25.14,142.44,4.99,2026-03-18 06:50:00,2026-03-20
+ORD-20607,CUST-109,Emma Williams,emma.williams92@testmail.com,Books & Media,Affiliate Partner,Asia-Pacific,Credit Card,Delivered,1,65.11,65.11,6.51,58.6,0.0,2026-03-16 17:27:00,2026-03-19
+ORD-20608,CUST-182,Noah Martinez,noah.martinez39@testmail.com,Electronics,Mobile App,North America,Cash on Delivery,Shipped,2,494.83,989.66,49.48,940.18,4.99,2026-01-29 13:23:00,
+ORD-20609,CUST-304,Elijah Johnson,elijah.johnson36@testmail.com,Electronics,Instagram Ad,North America,Credit Card,Delivered,1,454.11,454.11,0.0,454.11,9.99,2026-02-23 06:59:00,2026-03-01
+ORD-20610,CUST-107,Sophia Johnson,sophia.johnson74@testmail.com,Beauty & Care,Affiliate Partner,North America,Apple Pay,Processing,1,89.41,89.41,8.94,80.47,0.0,2026-02-25 10:25:00,
+ORD-20611,CUST-310,Oliver Brown,oliver.brown15@testmail.com,Books & Media,Desktop Web,Latin America,Credit Card,Delivered,3,85.7,257.1,12.86,244.24,4.99,2026-02-26 19:42:00,2026-03-01
+ORD-20612,CUST-483,Emma Martinez,emma.martinez26@testmail.com,Home & Kitchen,Direct,Latin America,PayPal,Shipped,1,51.64,51.64,5.16,46.48,0.0,2026-01-18 12:45:00,
+ORD-20613,CUST-228,Elijah Williams,elijah.williams78@testmail.com,Books & Media,Affiliate Partner,Latin America,Cash on Delivery,Shipped,3,93.97,281.91,42.29,239.62,4.99,2026-02-16 21:26:00,
+ORD-20614,CUST-144,Ava Williams,ava.williams64@testmail.com,Sports & Fitness,Mobile App,Latin America,Credit Card,Processing,1,68.72,68.72,10.31,58.41,0.0,2026-03-02 16:54:00,
+ORD-20615,CUST-493,Lucas Martinez,lucas.martinez64@testmail.com,Sports & Fitness,Desktop Web,Europe,Credit Card,Delivered,1,42.99,42.99,4.3,38.69,0.0,2026-01-22 15:35:00,2026-01-25
+ORD-20616,CUST-283,Olivia Brown,olivia.brown38@testmail.com,Home & Kitchen,Direct,Asia-Pacific,UPI,Delivered,1,94.89,94.89,0.0,94.89,4.99,2026-03-06 18:36:00,2026-03-10
+ORD-20617,CUST-132,Charlotte Garcia,charlotte.garcia84@testmail.com,Beauty & Care,Desktop Web,Europe,Apple Pay,Delivered,1,35.78,35.78,5.37,30.41,9.99,2026-03-13 07:17:00,2026-03-20
+ORD-20618,CUST-116,Emma Smith,emma.smith75@testmail.com,Sports & Fitness,Direct,Asia-Pacific,PayPal,Delivered,1,44.25,44.25,4.42,39.83,0.0,2026-03-03 14:11:00,2026-03-05
+ORD-20619,CUST-333,Noah Davis,noah.davis65@testmail.com,Sports & Fitness,Mobile App,Latin America,Credit Card,Delivered,2,92.39,184.78,18.48,166.3,4.99,2026-02-09 21:54:00,2026-02-16
+ORD-20620,CUST-231,Charlotte Jones,charlotte.jones54@testmail.com,Home & Kitchen,Desktop Web,Latin America,Apple Pay,Delivered,3,116.12,348.36,34.84,313.52,14.99,2026-01-11 23:48:00,2026-01-16
+ORD-20621,CUST-364,Elijah Williams,elijah.williams96@testmail.com,Beauty & Care,Affiliate Partner,Latin America,Cash on Delivery,Shipped,1,87.87,87.87,17.57,70.3,9.99,2026-01-09 17:42:00,
+ORD-20622,CUST-110,Lucas Martinez,lucas.martinez38@testmail.com,Electronics,Mobile App,Latin America,UPI,Delivered,1,111.58,111.58,16.74,94.84,14.99,2026-03-15 09:00:00,2026-03-21
+ORD-20623,CUST-347,Noah Garcia,noah.garcia83@testmail.com,Books & Media,Affiliate Partner,North America,UPI,Delivered,2,40.79,81.58,0.0,81.58,14.99,2026-02-01 20:17:00,2026-02-06
+ORD-20624,CUST-497,Elijah Brown,elijah.brown11@testmail.com,Electronics,Affiliate Partner,North America,Cash on Delivery,Delivered,1,763.65,763.65,114.55,649.1,9.99,2026-01-18 11:47:00,2026-01-21
+ORD-20625,CUST-341,Lucas Smith,lucas.smith97@testmail.com,Sports & Fitness,Affiliate Partner,Middle East,Apple Pay,Delivered,2,99.88,199.76,0.0,199.76,14.99,2026-02-12 12:32:00,2026-02-16
+ORD-20626,CUST-111,Noah Martinez,noah.martinez86@testmail.com,Books & Media,Desktop Web,Europe,Cash on Delivery,Delivered,5,17.53,87.65,8.77,78.88,9.99,2026-03-21 22:48:00,2026-03-26
+ORD-20627,CUST-449,Ava Martinez,ava.martinez93@testmail.com,Fashion & Apparel,Desktop Web,Latin America,Credit Card,Processing,2,143.55,287.1,57.42,229.68,14.99,2026-02-03 23:27:00,
+ORD-20628,CUST-492,Elijah Smith,elijah.smith66@testmail.com,Books & Media,Affiliate Partner,North America,Credit Card,Delivered,3,16.56,49.68,2.48,47.2,4.99,2026-02-21 11:36:00,2026-02-28
+ORD-20629,CUST-337,Lucas Johnson,lucas.johnson12@testmail.com,Beauty & Care,Instagram Ad,Europe,Apple Pay,Processing,1,48.9,48.9,2.45,46.45,4.99,2026-01-16 23:09:00,
+ORD-20630,CUST-144,Elijah Smith,elijah.smith87@testmail.com,Sports & Fitness,Affiliate Partner,Asia-Pacific,Cash on Delivery,Processing,2,31.56,63.12,3.16,59.96,4.99,2026-02-03 11:25:00,
+ORD-20631,CUST-415,Noah Garcia,noah.garcia44@testmail.com,Home & Kitchen,Instagram Ad,North America,PayPal,Shipped,1,54.94,54.94,2.75,52.19,0.0,2026-02-15 19:28:00,
+ORD-20632,CUST-127,Charlotte Davis,charlotte.davis90@testmail.com,Fashion & Apparel,Mobile App,Middle East,Cash on Delivery,Delivered,3,140.09,420.27,42.03,378.24,4.99,2026-01-21 14:14:00,2026-01-27
+ORD-20633,CUST-275,Olivia Johnson,olivia.johnson83@testmail.com,Books & Media,Instagram Ad,Latin America,Cash on Delivery,Delivered,4,43.46,173.84,8.69,165.15,0.0,2026-01-01 18:40:00,2026-01-06
+ORD-20634,CUST-343,Charlotte Martinez,charlotte.martinez7@testmail.com,Electronics,Mobile App,Asia-Pacific,Cash on Delivery,Delivered,1,803.4,803.4,0.0,803.4,0.0,2026-01-19 22:05:00,2026-01-23
+ORD-20635,CUST-181,Lucas Williams,lucas.williams52@testmail.com,Books & Media,Direct,North America,UPI,Delivered,1,82.27,82.27,0.0,82.27,14.99,2026-01-04 22:40:00,2026-01-10
+ORD-20636,CUST-334,Olivia Rodriguez,olivia.rodriguez19@testmail.com,Fashion & Apparel,Instagram Ad,Middle East,UPI,Cancelled,1,141.6,141.6,0.0,0.0,0.0,2026-02-07 15:53:00,
+ORD-20637,CUST-468,Charlotte Rodriguez,charlotte.rodriguez77@testmail.com,Beauty & Care,Instagram Ad,Middle East,UPI,Returned,1,15.23,15.23,3.05,0.0,0.0,2026-03-01 14:05:00,2026-03-03
+ORD-20638,CUST-129,Sophia Johnson,sophia.johnson82@testmail.com,Fashion & Apparel,Affiliate Partner,Europe,Credit Card,Delivered,3,62.22,186.66,0.0,186.66,14.99,2026-03-13 07:33:00,2026-03-16
+ORD-20639,CUST-103,Olivia Miller,olivia.miller11@testmail.com,Fashion & Apparel,Direct,Europe,PayPal,Delivered,1,64.23,64.23,12.85,51.38,14.99,2026-03-18 18:40:00,2026-03-25
+ORD-20640,CUST-214,Olivia Smith,olivia.smith59@testmail.com,Beauty & Care,Direct,Europe,PayPal,Processing,1,16.95,16.95,0.0,16.95,4.99,2026-01-21 17:13:00,
+ORD-20641,CUST-167,Oliver Brown,oliver.brown97@testmail.com,Electronics,Desktop Web,Asia-Pacific,Cash on Delivery,Delivered,1,549.73,549.73,82.46,467.27,0.0,2026-02-27 18:52:00,2026-03-06
+ORD-20642,CUST-288,Ava Brown,ava.brown36@testmail.com,Books & Media,Direct,Asia-Pacific,Credit Card,Delivered,2,41.86,83.72,0.0,83.72,14.99,2026-02-15 17:14:00,2026-02-22
+ORD-20643,CUST-365,Emma Brown,emma.brown48@testmail.com,Books & Media,Direct,Middle East,Cash on Delivery,Processing,3,74.85,224.55,33.68,190.87,4.99,2026-01-19 09:22:00,
+ORD-20644,CUST-245,Ava Miller,ava.miller75@testmail.com,Books & Media,Desktop Web,Europe,UPI,Returned,3,78.45,235.35,47.07,0.0,14.99,2026-02-24 07:24:00,2026-03-01
+ORD-20645,CUST-388,Liam Williams,liam.williams80@testmail.com,Home & Kitchen,Instagram Ad,Latin America,UPI,Delivered,2,55.63,111.26,5.56,105.7,14.99,2026-01-18 07:16:00,2026-01-21
+ORD-20646,CUST-401,Olivia Smith,olivia.smith95@testmail.com,Books & Media,Affiliate Partner,Latin America,Cash on Delivery,Delivered,3,54.58,163.74,32.75,130.99,4.99,2026-03-16 19:11:00,2026-03-19
+ORD-20647,CUST-499,Lucas Rodriguez,lucas.rodriguez56@testmail.com,Fashion & Apparel,Desktop Web,Middle East,Apple Pay,Delivered,2,94.9,189.8,9.49,180.31,9.99,2026-02-21 23:32:00,2026-02-26
+ORD-20648,CUST-491,Emma Jones,emma.jones77@testmail.com,Electronics,Desktop Web,Europe,Credit Card,Delivered,3,153.65,460.95,23.05,437.9,4.99,2026-03-08 14:57:00,2026-03-14
+ORD-20649,CUST-415,Liam Williams,liam.williams93@testmail.com,Fashion & Apparel,Affiliate Partner,North America,Credit Card,Delivered,5,133.25,666.25,99.94,566.31,4.99,2026-02-07 15:03:00,2026-02-14
+ORD-20650,CUST-264,Liam Jones,liam.jones20@testmail.com,Beauty & Care,Desktop Web,Asia-Pacific,Cash on Delivery,Processing,1,36.43,36.43,7.29,29.14,14.99,2026-01-10 12:19:00,
+ORD-20651,CUST-105,Charlotte Davis,charlotte.davis43@testmail.com,Fashion & Apparel,Mobile App,Middle East,Apple Pay,Delivered,2,128.41,256.82,12.84,243.98,9.99,2026-02-11 18:19:00,2026-02-14
+ORD-20652,CUST-386,Lucas Williams,lucas.williams80@testmail.com,Electronics,Instagram Ad,Asia-Pacific,UPI,Delivered,2,696.31,1392.62,278.52,1114.1,9.99,2026-01-04 21:27:00,2026-01-09
+ORD-20653,CUST-421,Sophia Williams,sophia.williams1@testmail.com,Sports & Fitness,Instagram Ad,North America,PayPal,Cancelled,3,23.94,71.82,7.18,0.0,4.99,2026-02-21 23:08:00,
+ORD-20654,CUST-258,Elijah Martinez,elijah.martinez32@testmail.com,Books & Media,Affiliate Partner,Middle East,Apple Pay,Delivered,2,83.42,166.84,16.68,150.16,0.0,2026-03-15 16:30:00,2026-03-18
+ORD-20655,CUST-106,Ava Davis,ava.davis7@testmail.com,Home & Kitchen,Mobile App,Asia-Pacific,UPI,Shipped,2,48.15,96.3,14.44,81.86,0.0,2026-01-10 12:30:00,
+ORD-20656,CUST-175,Elijah Davis,elijah.davis89@testmail.com,Books & Media,Desktop Web,North America,Apple Pay,Delivered,1,75.44,75.44,3.77,71.67,0.0,2026-02-14 07:14:00,2026-02-19
+ORD-20657,CUST-250,Oliver Martinez,oliver.martinez40@testmail.com,Beauty & Care,Instagram Ad,North America,Cash on Delivery,Delivered,1,19.23,19.23,1.92,17.31,4.99,2026-01-26 22:30:00,2026-01-29
+ORD-20658,CUST-261,Ava Davis,ava.davis9@testmail.com,Home & Kitchen,Instagram Ad,Asia-Pacific,Apple Pay,Delivered,4,58.68,234.72,11.74,222.98,4.99,2026-02-25 06:28:00,2026-03-04
+ORD-20659,CUST-347,Emma Davis,emma.davis89@testmail.com,Books & Media,Direct,Middle East,Credit Card,Delivered,2,97.03,194.06,19.41,174.65,0.0,2026-03-02 07:58:00,2026-03-09
+ORD-20660,CUST-276,Noah Williams,noah.williams45@testmail.com,Sports & Fitness,Instagram Ad,Asia-Pacific,PayPal,Delivered,2,22.7,45.4,4.54,40.86,0.0,2026-02-19 12:16:00,2026-02-21
+ORD-20661,CUST-431,Charlotte Johnson,charlotte.johnson63@testmail.com,Beauty & Care,Mobile App,Latin America,PayPal,Delivered,1,84.97,84.97,12.75,72.22,0.0,2026-02-04 18:42:00,2026-02-08
+ORD-20662,CUST-409,Elijah Smith,elijah.smith92@testmail.com,Electronics,Direct,Europe,Credit Card,Delivered,1,292.74,292.74,0.0,292.74,4.99,2026-02-09 16:57:00,2026-02-13
+ORD-20663,CUST-363,Charlotte Williams,charlotte.williams48@testmail.com,Fashion & Apparel,Mobile App,North America,UPI,Processing,2,143.91,287.82,0.0,287.82,4.99,2026-03-17 18:25:00,
+ORD-20664,CUST-295,Charlotte Rodriguez,charlotte.rodriguez37@testmail.com,Books & Media,Direct,North America,Apple Pay,Delivered,1,31.53,31.53,3.15,28.38,0.0,2026-03-10 23:00:00,2026-03-13
+ORD-20665,CUST-234,Sophia Martinez,sophia.martinez3@testmail.com,Fashion & Apparel,Desktop Web,Asia-Pacific,Apple Pay,Shipped,4,118.76,475.04,71.26,403.78,9.99,2026-01-17 12:03:00,
+ORD-20666,CUST-376,Charlotte Rodriguez,charlotte.rodriguez93@testmail.com,Electronics,Affiliate Partner,Middle East,Cash on Delivery,Delivered,1,833.87,833.87,0.0,833.87,0.0,2026-03-13 21:02:00,2026-03-19
+ORD-20667,CUST-275,Ava Brown,ava.brown21@testmail.com,Electronics,Mobile App,Europe,Apple Pay,Delivered,1,506.23,506.23,101.25,404.98,0.0,2026-02-18 09:06:00,2026-02-22
+ORD-20668,CUST-215,Sophia Brown,sophia.brown77@testmail.com,Fashion & Apparel,Mobile App,Latin America,Credit Card,Delivered,2,49.63,99.26,0.0,99.26,9.99,2026-02-07 20:51:00,2026-02-14
+ORD-20669,CUST-427,Elijah Smith,elijah.smith26@testmail.com,Books & Media,Affiliate Partner,Asia-Pacific,PayPal,Returned,4,20.95,83.8,16.76,0.0,4.99,2026-02-07 21:46:00,2026-02-14
+ORD-20670,CUST-308,Liam Davis,liam.davis17@testmail.com,Electronics,Direct,North America,Cash on Delivery,Delivered,2,404.34,808.68,121.3,687.38,14.99,2026-03-15 16:46:00,2026-03-18
+ORD-20671,CUST-478,Sophia Williams,sophia.williams69@testmail.com,Fashion & Apparel,Direct,Middle East,Apple Pay,Shipped,5,46.37,231.85,34.78,197.07,0.0,2026-01-01 17:14:00,
+ORD-20672,CUST-221,Ava Smith,ava.smith6@testmail.com,Fashion & Apparel,Direct,Middle East,Apple Pay,Delivered,1,32.5,32.5,0.0,32.5,14.99,2026-01-01 12:58:00,2026-01-06
+ORD-20673,CUST-104,Sophia Miller,sophia.miller80@testmail.com,Fashion & Apparel,Affiliate Partner,Asia-Pacific,Credit Card,Processing,2,125.28,250.56,37.58,212.98,9.99,2026-01-17 22:56:00,
+ORD-20674,CUST-286,Charlotte Martinez,charlotte.martinez18@testmail.com,Electronics,Mobile App,Middle East,Credit Card,Processing,1,650.4,650.4,0.0,650.4,4.99,2026-03-17 09:10:00,
+ORD-20675,CUST-300,Emma Martinez,emma.martinez6@testmail.com,Home & Kitchen,Direct,Europe,Apple Pay,Delivered,1,105.03,105.03,21.01,84.02,4.99,2026-02-17 20:44:00,2026-02-23
+ORD-20676,CUST-122,Emma Martinez,emma.martinez41@testmail.com,Beauty & Care,Instagram Ad,Europe,Apple Pay,Delivered,2,42.07,84.14,8.41,75.73,4.99,2026-02-14 21:59:00,2026-02-18
+ORD-20677,CUST-278,Ava Rodriguez,ava.rodriguez81@testmail.com,Sports & Fitness,Direct,Asia-Pacific,UPI,Shipped,2,81.22,162.44,0.0,162.44,14.99,2026-03-07 08:07:00,
+ORD-20678,CUST-163,Oliver Rodriguez,oliver.rodriguez64@testmail.com,Fashion & Apparel,Direct,Asia-Pacific,PayPal,Cancelled,3,117.55,352.65,35.27,0.0,4.99,2026-02-20 18:10:00,
+ORD-20679,CUST-115,Lucas Davis,lucas.davis58@testmail.com,Electronics,Direct,Latin America,Credit Card,Shipped,3,727.07,2181.21,218.12,1963.09,14.99,2026-01-31 19:06:00,
+ORD-20680,CUST-113,Emma Jones,emma.jones10@testmail.com,Books & Media,Desktop Web,Latin America,Credit Card,Shipped,2,21.6,43.2,8.64,34.56,9.99,2026-01-17 12:22:00,
+ORD-20681,CUST-392,Oliver Brown,oliver.brown8@testmail.com,Beauty & Care,Mobile App,Europe,Credit Card,Delivered,1,20.67,20.67,4.13,16.54,14.99,2026-02-24 21:51:00,2026-02-26
+ORD-20682,CUST-474,Oliver Williams,oliver.williams96@testmail.com,Fashion & Apparel,Direct,Europe,UPI,Delivered,2,33.78,67.56,10.13,57.43,9.99,2026-03-17 16:19:00,2026-03-22
+ORD-20683,CUST-322,Oliver Brown,oliver.brown96@testmail.com,Electronics,Direct,Latin America,Cash on Delivery,Shipped,1,520.96,520.96,0.0,520.96,14.99,2026-01-07 16:46:00,
+ORD-20684,CUST-302,Ava Miller,ava.miller71@testmail.com,Sports & Fitness,Desktop Web,Latin America,Credit Card,Delivered,2,66.96,133.92,26.78,107.14,14.99,2026-03-12 13:12:00,2026-03-16
+ORD-20685,CUST-388,Emma Garcia,emma.garcia24@testmail.com,Beauty & Care,Affiliate Partner,Europe,UPI,Delivered,1,42.86,42.86,0.0,42.86,0.0,2026-03-03 21:51:00,2026-03-10
+ORD-20686,CUST-389,Olivia Smith,olivia.smith52@testmail.com,Sports & Fitness,Direct,Europe,UPI,Delivered,2,65.3,130.6,6.53,124.07,4.99,2026-01-25 10:44:00,2026-02-01
+ORD-20687,CUST-416,Ava Jones,ava.jones76@testmail.com,Electronics,Desktop Web,Europe,PayPal,Processing,1,699.0,699.0,104.85,594.15,14.99,2026-01-31 11:52:00,
+ORD-20688,CUST-222,Olivia Jones,olivia.jones88@testmail.com,Fashion & Apparel,Affiliate Partner,Europe,Cash on Delivery,Delivered,3,126.01,378.03,0.0,378.03,4.99,2026-01-21 13:46:00,2026-01-27
+ORD-20689,CUST-353,Olivia Smith,olivia.smith85@testmail.com,Sports & Fitness,Mobile App,North America,Credit Card,Delivered,1,45.8,45.8,2.29,43.51,9.99,2026-02-24 12:14:00,2026-02-27
+ORD-20690,CUST-164,Liam Martinez,liam.martinez50@testmail.com,Sports & Fitness,Instagram Ad,Middle East,Credit Card,Delivered,3,49.47,148.41,14.84,133.57,9.99,2026-03-03 16:52:00,2026-03-07
+ORD-20691,CUST-225,Emma Davis,emma.davis28@testmail.com,Home & Kitchen,Affiliate Partner,Middle East,Cash on Delivery,Delivered,1,15.4,15.4,2.31,13.09,9.99,2026-01-09 12:35:00,2026-01-12
+ORD-20692,CUST-303,Olivia Williams,olivia.williams52@testmail.com,Books & Media,Desktop Web,Latin America,Apple Pay,Cancelled,1,22.92,22.92,4.58,0.0,0.0,2026-03-01 20:13:00,
+ORD-20693,CUST-169,Ava Davis,ava.davis81@testmail.com,Electronics,Affiliate Partner,Middle East,PayPal,Delivered,1,321.16,321.16,64.23,256.93,9.99,2026-01-07 13:24:00,2026-01-09
+ORD-20694,CUST-359,Ava Johnson,ava.johnson22@testmail.com,Beauty & Care,Mobile App,Asia-Pacific,Credit Card,Delivered,2,106.2,212.4,31.86,180.54,9.99,2026-01-17 21:17:00,2026-01-19
+ORD-20695,CUST-424,Sophia Davis,sophia.davis52@testmail.com,Books & Media,Desktop Web,North America,Apple Pay,Delivered,1,57.51,57.51,11.5,46.01,9.99,2026-01-21 06:53:00,2026-01-23
+ORD-20696,CUST-483,Ava Miller,ava.miller74@testmail.com,Beauty & Care,Mobile App,Latin America,PayPal,Delivered,1,69.89,69.89,3.49,66.4,14.99,2026-02-10 21:41:00,2026-02-16
+ORD-20697,CUST-313,Charlotte Jones,charlotte.jones56@testmail.com,Sports & Fitness,Mobile App,Middle East,Apple Pay,Delivered,1,44.62,44.62,2.23,42.39,4.99,2026-01-05 16:52:00,2026-01-09
+ORD-20698,CUST-438,Ava Brown,ava.brown14@testmail.com,Fashion & Apparel,Desktop Web,Middle East,PayPal,Shipped,1,136.38,136.38,27.28,109.1,0.0,2026-02-18 09:08:00,
+ORD-20699,CUST-170,Oliver Martinez,oliver.martinez25@testmail.com,Home & Kitchen,Instagram Ad,Europe,PayPal,Cancelled,1,86.93,86.93,13.04,0.0,4.99,2026-01-03 06:44:00,
+ORD-20700,CUST-362,Lucas Rodriguez,lucas.rodriguez65@testmail.com,Beauty & Care,Direct,Asia-Pacific,UPI,Cancelled,2,93.38,186.76,28.01,0.0,0.0,2026-01-21 16:25:00,
+ORD-20701,CUST-296,Charlotte Williams,charlotte.williams90@testmail.com,Fashion & Apparel,Desktop Web,Middle East,Apple Pay,Delivered,5,69.97,349.85,52.48,297.37,0.0,2026-01-08 16:42:00,2026-01-14
+ORD-20702,CUST-112,Liam Brown,liam.brown97@testmail.com,Beauty & Care,Direct,Asia-Pacific,Apple Pay,Delivered,2,117.11,234.22,23.42,210.8,14.99,2026-02-09 20:47:00,2026-02-15
+ORD-20703,CUST-203,Oliver Rodriguez,oliver.rodriguez51@testmail.com,Books & Media,Affiliate Partner,Middle East,Apple Pay,Delivered,3,105.1,315.3,47.3,268.0,4.99,2026-01-25 23:15:00,2026-01-27
+ORD-20704,CUST-475,Liam Smith,liam.smith58@testmail.com,Sports & Fitness,Mobile App,Europe,Apple Pay,Delivered,1,58.96,58.96,5.9,53.06,9.99,2026-01-11 18:25:00,2026-01-14
+ORD-20705,CUST-340,Charlotte Miller,charlotte.miller56@testmail.com,Home & Kitchen,Direct,Middle East,Apple Pay,Delivered,3,51.97,155.91,7.8,148.11,9.99,2026-02-11 16:48:00,2026-02-15
+ORD-20706,CUST-136,Ava Smith,ava.smith54@testmail.com,Electronics,Mobile App,Latin America,PayPal,Delivered,3,304.2,912.6,0.0,912.6,9.99,2026-03-08 19:51:00,2026-03-14
+ORD-20707,CUST-173,Sophia Garcia,sophia.garcia26@testmail.com,Home & Kitchen,Direct,Europe,PayPal,Delivered,2,64.59,129.18,12.92,116.26,0.0,2026-02-08 14:04:00,2026-02-14
+ORD-20708,CUST-225,Noah Rodriguez,noah.rodriguez53@testmail.com,Books & Media,Instagram Ad,North America,Cash on Delivery,Returned,3,91.67,275.01,41.25,0.0,0.0,2026-01-30 16:52:00,2026-02-04
+ORD-20709,CUST-376,Noah Smith,noah.smith79@testmail.com,Sports & Fitness,Direct,Asia-Pacific,UPI,Processing,1,33.2,33.2,3.32,29.88,0.0,2026-01-28 22:41:00,
+ORD-20710,CUST-410,Charlotte Brown,charlotte.brown61@testmail.com,Electronics,Instagram Ad,Asia-Pacific,Credit Card,Shipped,2,529.59,1059.18,158.88,900.3,0.0,2026-01-28 14:42:00,
+ORD-20711,CUST-252,Lucas Davis,lucas.davis41@testmail.com,Sports & Fitness,Affiliate Partner,Asia-Pacific,PayPal,Delivered,1,55.87,55.87,5.59,50.28,0.0,2026-01-20 23:17:00,2026-01-22
+ORD-20712,CUST-446,Emma Davis,emma.davis3@testmail.com,Fashion & Apparel,Direct,Latin America,Apple Pay,Shipped,2,102.23,204.46,10.22,194.24,9.99,2026-02-08 22:00:00,
+ORD-20713,CUST-146,Oliver Martinez,oliver.martinez46@testmail.com,Beauty & Care,Instagram Ad,Latin America,Credit Card,Delivered,2,99.92,199.84,0.0,199.84,4.99,2026-01-22 14:17:00,2026-01-25
+ORD-20714,CUST-440,Charlotte Martinez,charlotte.martinez59@testmail.com,Fashion & Apparel,Direct,Middle East,Credit Card,Delivered,1,60.24,60.24,12.05,48.19,14.99,2026-03-01 12:54:00,2026-03-05
+ORD-20715,CUST-203,Elijah Jones,elijah.jones1@testmail.com,Sports & Fitness,Affiliate Partner,Middle East,PayPal,Delivered,3,92.47,277.41,55.48,221.93,4.99,2026-01-15 15:04:00,2026-01-21
+ORD-20716,CUST-225,Charlotte Rodriguez,charlotte.rodriguez83@testmail.com,Beauty & Care,Desktop Web,Asia-Pacific,Cash on Delivery,Processing,4,26.13,104.52,15.68,88.84,4.99,2026-02-20 22:51:00,
+ORD-20717,CUST-150,Noah Williams,noah.williams57@testmail.com,Books & Media,Mobile App,Asia-Pacific,Cash on Delivery,Shipped,1,103.06,103.06,10.31,92.75,4.99,2026-02-18 14:10:00,
+ORD-20718,CUST-376,Noah Smith,noah.smith65@testmail.com,Books & Media,Affiliate Partner,Middle East,UPI,Delivered,4,98.81,395.24,0.0,395.24,14.99,2026-01-12 17:05:00,2026-01-18
+ORD-20719,CUST-220,Olivia Jones,olivia.jones18@testmail.com,Fashion & Apparel,Affiliate Partner,Asia-Pacific,Cash on Delivery,Processing,1,154.58,154.58,23.19,131.39,4.99,2026-02-09 19:39:00,
+ORD-20720,CUST-118,Elijah Williams,elijah.williams91@testmail.com,Fashion & Apparel,Affiliate Partner,Middle East,Cash on Delivery,Delivered,1,130.29,130.29,26.06,104.23,0.0,2026-03-16 06:09:00,2026-03-19
+ORD-20721,CUST-421,Sophia Garcia,sophia.garcia57@testmail.com,Home & Kitchen,Instagram Ad,Latin America,Credit Card,Delivered,5,76.0,380.0,38.0,342.0,0.0,2026-03-12 14:51:00,2026-03-17
+ORD-20722,CUST-363,Sophia Davis,sophia.davis9@testmail.com,Home & Kitchen,Direct,Middle East,Credit Card,Delivered,1,62.51,62.51,3.13,59.38,14.99,2026-03-11 23:39:00,2026-03-18
+ORD-20723,CUST-307,Oliver Martinez,oliver.martinez71@testmail.com,Electronics,Direct,North America,Cash on Delivery,Delivered,5,666.82,3334.1,500.11,2833.99,4.99,2026-03-16 15:23:00,2026-03-22
+ORD-20724,CUST-177,Noah Rodriguez,noah.rodriguez31@testmail.com,Home & Kitchen,Instagram Ad,Latin America,UPI,Delivered,4,86.95,347.8,52.17,295.63,0.0,2026-03-09 06:55:00,2026-03-12
+ORD-20725,CUST-390,Lucas Miller,lucas.miller83@testmail.com,Beauty & Care,Mobile App,Middle East,Credit Card,Delivered,1,99.76,99.76,0.0,99.76,4.99,2026-03-22 16:47:00,2026-03-24
+ORD-20726,CUST-466,Charlotte Rodriguez,charlotte.rodriguez98@testmail.com,Beauty & Care,Affiliate Partner,North America,Cash on Delivery,Processing,3,15.74,47.22,7.08,40.14,14.99,2026-01-18 06:41:00,
+ORD-20727,CUST-240,Lucas Smith,lucas.smith91@testmail.com,Electronics,Mobile App,Europe,UPI,Delivered,1,506.03,506.03,25.3,480.73,4.99,2026-03-03 10:37:00,2026-03-09
+ORD-20728,CUST-365,Charlotte Miller,charlotte.miller94@testmail.com,Beauty & Care,Direct,Latin America,Credit Card,Delivered,1,63.33,63.33,12.67,50.66,14.99,2026-02-01 16:02:00,2026-02-06
+ORD-20729,CUST-265,Noah Brown,noah.brown43@testmail.com,Home & Kitchen,Direct,North America,Apple Pay,Shipped,1,32.93,32.93,1.65,31.28,0.0,2026-02-26 13:47:00,
+ORD-20730,CUST-463,Oliver Smith,oliver.smith36@testmail.com,Beauty & Care,Direct,North America,PayPal,Delivered,2,85.93,171.86,8.59,163.27,9.99,2026-01-17 08:33:00,2026-01-22
+ORD-20731,CUST-485,Ava Smith,ava.smith20@testmail.com,Home & Kitchen,Direct,Middle East,UPI,Returned,1,65.76,65.76,0.0,0.0,0.0,2026-01-14 08:19:00,2026-01-16
+ORD-20732,CUST-330,Noah Garcia,noah.garcia80@testmail.com,Electronics,Desktop Web,Latin America,Credit Card,Delivered,2,652.61,1305.22,261.04,1044.18,14.99,2026-02-11 18:52:00,2026-02-17
+ORD-20733,CUST-112,Elijah Rodriguez,elijah.rodriguez98@testmail.com,Electronics,Desktop Web,Asia-Pacific,PayPal,Delivered,1,831.77,831.77,166.35,665.42,9.99,2026-02-15 19:32:00,2026-02-19
+ORD-20734,CUST-160,Noah Miller,noah.miller46@testmail.com,Beauty & Care,Affiliate Partner,North America,Credit Card,Returned,1,37.96,37.96,5.69,0.0,4.99,2026-02-25 12:08:00,2026-03-03
+ORD-20735,CUST-463,Lucas Davis,lucas.davis5@testmail.com,Home & Kitchen,Affiliate Partner,Europe,Cash on Delivery,Shipped,1,56.32,56.32,11.26,45.06,4.99,2026-01-19 20:14:00,
+ORD-20736,CUST-381,Olivia Martinez,olivia.martinez45@testmail.com,Electronics,Direct,Asia-Pacific,UPI,Delivered,1,737.99,737.99,73.8,664.19,0.0,2026-01-30 13:11:00,2026-02-03
+ORD-20737,CUST-190,Ava Rodriguez,ava.rodriguez94@testmail.com,Fashion & Apparel,Instagram Ad,Latin America,Credit Card,Delivered,2,156.22,312.44,31.24,281.2,14.99,2026-03-01 12:19:00,2026-03-05
+ORD-20738,CUST-132,Liam Garcia,liam.garcia57@testmail.com,Beauty & Care,Instagram Ad,Asia-Pacific,Credit Card,Delivered,4,112.55,450.2,0.0,450.2,14.99,2026-03-22 21:17:00,2026-03-29
+ORD-20739,CUST-216,Emma Garcia,emma.garcia98@testmail.com,Electronics,Desktop Web,North America,Cash on Delivery,Cancelled,2,577.06,1154.12,115.41,0.0,0.0,2026-01-13 18:36:00,
+ORD-20740,CUST-402,Ava Jones,ava.jones93@testmail.com,Beauty & Care,Affiliate Partner,North America,Cash on Delivery,Delivered,1,62.22,62.22,0.0,62.22,4.99,2026-02-02 23:13:00,2026-02-09
+ORD-20741,CUST-462,Olivia Rodriguez,olivia.rodriguez24@testmail.com,Books & Media,Direct,Europe,UPI,Shipped,4,81.61,326.44,0.0,326.44,14.99,2026-01-04 10:27:00,
+ORD-20742,CUST-482,Liam Rodriguez,liam.rodriguez51@testmail.com,Fashion & Apparel,Affiliate Partner,Latin America,Credit Card,Delivered,1,37.08,37.08,1.85,35.23,9.99,2026-03-18 18:26:00,2026-03-23
+ORD-20743,CUST-316,Noah Jones,noah.jones71@testmail.com,Fashion & Apparel,Mobile App,Europe,UPI,Delivered,1,36.22,36.22,1.81,34.41,14.99,2026-01-29 14:39:00,2026-02-04
+ORD-20744,CUST-161,Noah Miller,noah.miller36@testmail.com,Books & Media,Direct,North America,Credit Card,Delivered,1,81.74,81.74,8.17,73.57,14.99,2026-03-02 20:39:00,2026-03-04
+ORD-20745,CUST-292,Ava Smith,ava.smith7@testmail.com,Sports & Fitness,Desktop Web,Asia-Pacific,Credit Card,Delivered,3,60.6,181.8,18.18,163.62,4.99,2026-02-28 15:54:00,2026-03-05
+ORD-20746,CUST-282,Liam Rodriguez,liam.rodriguez75@testmail.com,Books & Media,Desktop Web,Europe,Apple Pay,Delivered,2,52.45,104.9,15.73,89.17,9.99,2026-01-28 08:36:00,2026-02-03
+ORD-20747,CUST-101,Olivia Williams,olivia.williams23@testmail.com,Books & Media,Affiliate Partner,Asia-Pacific,Credit Card,Delivered,4,116.72,466.88,93.38,373.5,9.99,2026-02-08 07:01:00,2026-02-11
+ORD-20748,CUST-393,Oliver Garcia,oliver.garcia1@testmail.com,Electronics,Desktop Web,Asia-Pacific,PayPal,Processing,1,219.04,219.04,43.81,175.23,4.99,2026-02-02 23:25:00,
+ORD-20749,CUST-283,Ava Davis,ava.davis12@testmail.com,Fashion & Apparel,Desktop Web,Asia-Pacific,PayPal,Delivered,1,114.94,114.94,5.75,109.19,4.99,2026-02-18 08:23:00,2026-02-25
+ORD-20750,CUST-398,Liam Jones,liam.jones42@testmail.com,Beauty & Care,Instagram Ad,Middle East,Apple Pay,Delivered,1,87.26,87.26,8.73,78.53,0.0,2026-03-17 16:13:00,2026-03-19
+ORD-20751,CUST-130,Ava Brown,ava.brown13@testmail.com,Books & Media,Affiliate Partner,Latin America,Credit Card,Shipped,2,99.46,198.92,39.78,159.14,0.0,2026-03-07 12:03:00,
+ORD-20752,CUST-423,Charlotte Davis,charlotte.davis14@testmail.com,Fashion & Apparel,Mobile App,Middle East,Credit Card,Delivered,1,99.61,99.61,14.94,84.67,4.99,2026-02-11 08:04:00,2026-02-15
+ORD-20753,CUST-127,Emma Davis,emma.davis53@testmail.com,Sports & Fitness,Mobile App,North America,Credit Card,Delivered,1,46.63,46.63,4.66,41.97,14.99,2026-03-20 18:40:00,2026-03-26
+ORD-20754,CUST-117,Charlotte Smith,charlotte.smith7@testmail.com,Fashion & Apparel,Affiliate Partner,Europe,UPI,Processing,1,140.17,140.17,0.0,140.17,14.99,2026-01-10 17:16:00,
+ORD-20755,CUST-149,Olivia Brown,olivia.brown38@testmail.com,Electronics,Desktop Web,Latin America,PayPal,Returned,3,186.34,559.02,55.9,0.0,0.0,2026-02-12 06:43:00,2026-02-16
+ORD-20756,CUST-317,Olivia Smith,olivia.smith32@testmail.com,Books & Media,Affiliate Partner,North America,PayPal,Delivered,2,29.88,59.76,0.0,59.76,14.99,2026-01-10 14:20:00,2026-01-17
+ORD-20757,CUST-124,Noah Rodriguez,noah.rodriguez48@testmail.com,Fashion & Apparel,Desktop Web,Europe,PayPal,Delivered,3,116.0,348.0,17.4,330.6,4.99,2026-01-05 07:20:00,2026-01-08
+ORD-20758,CUST-198,Sophia Williams,sophia.williams30@testmail.com,Beauty & Care,Mobile App,Middle East,Credit Card,Delivered,1,47.21,47.21,2.36,44.85,0.0,2026-01-10 09:48:00,2026-01-13
+ORD-20759,CUST-270,Olivia Garcia,olivia.garcia17@testmail.com,Fashion & Apparel,Instagram Ad,North America,UPI,Delivered,1,154.02,154.02,23.1,130.92,9.99,2026-01-21 13:46:00,2026-01-27
+ORD-20760,CUST-198,Noah Jones,noah.jones35@testmail.com,Fashion & Apparel,Instagram Ad,Asia-Pacific,Cash on Delivery,Delivered,1,115.47,115.47,17.32,98.15,14.99,2026-02-26 19:50:00,2026-02-28
+ORD-20761,CUST-418,Olivia Smith,olivia.smith61@testmail.com,Beauty & Care,Instagram Ad,Europe,Apple Pay,Returned,1,75.15,75.15,7.52,0.0,4.99,2026-02-28 21:40:00,2026-03-03
+ORD-20762,CUST-180,Noah Garcia,noah.garcia48@testmail.com,Books & Media,Mobile App,Europe,Apple Pay,Delivered,2,21.97,43.94,6.59,37.35,14.99,2026-02-21 17:52:00,2026-02-25
+ORD-20763,CUST-397,Noah Rodriguez,noah.rodriguez90@testmail.com,Electronics,Instagram Ad,Latin America,PayPal,Cancelled,2,364.49,728.98,36.45,0.0,14.99,2026-01-14 14:30:00,
+ORD-20764,CUST-165,Oliver Williams,oliver.williams98@testmail.com,Home & Kitchen,Affiliate Partner,Asia-Pacific,Apple Pay,Shipped,1,36.88,36.88,7.38,29.5,14.99,2026-02-25 16:42:00,
+ORD-20765,CUST-200,Lucas Rodriguez,lucas.rodriguez96@testmail.com,Home & Kitchen,Desktop Web,Europe,Apple Pay,Delivered,1,23.59,23.59,3.54,20.05,14.99,2026-03-05 10:19:00,2026-03-07
+ORD-20766,CUST-151,Charlotte Brown,charlotte.brown51@testmail.com,Home & Kitchen,Direct,Asia-Pacific,Apple Pay,Delivered,1,85.22,85.22,0.0,85.22,14.99,2026-03-12 16:32:00,2026-03-19
+ORD-20767,CUST-151,Charlotte Williams,charlotte.williams51@testmail.com,Home & Kitchen,Instagram Ad,Europe,Cash on Delivery,Delivered,1,25.1,25.1,1.26,23.84,0.0,2026-03-19 23:50:00,2026-03-26
+ORD-20768,CUST-148,Charlotte Brown,charlotte.brown36@testmail.com,Beauty & Care,Affiliate Partner,Europe,Credit Card,Delivered,1,64.51,64.51,3.23,61.28,0.0,2026-03-05 12:30:00,2026-03-08
+ORD-20769,CUST-303,Charlotte Martinez,charlotte.martinez26@testmail.com,Books & Media,Affiliate Partner,North America,Cash on Delivery,Returned,2,27.37,54.74,0.0,0.0,9.99,2026-01-18 18:46:00,2026-01-22
+ORD-20770,CUST-406,Lucas Jones,lucas.jones14@testmail.com,Books & Media,Affiliate Partner,Asia-Pacific,UPI,Delivered,1,93.82,93.82,4.69,89.13,4.99,2026-03-16 11:24:00,2026-03-23
+ORD-20771,CUST-192,Elijah Williams,elijah.williams83@testmail.com,Beauty & Care,Instagram Ad,Middle East,PayPal,Processing,3,42.54,127.62,0.0,127.62,0.0,2026-01-02 12:25:00,
+ORD-20772,CUST-268,Sophia Miller,sophia.miller29@testmail.com,Beauty & Care,Direct,North America,Cash on Delivery,Delivered,1,108.35,108.35,5.42,102.93,4.99,2026-02-22 20:43:00,2026-02-24
+ORD-20773,CUST-474,Lucas Johnson,lucas.johnson75@testmail.com,Electronics,Mobile App,North America,UPI,Returned,2,270.11,540.22,108.04,0.0,9.99,2026-02-14 06:07:00,2026-02-19
+ORD-20774,CUST-244,Emma Johnson,emma.johnson6@testmail.com,Fashion & Apparel,Desktop Web,Asia-Pacific,UPI,Delivered,2,56.79,113.58,11.36,102.22,0.0,2026-03-02 19:53:00,2026-03-07
+ORD-20775,CUST-153,Lucas Rodriguez,lucas.rodriguez52@testmail.com,Beauty & Care,Direct,North America,Credit Card,Delivered,1,119.37,119.37,23.87,95.5,0.0,2026-02-25 21:38:00,2026-02-28
+ORD-20776,CUST-371,Emma Jones,emma.jones72@testmail.com,Sports & Fitness,Instagram Ad,North America,Credit Card,Shipped,3,31.96,95.88,0.0,95.88,4.99,2026-01-07 15:41:00,
+ORD-20777,CUST-356,Sophia Miller,sophia.miller96@testmail.com,Electronics,Affiliate Partner,North America,Credit Card,Cancelled,1,173.94,173.94,8.7,0.0,9.99,2026-03-21 07:15:00,
+ORD-20778,CUST-348,Oliver Jones,oliver.jones76@testmail.com,Sports & Fitness,Direct,North America,UPI,Cancelled,1,88.01,88.01,17.6,0.0,0.0,2026-02-10 12:04:00,
+ORD-20779,CUST-108,Liam Brown,liam.brown18@testmail.com,Sports & Fitness,Affiliate Partner,Asia-Pacific,Apple Pay,Delivered,1,107.08,107.08,0.0,107.08,9.99,2026-01-13 08:50:00,2026-01-18
+ORD-20780,CUST-169,Ava Davis,ava.davis63@testmail.com,Beauty & Care,Mobile App,Middle East,Cash on Delivery,Delivered,1,71.03,71.03,7.1,63.93,9.99,2026-01-12 15:05:00,2026-01-14
+ORD-20781,CUST-119,Liam Martinez,liam.martinez82@testmail.com,Fashion & Apparel,Affiliate Partner,Middle East,PayPal,Delivered,1,36.12,36.12,7.22,28.9,0.0,2026-03-04 18:18:00,2026-03-09
+ORD-20782,CUST-124,Elijah Jones,elijah.jones10@testmail.com,Sports & Fitness,Mobile App,Latin America,Credit Card,Shipped,1,30.93,30.93,3.09,27.84,9.99,2026-03-15 15:10:00,
+ORD-20783,CUST-185,Noah Johnson,noah.johnson42@testmail.com,Home & Kitchen,Desktop Web,Latin America,Cash on Delivery,Delivered,1,41.59,41.59,4.16,37.43,9.99,2026-02-25 11:24:00,2026-02-27
+ORD-20784,CUST-366,Olivia Davis,olivia.davis68@testmail.com,Beauty & Care,Direct,North America,UPI,Cancelled,2,21.83,43.66,6.55,0.0,9.99,2026-02-16 15:31:00,
+ORD-20785,CUST-331,Oliver Miller,oliver.miller45@testmail.com,Books & Media,Instagram Ad,Middle East,Cash on Delivery,Delivered,1,118.99,118.99,11.9,107.09,14.99,2026-01-29 07:01:00,2026-02-02
+ORD-20786,CUST-168,Sophia Brown,sophia.brown98@testmail.com,Home & Kitchen,Direct,Asia-Pacific,UPI,Shipped,2,62.85,125.7,18.86,106.84,14.99,2026-01-24 20:40:00,
+ORD-20787,CUST-213,Oliver Miller,oliver.miller1@testmail.com,Home & Kitchen,Mobile App,North America,Apple Pay,Delivered,3,83.66,250.98,25.1,225.88,0.0,2026-01-03 07:05:00,2026-01-07
+ORD-20788,CUST-309,Sophia Rodriguez,sophia.rodriguez70@testmail.com,Beauty & Care,Affiliate Partner,Asia-Pacific,Credit Card,Processing,3,107.08,321.24,0.0,321.24,14.99,2026-03-07 20:49:00,
+ORD-20789,CUST-162,Lucas Smith,lucas.smith45@testmail.com,Beauty & Care,Direct,North America,Apple Pay,Returned,1,32.69,32.69,6.54,0.0,0.0,2026-01-18 23:09:00,2026-01-20
+ORD-20790,CUST-283,Olivia Williams,olivia.williams78@testmail.com,Fashion & Apparel,Desktop Web,Europe,UPI,Delivered,1,98.01,98.01,4.9,93.11,4.99,2026-03-13 10:18:00,2026-03-15
+ORD-20791,CUST-226,Lucas Martinez,lucas.martinez45@testmail.com,Home & Kitchen,Mobile App,North America,Credit Card,Delivered,3,38.96,116.88,0.0,116.88,0.0,2026-03-12 14:28:00,2026-03-18
+ORD-20792,CUST-160,Emma Garcia,emma.garcia82@testmail.com,Fashion & Apparel,Direct,Latin America,UPI,Returned,4,26.19,104.76,15.71,0.0,9.99,2026-01-22 22:37:00,2026-01-25
+ORD-20793,CUST-418,Oliver Davis,oliver.davis37@testmail.com,Sports & Fitness,Mobile App,Latin America,Cash on Delivery,Delivered,1,22.64,22.64,2.26,20.38,0.0,2026-01-31 06:08:00,2026-02-06
+ORD-20794,CUST-381,Oliver Brown,oliver.brown5@testmail.com,Home & Kitchen,Mobile App,Europe,Cash on Delivery,Delivered,2,98.99,197.98,19.8,178.18,4.99,2026-01-13 14:18:00,2026-01-18
+ORD-20795,CUST-444,Olivia Johnson,olivia.johnson30@testmail.com,Beauty & Care,Instagram Ad,Middle East,UPI,Shipped,2,67.26,134.52,26.9,107.62,0.0,2026-01-03 18:14:00,
+ORD-20796,CUST-263,Elijah Rodriguez,elijah.rodriguez43@testmail.com,Sports & Fitness,Mobile App,North America,UPI,Shipped,4,109.91,439.64,65.95,373.69,0.0,2026-03-21 20:16:00,
+ORD-20797,CUST-408,Charlotte Garcia,charlotte.garcia56@testmail.com,Home & Kitchen,Affiliate Partner,Middle East,Cash on Delivery,Shipped,2,34.59,69.18,0.0,69.18,14.99,2026-02-09 06:34:00,
+ORD-20798,CUST-315,Lucas Smith,lucas.smith59@testmail.com,Beauty & Care,Direct,Europe,Cash on Delivery,Delivered,1,91.43,91.43,13.71,77.72,9.99,2026-03-19 23:27:00,2026-03-21
+ORD-20799,CUST-253,Noah Brown,noah.brown76@testmail.com,Books & Media,Direct,North America,Credit Card,Delivered,1,112.28,112.28,16.84,95.44,0.0,2026-02-21 16:09:00,2026-02-26
+ORD-20800,CUST-251,Charlotte Smith,charlotte.smith35@testmail.com,Fashion & Apparel,Direct,North America,Cash on Delivery,Delivered,1,120.14,120.14,24.03,96.11,14.99,2026-02-05 12:30:00,2026-02-12
+ORD-20801,CUST-362,Ava Davis,ava.davis1@testmail.com,Books & Media,Desktop Web,North America,Cash on Delivery,Delivered,1,41.31,41.31,2.07,39.24,9.99,2026-02-06 11:15:00,2026-02-13
+ORD-20802,CUST-373,Emma Jones,emma.jones44@testmail.com,Electronics,Affiliate Partner,Asia-Pacific,Credit Card,Shipped,4,386.71,1546.84,0.0,1546.84,9.99,2026-02-12 16:15:00,
+ORD-20803,CUST-222,Oliver Davis,oliver.davis98@testmail.com,Home & Kitchen,Instagram Ad,Latin America,UPI,Cancelled,1,32.28,32.28,4.84,0.0,0.0,2026-03-05 18:00:00,
+ORD-20804,CUST-368,Noah Brown,noah.brown50@testmail.com,Beauty & Care,Desktop Web,Asia-Pacific,Cash on Delivery,Delivered,3,48.83,146.49,29.3,117.19,4.99,2026-02-07 17:11:00,2026-02-10
+ORD-20805,CUST-326,Noah Smith,noah.smith21@testmail.com,Home & Kitchen,Mobile App,Europe,Cash on Delivery,Cancelled,3,87.47,262.41,52.48,0.0,0.0,2026-02-25 18:11:00,
+ORD-20806,CUST-450,Liam Davis,liam.davis31@testmail.com,Home & Kitchen,Desktop Web,Europe,Credit Card,Delivered,1,95.76,95.76,0.0,95.76,9.99,2026-02-08 08:26:00,2026-02-13
+ORD-20807,CUST-400,Lucas Williams,lucas.williams21@testmail.com,Books & Media,Affiliate Partner,Latin America,Credit Card,Delivered,2,116.97,233.94,0.0,233.94,4.99,2026-02-20 13:08:00,2026-02-24
+ORD-20808,CUST-395,Charlotte Smith,charlotte.smith31@testmail.com,Home & Kitchen,Instagram Ad,Asia-Pacific,Credit Card,Shipped,1,85.5,85.5,0.0,85.5,0.0,2026-01-24 10:02:00,
+ORD-20809,CUST-320,Noah Brown,noah.brown13@testmail.com,Home & Kitchen,Instagram Ad,Middle East,Apple Pay,Delivered,2,34.3,68.6,13.72,54.88,9.99,2026-01-11 07:00:00,2026-01-13
+ORD-20810,CUST-396,Sophia Williams,sophia.williams80@testmail.com,Fashion & Apparel,Direct,Asia-Pacific,Apple Pay,Delivered,1,117.95,117.95,0.0,117.95,14.99,2026-01-09 22:47:00,2026-01-13
+ORD-20811,CUST-500,Olivia Brown,olivia.brown69@testmail.com,Electronics,Direct,Asia-Pacific,UPI,Shipped,4,581.18,2324.72,348.71,1976.01,14.99,2026-01-18 13:05:00,
+ORD-20812,CUST-446,Liam Jones,liam.jones79@testmail.com,Home & Kitchen,Affiliate Partner,Asia-Pacific,UPI,Delivered,1,46.05,46.05,4.6,41.45,4.99,2026-02-26 06:50:00,2026-03-05
+ORD-20813,CUST-164,Liam Johnson,liam.johnson4@testmail.com,Beauty & Care,Affiliate Partner,Latin America,Apple Pay,Returned,1,64.45,64.45,9.67,0.0,0.0,2026-02-24 16:03:00,2026-02-28
+ORD-20814,CUST-179,Lucas Williams,lucas.williams17@testmail.com,Sports & Fitness,Mobile App,Asia-Pacific,Apple Pay,Processing,2,98.7,197.4,39.48,157.92,0.0,2026-03-12 07:26:00,
+ORD-20815,CUST-177,Noah Johnson,noah.johnson26@testmail.com,Beauty & Care,Mobile App,Middle East,Apple Pay,Delivered,2,36.47,72.94,3.65,69.29,4.99,2026-01-04 18:40:00,2026-01-09
+ORD-20816,CUST-142,Elijah Johnson,elijah.johnson11@testmail.com,Sports & Fitness,Direct,North America,UPI,Delivered,2,53.6,107.2,5.36,101.84,14.99,2026-02-18 22:46:00,2026-02-22
+ORD-20817,CUST-224,Ava Williams,ava.williams90@testmail.com,Sports & Fitness,Direct,North America,Credit Card,Delivered,2,40.79,81.58,16.32,65.26,4.99,2026-02-01 20:53:00,2026-02-05
+ORD-20818,CUST-152,Liam Brown,liam.brown63@testmail.com,Fashion & Apparel,Direct,Middle East,Cash on Delivery,Delivered,1,99.21,99.21,19.84,79.37,9.99,2026-02-18 18:39:00,2026-02-21
+ORD-20819,CUST-298,Charlotte Brown,charlotte.brown46@testmail.com,Beauty & Care,Affiliate Partner,Middle East,Credit Card,Delivered,1,24.9,24.9,2.49,22.41,0.0,2026-02-13 12:58:00,2026-02-19
+ORD-20820,CUST-212,Olivia Miller,olivia.miller32@testmail.com,Books & Media,Direct,Latin America,UPI,Delivered,1,119.31,119.31,11.93,107.38,9.99,2026-02-17 08:51:00,2026-02-20
+ORD-20821,CUST-184,Elijah Garcia,elijah.garcia36@testmail.com,Beauty & Care,Affiliate Partner,Latin America,Cash on Delivery,Delivered,1,45.82,45.82,6.87,38.95,4.99,2026-03-02 19:16:00,2026-03-08
+ORD-20822,CUST-267,Lucas Jones,lucas.jones50@testmail.com,Beauty & Care,Direct,North America,PayPal,Processing,1,58.39,58.39,2.92,55.47,14.99,2026-02-22 10:20:00,
+ORD-20823,CUST-478,Charlotte Garcia,charlotte.garcia41@testmail.com,Electronics,Desktop Web,North America,Apple Pay,Processing,1,458.99,458.99,91.8,367.19,4.99,2026-01-17 20:56:00,
+ORD-20824,CUST-195,Emma Martinez,emma.martinez19@testmail.com,Books & Media,Instagram Ad,Asia-Pacific,PayPal,Shipped,2,46.62,93.24,9.32,83.92,0.0,2026-01-18 08:08:00,
+ORD-20825,CUST-366,Noah Jones,noah.jones38@testmail.com,Books & Media,Affiliate Partner,North America,PayPal,Delivered,1,107.11,107.11,10.71,96.4,0.0,2026-02-14 21:46:00,2026-02-20
+ORD-20826,CUST-198,Emma Davis,emma.davis57@testmail.com,Electronics,Desktop Web,Middle East,Cash on Delivery,Delivered,2,727.47,1454.94,72.75,1382.19,4.99,2026-01-18 08:18:00,2026-01-23
+ORD-20827,CUST-202,Olivia Smith,olivia.smith1@testmail.com,Sports & Fitness,Direct,Latin America,Apple Pay,Delivered,1,81.16,81.16,4.06,77.1,14.99,2026-02-21 20:00:00,2026-02-26
+ORD-20828,CUST-204,Liam Johnson,liam.johnson97@testmail.com,Fashion & Apparel,Desktop Web,North America,Cash on Delivery,Delivered,1,151.65,151.65,30.33,121.32,4.99,2026-02-07 22:58:00,2026-02-11
+ORD-20829,CUST-104,Noah Miller,noah.miller43@testmail.com,Books & Media,Instagram Ad,Middle East,UPI,Delivered,2,24.01,48.02,2.4,45.62,14.99,2026-03-11 18:31:00,2026-03-18
+ORD-20830,CUST-196,Ava Martinez,ava.martinez19@testmail.com,Home & Kitchen,Affiliate Partner,Middle East,UPI,Processing,3,44.39,133.17,0.0,133.17,0.0,2026-01-04 23:23:00,
+ORD-20831,CUST-343,Ava Martinez,ava.martinez45@testmail.com,Home & Kitchen,Mobile App,Europe,PayPal,Cancelled,1,49.84,49.84,7.48,0.0,0.0,2026-01-07 06:04:00,
+ORD-20832,CUST-223,Charlotte Smith,charlotte.smith9@testmail.com,Sports & Fitness,Mobile App,Middle East,Cash on Delivery,Delivered,2,21.43,42.86,0.0,42.86,9.99,2026-03-15 07:18:00,2026-03-19
+ORD-20833,CUST-258,Oliver Miller,oliver.miller59@testmail.com,Books & Media,Instagram Ad,Europe,PayPal,Delivered,1,69.08,69.08,3.45,65.63,14.99,2026-01-25 22:40:00,2026-02-01
+ORD-20834,CUST-381,Oliver Garcia,oliver.garcia34@testmail.com,Sports & Fitness,Mobile App,Middle East,Credit Card,Delivered,1,61.97,61.97,9.3,52.67,14.99,2026-01-14 18:33:00,2026-01-18
+ORD-20835,CUST-147,Emma Johnson,emma.johnson14@testmail.com,Sports & Fitness,Mobile App,Latin America,Credit Card,Delivered,2,36.44,72.88,0.0,72.88,14.99,2026-02-21 22:44:00,2026-02-27
+ORD-20836,CUST-396,Oliver Rodriguez,oliver.rodriguez95@testmail.com,Books & Media,Affiliate Partner,Middle East,Apple Pay,Returned,1,102.32,102.32,15.35,0.0,9.99,2026-01-15 08:36:00,2026-01-21
+ORD-20837,CUST-197,Charlotte Brown,charlotte.brown33@testmail.com,Beauty & Care,Desktop Web,North America,Apple Pay,Delivered,1,117.8,117.8,5.89,111.91,9.99,2026-01-06 16:55:00,2026-01-08
+ORD-20838,CUST-244,Oliver Rodriguez,oliver.rodriguez21@testmail.com,Electronics,Instagram Ad,Asia-Pacific,Apple Pay,Delivered,1,264.35,264.35,13.22,251.13,4.99,2026-01-20 23:23:00,2026-01-23
+ORD-20839,CUST-380,Sophia Miller,sophia.miller63@testmail.com,Beauty & Care,Desktop Web,Latin America,PayPal,Delivered,1,100.51,100.51,15.08,85.43,14.99,2026-03-13 07:04:00,2026-03-20
+ORD-20840,CUST-230,Lucas Brown,lucas.brown41@testmail.com,Electronics,Desktop Web,Middle East,PayPal,Delivered,1,660.54,660.54,99.08,561.46,4.99,2026-01-27 11:57:00,2026-02-01
+ORD-20841,CUST-197,Liam Garcia,liam.garcia1@testmail.com,Beauty & Care,Mobile App,Europe,Cash on Delivery,Delivered,4,15.46,61.84,12.37,49.47,14.99,2026-02-17 15:27:00,2026-02-19
+ORD-20842,CUST-340,Charlotte Martinez,charlotte.martinez59@testmail.com,Books & Media,Desktop Web,North America,Apple Pay,Cancelled,2,32.53,65.06,9.76,0.0,14.99,2026-01-29 23:55:00,
+ORD-20843,CUST-174,Liam Johnson,liam.johnson10@testmail.com,Sports & Fitness,Direct,Europe,Apple Pay,Delivered,2,21.46,42.92,6.44,36.48,0.0,2026-03-06 18:12:00,2026-03-08
+ORD-20844,CUST-340,Emma Williams,emma.williams13@testmail.com,Beauty & Care,Direct,Asia-Pacific,PayPal,Delivered,4,51.62,206.48,30.97,175.51,14.99,2026-03-04 12:56:00,2026-03-11
+ORD-20845,CUST-308,Lucas Miller,lucas.miller38@testmail.com,Electronics,Instagram Ad,Latin America,Credit Card,Delivered,1,674.35,674.35,101.15,573.2,14.99,2026-02-18 17:45:00,2026-02-24
+ORD-20846,CUST-170,Emma Martinez,emma.martinez87@testmail.com,Sports & Fitness,Affiliate Partner,Europe,UPI,Delivered,2,53.5,107.0,5.35,101.65,9.99,2026-02-06 14:01:00,2026-02-08
+ORD-20847,CUST-110,Sophia Garcia,sophia.garcia47@testmail.com,Fashion & Apparel,Affiliate Partner,Europe,UPI,Delivered,1,121.68,121.68,0.0,121.68,14.99,2026-01-12 08:48:00,2026-01-16
+ORD-20848,CUST-303,Ava Davis,ava.davis91@testmail.com,Beauty & Care,Desktop Web,North America,PayPal,Delivered,1,88.72,88.72,0.0,88.72,0.0,2026-03-05 09:05:00,2026-03-09
+ORD-20849,CUST-406,Olivia Miller,olivia.miller59@testmail.com,Electronics,Mobile App,Europe,Apple Pay,Delivered,1,281.47,281.47,42.22,239.25,9.99,2026-02-14 23:36:00,2026-02-21
+ORD-20850,CUST-341,Charlotte Brown,charlotte.brown73@testmail.com,Fashion & Apparel,Direct,Middle East,UPI,Delivered,2,41.71,83.42,16.68,66.74,14.99,2026-02-15 21:57:00,2026-02-17
+ORD-20851,CUST-353,Liam Jones,liam.jones89@testmail.com,Books & Media,Desktop Web,Middle East,Apple Pay,Returned,3,17.41,52.23,2.61,0.0,0.0,2026-02-19 15:43:00,2026-02-22
+ORD-20852,CUST-442,Olivia Miller,olivia.miller17@testmail.com,Books & Media,Direct,Middle East,UPI,Delivered,1,108.34,108.34,5.42,102.92,14.99,2026-02-09 18:34:00,2026-02-13
+ORD-20853,CUST-263,Ava Smith,ava.smith12@testmail.com,Electronics,Mobile App,Europe,Credit Card,Shipped,1,314.23,314.23,47.13,267.1,0.0,2026-03-11 18:42:00,
+ORD-20854,CUST-263,Lucas Smith,lucas.smith54@testmail.com,Sports & Fitness,Direct,Europe,Apple Pay,Delivered,2,107.31,214.62,10.73,203.89,4.99,2026-01-15 18:41:00,2026-01-18
+ORD-20855,CUST-133,Noah Miller,noah.miller71@testmail.com,Sports & Fitness,Desktop Web,North America,Credit Card,Processing,1,101.18,101.18,20.24,80.94,4.99,2026-01-08 07:37:00,
+ORD-20856,CUST-133,Elijah Rodriguez,elijah.rodriguez43@testmail.com,Electronics,Mobile App,Asia-Pacific,Cash on Delivery,Processing,2,810.23,1620.46,162.05,1458.41,9.99,2026-01-06 11:33:00,
+ORD-20857,CUST-224,Charlotte Martinez,charlotte.martinez99@testmail.com,Fashion & Apparel,Instagram Ad,Middle East,UPI,Shipped,1,93.74,93.74,14.06,79.68,0.0,2026-01-07 14:45:00,
+ORD-20858,CUST-489,Sophia Miller,sophia.miller74@testmail.com,Fashion & Apparel,Instagram Ad,North America,Cash on Delivery,Cancelled,2,91.51,183.02,0.0,0.0,9.99,2026-01-11 10:08:00,
+ORD-20859,CUST-445,Ava Davis,ava.davis95@testmail.com,Beauty & Care,Direct,North America,PayPal,Shipped,3,24.27,72.81,7.28,65.53,4.99,2026-01-29 08:53:00,
+ORD-20860,CUST-171,Noah Smith,noah.smith86@testmail.com,Sports & Fitness,Affiliate Partner,Europe,Cash on Delivery,Delivered,1,76.38,76.38,0.0,76.38,9.99,2026-02-27 22:18:00,2026-03-02
+ORD-20861,CUST-345,Sophia Martinez,sophia.martinez51@testmail.com,Fashion & Apparel,Affiliate Partner,Asia-Pacific,Credit Card,Returned,1,131.96,131.96,0.0,0.0,14.99,2026-01-14 18:51:00,2026-01-19
+ORD-20862,CUST-335,Olivia Rodriguez,olivia.rodriguez52@testmail.com,Sports & Fitness,Desktop Web,Europe,Apple Pay,Delivered,2,17.58,35.16,5.27,29.89,4.99,2026-03-11 22:57:00,2026-03-18
+ORD-20863,CUST-302,Olivia Martinez,olivia.martinez42@testmail.com,Fashion & Apparel,Desktop Web,Latin America,Apple Pay,Delivered,2,55.18,110.36,16.55,93.81,0.0,2026-03-07 22:00:00,2026-03-13
+ORD-20864,CUST-169,Olivia Williams,olivia.williams42@testmail.com,Sports & Fitness,Instagram Ad,Middle East,Cash on Delivery,Shipped,2,40.39,80.78,8.08,72.7,0.0,2026-01-01 20:18:00,
+ORD-20865,CUST-479,Oliver Martinez,oliver.martinez69@testmail.com,Books & Media,Affiliate Partner,Latin America,PayPal,Delivered,1,103.05,103.05,20.61,82.44,9.99,2026-03-19 21:24:00,2026-03-23
+ORD-20866,CUST-392,Emma Garcia,emma.garcia9@testmail.com,Electronics,Mobile App,Asia-Pacific,Credit Card,Cancelled,4,378.4,1513.6,227.04,0.0,4.99,2026-02-26 09:57:00,
+ORD-20867,CUST-120,Olivia Martinez,olivia.martinez8@testmail.com,Home & Kitchen,Affiliate Partner,North America,Cash on Delivery,Delivered,1,117.58,117.58,23.52,94.06,14.99,2026-03-10 20:05:00,2026-03-17
+ORD-20868,CUST-420,Oliver Smith,oliver.smith30@testmail.com,Electronics,Instagram Ad,Asia-Pacific,Cash on Delivery,Delivered,3,458.28,1374.84,206.23,1168.61,0.0,2026-01-24 22:28:00,2026-01-30
+ORD-20869,CUST-240,Emma Williams,emma.williams22@testmail.com,Sports & Fitness,Desktop Web,North America,UPI,Delivered,1,102.74,102.74,0.0,102.74,14.99,2026-02-13 06:04:00,2026-02-20
+ORD-20870,CUST-296,Lucas Smith,lucas.smith22@testmail.com,Books & Media,Instagram Ad,Europe,UPI,Delivered,1,27.5,27.5,5.5,22.0,0.0,2026-01-30 12:26:00,2026-02-05
+ORD-20871,CUST-286,Emma Smith,emma.smith31@testmail.com,Books & Media,Desktop Web,Europe,PayPal,Delivered,1,42.25,42.25,8.45,33.8,14.99,2026-01-23 18:41:00,2026-01-30
+ORD-20872,CUST-125,Elijah Jones,elijah.jones93@testmail.com,Electronics,Direct,North America,PayPal,Delivered,1,394.17,394.17,59.13,335.04,9.99,2026-02-09 18:42:00,2026-02-15
+ORD-20873,CUST-281,Sophia Rodriguez,sophia.rodriguez66@testmail.com,Books & Media,Desktop Web,Asia-Pacific,PayPal,Delivered,2,44.47,88.94,13.34,75.6,14.99,2026-02-17 13:16:00,2026-02-21
+ORD-20874,CUST-322,Noah Jones,noah.jones51@testmail.com,Sports & Fitness,Desktop Web,Middle East,UPI,Shipped,2,104.74,209.48,31.42,178.06,4.99,2026-02-15 23:27:00,
+ORD-20875,CUST-181,Ava Rodriguez,ava.rodriguez99@testmail.com,Home & Kitchen,Desktop Web,Latin America,Apple Pay,Delivered,4,109.61,438.44,43.84,394.6,4.99,2026-02-16 22:30:00,2026-02-18
+ORD-20876,CUST-112,Sophia Martinez,sophia.martinez98@testmail.com,Sports & Fitness,Desktop Web,Asia-Pacific,PayPal,Shipped,2,105.98,211.96,0.0,211.96,9.99,2026-02-01 19:38:00,
+ORD-20877,CUST-334,Ava Garcia,ava.garcia26@testmail.com,Electronics,Direct,North America,Cash on Delivery,Returned,1,644.27,644.27,0.0,0.0,0.0,2026-01-23 23:17:00,2026-01-28
+ORD-20878,CUST-441,Ava Williams,ava.williams81@testmail.com,Sports & Fitness,Desktop Web,Latin America,Apple Pay,Delivered,3,76.98,230.94,23.09,207.85,9.99,2026-01-30 21:58:00,2026-02-02
+ORD-20879,CUST-275,Emma Brown,emma.brown3@testmail.com,Sports & Fitness,Mobile App,Europe,PayPal,Delivered,1,28.93,28.93,0.0,28.93,9.99,2026-03-13 17:07:00,2026-03-17
+ORD-20880,CUST-484,Olivia Rodriguez,olivia.rodriguez63@testmail.com,Electronics,Direct,Europe,Credit Card,Delivered,2,608.73,1217.46,60.87,1156.59,4.99,2026-01-18 20:38:00,2026-01-22
+ORD-20881,CUST-283,Lucas Garcia,lucas.garcia24@testmail.com,Fashion & Apparel,Mobile App,North America,Credit Card,Shipped,1,29.52,29.52,1.48,28.04,14.99,2026-01-19 13:42:00,
+ORD-20882,CUST-383,Elijah Jones,elijah.jones92@testmail.com,Fashion & Apparel,Instagram Ad,Latin America,UPI,Delivered,1,101.87,101.87,20.37,81.5,4.99,2026-02-14 09:44:00,2026-02-16
+ORD-20883,CUST-283,Oliver Garcia,oliver.garcia41@testmail.com,Home & Kitchen,Direct,Asia-Pacific,Apple Pay,Returned,1,23.23,23.23,2.32,0.0,9.99,2026-01-06 08:37:00,2026-01-09
+ORD-20884,CUST-326,Noah Davis,noah.davis33@testmail.com,Beauty & Care,Mobile App,Latin America,UPI,Cancelled,3,58.65,175.95,8.8,0.0,4.99,2026-03-02 11:34:00,
+ORD-20885,CUST-114,Sophia Johnson,sophia.johnson66@testmail.com,Fashion & Apparel,Mobile App,Latin America,PayPal,Shipped,1,161.86,161.86,8.09,153.77,14.99,2026-02-24 11:48:00,
+ORD-20886,CUST-408,Ava Rodriguez,ava.rodriguez56@testmail.com,Electronics,Instagram Ad,Latin America,Apple Pay,Returned,4,406.4,1625.6,81.28,0.0,0.0,2026-01-21 06:37:00,2026-01-27
+ORD-20887,CUST-164,Noah Smith,noah.smith87@testmail.com,Fashion & Apparel,Instagram Ad,North America,Apple Pay,Delivered,1,76.14,76.14,15.23,60.91,4.99,2026-03-05 07:19:00,2026-03-09
+ORD-20888,CUST-146,Sophia Davis,sophia.davis85@testmail.com,Fashion & Apparel,Mobile App,Europe,PayPal,Cancelled,2,173.38,346.76,34.68,0.0,9.99,2026-01-30 22:58:00,
+ORD-20889,CUST-226,Ava Williams,ava.williams33@testmail.com,Electronics,Desktop Web,Europe,Apple Pay,Delivered,1,215.29,215.29,10.76,204.53,0.0,2026-02-08 17:02:00,2026-02-15
+ORD-20890,CUST-199,Olivia Davis,olivia.davis11@testmail.com,Home & Kitchen,Direct,Latin America,UPI,Delivered,1,77.0,77.0,7.7,69.3,9.99,2026-03-19 08:07:00,2026-03-26
+ORD-20891,CUST-347,Charlotte Brown,charlotte.brown16@testmail.com,Beauty & Care,Direct,Middle East,PayPal,Delivered,2,104.85,209.7,41.94,167.76,14.99,2026-01-29 08:56:00,2026-01-31
+ORD-20892,CUST-360,Liam Garcia,liam.garcia15@testmail.com,Electronics,Affiliate Partner,Middle East,Credit Card,Delivered,3,780.47,2341.41,117.07,2224.34,4.99,2026-03-01 10:24:00,2026-03-05
+ORD-20893,CUST-303,Sophia Williams,sophia.williams73@testmail.com,Beauty & Care,Instagram Ad,North America,Cash on Delivery,Delivered,1,25.28,25.28,5.06,20.22,4.99,2026-03-04 13:52:00,2026-03-10
+ORD-20894,CUST-100,Liam Garcia,liam.garcia57@testmail.com,Books & Media,Desktop Web,Latin America,Apple Pay,Shipped,1,68.95,68.95,10.34,58.61,14.99,2026-01-15 06:22:00,
+ORD-20895,CUST-167,Ava Garcia,ava.garcia83@testmail.com,Sports & Fitness,Instagram Ad,North America,PayPal,Processing,1,20.37,20.37,1.02,19.35,0.0,2026-01-26 07:16:00,
+ORD-20896,CUST-331,Sophia Rodriguez,sophia.rodriguez98@testmail.com,Fashion & Apparel,Instagram Ad,Middle East,Credit Card,Delivered,3,51.37,154.11,15.41,138.7,14.99,2026-01-28 15:40:00,2026-02-01
+ORD-20897,CUST-222,Sophia Smith,sophia.smith55@testmail.com,Fashion & Apparel,Mobile App,Middle East,UPI,Delivered,1,78.94,78.94,0.0,78.94,4.99,2026-02-04 19:43:00,2026-02-11
+ORD-20898,CUST-225,Charlotte Rodriguez,charlotte.rodriguez36@testmail.com,Electronics,Mobile App,Europe,Cash on Delivery,Delivered,1,657.76,657.76,0.0,657.76,4.99,2026-01-17 20:11:00,2026-01-19
+ORD-20899,CUST-116,Sophia Smith,sophia.smith99@testmail.com,Electronics,Instagram Ad,Europe,Credit Card,Delivered,1,358.48,358.48,17.92,340.56,4.99,2026-01-13 13:34:00,2026-01-20
+ORD-20900,CUST-432,Charlotte Brown,charlotte.brown90@testmail.com,Beauty & Care,Mobile App,Latin America,Cash on Delivery,Cancelled,1,15.95,15.95,3.19,0.0,0.0,2026-01-16 19:14:00,
+ORD-20901,CUST-281,Elijah Brown,elijah.brown17@testmail.com,Beauty & Care,Affiliate Partner,Latin America,Cash on Delivery,Delivered,1,34.34,34.34,0.0,34.34,0.0,2026-03-17 15:41:00,2026-03-22
+ORD-20902,CUST-153,Liam Jones,liam.jones24@testmail.com,Beauty & Care,Mobile App,Latin America,Credit Card,Shipped,1,73.87,73.87,0.0,73.87,9.99,2026-02-28 09:27:00,
+ORD-20903,CUST-410,Noah Davis,noah.davis61@testmail.com,Electronics,Instagram Ad,North America,Cash on Delivery,Delivered,1,279.85,279.85,27.99,251.86,14.99,2026-01-11 14:51:00,2026-01-18
+ORD-20904,CUST-484,Olivia Martinez,olivia.martinez19@testmail.com,Books & Media,Direct,North America,Cash on Delivery,Delivered,1,61.12,61.12,0.0,61.12,14.99,2026-01-24 20:27:00,2026-01-29
+ORD-20905,CUST-334,Sophia Brown,sophia.brown13@testmail.com,Sports & Fitness,Direct,Europe,Apple Pay,Delivered,4,54.09,216.36,32.45,183.91,4.99,2026-02-18 20:34:00,2026-02-21
+ORD-20906,CUST-135,Noah Rodriguez,noah.rodriguez39@testmail.com,Sports & Fitness,Affiliate Partner,North America,UPI,Shipped,2,90.33,180.66,18.07,162.59,14.99,2026-01-18 12:43:00,
+ORD-20907,CUST-189,Ava Miller,ava.miller81@testmail.com,Books & Media,Desktop Web,Europe,UPI,Delivered,1,62.99,62.99,0.0,62.99,9.99,2026-01-01 15:43:00,2026-01-03
+ORD-20908,CUST-113,Liam Garcia,liam.garcia33@testmail.com,Fashion & Apparel,Direct,North America,Cash on Delivery,Delivered,1,168.08,168.08,16.81,151.27,14.99,2026-02-20 23:47:00,2026-02-25
+ORD-20909,CUST-114,Sophia Garcia,sophia.garcia36@testmail.com,Books & Media,Instagram Ad,Latin America,Cash on Delivery,Returned,1,72.88,72.88,3.64,0.0,0.0,2026-03-07 21:59:00,2026-03-09
+ORD-20910,CUST-438,Charlotte Brown,charlotte.brown83@testmail.com,Books & Media,Instagram Ad,Europe,Apple Pay,Cancelled,1,117.43,117.43,5.87,0.0,0.0,2026-01-30 08:48:00,
+ORD-20911,CUST-141,Olivia Davis,olivia.davis70@testmail.com,Electronics,Affiliate Partner,Europe,PayPal,Delivered,1,651.98,651.98,32.6,619.38,0.0,2026-01-09 07:58:00,2026-01-13
+ORD-20912,CUST-433,Elijah Williams,elijah.williams7@testmail.com,Fashion & Apparel,Instagram Ad,Latin America,Credit Card,Delivered,1,94.18,94.18,18.84,75.34,14.99,2026-03-08 12:01:00,2026-03-10
+ORD-20913,CUST-261,Elijah Garcia,elijah.garcia21@testmail.com,Beauty & Care,Affiliate Partner,Middle East,PayPal,Delivered,2,62.12,124.24,24.85,99.39,0.0,2026-03-15 21:57:00,2026-03-19
+ORD-20914,CUST-104,Olivia Johnson,olivia.johnson56@testmail.com,Books & Media,Mobile App,Middle East,Apple Pay,Delivered,2,73.05,146.1,29.22,116.88,0.0,2026-02-12 19:22:00,2026-02-18
+ORD-20915,CUST-329,Liam Davis,liam.davis23@testmail.com,Fashion & Apparel,Direct,Europe,Credit Card,Delivered,1,96.45,96.45,9.65,86.8,9.99,2026-02-22 12:53:00,2026-02-24
+ORD-20916,CUST-300,Sophia Johnson,sophia.johnson68@testmail.com,Books & Media,Instagram Ad,Latin America,UPI,Delivered,1,103.11,103.11,5.16,97.95,0.0,2026-03-04 23:32:00,2026-03-06
+ORD-20917,CUST-299,Olivia Smith,olivia.smith29@testmail.com,Electronics,Desktop Web,North America,Apple Pay,Delivered,1,606.12,606.12,30.31,575.81,0.0,2026-01-10 19:31:00,2026-01-14
+ORD-20918,CUST-224,Noah Miller,noah.miller61@testmail.com,Electronics,Desktop Web,Middle East,Cash on Delivery,Delivered,2,114.96,229.92,45.98,183.94,0.0,2026-02-12 14:37:00,2026-02-14
+ORD-20919,CUST-178,Olivia Martinez,olivia.martinez62@testmail.com,Home & Kitchen,Direct,Asia-Pacific,Cash on Delivery,Delivered,3,101.13,303.39,15.17,288.22,0.0,2026-01-29 16:44:00,2026-02-03
+ORD-20920,CUST-385,Ava Brown,ava.brown9@testmail.com,Sports & Fitness,Desktop Web,Asia-Pacific,PayPal,Delivered,1,78.02,78.02,3.9,74.12,9.99,2026-01-14 20:51:00,2026-01-18
+ORD-20921,CUST-392,Ava Davis,ava.davis77@testmail.com,Books & Media,Desktop Web,North America,UPI,Cancelled,1,88.1,88.1,13.21,0.0,4.99,2026-01-25 18:51:00,
+ORD-20922,CUST-104,Ava Garcia,ava.garcia99@testmail.com,Home & Kitchen,Mobile App,Middle East,PayPal,Processing,1,37.85,37.85,0.0,37.85,4.99,2026-02-10 13:06:00,
+ORD-20923,CUST-169,Elijah Martinez,elijah.martinez81@testmail.com,Books & Media,Instagram Ad,Asia-Pacific,Cash on Delivery,Shipped,2,53.05,106.1,21.22,84.88,14.99,2026-01-06 19:44:00,
+ORD-20924,CUST-305,Ava Smith,ava.smith66@testmail.com,Sports & Fitness,Instagram Ad,Europe,Credit Card,Delivered,1,114.3,114.3,0.0,114.3,14.99,2026-02-28 21:40:00,2026-03-03
+ORD-20925,CUST-105,Liam Johnson,liam.johnson91@testmail.com,Fashion & Apparel,Desktop Web,Latin America,UPI,Returned,2,43.76,87.52,4.38,0.0,9.99,2026-02-24 20:01:00,2026-03-01
+ORD-20926,CUST-194,Olivia Jones,olivia.jones94@testmail.com,Fashion & Apparel,Desktop Web,Asia-Pacific,Credit Card,Delivered,1,150.45,150.45,22.57,127.88,4.99,2026-03-20 22:56:00,2026-03-27
+ORD-20927,CUST-179,Noah Miller,noah.miller86@testmail.com,Home & Kitchen,Direct,North America,Cash on Delivery,Cancelled,1,46.14,46.14,9.23,0.0,9.99,2026-01-13 15:18:00,
+ORD-20928,CUST-442,Emma Williams,emma.williams95@testmail.com,Beauty & Care,Direct,Asia-Pacific,Credit Card,Delivered,1,108.92,108.92,0.0,108.92,0.0,2026-03-18 15:28:00,2026-03-23
+ORD-20929,CUST-198,Charlotte Miller,charlotte.miller60@testmail.com,Beauty & Care,Mobile App,Latin America,PayPal,Returned,1,35.2,35.2,7.04,0.0,0.0,2026-01-02 15:06:00,2026-01-06
+ORD-20930,CUST-429,Emma Garcia,emma.garcia26@testmail.com,Home & Kitchen,Desktop Web,Asia-Pacific,Credit Card,Delivered,1,22.99,22.99,0.0,22.99,0.0,2026-03-21 07:32:00,2026-03-24
+ORD-20931,CUST-398,Oliver Miller,oliver.miller85@testmail.com,Home & Kitchen,Instagram Ad,Middle East,Cash on Delivery,Delivered,1,55.13,55.13,8.27,46.86,14.99,2026-01-23 07:40:00,2026-01-26
+ORD-20932,CUST-411,Sophia Martinez,sophia.martinez87@testmail.com,Fashion & Apparel,Desktop Web,Europe,UPI,Delivered,1,154.39,154.39,30.88,123.51,4.99,2026-03-10 18:05:00,2026-03-16
+ORD-20933,CUST-197,Emma Martinez,emma.martinez26@testmail.com,Fashion & Apparel,Direct,Europe,PayPal,Delivered,1,140.43,140.43,14.04,126.39,14.99,2026-01-01 18:27:00,2026-01-08
+ORD-20934,CUST-413,Ava Rodriguez,ava.rodriguez33@testmail.com,Sports & Fitness,Instagram Ad,Europe,PayPal,Delivered,4,92.45,369.8,55.47,314.33,14.99,2026-01-27 21:23:00,2026-01-29
+ORD-20935,CUST-275,Emma Rodriguez,emma.rodriguez3@testmail.com,Books & Media,Direct,Europe,PayPal,Processing,1,80.12,80.12,4.01,76.11,9.99,2026-02-01 23:11:00,
+ORD-20936,CUST-411,Elijah Jones,elijah.jones35@testmail.com,Fashion & Apparel,Direct,North America,Cash on Delivery,Processing,3,123.21,369.63,73.93,295.7,9.99,2026-02-14 11:48:00,
+ORD-20937,CUST-268,Elijah Smith,elijah.smith6@testmail.com,Fashion & Apparel,Instagram Ad,Middle East,Apple Pay,Delivered,2,155.12,310.24,46.54,263.7,14.99,2026-02-06 16:13:00,2026-02-10
+ORD-20938,CUST-245,Ava Davis,ava.davis95@testmail.com,Electronics,Instagram Ad,North America,Credit Card,Delivered,2,811.15,1622.3,81.12,1541.18,9.99,2026-03-17 16:17:00,2026-03-20
+ORD-20939,CUST-458,Lucas Miller,lucas.miller83@testmail.com,Beauty & Care,Affiliate Partner,Latin America,Apple Pay,Delivered,1,16.72,16.72,0.0,16.72,14.99,2026-02-27 23:39:00,2026-03-05
+ORD-20940,CUST-466,Emma Miller,emma.miller58@testmail.com,Sports & Fitness,Mobile App,Asia-Pacific,Cash on Delivery,Delivered,4,37.56,150.24,30.05,120.19,9.99,2026-02-26 08:05:00,2026-02-28
+ORD-20941,CUST-110,Liam Garcia,liam.garcia88@testmail.com,Books & Media,Affiliate Partner,Latin America,Apple Pay,Processing,1,72.0,72.0,14.4,57.6,14.99,2026-02-11 06:41:00,
+ORD-20942,CUST-109,Liam Miller,liam.miller36@testmail.com,Books & Media,Direct,Europe,UPI,Delivered,3,118.26,354.78,70.96,283.82,9.99,2026-02-06 12:23:00,2026-02-12
+ORD-20943,CUST-387,Oliver Smith,oliver.smith56@testmail.com,Beauty & Care,Direct,Latin America,Cash on Delivery,Shipped,1,29.25,29.25,2.93,26.32,4.99,2026-01-30 21:21:00,
+ORD-20944,CUST-461,Liam Davis,liam.davis63@testmail.com,Beauty & Care,Instagram Ad,Asia-Pacific,Apple Pay,Delivered,1,117.94,117.94,5.9,112.04,9.99,2026-01-16 15:02:00,2026-01-19
+ORD-20945,CUST-443,Sophia Williams,sophia.williams50@testmail.com,Books & Media,Direct,North America,Apple Pay,Delivered,2,94.67,189.34,28.4,160.94,0.0,2026-02-01 22:41:00,2026-02-05
+ORD-20946,CUST-100,Noah Garcia,noah.garcia98@testmail.com,Sports & Fitness,Direct,North America,Credit Card,Delivered,2,78.11,156.22,0.0,156.22,4.99,2026-01-11 10:28:00,2026-01-17
+ORD-20947,CUST-267,Ava Rodriguez,ava.rodriguez54@testmail.com,Home & Kitchen,Desktop Web,Latin America,Apple Pay,Cancelled,2,20.12,40.24,2.01,0.0,14.99,2026-02-14 22:24:00,
+ORD-20948,CUST-153,Olivia Smith,olivia.smith69@testmail.com,Fashion & Apparel,Affiliate Partner,Asia-Pacific,PayPal,Delivered,2,83.52,167.04,8.35,158.69,4.99,2026-01-28 14:25:00,2026-02-03
+ORD-20949,CUST-282,Liam Williams,liam.williams60@testmail.com,Fashion & Apparel,Desktop Web,Latin America,Credit Card,Delivered,3,162.32,486.96,48.7,438.26,9.99,2026-03-03 07:28:00,2026-03-06
+ORD-20950,CUST-353,Elijah Miller,elijah.miller34@testmail.com,Fashion & Apparel,Affiliate Partner,Latin America,UPI,Cancelled,1,31.38,31.38,6.28,0.0,14.99,2026-02-20 20:34:00,
+ORD-20951,CUST-229,Elijah Garcia,elijah.garcia4@testmail.com,Sports & Fitness,Direct,Europe,PayPal,Shipped,2,104.09,208.18,31.23,176.95,14.99,2026-03-06 16:08:00,
+ORD-20952,CUST-281,Noah Davis,noah.davis11@testmail.com,Books & Media,Affiliate Partner,Latin America,PayPal,Delivered,1,105.99,105.99,15.9,90.09,14.99,2026-01-04 14:55:00,2026-01-07
+ORD-20953,CUST-116,Ava Martinez,ava.martinez83@testmail.com,Books & Media,Direct,North America,Credit Card,Delivered,2,36.84,73.68,14.74,58.94,0.0,2026-02-10 21:49:00,2026-02-13
+ORD-20954,CUST-225,Emma Martinez,emma.martinez68@testmail.com,Home & Kitchen,Mobile App,Asia-Pacific,Apple Pay,Shipped,1,45.5,45.5,4.55,40.95,9.99,2026-02-15 22:09:00,
+ORD-20955,CUST-233,Oliver Miller,oliver.miller60@testmail.com,Home & Kitchen,Desktop Web,Europe,UPI,Delivered,2,111.12,222.24,0.0,222.24,0.0,2026-01-17 19:27:00,2026-01-19
+ORD-20956,CUST-260,Emma Martinez,emma.martinez11@testmail.com,Beauty & Care,Mobile App,Europe,PayPal,Delivered,1,78.0,78.0,15.6,62.4,14.99,2026-03-16 17:52:00,2026-03-21
+ORD-20957,CUST-361,Liam Rodriguez,liam.rodriguez83@testmail.com,Electronics,Direct,Latin America,PayPal,Delivered,2,442.2,884.4,132.66,751.74,0.0,2026-02-21 19:04:00,2026-02-25
+ORD-20958,CUST-462,Sophia Rodriguez,sophia.rodriguez79@testmail.com,Books & Media,Mobile App,Latin America,Cash on Delivery,Delivered,3,102.56,307.68,61.54,246.14,4.99,2026-02-22 18:42:00,2026-03-01
+ORD-20959,CUST-454,Emma Garcia,emma.garcia30@testmail.com,Beauty & Care,Desktop Web,Asia-Pacific,Cash on Delivery,Delivered,2,22.12,44.24,2.21,42.03,4.99,2026-03-17 17:01:00,2026-03-23
+ORD-20960,CUST-179,Emma Williams,emma.williams9@testmail.com,Sports & Fitness,Desktop Web,Asia-Pacific,Credit Card,Delivered,2,80.43,160.86,24.13,136.73,4.99,2026-02-10 14:53:00,2026-02-15
+ORD-20961,CUST-382,Ava Smith,ava.smith76@testmail.com,Home & Kitchen,Mobile App,North America,Cash on Delivery,Delivered,1,62.36,62.36,3.12,59.24,4.99,2026-02-19 18:02:00,2026-02-23
+ORD-20962,CUST-152,Liam Jones,liam.jones3@testmail.com,Books & Media,Instagram Ad,Asia-Pacific,Apple Pay,Delivered,1,49.37,49.37,4.94,44.43,9.99,2026-02-08 15:52:00,2026-02-11
+ORD-20963,CUST-148,Olivia Brown,olivia.brown27@testmail.com,Sports & Fitness,Affiliate Partner,Asia-Pacific,Credit Card,Delivered,4,105.78,423.12,63.47,359.65,9.99,2026-03-10 19:26:00,2026-03-14
+ORD-20964,CUST-373,Liam Brown,liam.brown11@testmail.com,Home & Kitchen,Mobile App,Europe,Credit Card,Delivered,1,109.57,109.57,16.44,93.13,9.99,2026-01-19 17:32:00,2026-01-23
+ORD-20965,CUST-395,Oliver Brown,oliver.brown67@testmail.com,Sports & Fitness,Instagram Ad,Asia-Pacific,UPI,Shipped,2,51.09,102.18,20.44,81.74,0.0,2026-01-16 21:35:00,
+ORD-20966,CUST-149,Ava Johnson,ava.johnson76@testmail.com,Fashion & Apparel,Instagram Ad,Asia-Pacific,PayPal,Returned,1,121.23,121.23,6.06,0.0,4.99,2026-03-08 09:24:00,2026-03-13
+ORD-20967,CUST-259,Noah Jones,noah.jones21@testmail.com,Sports & Fitness,Instagram Ad,North America,Credit Card,Delivered,3,34.85,104.55,5.23,99.32,4.99,2026-01-26 23:04:00,2026-01-30
+ORD-20968,CUST-146,Liam Martinez,liam.martinez12@testmail.com,Home & Kitchen,Instagram Ad,Europe,Credit Card,Delivered,1,31.25,31.25,1.56,29.69,9.99,2026-03-17 09:11:00,2026-03-19
+ORD-20969,CUST-130,Ava Miller,ava.miller40@testmail.com,Electronics,Desktop Web,Asia-Pacific,PayPal,Delivered,4,326.96,1307.84,0.0,1307.84,4.99,2026-02-16 12:54:00,2026-02-18
+ORD-20970,CUST-333,Ava Smith,ava.smith53@testmail.com,Books & Media,Affiliate Partner,North America,Credit Card,Delivered,1,84.68,84.68,8.47,76.21,9.99,2026-03-20 19:23:00,2026-03-26
+ORD-20971,CUST-274,Sophia Brown,sophia.brown20@testmail.com,Beauty & Care,Direct,Asia-Pacific,Credit Card,Delivered,1,57.69,57.69,11.54,46.15,9.99,2026-03-13 11:38:00,2026-03-19
+ORD-20972,CUST-108,Emma Miller,emma.miller8@testmail.com,Home & Kitchen,Mobile App,North America,Credit Card,Cancelled,2,55.16,110.32,16.55,0.0,0.0,2026-02-23 09:58:00,
+ORD-20973,CUST-282,Charlotte Williams,charlotte.williams82@testmail.com,Fashion & Apparel,Direct,North America,Apple Pay,Delivered,4,48.55,194.2,0.0,194.2,14.99,2026-03-10 10:26:00,2026-03-16
+ORD-20974,CUST-481,Sophia Williams,sophia.williams1@testmail.com,Beauty & Care,Affiliate Partner,Middle East,Apple Pay,Processing,1,43.45,43.45,8.69,34.76,0.0,2026-01-19 06:33:00,
+ORD-20975,CUST-115,Emma Garcia,emma.garcia6@testmail.com,Sports & Fitness,Desktop Web,Asia-Pacific,Apple Pay,Delivered,1,88.86,88.86,4.44,84.42,4.99,2026-01-17 10:35:00,2026-01-24
+ORD-20976,CUST-195,Elijah Jones,elijah.jones92@testmail.com,Sports & Fitness,Direct,Europe,PayPal,Delivered,1,51.71,51.71,5.17,46.54,9.99,2026-01-25 23:29:00,2026-01-27
+ORD-20977,CUST-188,Emma Garcia,emma.garcia24@testmail.com,Beauty & Care,Instagram Ad,North America,UPI,Cancelled,1,54.91,54.91,5.49,0.0,0.0,2026-03-22 22:25:00,
+ORD-20978,CUST-231,Ava Smith,ava.smith11@testmail.com,Books & Media,Direct,Latin America,PayPal,Processing,5,116.43,582.15,0.0,582.15,0.0,2026-02-27 18:44:00,
+ORD-20979,CUST-212,Charlotte Martinez,charlotte.martinez66@testmail.com,Sports & Fitness,Direct,Asia-Pacific,UPI,Delivered,1,103.3,103.3,15.49,87.81,4.99,2026-01-05 09:57:00,2026-01-10
+ORD-20980,CUST-137,Charlotte Davis,charlotte.davis27@testmail.com,Sports & Fitness,Instagram Ad,Latin America,Apple Pay,Cancelled,5,117.55,587.75,117.55,0.0,4.99,2026-02-14 19:44:00,
+ORD-20981,CUST-104,Sophia Smith,sophia.smith36@testmail.com,Books & Media,Desktop Web,Europe,Cash on Delivery,Cancelled,2,106.15,212.3,42.46,0.0,14.99,2026-01-03 08:06:00,
+ORD-20982,CUST-366,Elijah Martinez,elijah.martinez76@testmail.com,Home & Kitchen,Affiliate Partner,North America,Cash on Delivery,Cancelled,1,36.77,36.77,0.0,0.0,9.99,2026-03-20 06:13:00,
+ORD-20983,CUST-285,Oliver Brown,oliver.brown30@testmail.com,Sports & Fitness,Desktop Web,Middle East,PayPal,Returned,2,42.26,84.52,16.9,0.0,0.0,2026-02-09 08:37:00,2026-02-16
+ORD-20984,CUST-436,Ava Davis,ava.davis94@testmail.com,Fashion & Apparel,Instagram Ad,Asia-Pacific,Credit Card,Delivered,1,112.48,112.48,5.62,106.86,4.99,2026-02-22 21:13:00,2026-03-01
+ORD-20985,CUST-288,Sophia Davis,sophia.davis85@testmail.com,Electronics,Instagram Ad,Middle East,Cash on Delivery,Delivered,3,335.43,1006.29,50.31,955.98,4.99,2026-02-21 22:47:00,2026-02-26
+ORD-20986,CUST-361,Charlotte Williams,charlotte.williams66@testmail.com,Fashion & Apparel,Instagram Ad,Middle East,Credit Card,Cancelled,1,82.9,82.9,0.0,0.0,14.99,2026-01-15 22:13:00,
+ORD-20987,CUST-382,Oliver Miller,oliver.miller29@testmail.com,Sports & Fitness,Direct,Latin America,Apple Pay,Shipped,1,114.65,114.65,11.47,103.18,9.99,2026-02-22 21:32:00,
+ORD-20988,CUST-276,Elijah Jones,elijah.jones88@testmail.com,Beauty & Care,Direct,Middle East,Apple Pay,Delivered,1,36.07,36.07,5.41,30.66,9.99,2026-02-12 10:05:00,2026-02-15
+ORD-20989,CUST-369,Oliver Martinez,oliver.martinez50@testmail.com,Beauty & Care,Desktop Web,Middle East,Apple Pay,Cancelled,1,44.03,44.03,0.0,0.0,9.99,2026-02-05 23:45:00,
+ORD-20990,CUST-282,Olivia Miller,olivia.miller41@testmail.com,Books & Media,Direct,North America,Cash on Delivery,Shipped,1,38.52,38.52,7.7,30.82,14.99,2026-03-21 21:27:00,
+ORD-20991,CUST-389,Liam Garcia,liam.garcia27@testmail.com,Beauty & Care,Affiliate Partner,North America,Cash on Delivery,Delivered,1,113.21,113.21,0.0,113.21,0.0,2026-02-21 20:33:00,2026-02-27
+ORD-20992,CUST-243,Oliver Rodriguez,oliver.rodriguez19@testmail.com,Fashion & Apparel,Mobile App,Latin America,UPI,Processing,2,114.22,228.44,11.42,217.02,4.99,2026-01-05 08:48:00,
+ORD-20993,CUST-323,Olivia Rodriguez,olivia.rodriguez84@testmail.com,Home & Kitchen,Instagram Ad,Europe,PayPal,Shipped,1,73.1,73.1,14.62,58.48,9.99,2026-03-18 11:30:00,
+ORD-20994,CUST-324,Emma Johnson,emma.johnson96@testmail.com,Beauty & Care,Instagram Ad,Asia-Pacific,Credit Card,Returned,2,22.56,45.12,4.51,0.0,4.99,2026-01-27 12:58:00,2026-01-31
+ORD-20995,CUST-301,Noah Garcia,noah.garcia6@testmail.com,Sports & Fitness,Affiliate Partner,Latin America,Credit Card,Delivered,1,16.66,16.66,0.83,15.83,4.99,2026-02-14 16:16:00,2026-02-18
+ORD-20996,CUST-419,Lucas Miller,lucas.miller74@testmail.com,Books & Media,Direct,Latin America,UPI,Cancelled,2,93.69,187.38,28.11,0.0,9.99,2026-03-05 10:03:00,
+ORD-20997,CUST-282,Liam Johnson,liam.johnson42@testmail.com,Sports & Fitness,Desktop Web,Asia-Pacific,Apple Pay,Shipped,1,92.48,92.48,4.62,87.86,0.0,2026-02-26 10:51:00,
+ORD-20998,CUST-233,Noah Rodriguez,noah.rodriguez28@testmail.com,Fashion & Apparel,Mobile App,Latin America,PayPal,Shipped,1,49.6,49.6,2.48,47.12,14.99,2026-02-10 23:08:00,
+ORD-20999,CUST-142,Lucas Garcia,lucas.garcia86@testmail.com,Books & Media,Affiliate Partner,Asia-Pacific,PayPal,Delivered,2,102.38,204.76,30.71,174.05,9.99,2026-02-20 06:28:00,2026-02-26
+ORD-21000,CUST-257,Lucas Martinez,lucas.martinez78@testmail.com,Electronics,Instagram Ad,Latin America,Apple Pay,Delivered,2,609.75,1219.5,121.95,1097.55,0.0,2026-02-17 17:04:00,2026-02-20

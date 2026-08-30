@@ -6,13 +6,23 @@ from __future__ import annotations
 MCP_SERVER_NAME = "mis-mcp-runtime"
 
 TOOL_NAMES = [
+    "describe_data",
+    "list_business_concepts",
     "describe_schema",
     "get_data_profile",
+    "get_value_set",
     "list_kpis",
     "get_kpi",
-    "run_safe_query",
+    "explain_metric",
+    "compare_kpi",
+    "rank_entities",
+    "breakdown_metric",
+    "query_metric",
     "search_records",
+    "get_record",
+    "get_related_records",
     "render_chart",
+    "run_safe_query",
 ]
 
 

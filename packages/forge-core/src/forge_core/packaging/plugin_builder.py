@@ -15,7 +15,7 @@ import re
 import secrets
 from pathlib import Path
 
-from forge_core.generation import MCP_SERVER_NAME, GeneratedPlugin
+from forge_core.generation import MCP_SERVER_NAME, GeneratedPlugin, GeneratedSkill
 from forge_core.models.bindings import SchemaBindings
 from forge_core.models.datasource import DataSource
 from forge_core.models.industry_pack import IndustryPack
@@ -110,6 +110,35 @@ def _config_files(
         },
     }
 
+    # Derive high-level business context
+    dims, measures, time_cols = [], [], []
+    for t_summary in schema_summary_json["tables"]:
+        for p in t_summary["column_profiles"]:
+            c_name = p["column"]
+            role = p.get("guessed_role", "")
+            if role in ("categorical", "geographic", "boolean_flag"):
+                dims.append(c_name)
+            elif role in ("numeric", "currency"):
+                measures.append(c_name)
+            elif role in ("date", "datetime"):
+                time_cols.append(c_name)
+
+    business_context_json = {
+        "business_domain": pack.slug,
+        "business_process": pack.name,
+        "record_grain": f"one business record per row in {source.tables[0].name}" if source.tables else "one record per row",
+        "entities": [t.name for t in source.tables if t.name in bindings.allowed_tables],
+        "dimensions": list(dict.fromkeys(dims)),
+        "measures": list(dict.fromkeys(measures)),
+        "time_fields": list(dict.fromkeys(time_cols)),
+        "concepts": {
+            "entities": [t.name for t in source.tables if t.name in bindings.allowed_tables],
+            "dimensions": list(dict.fromkeys(dims)),
+            "measures": list(dict.fromkeys(measures)),
+            "events": [f"{t.name}_recorded" for t in source.tables if t.name in bindings.allowed_tables],
+        },
+    }
+
     return [
         GeneratedFile(
             relative_path="config/data_source.json",
@@ -127,6 +156,11 @@ def _config_files(
         GeneratedFile(
             relative_path="config/schema_summary.json",
             content=json.dumps(schema_summary_json, indent=2),
+            is_json=True,
+        ),
+        GeneratedFile(
+            relative_path="config/business_context.json",
+            content=json.dumps(business_context_json, indent=2),
             is_json=True,
         ),
     ]
@@ -279,21 +313,38 @@ def build_plugin_spec(
         userConfig=user_config,
     )
 
-    files: list[GeneratedFile] = [
-        GeneratedFile(
-            relative_path=f"skills/{generated.skill_name}/SKILL.md",
-            content=render_frontmatter(
-                generated.skill_frontmatter.to_frontmatter_dict(), generated.skill_body
-            ),
-        ),
+    files: list[GeneratedFile] = []
+    skills_to_package = (
+        generated.skills
+        if generated.skills
+        else [
+            GeneratedSkill(
+                name=generated.skill_name,
+                frontmatter=generated.skill_frontmatter,
+                body=generated.skill_body,
+            )
+        ]
+    )
+    for skill in skills_to_package:
+        files.append(
+            GeneratedFile(
+                relative_path=f"skills/{skill.name}/SKILL.md",
+                content=render_frontmatter(
+                    skill.frontmatter.to_frontmatter_dict(), skill.body
+                ),
+            )
+        )
+    files.append(
         GeneratedFile(
             relative_path=f"agents/{generated.agent_name}.md",
             content=render_frontmatter(
                 generated.agent_frontmatter.to_frontmatter_dict(), generated.agent_body
             ),
-        ),
-        GeneratedFile(relative_path="artifacts/dashboard.html", content=generated.dashboard_html),
-    ]
+        )
+    )
+    files.append(
+        GeneratedFile(relative_path="artifacts/dashboard.html", content=generated.dashboard_html)
+    )
     for command in generated.commands:
         files.append(
             GeneratedFile(

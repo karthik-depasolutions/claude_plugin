@@ -45,6 +45,12 @@ HIGH_NULL_THRESHOLD = 40.0
 MIXED_TYPE_MIN_RATIO = 0.05
 MIXED_TYPE_MAX_RATIO = 0.95
 MAX_TOP_VALUES = 5
+# Numeric outlier detection (Tukey's IQR rule) - the one gap the cardinality-capped
+# categorical checks above can't cover: continuous columns (amounts, durations) that
+# are exactly the high-cardinality case _is_eligible excludes.
+OUTLIER_IQR_MULTIPLIER = 1.5
+MIN_NUMERIC_COUNT_FOR_OUTLIERS = 20
+OUTLIER_FRACTION_THRESHOLD = 0.01
 
 Histogram = dict[str, int]
 
@@ -67,6 +73,12 @@ def _is_eligible(col: ColumnProfile) -> bool:
 
 def _is_numeric(col: ColumnProfile) -> bool:
     return _base_type(col.dtype) in _NUMERIC_DUCKDB_TYPES
+
+
+def _is_numeric_eligible(col: ColumnProfile) -> bool:
+    # No cardinality cap (unlike _is_eligible) - continuous columns are exactly
+    # the high-cardinality case the categorical histogram check excludes.
+    return not col.is_likely_pii and not col.is_likely_identifier and col.cardinality > 1 and _is_numeric(col)
 
 
 def _looks_numeric(value: str) -> bool:
@@ -118,6 +130,46 @@ def _frequency_scan(
         numlike = int(row[f"numlike_{i}"]) if wants_numlike[i] else None
         result[col.name] = (hist, numlike)
     return result
+
+
+def _quantile_scan(
+    con: duckdb.DuckDBPyConnection, table: TableDescriptor, cols: list[ColumnProfile]
+) -> dict[str, tuple[float, float, int]]:
+    """One scan for the whole table's eligible numeric columns: {column_name: (q1, q3, non_null_count)}."""
+    if not cols:
+        return {}
+    aggregates: list[str] = []
+    for i, col in enumerate(cols):
+        quoted = f'"{col.name}"'
+        aggregates.append(f'quantile_cont({quoted}, 0.25) AS q1_{i}')
+        aggregates.append(f'quantile_cont({quoted}, 0.75) AS q3_{i}')
+        aggregates.append(f'COUNT({quoted}) AS n_{i}')
+    sql = f"SELECT {', '.join(aggregates)} FROM {table.physical_ref}"
+    row = con.execute(sql).fetchdf().iloc[0]
+
+    result: dict[str, tuple[float, float, int]] = {}
+    for i, col in enumerate(cols):
+        q1, q3 = row[f"q1_{i}"], row[f"q3_{i}"]
+        if q1 is None or q3 is None:  # all-NULL column
+            continue
+        result[col.name] = (float(q1), float(q3), int(row[f"n_{i}"]))
+    return result
+
+
+def _outlier_count_scan(
+    con: duckdb.DuckDBPyConnection, table: TableDescriptor, bounds: dict[str, tuple[float, float]]
+) -> dict[str, int]:
+    """One scan for outlier counts, given IQR bounds already computed per column."""
+    if not bounds:
+        return {}
+    names = list(bounds)
+    aggregates = [
+        f'COUNT(*) FILTER (WHERE "{name}" < {bounds[name][0]!r} OR "{name}" > {bounds[name][1]!r}) AS oc_{i}'
+        for i, name in enumerate(names)
+    ]
+    sql = f"SELECT {', '.join(aggregates)} FROM {table.physical_ref}"
+    row = con.execute(sql).fetchdf().iloc[0]
+    return {name: int(row[f"oc_{i}"]) for i, name in enumerate(names)}
 
 
 def _check_high_null(col: ColumnProfile) -> QualityFinding | None:
@@ -231,6 +283,29 @@ def _check_mixed_types(col: ColumnProfile, hist: Histogram, numlike_count: int |
     )
 
 
+def _check_numeric_outliers(
+    col: ColumnProfile, q1: float, q3: float, non_null_count: int, outlier_count: int
+) -> QualityFinding | None:
+    if non_null_count < MIN_NUMERIC_COUNT_FOR_OUTLIERS or outlier_count == 0:
+        return None
+    fraction = outlier_count / non_null_count
+    if fraction < OUTLIER_FRACTION_THRESHOLD:
+        return None
+    iqr = q3 - q1
+    lower, upper = q1 - OUTLIER_IQR_MULTIPLIER * iqr, q3 + OUTLIER_IQR_MULTIPLIER * iqr
+    return QualityFinding(
+        id=f"numeric_outlier:{col.table}.{col.name}",
+        code="numeric_outlier",
+        severity=Severity.MEDIUM,
+        table=col.table,
+        column=col.name,
+        summary=(
+            f'{outlier_count:,} of {non_null_count:,} non-null values ({fraction * 100:.1f}%) in '
+            f'"{col.name}" fall outside the typical range ({lower:,.2f} to {upper:,.2f}, by the IQR rule).'
+        ),
+    )
+
+
 _SEVERITY_RANK = {Severity.HIGH: 0, Severity.MEDIUM: 1, Severity.LOW: 2}
 
 
@@ -282,6 +357,21 @@ def analyze_quality(
                 if found:
                     findings.append(found)
 
+        numeric_eligible = [c for c in cols if _is_numeric_eligible(c)]
+        quantiles = _quantile_scan(con, table, numeric_eligible)
+        bounds = {
+            name: (q1 - OUTLIER_IQR_MULTIPLIER * (q3 - q1), q3 + OUTLIER_IQR_MULTIPLIER * (q3 - q1))
+            for name, (q1, q3, _n) in quantiles.items()
+        }
+        outlier_counts = _outlier_count_scan(con, table, bounds)
+        for col in numeric_eligible:
+            if col.name not in quantiles:
+                continue
+            q1, q3, non_null_count = quantiles[col.name]
+            found = _check_numeric_outliers(col, q1, q3, non_null_count, outlier_counts.get(col.name, 0))
+            if found:
+                findings.append(found)
+
     findings.sort(key=lambda f: (_SEVERITY_RANK[f.severity], f.code, f.table, f.column))
     return findings, skipped_tables
 
@@ -301,6 +391,7 @@ _FALLBACK_QUESTIONS: dict[str, str] = {
     "inconsistent_format": 'Should the different spellings in "{column}" be treated as the same value?',
     "mixed_types": 'What do the numeric-looking values mixed into "{column}" mean?',
     "single_value": 'Is the single value in "{column}" a placeholder, or is it meaningful?',
+    "numeric_outlier": 'Are the unusually large or small values in "{column}" real, or data-entry errors?',
 }
 
 
