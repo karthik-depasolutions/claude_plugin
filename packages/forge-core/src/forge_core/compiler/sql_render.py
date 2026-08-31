@@ -28,7 +28,10 @@ def _sql_string_list(values: list[str]) -> str:
 
 def render_sql(template: str, bindings: SchemaBindings) -> str:
     table_by_alias = {t.alias: t.physical for t in bindings.tables}
-    column_by_role = {c.role: c.physical for c in bindings.columns}
+    # role -> (table_alias, physical_column). A "fact" (primary-table) role
+    # renders as a bare quoted column; a cross-table role is qualified with
+    # the related table so it's unambiguous after the compiler adds the JOIN.
+    column_by_role = {c.role: (c.table_alias, c.physical) for c in bindings.columns}
     value_set_by_name = {v.name: v.values for v in bindings.value_sets}
 
     def _replace(match: re.Match[str]) -> str:
@@ -36,7 +39,10 @@ def render_sql(template: str, bindings: SchemaBindings) -> str:
         if token in table_by_alias:
             return table_by_alias[token]
         if token in column_by_role:
-            return f'"{column_by_role[token]}"'
+            alias, physical = column_by_role[token]
+            if alias == "fact" or alias not in table_by_alias:
+                return f'"{physical}"'
+            return f'"{table_by_alias[alias]}"."{physical}"'
         if token in value_set_by_name:
             return _sql_string_list(value_set_by_name[token])
         raise UnresolvedTokenError(token)

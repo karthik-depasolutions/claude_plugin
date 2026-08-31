@@ -13,12 +13,21 @@ BOOKINGS_CSV = REPO_ROOT / "fixtures" / "datasets" / "bookings.csv"
 RETAIL_ORDERS_DIR = REPO_ROOT / "fixtures" / "datasets" / "retail_orders"
 
 
-async def _wait_for_terminal(client: AsyncClient, run_id: str, timeout: float = 90.0) -> dict:
+async def _wait_for_terminal(
+    client: AsyncClient, run_id: str, timeout: float = 90.0, *, auto_answer: bool = True
+) -> dict:
+    """Waits for succeeded/failed. `auto_answer` transparently skips the
+    pre-synthesis data-clarification pause (a POST of empty answers) so tests
+    that only care about the end state don't have to; it still returns on a
+    classify-stage `needs_input` (industry confirmation)."""
     loop = asyncio.get_event_loop()
     deadline = loop.time() + timeout
     while loop.time() < deadline:
-        response = await client.get(f"/runs/{run_id}")
-        data = response.json()
+        data = (await client.get(f"/runs/{run_id}")).json()
+        if data["status"] == "needs_input" and auto_answer and data.get("current_stage") == "profile":
+            await client.post(f"/runs/{run_id}/answers", json={"answers": {}})
+            await asyncio.sleep(0.3)
+            continue
         if data["status"] in ("succeeded", "failed", "needs_input"):
             return data
         await asyncio.sleep(0.3)
@@ -52,6 +61,28 @@ async def test_full_run_lifecycle_succeeds_and_is_downloadable(client: AsyncClie
     confirm_url = f"/runs/{run_id}/confirm-industry"
     confirm_after_success = await client.post(confirm_url, json={"industry": "finance"})
     assert confirm_after_success.status_code == 409
+    # /answers is likewise a NEEDS_INPUT-only resume, 409 once the run is done
+    answers_after_success = await client.post(f"/runs/{run_id}/answers", json={"answers": {}})
+    assert answers_after_success.status_code == 409
+
+
+async def test_data_clarification_pause_can_be_answered(client: AsyncClient):
+    create = await client.post("/runs", json={"source_path": str(BOOKINGS_CSV)})
+    run_id = create.json()["run_id"]
+
+    paused = await _wait_for_terminal(client, run_id, auto_answer=False)
+    if paused["status"] == "needs_input" and paused.get("current_stage") == "profile":
+        detail = (await client.get(f"/runs/{run_id}")).json()
+        questions = detail["data_review"]["questions"]
+        assert questions, "a profile-stage pause must carry questions"
+        resumed = await client.post(
+            f"/runs/{run_id}/answers", json={"answers": {questions[0]["id"]: "a clarification"}}
+        )
+        assert resumed.status_code == 200
+        final = await _wait_for_terminal(client, run_id)
+        assert final["status"] in ("succeeded", "needs_input")  # may still pause for industry
+    else:
+        assert paused["status"] in ("succeeded", "needs_input")
 
 
 async def test_upload_accepts_multiple_csv_files_as_one_multi_table_run(client: AsyncClient):

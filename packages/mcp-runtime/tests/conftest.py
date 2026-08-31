@@ -22,6 +22,8 @@ def bookings_config_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path
     from forge_core.ingestion.registry import ingest
     from forge_core.models.schema_profile import SchemaProfile
     from forge_core.profiling import build_structural_only
+    from forge_core.profiling.synthesis import build_schema_model
+    from forge_core.testing import FakeLLMProvider
 
     source = REPO_ROOT / "fixtures" / "datasets" / "bookings.csv"
     ds = ingest(source)
@@ -31,9 +33,11 @@ def bookings_config_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path
     pack = load_pack(REPO_ROOT / "industry-packs" / "healthcare-diagnostics")
     bindings = resolve_bindings(profile, pack)
     kpi_defs = compile_all(pack, bindings)
+    schema_model = build_schema_model(structural, ds, FakeLLMProvider(), cache_dir=tmp_path / "cache")
 
     config_dir = tmp_path / "config"
     config_dir.mkdir()
+    (config_dir / "schema_model.json").write_text(schema_model.model_dump_json(), encoding="utf-8")
 
     table = ds.tables[0]
     data_source_json = {
@@ -55,6 +59,7 @@ def bookings_config_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path
         bindings.model_dump_json(), encoding="utf-8"
     )
     (config_dir / "kpi_defs.json").write_text(kpi_defs.model_dump_json(), encoding="utf-8")
+    denied = set(bindings.denied_columns)
     (config_dir / "schema_summary.json").write_text(
         json.dumps(
             {
@@ -63,7 +68,18 @@ def bookings_config_dir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path
                     "max_query_rows": pack.guardrails.max_query_rows,
                     "query_timeout_seconds": pack.guardrails.query_timeout_seconds,
                 },
-                "tables": [{"name": table.name, "columns": [c.name for c in table.columns]}],
+                "tables": [
+                    {
+                        "name": table.name,
+                        "columns": [c.name for c in table.columns],
+                        "column_profiles": [
+                            {"column": c.name, "guessed_role": c.guessed_role.value,
+                             "null_percent": c.null_percent, "cardinality": c.cardinality}
+                            for c in structural.columns_for(table.name)
+                            if c.name not in denied
+                        ],
+                    }
+                ],
             }
         ),
         encoding="utf-8",

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from typing import Any
 
 from forge_core.llm.provider import LLMError, LLMProvider
@@ -22,12 +23,17 @@ class GeminiProvider(LLMProvider):
                 "or set FORGE_LLM_CASSETTE_MODE=replay to use recorded fixtures."
             )
         self._client = None  # lazy — keeps import cost out of code paths that use cassettes only
+        self._client_lock = threading.Lock()
 
     def _get_client(self):
+        # Double-checked lock: synthesis fans the per-table calls across a
+        # thread pool, so the lazy init must not race.
         if self._client is None:
-            from google import genai
+            with self._client_lock:
+                if self._client is None:
+                    from google import genai
 
-            self._client = genai.Client(api_key=self._api_key)
+                    self._client = genai.Client(api_key=self._api_key)
         return self._client
 
     def generate_json(self, prompt: str, *, system: str | None = None) -> dict[str, Any]:

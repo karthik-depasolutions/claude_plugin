@@ -8,6 +8,22 @@ recipes, and customer-specific configuration)
 
 ------------------------------------------------------------------------
 
+> **Amendments (improvement plan).** Since this doc was written: the LLM
+> understanding phase is **mandatory** (no `--no-llm` / deterministic-only
+> run) and now includes a synthesis pass that ships `config/schema_model.json`
+> — per-table docs, enum decodes, pattern notes, and a dry-run-verified
+> NL→SQL cookbook — served to the client as `schema://` MCP resources.
+> Profiling gained composite-key grain, generous relationship recall
+> (`strong`/`weak`, empty when unrelated), value-set capture, and
+> statistical pattern mining. **All** ingested tables are queryable, not
+> just the pack's primary fact table; relationships are optional. The
+> `is_likely_pii` heuristic, sample redaction, and the `pii_scan` validation
+> check were **removed** — the harness is 7 checks. See
+> [architecture.md](architecture.md) and [generator-flow.md](generator-flow.md)
+> for the current flow.
+
+------------------------------------------------------------------------
+
 ## 1. Executive Summary
 
 The product is a **meta-product / plugin compiler**.

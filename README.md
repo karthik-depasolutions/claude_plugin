@@ -32,7 +32,8 @@ Concretely:
 - The **binding resolver** (`packages/forge-core/src/forge_core/binding/`) maps a specific customer's real columns onto those canonical roles and writes `config/schema_bindings.json`.
 - The **KPI compiler** (`packages/forge-core/src/forge_core/compiler/`) joins pack KPI + bindings into concrete, `sqlglot`-validated SQL in `config/kpi_defs.json`. The LLM never writes executable code that ships to a customer — only proposals that get compiled and verified.
 - The **generic MCP runtime** (`packages/mcp-runtime/`) is one implementation that executes `config/*.json` for every customer. It is versioned and shipped independently of any single generated plugin.
-- Everything generated must pass the **validation harness** (`packages/forge-core/src/forge_core/validation/harness.py`) before packaging — schema fact-check, SQL safety, DuckDB dry-run, PII scan, plugin-spec validation, the real `claude plugin validate --strict`, an MCP stdio smoke test, and an LLM self-critique pass.
+- The **understanding phase is mandatory**: after deterministic profiling (structure, relationships, grain, value sets, statistical patterns) an LLM pass synthesizes `config/schema_model.json` — the knowledge pack the plugin ships (per-table docs, enum decodes, pattern notes, a dry-run-verified query cookbook). The MCP runtime serves it to any client as `schema://` resources and folds its overview + caveats into the server `instructions`.
+- Everything generated must pass the **validation harness** (`packages/forge-core/src/forge_core/validation/harness.py`) before packaging — schema fact-check, SQL safety, DuckDB dry-run, plugin-spec validation, the real `claude plugin validate --strict`, an MCP stdio smoke test, and an LLM self-critique pass (7 checks).
 
 ## Repository layout
 
@@ -56,10 +57,10 @@ See [docs/architecture.md](docs/architecture.md) for the full data flow and [doc
 
 ```bash
 uv sync --all-packages --dev
-cp .env.example .env   # set GEMINI_API_KEY
+cp .env.example .env   # GEMINI_API_KEY is required — the understanding phase is not optional
 
 # Generate a plugin from the bundled sample dataset (the full pipeline,
-# including the 8-check validation harness, runs as part of `forge run`)
+# including the 7-check validation harness, runs as part of `forge run`)
 uv run forge run fixtures/datasets/bookings.csv --out generated/demo
 
 # Re-check just the plugin-spec structural rules against packaged output
@@ -76,7 +77,7 @@ uv run --package forge-api uvicorn forge_api.main:app --reload --port 8420
 # API:  http://localhost:8420/docs
 
 curl -X POST localhost:8420/runs -H 'content-type: application/json' \
-  -d '{"source_path": "fixtures/datasets/bookings.csv", "use_llm": false}'
+  -d '{"source_path": "fixtures/datasets/bookings.csv"}'
 ```
 
 Run the web wizard against that API without Docker:

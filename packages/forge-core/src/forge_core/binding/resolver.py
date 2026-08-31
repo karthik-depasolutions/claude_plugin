@@ -22,6 +22,7 @@ from forge_core.llm.provider import LLMProvider
 from forge_core.models.bindings import ColumnBinding, SchemaBindings, TableBinding, ValueSetBinding
 from forge_core.models.datasource import DataSource
 from forge_core.models.industry_pack import IndustryPack
+from forge_core.models.schema_model import RelationshipDoc
 from forge_core.models.schema_profile import ColumnProfile, SchemaProfile
 from forge_core.runtime_session import open_session
 
@@ -30,13 +31,14 @@ MAX_DISTINCT_VALUES_SCANNED = 50
 
 
 def _is_denied(column: ColumnProfile, pack: IndustryPack) -> bool:
-    return (
-        column.is_likely_pii
-        or column.guessed_role.value in pack.guardrails.denied_role_categories
-    )
+    return column.guessed_role.value in pack.guardrails.denied_role_categories
 
 
-def pick_fact_table(profile: SchemaProfile, pack: IndustryPack) -> str:
+def pick_primary_table(profile: SchemaProfile, pack: IndustryPack) -> str:
+    """The one table pack KPIs bind their roles against (the `{{fact}}`
+    template token). Every other ingested table is still queryable and a
+    role a KPI needs but the primary lacks can bind to a directly-related
+    table - see `_resolve_cross_table`."""
     tables = profile.source.tables
     if len(tables) == 1:
         return tables[0].name
@@ -191,37 +193,135 @@ def resolve_bindings(
     use_agent: bool = False,
 ) -> SchemaBindings:
     overrides = overrides or {}
-    fact_table_name = pick_fact_table(profile, pack)
-    fact_table = profile.source.table(fact_table_name)
-    table_cols = [c for c in profile.structural.columns if c.table == fact_table_name]
-    denied_columns = sorted(c.name for c in table_cols if _is_denied(c, pack))
-    bindable_cols = [c for c in table_cols if not _is_denied(c, pack)]
+    primary_table_name = pick_primary_table(profile, pack)
+    primary_table = profile.source.table(primary_table_name)
+    # KPI roles bind against the primary table first, but *every* ingested
+    # table is exposed for querying, and a role the primary lacks can bind to
+    # a directly-related table (see _resolve_cross_table). A denied role
+    # category (free_text) is stripped wherever it appears.
+    primary_cols = [c for c in profile.structural.columns if c.table == primary_table_name]
+    denied_columns = sorted({c.name for c in profile.structural.columns if _is_denied(c, pack)})
+    bindable_cols = [c for c in primary_cols if not _is_denied(c, pack)]
 
     columns, unresolved = _resolve_columns(
-        fact_table_name,
+        primary_table_name,
         bindable_cols,
         pack,
         provider=provider,
         overrides=overrides,
         source=profile.source,
-        fact_table_physical_ref=fact_table.physical_ref,
+        fact_table_physical_ref=primary_table.physical_ref,
         use_agent=use_agent,
     )
 
-    value_sets = _resolve_value_sets(pack, fact_table.physical_ref, columns, profile)
+    table_bindings = [
+        TableBinding(alias="fact", physical=primary_table.physical_ref, grain=primary_table_name)
+    ]
+    # A role can also bind to a table one verified relationship hop away -
+    # tried for roles the primary left unresolved, and for roles the primary
+    # bound only weakly (a category match with no real name signal), where a
+    # clearly-better related column should win.
+    _WEAK = 0.55
+    primary_conf = {c.role: c.confidence for c in columns if c.source == "deterministic"}
+    candidates = [*unresolved, *(r for r, c in primary_conf.items() if c < _WEAK)]
+    cross = _resolve_cross_table(candidates, pack, profile, primary_table_name, denied_columns)
+    for cb, tb in cross:
+        prior = primary_conf.get(cb.role)
+        if prior is not None and cb.confidence <= prior + 0.1:
+            continue  # the primary's weak bind still stands - not a clear enough improvement
+        columns = [c for c in columns if c.role != cb.role]
+        columns.append(cb)
+        if all(existing.alias != tb.alias for existing in table_bindings):
+            table_bindings.append(tb)
+    bound_cross = {cb.role for cb, _ in cross}
+    still_unresolved = [r for r in unresolved if r not in bound_cross]
+
+    value_sets = _resolve_value_sets(pack, primary_table.physical_ref, columns, profile)
 
     return SchemaBindings(
         pack_slug=pack.slug,
         data_source_id=profile.data_source_id,
-        tables=[
-            TableBinding(alias="fact", physical=fact_table.physical_ref, grain=fact_table_name)
-        ],
+        tables=table_bindings,
         columns=columns,
         value_sets=value_sets,
-        allowed_tables=[fact_table.physical_ref],
+        allowed_tables=[t.physical_ref for t in profile.source.tables],
+        relationships=[
+            RelationshipDoc(
+                from_ref=f"{r.from_table}.{r.from_column}",
+                to_ref=f"{r.to_table}.{r.to_column}",
+                strength=r.strength,
+            )
+            for r in profile.structural.relationships
+        ],
         denied_columns=denied_columns,
-        unresolved_roles=unresolved,
+        unresolved_roles=still_unresolved,
     )
+
+
+def _resolve_cross_table(
+    roles: list[str],
+    pack: IndustryPack,
+    profile: SchemaProfile,
+    primary_table_name: str,
+    denied_columns: list[str],
+) -> list[tuple[ColumnBinding, TableBinding]]:
+    """For each role, try the best column on a table one verified relationship
+    hop from the primary. The caller decides whether it beats an existing bind."""
+    if not roles:
+        return []
+
+    physical = {t.name: t.physical_ref for t in profile.source.tables}
+    # table_name -> ON expression joining it to the primary
+    joinable: dict[str, str] = {}
+    for r in profile.structural.relationships:
+        p = physical.get(primary_table_name)
+        if r.from_table == primary_table_name and r.to_table in physical:
+            joinable[r.to_table] = (
+                f'"{p}"."{r.from_column}" = "{physical[r.to_table]}"."{r.to_column}"'
+            )
+        elif r.to_table == primary_table_name and r.from_table in physical:
+            joinable[r.from_table] = (
+                f'"{p}"."{r.to_column}" = "{physical[r.from_table]}"."{r.from_column}"'
+            )
+
+    denied = set(denied_columns)
+    out: list[tuple[ColumnBinding, TableBinding]] = []
+    for role in roles:
+        hints = tuple(pack.role_hints.get(role, ()))
+        best: tuple[float, str, str] | None = None  # (confidence, table_name, column_name)
+        for table_name in joinable:
+            cols = [
+                c
+                for c in profile.structural.columns
+                if c.table == table_name and c.name not in denied
+            ]
+            candidate = best_candidate(role, cols, hints)
+            if candidate and candidate.confidence >= MIN_BIND_CONFIDENCE and (
+                best is None or candidate.confidence > best[0]
+            ):
+                best = (candidate.confidence, table_name, candidate.column.name)
+        if best is None:
+            continue
+        _, table_name, column_name = best
+        out.append(
+            (
+                ColumnBinding(
+                    role=role,
+                    table_alias=table_name,
+                    physical=column_name,
+                    confidence=best[0],
+                    evidence=f"resolved on related table {table_name!r} (one relationship hop)",
+                    source="cross_table",
+                ),
+                TableBinding(
+                    alias=table_name,
+                    physical=physical[table_name],
+                    grain=table_name,
+                    join_on=joinable[table_name],
+                ),
+            )
+        )
+    return out
 
 
 def now_iso() -> str:

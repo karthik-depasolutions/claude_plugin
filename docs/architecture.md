@@ -43,9 +43,21 @@ Each stage is a pure function over the previous stage's typed output
    customer's own environment at query time.
 2. **Profile** (`forge_core/profiling/`) — deterministic per-column stats,
    structural role inference (`identifier`, `currency`, `date`, ...),
-   PK/FK/join-candidate detection, and table grain inference. An optional
-   LLM semantic layer annotates the profile with business-meaning summaries
-   from metadata and capped samples only (see [security.md](security.md)).
+   PK/FK/join-candidate detection (name-variant matching + value-overlap
+   verification; a `strong`/`weak` strength, empty when the tables are
+   unrelated), single- and composite-column grain inference, full value-set
+   capture for low-cardinality columns, and statistical pattern mining
+   (correlation, monthly temporal trend/seasonality, functional
+   dependencies, redundant columns). Then a **mandatory** LLM synthesis pass
+   (`profiling/synthesis.py`) turns all of that into `SchemaModel` — the
+   knowledge pack: per-table purpose/role/grain, per-column meaning + enum
+   decode, actionable pattern notes, and a natural-language→SQL cookbook.
+   Every table/column reference is fact-checked against the structural
+   profile and every cookbook query is executed once against the real data
+   before it is kept. The result is cached on disk by a hash of the
+   structural facts, so an unchanged schema is never re-synthesized. No
+   provider configured ⇒ the run fails fast; there is no deterministic-only
+   fallback.
 3. **Classify** (`forge_core/classification/`) — scores every
    `industry-packs/*/signatures.json` against the profile (entity-name
    hints, column-name hints, required canonical roles, table-count range)
@@ -53,11 +65,14 @@ Each stage is a pure function over the previous stage's typed output
    the orchestrator pauses (`RunStatus.NEEDS_INPUT`) for a human to pick.
 4. **Bind** (`forge_core/binding/`) — the deterministic scorer
    (`scorer.py`) maps each canonical role the chosen pack needs (e.g.
-   `revenue_amount`) to a real `table.column`, using pack-authored hints and
-   token overlap. Whatever it can't resolve, an LLM proposer attempts;
-   whatever neither can resolve stays `unresolved` and any KPI that
-   requires it is skipped (or the whole run pauses if the caller wants to
-   supply overrides — see `binding_overrides`).
+   `revenue_amount`) to a real `table.column` on the one **primary** table,
+   using pack-authored hints and token overlap. Whatever it can't resolve,
+   an LLM proposer attempts; whatever neither can resolve stays `unresolved`
+   and any KPI that requires it is skipped (or the whole run pauses if the
+   caller wants to supply overrides — see `binding_overrides`). Pack KPIs
+   bind to the primary table only, but **every** ingested table is exposed
+   for querying (`allowed_tables`), and verified relationships (possibly
+   empty) are carried through for the runtime to serve.
 5. **Compile** (`forge_core/compiler/`) — joins each pack KPI's canonical
    SQL template with the resolved bindings, renders concrete SQL, and
    validates it with `sqlglot`. The LLM never touches this step — it only
@@ -66,11 +81,20 @@ Each stage is a pure function over the previous stage's typed output
    `SKILL.md`, a deep-dive subagent, one slash command per recipe, a
    `SessionStart` guardrail hook, and a static KPI-snapshot dashboard
    computed by actually executing the compiled SQL.
-7. **Validate** (`forge_core/validation/harness.py`) — eight checks gate
-   packaging; see [security.md](security.md) for what each one catches.
+7. **Validate** (`forge_core/validation/harness.py`) — seven checks gate
+   packaging (schema fact-check, SQL safety, DuckDB dry-run, plugin-spec,
+   the real `claude plugin validate --strict`, an MCP stdio smoke test, and
+   an LLM self-critique). A dedicated PII scanner was removed along with the
+   `is_likely_pii` heuristic; denied-column enforcement now covers only
+   pack-declared role categories (e.g. `free_text`).
 8. **Package** (`forge_core/packaging/`) — assembles a `PluginSpec`,
    bundles the generic MCP runtime, and writes a BOM-less, spec-compliant
-   plugin directory (see [plugin-format.md](plugin-format.md)).
+   plugin directory (see [plugin-format.md](plugin-format.md)). `config/`
+   carries `schema_model.json` (the knowledge pack) and `schema_summary.json`
+   (structural reference, including each column's guessed role); the old
+   `business_context.json` is gone. The MCP runtime loads `schema_model.json`
+   and exposes it as `schema://overview|model|relationships|patterns|cookbook|profile`
+   resources, and builds the server `instructions` from its overview + caveats.
 9. **Publish** (`forge_core/publishing/`) — copy/zip locally, push to a
    customer-specific GitHub repo, or add to a central marketplace catalog.
 

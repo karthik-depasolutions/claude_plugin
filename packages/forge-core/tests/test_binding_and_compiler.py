@@ -27,8 +27,7 @@ def test_bookings_binds_and_compiles_all_kpis(bookings_csv: Path):
     assert bindings.unresolved_roles == []
     assert bindings.column("revenue_amount") is not None
     assert bindings.column("revenue_amount").physical == "amount_inr"
-    # PII columns must never be bindable/projectable.
-    assert "phone" in bindings.denied_columns
+    # free_text columns are not analytically bindable/projectable.
     assert "customer_name" in bindings.denied_columns
 
     kpi_defs = compile_all(pack, bindings)
@@ -79,6 +78,52 @@ def test_edtech_sqlite_binds_and_compiles(edtech_sqlite: Path):
         for kpi in kpi_defs.kpis:
             result = con.execute(kpi.sql).fetchdf()
             assert result.shape[0] >= 1
+    finally:
+        con.close()
+
+
+def test_every_table_is_exposed_even_when_the_tables_are_unrelated(tmp_path: Path):
+    src = tmp_path / "src"
+    src.mkdir()
+    (src / "orders.csv").write_text("order_id,amount\n1,10\n2,20\n3,30\n", encoding="utf-8")
+    (src / "weather.csv").write_text("city,temp_c\nA,20\nB,25\n", encoding="utf-8")
+    (src / "staff.csv").write_text("staff_id,shift\n1,am\n2,pm\n", encoding="utf-8")
+
+    profile = _profile_for(src)
+    bindings = resolve_bindings(profile, load_pack(PACKS_ROOT / "generic-analytics"))
+
+    assert len(bindings.allowed_tables) == 3
+    assert bindings.relationships == []  # no shared keys -> not an error, just empty
+
+
+def test_verified_relationships_are_carried_into_the_bindings(retail_orders_dir: Path):
+    profile = _profile_for(retail_orders_dir)
+    bindings = resolve_bindings(profile, load_pack(PACKS_ROOT / "retail-ecommerce"))
+
+    assert len(bindings.allowed_tables) == 3
+    pairs = {(r.from_ref, r.to_ref) for r in bindings.relationships}
+    assert ("orders.customer_id", "customers.customer_id") in pairs
+
+
+def test_cross_table_kpi_binds_via_a_relationship_and_compiles_a_join(retail_orders_dir: Path):
+    profile = _profile_for(retail_orders_dir)
+    pack = load_pack(PACKS_ROOT / "retail-ecommerce")
+    bindings = resolve_bindings(profile, pack)
+
+    tier = bindings.column("customer_tier")
+    assert tier is not None
+    assert tier.table_alias == "customers" and tier.source == "cross_table"
+    assert any(t.alias == "customers" and t.join_on for t in bindings.tables)
+
+    kpi_defs = compile_all(pack, bindings)
+    xk = kpi_defs.get("revenue_by_customer_tier")
+    assert xk is not None, f"cross-table KPI was skipped: {kpi_defs.skipped}"
+    assert "LEFT JOIN" in xk.sql.upper()
+
+    con = open_session(profile.source)
+    try:
+        rows = con.execute(xk.sql).fetchdf()
+        assert rows.shape[0] >= 1 and "revenue" in rows.columns
     finally:
         con.close()
 

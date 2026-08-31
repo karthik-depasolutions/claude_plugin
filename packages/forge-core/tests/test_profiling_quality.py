@@ -219,3 +219,22 @@ def test_build_data_review_end_to_end_with_no_provider(dirty_leads_csv: Path):
     assert review.findings
     assert len(review.questions) == 6
     assert review.questions[-1].id == GENERAL_NOTES_ID
+
+
+def test_large_table_is_sampled_not_skipped(dirty_leads_csv: Path, monkeypatch):
+    """Above MAX_ROWS_FOR_FREQUENCY the frequency/quantile passes run on a
+    seeded sample: findings still appear (marked as estimates) and are
+    reproducible across runs."""
+    import forge_core.profiling.quality as q
+
+    monkeypatch.setattr(q, "MAX_ROWS_FOR_FREQUENCY", 10)  # dirty_leads has 100 rows
+    monkeypatch.setattr(q, "SAMPLE_ROWS", 80)
+
+    a_findings, a_sampled = _analyze(dirty_leads_csv)
+    b_findings, _ = _analyze(dirty_leads_csv)
+
+    assert a_sampled  # the table was sampled, not skipped
+    assert a_findings, "sampling must still yield findings"
+    assert any("estimated from a" in f.summary for f in a_findings)
+    # REPEATABLE(seed) -> byte-identical results across runs
+    assert [(f.id, f.summary) for f in a_findings] == [(f.id, f.summary) for f in b_findings]

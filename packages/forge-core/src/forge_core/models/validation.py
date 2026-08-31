@@ -15,11 +15,11 @@ CHECK_NAMES = (
     "fact_check",
     "sql_safety",
     "dry_run",
-    "pii_scan",
     "plugin_spec",
     "cli_validate",
     "mcp_smoke",
     "self_critique",
+    "schema_model",
 )
 
 

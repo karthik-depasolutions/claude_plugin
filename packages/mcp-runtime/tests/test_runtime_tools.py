@@ -32,14 +32,14 @@ def test_describe_schema_excludes_row_data(bookings_config_dir: Path):
     result = describe_schema(config)
     assert "tables" in result
     assert "denied_columns" in result
-    assert "phone" in result["denied_columns"]
+    assert "customer_name" in result["denied_columns"]
 
 
 def test_get_data_profile_excludes_denied_columns(bookings_config_dir: Path):
     config, con = _load(bookings_config_dir)
     result = get_data_profile(config, con, "bookings")
     columns = {c["column"] for c in result["columns"]}
-    assert "phone" not in columns
+    assert "phone" in columns  # a normal column, no longer denied
     assert "customer_name" not in columns
 
 
@@ -78,7 +78,7 @@ def test_run_safe_query_rejects_select_star(bookings_config_dir: Path):
 def test_run_safe_query_rejects_denied_column(bookings_config_dir: Path):
     config, con = _load(bookings_config_dir)
     fact_ref = config.data_source.tables[0].physical_ref
-    result = run_safe_query(config, con, f'SELECT "phone" FROM {fact_ref}')
+    result = run_safe_query(config, con, f'SELECT "customer_name" FROM {fact_ref}')
     assert "error" in result
 
 
@@ -107,13 +107,12 @@ def test_search_records_excludes_denied_and_filters(bookings_config_dir: Path):
     result = search_records(config, con, "bookings", filters={"status": "Completed"}, limit=5)
     assert result["row_count"] <= 5
     for row in result["rows"]:
-        assert "phone" not in row
         assert "customer_name" not in row
 
 
 def test_search_records_rejects_denied_filter_column(bookings_config_dir: Path):
     config, con = _load(bookings_config_dir)
-    result = search_records(config, con, "bookings", filters={"phone": "123"})
+    result = search_records(config, con, "bookings", filters={"customer_name": "x"})
     assert "error" in result
 
 
@@ -141,6 +140,24 @@ def test_describe_data_and_business_concepts(bookings_config_dir: Path):
     assert "dimensions" in concepts
 
 
+def test_schema_drift_report(bookings_config_dir: Path):
+    from dataclasses import replace
+
+    from mis_mcp_runtime.config import TableConfig
+    from mis_mcp_runtime.schema_drift import schema_drift_report
+
+    config, con = _load(bookings_config_dir)
+    assert schema_drift_report(config, con) is None  # config matches the live data
+
+    # A config that claims a column the live table doesn't have -> drift.
+    t = config.data_source.tables[0]
+    drifted_tables = [replace(t, columns=[*t.columns, "ghost_column"])]
+    drifted = replace(config.data_source, tables=drifted_tables)
+    report = schema_drift_report(replace(config, data_source=drifted), con)
+    assert report is not None
+    assert "ghost_column" in report and "SCHEMA DRIFT" in report
+
+
 def test_describe_schema_targeted(bookings_config_dir: Path):
     config, _ = _load(bookings_config_dir)
     result = describe_schema(config, table="bookings")
@@ -161,7 +178,7 @@ def test_get_value_set_success_and_denied_rejection(bookings_config_dir: Path):
     assert any(v["value"] == "Completed" for v in res["values"])
 
     # Denied column must be rejected
-    denied_res = get_value_set(config, con, field="phone")
+    denied_res = get_value_set(config, con, field="customer_name")
     assert "error" in denied_res
     assert "denied" in denied_res["error"].lower()
 
@@ -193,7 +210,7 @@ def test_metric_analytics_tools(bookings_config_dir: Path):
     assert "share_percent" in breakdown["slices"][0]
 
     # Denied breakdown must be rejected
-    assert "error" in breakdown_metric(config, con, dimension="phone")
+    assert "error" in breakdown_metric(config, con, dimension="customer_name")
 
     # 4. rank_entities
     ranked = rank_entities(config, con, entity_dimension="package_name", limit=5)
@@ -201,7 +218,7 @@ def test_metric_analytics_tools(bookings_config_dir: Path):
     assert ranked["ranked_results"][0]["rank"] == 1
 
     # Denied entity ranking must be rejected
-    assert "error" in rank_entities(config, con, entity_dimension="phone")
+    assert "error" in rank_entities(config, con, entity_dimension="customer_name")
 
     # 5. query_metric
     qm = query_metric(config, con, metric_id="bookings_count", group_by=["status"])
@@ -217,9 +234,31 @@ def test_record_exploration_tools(bookings_config_dir: Path):
 
     rec = get_record(config, con, table_or_entity="bookings", id_value=first_row, id_column="booking_id")
     assert rec["found"] is True
-    assert "phone" not in rec["record"]
     assert "customer_name" not in rec["record"]
 
     # Denied ID lookup
-    denied_rec = get_record(config, con, table_or_entity="bookings", id_value="123", id_column="phone")
+    denied_rec = get_record(config, con, table_or_entity="bookings", id_value="123", id_column="customer_name")
     assert "error" in denied_rec
+
+
+async def test_schema_resources_are_registered_and_readable(bookings_config_dir: Path):
+    import json as _json
+
+    from mis_mcp_runtime.server import create_server
+
+    mcp = create_server()
+    uris = {str(r.uri).rstrip("/") for r in await mcp.list_resources()}
+    assert {
+        "schema://overview",
+        "schema://model",
+        "schema://cookbook",
+        "schema://relationships",
+        "schema://patterns",
+        "schema://statistics",
+    } <= uris
+
+    contents = list(await mcp.read_resource("schema://model"))
+    text = "".join(
+        c.content if isinstance(c.content, str) else c.content.decode("utf-8") for c in contents
+    )
+    _json.loads(text)  # schema://model must be valid JSON

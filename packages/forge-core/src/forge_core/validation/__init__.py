@@ -1,5 +1,5 @@
 """Stage 6 - validation harness. See `forge_core.validation.harness.run_harness`
-for the entry point and `docs/architecture.md` §5 for why each of the eight
+for the entry point and `docs/architecture.md` §5 for why each of the seven
 checks (`forge_core.models.validation.CHECK_NAMES`) exists.
 """
 

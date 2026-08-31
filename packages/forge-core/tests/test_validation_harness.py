@@ -17,7 +17,6 @@ from forge_core.profiling import build_structural_only
 from forge_core.validation import run_harness
 from forge_core.validation.dry_run import check_dry_run
 from forge_core.validation.facts import check_facts
-from forge_core.validation.pii import check_pii
 from forge_core.validation.self_critique import check_self_critique
 from forge_core.validation.sql_safety import check_sql_safety
 
@@ -55,7 +54,7 @@ def test_healthy_plugin_passes_every_runnable_check(bookings_csv: Path):
     assert {c.check for c in report.checks} == set(CHECK_NAMES)
     for name in ("plugin_spec", "cli_validate", "mcp_smoke", "self_critique"):
         assert report.check(name).status == CheckStatus.SKIPPED
-    for name in ("fact_check", "sql_safety", "dry_run", "pii_scan"):
+    for name in ("fact_check", "sql_safety", "dry_run"):
         result = report.check(name)
         assert result.status == CheckStatus.PASS, f"{name}: {result.issues}"
     # SKIPPED checks (no packaged plugin dir / no LLM provider yet) don't fail the run.
@@ -97,22 +96,6 @@ def test_dry_run_flags_failing_assertion(bookings_csv: Path):
     result = check_dry_run(tampered, profile.source)
     assert result.status == CheckStatus.FAIL
     assert any("assertion failed" in i.message for i in result.issues)
-
-
-def test_pii_scan_flags_denied_column_in_sql(bookings_csv: Path):
-    profile, pack, bindings, kpi_defs, _ = _pipeline(bookings_csv, "healthcare-diagnostics")
-    denied = bindings.denied_columns[0]
-    tampered = kpi_defs.model_copy(deep=True)
-    tampered.kpis[0].sql = f'SELECT "{denied}" AS leaked FROM {bindings.table("fact").physical}'
-
-    result = check_pii(tampered, bindings, generated_texts={})
-    assert result.status == CheckStatus.FAIL
-
-
-def test_pii_scan_warns_on_email_like_text_in_artifact(bookings_csv: Path):
-    profile, pack, bindings, kpi_defs, _ = _pipeline(bookings_csv, "healthcare-diagnostics")
-    result = check_pii(kpi_defs, bindings, generated_texts={"skill": "Contact us at hello@example.com"})
-    assert result.status == CheckStatus.WARN
 
 
 def test_harness_is_generic_across_multi_table_and_sqlite(retail_orders_dir: Path, edtech_sqlite: Path):
@@ -253,3 +236,50 @@ def test_self_critique_keeps_pii_finding_even_when_it_names_an_allowed_tool(book
 
     assert result.status == CheckStatus.FAIL
     assert any("PII" in i.message for i in result.issues)
+
+
+def test_schema_model_check_passes_for_a_grounded_model(bookings_csv: Path):
+    from forge_core.models.schema_model import ColumnDoc, SchemaModel, TableDoc
+    from forge_core.validation.schema_model_check import check_schema_model
+
+    profile, *_ = _pipeline(bookings_csv, "healthcare-diagnostics")
+    cols = [c for c in profile.structural.columns if c.table == "bookings"][:3]
+    model = SchemaModel(
+        schema_hash="sha256:x", generated_by="test",
+        tables=[TableDoc(name="bookings", purpose="one row per booking",
+                         columns=[ColumnDoc(name=c.name, meaning="x") for c in cols])],
+    )
+    assert check_schema_model(model, profile).status == CheckStatus.PASS
+
+
+def test_schema_model_check_fails_on_a_hallucinated_reference(bookings_csv: Path):
+    from forge_core.models.schema_model import ColumnDoc, SchemaModel, TableDoc
+    from forge_core.validation.schema_model_check import check_schema_model
+
+    profile, *_ = _pipeline(bookings_csv, "healthcare-diagnostics")
+    model = SchemaModel(
+        schema_hash="sha256:x", generated_by="test",
+        tables=[TableDoc(name="bookings", purpose="p",
+                         columns=[ColumnDoc(name="ghost_column", meaning="nope")])],
+    )
+    result = check_schema_model(model, profile)
+    assert result.status == CheckStatus.FAIL
+    assert any("ghost_column" in i.message for i in result.issues)
+
+
+def test_schema_model_check_runs_the_verified_cookbook(bookings_csv: Path):
+    from forge_core.models.schema_model import CookbookEntry, SchemaModel
+    from forge_core.validation.schema_model_check import check_schema_model
+
+    profile, *_ = _pipeline(bookings_csv, "healthcare-diagnostics")
+    fact = profile.source.tables[0].physical_ref
+    model = SchemaModel(
+        schema_hash="sha256:x", generated_by="test",
+        cookbook=[
+            CookbookEntry(question="count", sql=f"SELECT COUNT(*) AS n FROM {fact}", verified=True),
+            CookbookEntry(question="broken", sql="SELECT * FROM nope", verified=True),
+        ],
+    )
+    result = check_schema_model(model, profile)
+    assert result.status == CheckStatus.FAIL
+    assert any("cookbook[1]" in i.location for i in result.issues)

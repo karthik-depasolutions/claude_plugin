@@ -47,5 +47,8 @@ Thumbs.db
 # Logs
 *.log
 
+# API runtime output (DuckDB warehouse, run data, caches)
+apps/api/generated/
+
 # Downloaded/collected skills (not source)
 collected_skills/

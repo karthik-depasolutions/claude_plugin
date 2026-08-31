@@ -26,15 +26,22 @@ EXPECTED_KPI_IDS = {
 }
 
 
-def test_bookings_dataset_still_produces_a_fully_valid_plugin(bookings_csv: Path, tmp_path: Path):
+def test_bookings_dataset_still_produces_a_fully_valid_plugin(bookings_csv: Path, tmp_path: Path, fake_llm):
     record = RunRecord(
         run_id="golden-curelo-bookings",
         source_path=str(bookings_csv),
         output_dir=str(tmp_path),
         industry_override="healthcare-diagnostics",
     )
+    record.data_answers = {}  # skip the pre-synthesis clarification pause
 
-    result = run_pipeline(record, packs_root=DEFAULT_PACKS_ROOT)
+    result = run_pipeline(
+        record,
+        packs_root=DEFAULT_PACKS_ROOT,
+        profiling_provider=fake_llm,
+        generation_provider=fake_llm,
+        critique_provider=fake_llm,
+    )
 
     assert result.status == RunStatus.SUCCEEDED, result.error
 
@@ -46,7 +53,7 @@ def test_bookings_dataset_still_produces_a_fully_valid_plugin(bookings_csv: Path
     assert report["overall"] in (CheckStatus.PASS.value, CheckStatus.WARN.value)
 
     checks_by_name = {c["check"]: c for c in report["checks"]}
-    for hard_check in ("fact_check", "sql_safety", "dry_run", "pii_scan", "plugin_spec", "cli_validate"):
+    for hard_check in ("fact_check", "sql_safety", "dry_run", "plugin_spec", "cli_validate"):
         assert checks_by_name[hard_check]["status"] == CheckStatus.PASS.value, checks_by_name[hard_check]
 
     package_event = next(e for e in reversed(result.events) if e.stage.value == "package")

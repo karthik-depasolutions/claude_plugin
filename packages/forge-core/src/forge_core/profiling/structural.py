@@ -27,16 +27,6 @@ _NAME_PATTERNS: list[tuple[re.Pattern[str], ColumnRole]] = [
 # or genuine free text (customer_name) depends on cardinality, not the column
 # name — so it's decided by the fallback logic in _guess_role below.
 
-_PERSON_NAME_HINTS = re.compile(
-    r"(customer|patient|guardian|contact|user|full|first|last|student|employee|client|"
-    r"account_holder|owner)[_\s]*name|^name$",
-    re.IGNORECASE,
-)
-_OTHER_PII_HINTS = re.compile(
-    r"phone|email|address|dob|birth|ssn|aadhaar|pan_number|passport|account_number|card_number",
-    re.IGNORECASE,
-)
-
 _NUMERIC_DUCKDB_TYPES = {
     "TINYINT", "SMALLINT", "INTEGER", "BIGINT", "HUGEINT", "UTINYINT", "USMALLINT",
     "UINTEGER", "UBIGINT", "FLOAT", "DOUBLE", "DECIMAL", "REAL",
@@ -75,13 +65,6 @@ def _guess_role(name: str, dtype: str, cardinality: int, row_count: int) -> Colu
     return ColumnRole.FREE_TEXT
 
 
-def _is_likely_pii(name: str, role: ColumnRole) -> bool:
-    if role in (ColumnRole.EMAIL, ColumnRole.PHONE):
-        return True
-    lower = name.lower()
-    return bool(_PERSON_NAME_HINTS.search(lower) or _OTHER_PII_HINTS.search(lower))
-
-
 def _profile_table(
     con: duckdb.DuckDBPyConnection, table: TableDescriptor
 ) -> list[ColumnProfile]:
@@ -110,7 +93,7 @@ def _profile_table(
         assert res is not None
 
         res_idx = 0
-        for idx, col in enumerate(chunk):
+        for col in chunk:
             null_count = int(res[res_idx] or 0)
             cardinality = int(res[res_idx + 1] or 0)
             res_idx += 2
@@ -145,7 +128,6 @@ def _profile_table(
                     max_value=max_value,
                     sample_values=sample_values,
                     is_likely_identifier=role == ColumnRole.IDENTIFIER,
-                    is_likely_pii=_is_likely_pii(col.name, role),
                 )
             )
 

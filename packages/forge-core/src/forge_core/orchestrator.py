@@ -26,9 +26,11 @@ from forge_core.llm.provider import LLMProvider
 from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.quality import DataReview
 from forge_core.models.run import RunRecord
+from forge_core.models.schema_model import SchemaModel
 from forge_core.packaging import build_plugin_spec, write_plugin
 from forge_core.profiling import build_schema_profile
 from forge_core.profiling.quality import build_data_review
+from forge_core.profiling.synthesis import build_schema_model
 from forge_core.runtime_session import open_session
 from forge_core.validation import run_harness
 
@@ -46,6 +48,18 @@ def run_pipeline(
     binding_overrides: dict[str, str] | None = None,
     use_agent: bool = False,
 ) -> RunRecord:
+    # The understanding phase is not optional: profiling synthesis, generation
+    # prose, and self-critique all require a live model. Fail fast and loud
+    # rather than silently degrading to a deterministic-only run.
+    if profiling_provider is None or generation_provider is None or critique_provider is None:
+        record.status = RunStatus.FAILED
+        record.error = (
+            "MIS Plugin Forge requires an LLM provider for the understanding phase. "
+            "Set GEMINI_API_KEY, or FORGE_LLM_CASSETTE_MODE=replay with recorded fixtures."
+        )
+        record.log(RunStage.INGEST, record.error)
+        return record
+
     record.status = RunStatus.RUNNING
     try:
         _run_pipeline_inner(
@@ -89,11 +103,10 @@ def _run_pipeline_inner(
     profile = build_schema_profile(data_source, profiling_provider)
     record.log(RunStage.PROFILE, "Profile complete", columns=len(profile.structural.columns))
 
-    # Computed once and reused on every resume - see RunRecord.data_review's
-    # docstring. Wrapped in its own try/except: a data-quality review must
-    # inform, never block, so it can never be what turns this whole run into
-    # a FAILED one (unlike everything else in this function, which is
-    # allowed to raise up into run_pipeline's own catch-all).
+    # Data-quality review first - its deterministic findings feed the schema
+    # synthesis below. Wrapped in its own try/except: a data-quality review
+    # must inform, never block, so it can never be what turns this whole run
+    # into a FAILED one. Computed once, reused on every resume.
     if record.data_review is None:
         con = open_session(data_source)
         try:
@@ -101,10 +114,6 @@ def _run_pipeline_inner(
                 data_source,
                 profile.structural,
                 con,
-                # No provider => findings only, no LLM-phrased questions.
-                # Set when the caller has already declared it won't ask
-                # (e.g. the CLI's default, without --review) - no point
-                # paying for question generation nobody will read answers to.
                 provider=profiling_provider if record.data_answers is None else None,
                 semantic=profile.semantic,
             )
@@ -118,6 +127,46 @@ def _run_pipeline_inner(
         f"Data quality: {len(record.data_review.findings)} finding(s)",
         review=record.data_review.model_dump(mode="json"),
     )
+
+    # Pause for the user to clarify what the data means, before synthesis (so
+    # their answers actually shape the knowledge pack). `data_answers is None`
+    # = not asked yet; `{}` = asked and the caller opted out - either way, on
+    # resume we fall through. Mirrors the industry-confirmation pause below.
+    if record.data_answers is None and record.data_review.questions:
+        record.status = RunStatus.NEEDS_INPUT
+        record.log(
+            RunStage.PROFILE,
+            f"Awaiting {len(record.data_review.questions)} data clarification(s) from the caller",
+            questions=[q.model_dump(mode="json") for q in record.data_review.questions],
+        )
+        return
+
+    user_context = record.data_review.to_context(record.data_answers or {})["notes"]
+
+    # Semantic synthesis - the mandatory LLM pass that turns structural facts
+    # + quality findings + the user's own clarifications into the knowledge
+    # pack the plugin ships. Computed once, reused on resume (cached on the
+    # record and on disk by schema hash). A model hiccup degrades to a
+    # sparser SchemaModel, not a failure.
+    if record.schema_model is None:
+        try:
+            record.schema_model = build_schema_model(
+                profile.structural,
+                data_source,
+                profiling_provider,
+                quality_findings=record.data_review.findings,
+                user_context=user_context,
+            )
+            record.log(
+                RunStage.PROFILE,
+                f"Synthesized schema model: {len(record.schema_model.tables)} table doc(s), "
+                f"{sum(len(t.columns) for t in record.schema_model.tables)} column doc(s), "
+                f"{len(record.schema_model.cookbook)} verified cookbook quer(ies), "
+                f"{len(record.schema_model.patterns)} pattern note(s)",
+            )
+        except Exception as exc:  # noqa: BLE001 - degrade, don't crash the run
+            record.schema_model = SchemaModel(schema_hash="", generated_by="unavailable")
+            record.log(RunStage.PROFILE, f"Schema-model synthesis failed: {exc}")
 
     record.log(RunStage.CLASSIFY, "Classifying industry")
     packs = load_all_packs(packs_root)
@@ -160,7 +209,10 @@ def _run_pipeline_inner(
     record.log(RunStage.GENERATE, "Generation complete", commands=[c.name for c in generated.commands])
 
     record.log(RunStage.PACKAGE, "Packaging plugin")
-    spec = build_plugin_spec(pack, profile, bindings, kpi_defs, generated, customer_label=record.label)
+    spec = build_plugin_spec(
+        pack, profile, bindings, kpi_defs, generated,
+        schema_model=record.schema_model, customer_label=record.label,
+    )
     plugin_dir = Path(record.output_dir) / spec.manifest.name
     write_plugin(spec, plugin_dir, source=data_source, profile=profile, pack=pack)
     record.log(RunStage.PACKAGE, f"Packaged to {plugin_dir}", plugin_dir=str(plugin_dir))
@@ -173,11 +225,15 @@ def _run_pipeline_inner(
         kpi_defs=kpi_defs,
         generated=generated,
         provider=critique_provider,
+        schema_model=record.schema_model,
         plugin_dir=plugin_dir,
         config_dir=plugin_dir / "config",
         data_dir=plugin_dir / "data",
         on_check=lambda result: record.log(
-            RunStage.VALIDATE, f"{result.check}: {result.status.value}", check=result.check, status=result.status.value
+            RunStage.VALIDATE,
+            f"{result.check}: {result.status.value}",
+            check=result.check,
+            status=result.status.value,
         ),
     )
     record.log(

@@ -1,6 +1,6 @@
 """`get_data_profile` — per-column data quality stats (null %, cardinality).
-Prefers the pre-computed, PII-scrubbed `schema_summary.json` shipped with the
-plugin; falls back to a live (still denied-column-excluded) computation."""
+Prefers the pre-computed `schema_summary.json` shipped with the plugin;
+falls back to a live (still denied-column-excluded) computation."""
 
 from __future__ import annotations
 

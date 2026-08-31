@@ -9,7 +9,7 @@ Two layers, kept structurally separate per the architecture doc:
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -31,12 +31,16 @@ class ColumnProfile(BaseModel):
     max_value: float | str | None = None
     sample_values: list[str] = Field(default_factory=list)
     is_likely_identifier: bool = False
-    is_likely_pii: bool = False
 
 
 class RelationshipCandidate(BaseModel):
     """A candidate join / foreign-key relationship, deterministically inferred
-    from name similarity and value-overlap sampling — never invented by an LLM."""
+    from name similarity and value-overlap sampling — never invented by an LLM.
+
+    `strength` is "strong" when nearly every child value resolves to a parent
+    key, "weak" when most (but not all) do — a real relationship with dirty
+    data, still worth surfacing. Absence of any relationship is normal and
+    never an error."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -45,6 +49,7 @@ class RelationshipCandidate(BaseModel):
     to_table: str
     to_column: str
     confidence: float = Field(ge=0.0, le=1.0)
+    strength: Literal["strong", "weak"] = "strong"
     evidence: str
 
 
@@ -57,6 +62,93 @@ class TableGrain(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
 
 
+class Correlation(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    table: str
+    column_a: str
+    column_b: str
+    pearson_r: float
+    n: int
+
+
+class TemporalPattern(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    table: str
+    column: str
+    buckets: dict[str, int] = Field(description="ISO month -> row count, chronological.")
+    trend: Literal["rising", "falling", "flat"]
+    seasonal: bool
+    day_of_week: dict[str, int] = Field(
+        default_factory=dict, description="Weekday name -> row count (Mon..Sun)."
+    )
+    year_over_year: dict[str, float] = Field(
+        default_factory=dict, description="Year -> growth ratio vs the prior year (1.0 = flat)."
+    )
+
+
+class FunctionalDependency(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    table: str
+    determinant: str
+    dependent: str
+
+
+class RedundantColumns(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    table: str
+    column_a: str
+    column_b: str
+    note: str
+
+
+class DenormalizationMismatch(BaseModel):
+    """A stored aggregate on the parent side of a relationship that disagrees
+    with re-aggregating the child rows — e.g. orders.total != SUM(items)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    parent_table: str
+    parent_column: str
+    child_table: str
+    child_expression: str
+    mismatched_rows: int
+    checked_rows: int
+    example: str = ""
+
+
+class Segment(BaseModel):
+    """How a table's rows break down across one dimension — the natural
+    slices a reader would want before writing a query."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    table: str
+    dimension: str
+    top_groups: list[tuple[str, float]] = Field(
+        description="(value, share-of-rows 0..1), largest first, at most 5."
+    )
+    concentration: Literal["high", "moderate", "even"]
+
+
+class PatternsRaw(BaseModel):
+    """Deterministic statistical patterns — raw numbers, no interpretation.
+    Every list defaults empty; a dataset with no detectable pattern of a
+    given kind is normal."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    correlations: list[Correlation] = Field(default_factory=list)
+    temporal: list[TemporalPattern] = Field(default_factory=list)
+    functional_dependencies: list[FunctionalDependency] = Field(default_factory=list)
+    redundancies: list[RedundantColumns] = Field(default_factory=list)
+    mismatches: list[DenormalizationMismatch] = Field(default_factory=list)
+    segments: list[Segment] = Field(default_factory=list)
+
+
 class StructuralProfile(BaseModel):
     """Layer 1 — deterministic. Must never depend on an LLM call."""
 
@@ -65,6 +157,11 @@ class StructuralProfile(BaseModel):
     columns: list[ColumnProfile]
     relationships: list[RelationshipCandidate] = Field(default_factory=list)
     grains: list[TableGrain] = Field(default_factory=list)
+    value_sets: dict[str, list[str]] = Field(
+        default_factory=dict,
+        description='"table.column" -> full distinct value set, for low-cardinality columns.',
+    )
+    patterns: PatternsRaw = Field(default_factory=PatternsRaw)
 
     def columns_for(self, table: str) -> list[ColumnProfile]:
         return [c for c in self.columns if c.table == table]

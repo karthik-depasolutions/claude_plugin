@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.quality import DataReview
+from forge_core.models.schema_model import SchemaModel
 
 
 class StageEvent(BaseModel):
@@ -43,6 +44,10 @@ class RunRecord(BaseModel):
     it would drift finding/question ids and orphan answers keyed to them
     (resume re-runs the whole pipeline from ingest, see orchestrator.py).
     None = not computed yet. Set = never recomputed, even on replay."""
+    schema_model: SchemaModel | None = None
+    """The LLM-synthesized knowledge pack (overview, per-table docs, pattern
+    notes, verified cookbook). Computed once during PROFILE, reused on resume.
+    Shipped as config/schema_model.json and served by the MCP runtime."""
     data_answers: dict[str, str] | None = None
     """question id -> answer. None = never asked (or asked and not yet
     resumed). {} = asked, caller supplied no answers (or opted out) - this

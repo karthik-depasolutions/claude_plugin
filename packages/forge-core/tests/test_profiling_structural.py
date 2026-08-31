@@ -11,7 +11,7 @@ def _col(profile, table, name):
     return next(c for c in profile.columns if c.table == table and c.name == name)
 
 
-def test_bookings_roles_and_pii(bookings_csv: Path):
+def test_bookings_roles(bookings_csv: Path):
     ds = ingest(bookings_csv)
     profile = build_structural_only(ds)
 
@@ -23,10 +23,10 @@ def test_bookings_roles_and_pii(bookings_csv: Path):
     assert amount.guessed_role == ColumnRole.CURRENCY
 
     phone = _col(profile, "bookings", "phone")
-    assert phone.is_likely_pii
+    assert phone.guessed_role == ColumnRole.PHONE
 
     name_col = _col(profile, "bookings", "customer_name")
-    assert name_col.is_likely_pii
+    assert name_col.guessed_role == ColumnRole.FREE_TEXT
 
 
 def test_retail_multi_table_relationships_detected(retail_orders_dir: Path):

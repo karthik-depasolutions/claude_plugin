@@ -68,7 +68,7 @@ class RuntimeConfig:
     bindings: BindingsConfig
     kpis: list[CompiledKpiConfig]
     schema_summary: dict
-    business_context: dict
+    schema_model: dict
     max_query_rows: int
     query_timeout_seconds: int
 
@@ -104,8 +104,8 @@ def load_runtime_config(
     kpis_raw = _read_json(config_dir / "kpi_defs.json")
     summary_path = config_dir / "schema_summary.json"
     schema_summary = _read_json(summary_path) if summary_path.exists() else {}
-    business_context_path = config_dir / "business_context.json"
-    business_context = _read_json(business_context_path) if business_context_path.exists() else {}
+    model_path = config_dir / "schema_model.json"
+    schema_model = _read_json(model_path) if model_path.exists() else {}
 
     try:
         tables = [
@@ -157,7 +157,7 @@ def load_runtime_config(
         bindings=bindings,
         kpis=kpis,
         schema_summary=schema_summary,
-        business_context=business_context,
+        schema_model=schema_model,
         max_query_rows=int(guardrails.get("max_query_rows", 200)),
         query_timeout_seconds=int(guardrails.get("query_timeout_seconds", 10)),
     )

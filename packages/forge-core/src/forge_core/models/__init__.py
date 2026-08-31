@@ -31,7 +31,6 @@ from forge_core.models.industry_pack import (
     VocabularyEntry,
 )
 from forge_core.models.kpi import CompiledKpi, KpiDefsFile
-from forge_core.models.quality import DataQuestion, DataReview, QualityFinding, ValueCount
 from forge_core.models.plugin_spec import (
     AgentFrontmatter,
     Author,
@@ -50,6 +49,7 @@ from forge_core.models.plugin_spec import (
     PluginSpec,
     SkillFrontmatter,
 )
+from forge_core.models.quality import DataQuestion, DataReview, QualityFinding, ValueCount
 from forge_core.models.run import RunRecord, StageEvent
 from forge_core.models.schema_profile import (
     CandidateInsight,

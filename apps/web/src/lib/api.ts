@@ -26,7 +26,7 @@ export function listPacks(): Promise<PackSummary[]> {
 
 export function createRunFromPath(
   sourcePath: string,
-  opts: { industry?: string; useLlm: boolean; label?: string }
+  opts: { industry?: string; label?: string }
 ): Promise<RunSummary> {
   return fetch(`${BASE}/runs`, {
     method: "POST",
@@ -34,7 +34,6 @@ export function createRunFromPath(
     body: JSON.stringify({
       source_path: sourcePath,
       industry: opts.industry ?? null,
-      use_llm: opts.useLlm,
       label: opts.label ?? null,
     }),
   }).then((r) => asJson(r));
@@ -42,14 +41,17 @@ export function createRunFromPath(
 
 export function createRunFromUpload(
   files: File[],
-  opts: { industry?: string; useLlm: boolean; label?: string }
+  opts: { industry?: string; label?: string }
 ): Promise<RunSummary> {
-  const params = new URLSearchParams({ use_llm: String(opts.useLlm) });
+  const params = new URLSearchParams();
   if (opts.industry) params.set("industry", opts.industry);
   if (opts.label) params.set("label", opts.label);
   const form = new FormData();
   for (const file of files) form.append("files", file);
-  return fetch(`${BASE}/runs/upload?${params}`, { method: "POST", body: form }).then((r) => asJson(r));
+  const qs = params.toString();
+  return fetch(`${BASE}/runs/upload${qs ? `?${qs}` : ""}`, { method: "POST", body: form }).then((r) =>
+    asJson(r)
+  );
 }
 
 export function getRun(runId: string): Promise<RunDetail> {
@@ -61,6 +63,14 @@ export function confirmIndustry(runId: string, industry: string): Promise<RunSum
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ industry }),
+  }).then((r) => asJson(r));
+}
+
+export function submitDataAnswers(runId: string, answers: Record<string, string>): Promise<RunSummary> {
+  return fetch(`${BASE}/runs/${runId}/answers`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ answers }),
   }).then((r) => asJson(r));
 }
 
@@ -99,9 +109,13 @@ export function publishToGithub(
  * warehouse - a plain 404 (no such run ever had one) is treated as "nothing
  * to show" rather than an error, since most runs won't have this. */
 export async function getWarehouseCredentials(runId: string): Promise<WarehouseCredentialsResponse | null> {
-  const response = await fetch(`${BASE}/runs/${runId}/warehouse-credentials`);
-  if (response.status === 404) return null;
-  return asJson(response);
+  try {
+    const response = await fetch(`${BASE}/runs/${runId}/warehouse-credentials`);
+    if (!response.ok) return null;
+    return (await response.json()) as WarehouseCredentialsResponse;
+  } catch {
+    return null;
+  }
 }
 
 type SsePayload = StageEvent | { final: true; status: string };

@@ -11,13 +11,22 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from forge_core.models.schema_model import RelationshipDoc
+
 
 class TableBinding(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    alias: str = Field(description="Canonical table alias from the industry pack, e.g. 'fact'.")
+    alias: str = Field(
+        description="'fact' for the primary table, or a related table's own name for a cross-table bind."
+    )
     physical: str = Field(description="Real table/view name in the customer's DataSource.")
     grain: str = ""
+    join_on: str | None = Field(
+        default=None,
+        description="For a non-primary table: the ON expression that joins it to the primary "
+        "(a verified relationship). None for the primary table itself.",
+    )
 
 
 class ColumnBinding(BaseModel):
@@ -55,7 +64,14 @@ class SchemaBindings(BaseModel):
     tables: list[TableBinding]
     columns: list[ColumnBinding]
     value_sets: list[ValueSetBinding] = Field(default_factory=list)
-    allowed_tables: list[str]
+    allowed_tables: list[str] = Field(
+        description="Every ingested table is queryable - KPIs bind against the primary table, "
+        "but the client can read any of them via run_safe_query / search_records."
+    )
+    relationships: list[RelationshipDoc] = Field(
+        default_factory=list,
+        description="Verified joins between allowed tables. Empty is normal - the tables may be unrelated.",
+    )
     denied_columns: list[str] = Field(
         default_factory=list, description="Physical columns the runtime must never project."
     )

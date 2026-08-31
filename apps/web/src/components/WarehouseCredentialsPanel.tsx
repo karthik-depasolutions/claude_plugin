@@ -37,30 +37,29 @@ export default function WarehouseCredentialsPanel({ runId }: { runId: string }) 
   }
 
   return (
-    <div className="space-y-3 rounded border border-amber-800/50 bg-amber-950/20 p-4">
-      <p className="text-sm text-amber-300">
-        Your data was loaded into a dedicated, isolated database schema. This is the{" "}
-        <strong>only time</strong> this connection string is shown — copy it now and store it
-        somewhere safe (e.g. a password manager). We never save it.
+    <div className="rounded-lg border border-amber/40 bg-amber/5 p-4 text-doc-ink">
+      <p className="text-sm">
+        Your data lives in an isolated database schema. This is the <strong>only time</strong> the
+        connection string is shown &mdash; copy it now and keep it somewhere safe. It&rsquo;s never saved.
       </p>
-      <p className="text-xs text-slate-400">
-        Set this in the environment Claude Desktop/Code launches from, before first use:
+      <p className="mt-2 text-xs text-doc-ink/60">
+        Set it in the environment Claude Code launches from, before first use:
       </p>
-      <pre className="overflow-x-auto rounded bg-slate-950 p-2 text-xs text-slate-200">{exportLine}</pre>
-      <div className="flex flex-wrap gap-2">
+      <pre className="mt-1.5 overflow-x-auto rounded-md bg-doc-ink p-3 font-mono text-xs text-doc">{exportLine}</pre>
+      <div className="mt-3 flex flex-wrap gap-2">
         <button
           type="button"
           onClick={copy}
-          className="rounded border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800"
+          className="rounded-md border border-doc-hair px-3 py-1.5 text-xs font-medium text-doc-ink hover:bg-doc-ink/5"
         >
-          {copied ? "Copied!" : "Copy to clipboard"}
+          {copied ? "Copied" : "Copy"}
         </button>
         <button
           type="button"
           onClick={() => setAcknowledged(true)}
-          className="rounded px-3 py-1.5 text-xs text-slate-400 underline hover:text-slate-200"
+          className="px-2 py-1.5 text-xs text-doc-ink/55 underline underline-offset-4 hover:text-doc-ink"
         >
-          I've saved it, hide this
+          I&rsquo;ve saved it
         </button>
       </div>
     </div>

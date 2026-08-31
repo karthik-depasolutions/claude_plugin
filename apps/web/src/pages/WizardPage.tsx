@@ -3,15 +3,23 @@ import Wizard from "./Wizard";
 
 export default function WizardPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
-      <header className="border-b border-slate-800 px-6 py-4">
-        <Link to="/" className="text-xs text-slate-500 hover:text-slate-300">
-          ← MIS Plugin Forge
-        </Link>
-        <h1 className="mt-1 text-lg font-semibold tracking-tight">Generate a plugin</h1>
-        <p className="text-sm text-slate-400">Connect a data source and walk through the pipeline.</p>
+    <div className="min-h-screen bg-void font-sans text-paper antialiased">
+      <header className="border-b border-hair">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-6 py-3.5">
+          <Link to="/" className="flex items-baseline gap-2">
+            <span className="font-display text-base font-semibold tracking-tight">Forge</span>
+            <span className="font-mono text-[11px] text-dim">plugin foundry</span>
+          </Link>
+          <span className="flex-1" />
+          <a
+            href="https://github.com"
+            className="font-mono text-[11px] text-dim transition-colors hover:text-paper"
+          >
+            source
+          </a>
+        </div>
       </header>
-      <main className="mx-auto max-w-3xl px-6 py-8">
+      <main className="mx-auto max-w-5xl px-6 py-10 sm:py-14">
         <Wizard />
       </main>
     </div>

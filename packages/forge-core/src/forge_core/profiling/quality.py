@@ -20,6 +20,7 @@ replay — see orchestrator.py's pause: a resumed run must never regenerate
 from __future__ import annotations
 
 import json
+import re
 from datetime import UTC, datetime
 from typing import Any
 
@@ -35,11 +36,28 @@ from forge_core.profiling.structural import _NUMERIC_DUCKDB_TYPES, _TEMPORAL_DUC
 # A column with more distinct values than this is either free text or a
 # genuine identifier-shaped field - a histogram over it is noise, not signal.
 TOP_VALUE_CARDINALITY_CAP = 50
-# ponytail: whole-table scan per eligible column set; add USING SAMPLE +
-# SETSEED if a customer table blows this - rejected sampling for now because
-# it breaks exact percentages and isn't reproducible across a replay, which
-# this whole module depends on.
+# Above this row count the frequency/quantile/outlier passes run against a
+# seeded reservoir sample instead of the whole table. REPEATABLE(seed) keeps
+# it reproducible across a replay (the invariant this module depends on);
+# finding numbers from a sampled table are marked as estimates.
 MAX_ROWS_FOR_FREQUENCY = 5_000_000
+SAMPLE_ROWS = 500_000
+SAMPLE_SEED = 42
+
+
+def _scan_from(table: TableDescriptor, sampled: bool) -> str:
+    if not sampled:
+        return table.physical_ref
+    return (
+        f"(SELECT * FROM {table.physical_ref} "
+        f"USING SAMPLE reservoir({SAMPLE_ROWS} ROWS) REPEATABLE ({SAMPLE_SEED}))"
+    )
+
+
+def _sampled_note(finding: QualityFinding) -> QualityFinding:
+    return finding.model_copy(
+        update={"summary": f"{finding.summary} (estimated from a {SAMPLE_ROWS:,}-row sample)"}
+    )
 DOMINANT_VALUE_THRESHOLD = 0.60
 HIGH_NULL_THRESHOLD = 40.0
 MIXED_TYPE_MIN_RATIO = 0.05
@@ -65,8 +83,7 @@ def _is_eligible(col: ColumnProfile) -> bool:
     # "*_id"-named dimension like campaign_id or agent_id, which is exactly
     # the kind of column this analysis exists to find dominance in.
     return (
-        not col.is_likely_pii
-        and 0 < col.cardinality <= TOP_VALUE_CARDINALITY_CAP
+        0 < col.cardinality <= TOP_VALUE_CARDINALITY_CAP
         and _base_type(col.dtype) not in _TEMPORAL_DUCKDB_TYPES
     )
 
@@ -78,7 +95,7 @@ def _is_numeric(col: ColumnProfile) -> bool:
 def _is_numeric_eligible(col: ColumnProfile) -> bool:
     # No cardinality cap (unlike _is_eligible) - continuous columns are exactly
     # the high-cardinality case the categorical histogram check excludes.
-    return not col.is_likely_pii and not col.is_likely_identifier and col.cardinality > 1 and _is_numeric(col)
+    return not col.is_likely_identifier and col.cardinality > 1 and _is_numeric(col)
 
 
 def _looks_numeric(value: str) -> bool:
@@ -102,7 +119,10 @@ def _top_values(hist: Histogram, total: int) -> list[ValueCount]:
 
 
 def _frequency_scan(
-    con: duckdb.DuckDBPyConnection, table: TableDescriptor, eligible: list[ColumnProfile]
+    con: duckdb.DuckDBPyConnection,
+    table: TableDescriptor,
+    eligible: list[ColumnProfile],
+    sampled: bool = False,
 ) -> dict[str, tuple[Histogram | None, int | None]]:
     """One scan for the whole table. Returns {column_name: (histogram, numlike_count)}
     - numlike_count is None for already-numeric columns, where a TRY_CAST
@@ -120,7 +140,7 @@ def _frequency_scan(
         if textual:
             aggregates.append(f'COUNT(*) FILTER (WHERE TRY_CAST({quoted} AS DOUBLE) IS NOT NULL) AS numlike_{i}')
 
-    sql = f"SELECT {', '.join(aggregates)} FROM {table.physical_ref}"
+    sql = f"SELECT {', '.join(aggregates)} FROM {_scan_from(table, sampled)}"
     df = con.execute(sql).fetchdf()
     row = df.iloc[0]
 
@@ -133,7 +153,10 @@ def _frequency_scan(
 
 
 def _quantile_scan(
-    con: duckdb.DuckDBPyConnection, table: TableDescriptor, cols: list[ColumnProfile]
+    con: duckdb.DuckDBPyConnection,
+    table: TableDescriptor,
+    cols: list[ColumnProfile],
+    sampled: bool = False,
 ) -> dict[str, tuple[float, float, int]]:
     """One scan for the whole table's eligible numeric columns: {column_name: (q1, q3, non_null_count)}."""
     if not cols:
@@ -144,7 +167,7 @@ def _quantile_scan(
         aggregates.append(f'quantile_cont({quoted}, 0.25) AS q1_{i}')
         aggregates.append(f'quantile_cont({quoted}, 0.75) AS q3_{i}')
         aggregates.append(f'COUNT({quoted}) AS n_{i}')
-    sql = f"SELECT {', '.join(aggregates)} FROM {table.physical_ref}"
+    sql = f"SELECT {', '.join(aggregates)} FROM {_scan_from(table, sampled)}"
     row = con.execute(sql).fetchdf().iloc[0]
 
     result: dict[str, tuple[float, float, int]] = {}
@@ -157,7 +180,10 @@ def _quantile_scan(
 
 
 def _outlier_count_scan(
-    con: duckdb.DuckDBPyConnection, table: TableDescriptor, bounds: dict[str, tuple[float, float]]
+    con: duckdb.DuckDBPyConnection,
+    table: TableDescriptor,
+    bounds: dict[str, tuple[float, float]],
+    sampled: bool = False,
 ) -> dict[str, int]:
     """One scan for outlier counts, given IQR bounds already computed per column."""
     if not bounds:
@@ -167,7 +193,7 @@ def _outlier_count_scan(
         f'COUNT(*) FILTER (WHERE "{name}" < {bounds[name][0]!r} OR "{name}" > {bounds[name][1]!r}) AS oc_{i}'
         for i, name in enumerate(names)
     ]
-    sql = f"SELECT {', '.join(aggregates)} FROM {table.physical_ref}"
+    sql = f"SELECT {', '.join(aggregates)} FROM {_scan_from(table, sampled)}"
     row = con.execute(sql).fetchdf().iloc[0]
     return {name: int(row[f"oc_{i}"]) for i, name in enumerate(names)}
 
@@ -315,36 +341,32 @@ def analyze_quality(
     """Findings only - see profiling.quality module docstring. Takes an
     already-open connection, mirroring build_structural_profile(data_source, con)."""
     findings: list[QualityFinding] = []
-    skipped_tables: list[str] = []
+    sampled_tables: list[str] = []
 
     for table in data_source.tables:
         cols = structural.columns_for(table.name)
 
-        # Free checks - no query, already on ColumnProfile from pass 1.
+        # Free checks - no query, already on ColumnProfile from pass 1 (a full
+        # scan), so these stay exact even when the table below is sampled.
         for col in cols:
             found = _check_high_null(col)
             if found:
                 findings.append(found)
 
-        if table.row_count > MAX_ROWS_FOR_FREQUENCY:
-            skipped_tables.append(table.name)
-            # single_value with no histogram still works from cardinality alone.
-            for col in cols:
-                if col.cardinality == 1:
-                    found = _check_single_value(col, hist=None)
-                    if found:
-                        findings.append(found)
-            continue
+        sampled = table.row_count > MAX_ROWS_FOR_FREQUENCY
+        if sampled:
+            sampled_tables.append(table.name)
+        scan_findings: list[QualityFinding] = []
 
         eligible = [c for c in cols if _is_eligible(c)]
-        scan = _frequency_scan(con, table, eligible)
+        scan = _frequency_scan(con, table, eligible, sampled)
 
         for col in eligible:
             hist, numlike = scan.get(col.name, (None, None))
             if col.cardinality == 1:
                 found = _check_single_value(col, hist)
                 if found:
-                    findings.append(found)
+                    scan_findings.append(found)
                 continue  # a single-value column can't also be dominant/inconsistent/mixed
             if hist is None:
                 continue
@@ -355,25 +377,27 @@ def analyze_quality(
             ):
                 found = check()
                 if found:
-                    findings.append(found)
+                    scan_findings.append(found)
 
         numeric_eligible = [c for c in cols if _is_numeric_eligible(c)]
-        quantiles = _quantile_scan(con, table, numeric_eligible)
+        quantiles = _quantile_scan(con, table, numeric_eligible, sampled)
         bounds = {
             name: (q1 - OUTLIER_IQR_MULTIPLIER * (q3 - q1), q3 + OUTLIER_IQR_MULTIPLIER * (q3 - q1))
             for name, (q1, q3, _n) in quantiles.items()
         }
-        outlier_counts = _outlier_count_scan(con, table, bounds)
+        outlier_counts = _outlier_count_scan(con, table, bounds, sampled)
         for col in numeric_eligible:
             if col.name not in quantiles:
                 continue
             q1, q3, non_null_count = quantiles[col.name]
             found = _check_numeric_outliers(col, q1, q3, non_null_count, outlier_counts.get(col.name, 0))
             if found:
-                findings.append(found)
+                scan_findings.append(found)
+
+        findings.extend(_sampled_note(f) if sampled else f for f in scan_findings)
 
     findings.sort(key=lambda f: (_SEVERITY_RANK[f.severity], f.code, f.table, f.column))
-    return findings, skipped_tables
+    return findings, sampled_tables
 
 
 # Findings are already severity-sorted by analyze_quality, so slicing here
@@ -471,6 +495,78 @@ def generate_questions(
     return questions
 
 
+_BUSINESS_QUESTIONS_PROMPT = """You are about to build an analytics assistant on a business's own
+data. Before you do, ask its owner up to {max_q} short questions that would most improve your
+understanding - only things you genuinely cannot infer from the data itself.
+
+SCHEMA (table -> columns as name|role|distinct|samples):
+{schema}
+
+VALUE SETS (complete distinct values for low-cardinality columns):
+{value_sets}
+
+RELATIONSHIPS (verified joins; empty means none were found):
+{relationships}
+
+Good questions clarify: what a coded/enum column means, which status values count as
+"successful" / "completed" / "active", the real-world grain of a table, what an ambiguous
+column records, or which column is the money / date / customer field when that's unclear.
+Never ask something the data already answers. Never ask more than {max_q}.
+
+Respond with strict JSON: {{"questions": [{{"slug": "short-kebab-id", "question": "..."}}]}}.
+"""
+
+_MAX_BUSINESS_QUESTIONS = 6
+
+
+def _compact_schema(structural: StructuralProfile) -> str:
+    by_table: dict[str, list[str]] = {}
+    for c in structural.columns:
+        samples = ", ".join(c.sample_values[:3]) if c.sample_values else ""
+        by_table.setdefault(c.table, []).append(
+            f"{c.name}|{c.guessed_role.value}|{c.cardinality}" + (f"|[{samples}]" if samples else "")
+        )
+    return "\n".join(f"{t}: " + "; ".join(cols) for t, cols in by_table.items())
+
+
+def generate_business_questions(
+    structural: StructuralProfile, provider: LLMProvider | None
+) -> list[DataQuestion]:
+    """Up to a handful of plain-language clarifications about what the data
+    *means* - fed into schema synthesis when the user answers them."""
+    if provider is None:
+        return []
+    rels = [
+        f"{r.from_table}.{r.from_column} -> {r.to_table}.{r.to_column}" for r in structural.relationships
+    ]
+    prompt = _BUSINESS_QUESTIONS_PROMPT.format(
+        max_q=_MAX_BUSINESS_QUESTIONS,
+        schema=_compact_schema(structural),
+        value_sets=json.dumps(structural.value_sets, indent=2, default=str),
+        relationships="\n".join(rels) or "(none)",
+    )
+    try:
+        raw: Any = provider.generate_json(prompt)
+    except LLMError:
+        return []
+    if not isinstance(raw, dict):
+        return []
+    out: list[DataQuestion] = []
+    seen: set[str] = set()
+    for item in raw.get("questions", []):
+        if not isinstance(item, dict):
+            continue
+        text = str(item.get("question") or "").strip()
+        slug = re.sub(r"[^a-z0-9]+", "-", str(item.get("slug") or "").lower()).strip("-")
+        if not text or not slug or slug in seen:
+            continue
+        seen.add(slug)
+        out.append(DataQuestion(id=f"biz:{slug}", question=text, kind="business"))
+        if len(out) >= _MAX_BUSINESS_QUESTIONS:
+            break
+    return out
+
+
 def build_data_review(
     data_source: DataSource,
     structural: StructuralProfile,
@@ -479,14 +575,16 @@ def build_data_review(
     provider: LLMProvider | None = None,
     semantic: SemanticProfile | None = None,
 ) -> DataReview:
-    findings, skipped_tables = analyze_quality(data_source, structural, con)
+    findings, sampled_tables = analyze_quality(data_source, structural, con)
     hints = [flag.issue for flag in semantic.data_quality_flags] if semantic else []
-    questions = generate_questions(findings, provider, hints)
+    business = generate_business_questions(structural, provider)
+    quality = generate_questions(findings, provider, hints)
+    questions = [*business, *quality]  # business clarifications first; general_notes stays last
     return DataReview(
         generated_at=datetime.now(UTC).isoformat(),
         findings=findings,
         questions=questions,
-        skipped_tables=skipped_tables,
+        sampled_tables=sampled_tables,
     )
 
 

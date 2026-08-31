@@ -14,8 +14,9 @@ render identical progress regardless of which front end started the run.
 - `packs_root` — defaults to `industry-packs/` at the repo root
   (`DEFAULT_PACKS_ROOT`).
 - `profiling_provider` / `generation_provider` / `critique_provider` — three
-  independently-selectable `LLMProvider`s (`forge_core.llm.get_provider`),
-  or `None` to run fully deterministically (`--no-llm` / `use_llm=false`).
+  independently-selectable `LLMProvider`s (`forge_core.llm.get_provider`).
+  All three are **required**: `run_pipeline` fails fast if any is `None`.
+  Tests pass `forge_core.testing.FakeLLMProvider` (deterministic, keyless).
 
 ## 1. Ingest — `forge_core.ingestion.registry.ingest`
 
@@ -27,16 +28,26 @@ a `DataSource` (`forge_core/models/datasource.py`).
 
 ## 2. Profile — `forge_core.profiling.build_schema_profile`
 
-- **Structural** (always runs): per-column dtype, cardinality, null rate,
-  a `ColumnRole` guess (`identifier`, `currency`, `date`, `email`, ...),
-  primary/foreign-key and join-candidate detection across tables, and a
-  grain guess per table.
-- **Semantic** (only if a `profiling_provider` is passed): sends the LLM
-  *metadata and a capped sample* (never full columns of PII-shaped data —
-  see [security.md](security.md)) and merges back per-column business-
+- **Structural** (deterministic): per-column dtype, cardinality, null rate,
+  a `ColumnRole` guess; relationship detection (name-variant candidates +
+  value-overlap verification, `strong`/`weak`, empty if unrelated);
+  single- and composite-column grain; full value sets for low-cardinality
+  columns; statistical patterns (`patterns.py`: correlation, temporal
+  trend/seasonality, functional dependencies, redundant columns).
+- **Semantic** (deterministic samples, no redaction): merges back per-column
   meaning annotations and dataset-level insights.
 
 Output: `SchemaProfile` (`forge_core/models/schema_profile.py`).
+
+## 2b. Synthesize — `forge_core.profiling.synthesis.build_schema_model`
+
+Mandatory LLM pass. Per-table docs (purpose/role/grain, column meaning +
+enum decode) then a global pass (overview, caveats, pattern notes, a
+NL→SQL cookbook). Fact-checked against the structural profile; every
+cookbook query executed once against the real data. Cached on disk by a
+hash of the structural facts. Stored on `RunRecord.schema_model`, shipped
+as `config/schema_model.json`. Output: `SchemaModel`
+(`forge_core/models/schema_model.py`).
 
 ## 3. Classify — `forge_core.classification.classify`
 

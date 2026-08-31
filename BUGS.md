@@ -28,6 +28,11 @@ This document records the defects, edge cases, and security boundary gaps discov
 ---
 
 ## 2. 🛡️ Security Gap: PII Scanner Regex Missing Standard Formatting Shapes
+- **Status**: RESOLVED BY REMOVAL — the PII scanner (`validation/pii.py`), the
+  `is_likely_pii` profiling heuristic, and the semantic-profile redaction
+  boundary were removed in the improvement-plan Phase 0. The validation
+  harness is now 7 checks. Denied-column enforcement (for pack-declared role
+  categories like `free_text`) is unchanged.
 - **Severity**: High (PII Leakage in static artifacts/dashboards)
 - **Files**:
   - Implementation: [`packages/forge-core/src/forge_core/validation/pii.py`](file:///d:/claude-plugin-poc/packages/forge-core/src/forge_core/validation/pii.py#L20-L26)

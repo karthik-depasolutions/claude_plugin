@@ -3,8 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from forge_core.testing import FakeLLMProvider
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+@pytest.fixture
+def fake_llm() -> FakeLLMProvider:
+    return FakeLLMProvider()
 
 
 @pytest.fixture

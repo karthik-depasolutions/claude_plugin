@@ -4,9 +4,18 @@
   "version": "1.0.0",
   "description": "Industry context for education/e-learning enrollment data — students, courses, and enrollments.",
   "vocabulary": [
-    { "term": "enrollment", "definition": "A student's registration in a course" },
-    { "term": "student", "definition": "A learner enrolled in one or more courses" },
-    { "term": "course", "definition": "A paid or free learning offering" }
+    {
+      "term": "enrollment",
+      "definition": "A student's registration in a course"
+    },
+    {
+      "term": "student",
+      "definition": "A learner enrolled in one or more courses"
+    },
+    {
+      "term": "course",
+      "definition": "A paid or free learning offering"
+    }
   ],
   "canonical_roles": {
     "revenue_amount": "the price of a course associated with an enrollment",
@@ -20,34 +29,79 @@
     "fact": "the primary enrollments table"
   },
   "value_set_hints": {
-    "completed_values": ["completed", "active", "passed"],
-    "cancelled_values": ["dropped", "cancelled", "withdrawn"]
+    "completed_values": [
+      "completed",
+      "active",
+      "passed"
+    ],
+    "cancelled_values": [
+      "dropped",
+      "cancelled",
+      "withdrawn"
+    ]
   },
   "guardrails": {
-    "denied_role_categories": ["free_text", "email", "phone"],
+    "denied_role_categories": [
+      "free_text"
+    ],
     "require_read_only": true,
     "max_query_rows": 200,
     "query_timeout_seconds": 10,
     "notes": [
-      "Never expose student email, phone, or full name in aggregate outputs",
       "All data access must be read-only"
     ]
   },
   "signature": {
-    "entity_name_hints": ["enrollment", "student", "course", "class", "cohort", "curriculum"],
-    "column_name_hints": [
-      "student_id", "course_id", "enrolled_on", "grade_level", "subject", "score", "enrollment_id"
+    "entity_name_hints": [
+      "enrollment",
+      "student",
+      "course",
+      "class",
+      "cohort",
+      "curriculum"
     ],
-    "required_role_categories": ["date", "identifier"],
-    "table_count_range": [1, 10]
+    "column_name_hints": [
+      "student_id",
+      "course_id",
+      "enrolled_on",
+      "grade_level",
+      "subject",
+      "score",
+      "enrollment_id"
+    ],
+    "required_role_categories": [
+      "date",
+      "identifier"
+    ],
+    "table_count_range": [
+      1,
+      10
+    ]
   },
   "skill_templates": [
-    { "id": "enrollment-analyst", "template_path": "skills/enrollment-analyst.md.j2", "requires_roles": [], "description": "General enrollment analytics" }
+    {
+      "id": "enrollment-analyst",
+      "template_path": "skills/enrollment-analyst.md.j2",
+      "requires_roles": [],
+      "description": "General enrollment analytics"
+    }
   ],
   "agent_templates": [
-    { "id": "edtech-analyst", "template_path": "agents/edtech-analyst.md.j2", "requires_roles": [], "description": "Deep-dive enrollment analysis agent" }
+    {
+      "id": "edtech-analyst",
+      "template_path": "agents/edtech-analyst.md.j2",
+      "requires_roles": [],
+      "description": "Deep-dive enrollment analysis agent"
+    }
   ],
   "recipe_templates": [
-    { "id": "monthly-report", "template_path": "recipes/monthly-report.md.j2", "requires_roles": ["transaction_date"], "description": "Monthly enrollment report recipe" }
+    {
+      "id": "monthly-report",
+      "template_path": "recipes/monthly-report.md.j2",
+      "requires_roles": [
+        "transaction_date"
+      ],
+      "description": "Monthly enrollment report recipe"
+    }
   ]
 }

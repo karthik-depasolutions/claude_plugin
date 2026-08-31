@@ -19,7 +19,6 @@ class CreateRunFromPathRequest(BaseModel):
         ),
     )
     industry: str | None = Field(None, description="Force a pack slug, skipping auto-classification.")
-    use_llm: bool = Field(True, description="Use Gemini for semantic profiling, generation, and critique.")
     use_agent: bool = Field(
         False,
         description="Use a tool-using LangChain agent (schema inspection, live data preview, "
@@ -49,6 +48,14 @@ class RunDetail(RunRecord):
 
 class ConfirmIndustryRequest(BaseModel):
     industry: str = Field(..., description="Pack slug chosen from the classify stage's ranked_matches.")
+
+
+class DataAnswersRequest(BaseModel):
+    answers: dict[str, str] = Field(
+        default_factory=dict,
+        description="question id -> the owner's answer. An empty object means 'I have nothing "
+        "to add' and lets the run proceed without any clarifications.",
+    )
 
 
 class BindingOverridesRequest(BaseModel):

@@ -4,11 +4,26 @@
   "version": "1.0.0",
   "description": "Industry context for diagnostic lab booking MIS data — bookings, customers, households, lab partners, and health packages.",
   "vocabulary": [
-    { "term": "booking", "definition": "An order or transaction for a diagnostic test or health package" },
-    { "term": "customer", "definition": "Person who booked a test" },
-    { "term": "household", "definition": "Group of related customers sharing a household grouping (family bookings)" },
-    { "term": "lab_partner", "definition": "External lab vendor that fulfilled the booking" },
-    { "term": "package", "definition": "Product or service booked (e.g. Full Body Checkup, Diabetes Panel)" }
+    {
+      "term": "booking",
+      "definition": "An order or transaction for a diagnostic test or health package"
+    },
+    {
+      "term": "customer",
+      "definition": "Person who booked a test"
+    },
+    {
+      "term": "household",
+      "definition": "Group of related customers sharing a household grouping (family bookings)"
+    },
+    {
+      "term": "lab_partner",
+      "definition": "External lab vendor that fulfilled the booking"
+    },
+    {
+      "term": "package",
+      "definition": "Product or service booked (e.g. Full Body Checkup, Diabetes Panel)"
+    }
   ],
   "canonical_roles": {
     "revenue_amount": "the monetary amount charged for a completed booking",
@@ -25,41 +40,106 @@
     "fact": "the primary bookings/transactions table"
   },
   "role_hints": {
-    "partner_name": ["partner", "vendor", "lab_partner", "supplier"],
-    "product_name": ["package", "product", "item", "service_name", "test_name"]
+    "partner_name": [
+      "partner",
+      "vendor",
+      "lab_partner",
+      "supplier"
+    ],
+    "product_name": [
+      "package",
+      "product",
+      "item",
+      "service_name",
+      "test_name"
+    ]
   },
   "value_set_hints": {
-    "completed_values": ["completed", "success", "fulfilled", "delivered"],
-    "cancelled_values": ["cancelled", "canceled"],
-    "repeat_values": ["yes", "true", "1", "repeat"]
+    "completed_values": [
+      "completed",
+      "success",
+      "fulfilled",
+      "delivered"
+    ],
+    "cancelled_values": [
+      "cancelled",
+      "canceled"
+    ],
+    "repeat_values": [
+      "yes",
+      "true",
+      "1",
+      "repeat"
+    ]
   },
   "guardrails": {
-    "denied_role_categories": ["free_text", "email", "phone"],
+    "denied_role_categories": [
+      "free_text"
+    ],
     "require_read_only": true,
     "max_query_rows": 200,
     "query_timeout_seconds": 10,
     "notes": [
-      "Never expose phone or customer name in aggregate outputs or dashboards",
       "All data access must be read-only",
       "Prefer named KPI tools over ad-hoc SQL when a standard KPI applies"
     ]
   },
   "signature": {
-    "entity_name_hints": ["booking", "patient", "diagnostic", "lab", "appointment", "clinic"],
-    "column_name_hints": [
-      "booking_id", "patient_id", "lab_partner", "package_name", "diagnosis",
-      "report_delivery", "household_id", "payment_status"
+    "entity_name_hints": [
+      "booking",
+      "patient",
+      "diagnostic",
+      "lab",
+      "appointment",
+      "clinic"
     ],
-    "required_role_categories": ["currency", "date", "identifier"],
-    "table_count_range": [1, 10]
+    "column_name_hints": [
+      "booking_id",
+      "patient_id",
+      "lab_partner",
+      "package_name",
+      "diagnosis",
+      "report_delivery",
+      "household_id",
+      "payment_status"
+    ],
+    "required_role_categories": [
+      "currency",
+      "date",
+      "identifier"
+    ],
+    "table_count_range": [
+      1,
+      10
+    ]
   },
   "skill_templates": [
-    { "id": "booking-analyst", "template_path": "skills/booking-analyst.md.j2", "requires_roles": ["revenue_amount"], "description": "General booking MIS analysis" }
+    {
+      "id": "booking-analyst",
+      "template_path": "skills/booking-analyst.md.j2",
+      "requires_roles": [
+        "revenue_amount"
+      ],
+      "description": "General booking MIS analysis"
+    }
   ],
   "agent_templates": [
-    { "id": "healthcare-analyst", "template_path": "agents/healthcare-analyst.md.j2", "requires_roles": [], "description": "Deep-dive healthcare MIS analysis agent" }
+    {
+      "id": "healthcare-analyst",
+      "template_path": "agents/healthcare-analyst.md.j2",
+      "requires_roles": [],
+      "description": "Deep-dive healthcare MIS analysis agent"
+    }
   ],
   "recipe_templates": [
-    { "id": "monthly-report", "template_path": "recipes/monthly-report.md.j2", "requires_roles": ["revenue_amount", "transaction_date"], "description": "Monthly booking report recipe" }
+    {
+      "id": "monthly-report",
+      "template_path": "recipes/monthly-report.md.j2",
+      "requires_roles": [
+        "revenue_amount",
+        "transaction_date"
+      ],
+      "description": "Monthly booking report recipe"
+    }
   ]
 }

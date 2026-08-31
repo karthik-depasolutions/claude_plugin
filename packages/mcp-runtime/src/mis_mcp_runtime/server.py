@@ -9,6 +9,7 @@ runtime interprets it, identically, for every customer and every industry.
 from __future__ import annotations
 
 import importlib.resources
+import sys
 from collections.abc import Callable
 from typing import Any
 
@@ -18,8 +19,12 @@ from mcp.server.mcpserver.context import Context
 
 from mis_mcp_runtime.config import ConfigError, RuntimeConfig, load_runtime_config
 from mis_mcp_runtime.engine.duckdb_session import open_session
+from mis_mcp_runtime.resources import build_instructions, register_resources
+from mis_mcp_runtime.schema_drift import schema_drift_report
 from mis_mcp_runtime.tools.describe_data import (
     describe_data as _describe_data,
+)
+from mis_mcp_runtime.tools.describe_data import (
     list_business_concepts as _list_business_concepts,
 )
 from mis_mcp_runtime.tools.describe_schema import describe_schema as _describe_schema
@@ -29,13 +34,23 @@ from mis_mcp_runtime.tools.get_kpi import list_kpis as _list_kpis
 from mis_mcp_runtime.tools.get_value_set import get_value_set as _get_value_set
 from mis_mcp_runtime.tools.metric_analytics import (
     breakdown_metric as _breakdown_metric,
+)
+from mis_mcp_runtime.tools.metric_analytics import (
     compare_kpi as _compare_kpi,
+)
+from mis_mcp_runtime.tools.metric_analytics import (
     explain_metric as _explain_metric,
+)
+from mis_mcp_runtime.tools.metric_analytics import (
     query_metric as _query_metric,
+)
+from mis_mcp_runtime.tools.metric_analytics import (
     rank_entities as _rank_entities,
 )
 from mis_mcp_runtime.tools.record_tools import (
     get_record as _get_record,
+)
+from mis_mcp_runtime.tools.record_tools import (
     get_related_records as _get_related_records,
 )
 from mis_mcp_runtime.tools.render_chart import chart_payload as _chart_payload
@@ -45,12 +60,11 @@ from mis_mcp_runtime.tools.search_records import search_records as _search_recor
 
 StateFn = Callable[[], tuple[RuntimeConfig, Any]]
 
-_INSTRUCTIONS = (
-    "Tools for querying this business's MIS data and Business Semantic Model. "
-    "Use describe_data, list_business_concepts, and list_kpis first to discover available business concepts and metrics; "
-    "use get_kpi, compare_kpi, breakdown_metric, and rank_entities for standard business analytics; "
-    "use get_value_set to inspect distinct categories; "
-    "use get_record and search_records for entity lookups; "
+_FALLBACK_INSTRUCTIONS = (
+    "Tools for querying this business's MIS data. "
+    "Use describe_data, list_business_concepts, and list_kpis first to discover concepts and "
+    "metrics; use get_kpi, compare_kpi, breakdown_metric, and rank_entities for standard "
+    "analytics; read schema://cookbook and schema://model before writing SQL; "
     "use run_safe_query ONLY as a last resort when no semantic tool can answer the question."
 )
 
@@ -107,9 +121,20 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
         prefers_border=True,
     )
 
+    try:
+        _cfg, _con = resolve()
+        instructions = build_instructions(_cfg.schema_model or {})
+        drift = schema_drift_report(_cfg, _con)
+        if drift:
+            print(drift, file=sys.stderr)  # noqa: T201 - the MCP host's log is the only channel here
+            instructions = f"{instructions}\n\n{drift}"
+    except Exception:  # noqa: BLE001 - config not ready yet (per-request state); use the static string
+        instructions = _FALLBACK_INSTRUCTIONS
+
     mcp = MCPServer(
-        name="mis-mcp-runtime", version="0.2.0", instructions=_INSTRUCTIONS, extensions=[apps]
+        name="mis-mcp-runtime", version="0.2.0", instructions=instructions, extensions=[apps]
     )
+    register_resources(mcp, resolve)
 
     # -------------------------------------------------------------------------
     # Tier 1: Semantic Discovery Tools
@@ -117,11 +142,15 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
 
     @mcp.tool()
     def describe_data() -> dict[str, Any]:
-        """Return the high-level Business Semantic Model: business domain, core
-        entities, record grain, dimensions, measures, time fields, and available
-        KPI counts. Call this FIRST to understand the scope of the business dataset."""
-        config, _ = resolve()
-        return _describe_data(config)
+        """Return the high-level data overview: domain, core entities, record
+        grain, dimensions, measures, time fields, relationships, and KPI count.
+        Call this FIRST to understand the scope of the dataset."""
+        config, con = resolve()
+        out = _describe_data(config)
+        drift = schema_drift_report(config, con)
+        if drift:
+            out["schema_drift_warning"] = drift
+        return out
 
     @mcp.tool()
     def list_business_concepts() -> dict[str, Any]:
@@ -140,7 +169,7 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
     @mcp.tool()
     def get_data_profile(table: str) -> dict[str, Any]:
         """Return per-column data quality statistics (null percentages, cardinality,
-        sample values) for one table. Denied/PII columns are always excluded."""
+        sample values) for one table. Denied columns are always excluded."""
         config, con = resolve()
         return _get_data_profile(config, con, table)
 

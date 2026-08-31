@@ -138,7 +138,7 @@ def breakdown_metric(
     (e.g., revenue by region, leads by status) with share-of-total percentage.
     """
     if dimension in config.bindings.denied_columns:
-        return {"error": f"Dimension {dimension!r} is a denied/PII column."}
+        return {"error": f"Dimension {dimension!r} is a denied column."}
     if not _IDENTIFIER_PATTERN.match(dimension):
         return {"error": f"Invalid dimension identifier: {dimension!r}"}
 

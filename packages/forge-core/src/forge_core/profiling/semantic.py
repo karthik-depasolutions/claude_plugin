@@ -2,9 +2,7 @@
 
 Every semantic claim is evidence-attached and confidence-scored, and none of
 it is trusted until the validation harness's fact-check pass re-verifies it
-against the StructuralProfile. This module also enforces the privacy
-boundary called out in the doc's Security Architecture section: PII-flagged
-column values are redacted before anything leaves the process.
+against the StructuralProfile.
 """
 
 from __future__ import annotations
@@ -15,24 +13,14 @@ from forge_core.llm.provider import LLMProvider
 from forge_core.models.datasource import DataSource
 from forge_core.models.schema_profile import SemanticProfile, StructuralProfile
 
-MAX_SAMPLE_ROWS_PER_TABLE = 3
-REDACTED = "[REDACTED-PII]"
+MAX_SAMPLE_ROWS_PER_TABLE = 12
 
 
-def _redacted_samples(data_source: DataSource, structural: StructuralProfile) -> dict[str, list[dict]]:
-    pii_by_table: dict[str, set[str]] = {}
-    for col in structural.columns:
-        if col.is_likely_pii:
-            pii_by_table.setdefault(col.table, set()).add(col.name)
-
-    out: dict[str, list[dict]] = {}
-    for table in data_source.tables:
-        pii_cols = pii_by_table.get(table.name, set())
-        rows = []
-        for row in table.sample_rows[:MAX_SAMPLE_ROWS_PER_TABLE]:
-            rows.append({k: (REDACTED if k in pii_cols else v) for k, v in row.items()})
-        out[table.name] = rows
-    return out
+def _sample_rows(data_source: DataSource) -> dict[str, list[dict]]:
+    return {
+        table.name: list(table.sample_rows[:MAX_SAMPLE_ROWS_PER_TABLE])
+        for table in data_source.tables
+    }
 
 
 def _compact_structural(structural: StructuralProfile) -> list[dict]:
@@ -44,21 +32,18 @@ def _compact_structural(structural: StructuralProfile) -> list[dict]:
             "guessed_role": c.guessed_role.value,
             "null_percent": c.null_percent,
             "cardinality": c.cardinality,
-            "is_likely_pii": c.is_likely_pii,
         }
         for c in structural.columns
     ]
 
 
 _PROMPT_TEMPLATE = """You are profiling a customer's business data (possibly multiple tables).
-You are given deterministically computed structural facts and a few redacted sample rows —
-PII-flagged fields are already replaced with "{redacted}" before reaching you. Never assume you
-know a redacted value.
+You are given deterministically computed structural facts and a few real sample rows.
 
 STRUCTURAL FACTS (ground truth — every table/column reference you use below MUST come from here):
 {structural}
 
-SAMPLE ROWS (redacted, at most {max_rows} rows per table):
+SAMPLE ROWS (at most {max_rows} rows per table):
 {samples}
 
 Propose:
@@ -97,9 +82,8 @@ def run_semantic_profile(
     provider: LLMProvider,
 ) -> SemanticProfile:
     prompt = _PROMPT_TEMPLATE.format(
-        redacted=REDACTED,
         structural=json.dumps(_compact_structural(structural), indent=2, default=str),
-        samples=json.dumps(_redacted_samples(data_source, structural), indent=2, default=str),
+        samples=json.dumps(_sample_rows(data_source), indent=2, default=str),
         max_rows=MAX_SAMPLE_ROWS_PER_TABLE,
     )
     raw = provider.generate_json(prompt)

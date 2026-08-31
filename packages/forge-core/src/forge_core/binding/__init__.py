@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from forge_core.binding.resolver import pick_fact_table, resolve_bindings
+from forge_core.binding.resolver import pick_primary_table, resolve_bindings
 
-__all__ = ["pick_fact_table", "resolve_bindings"]
+__all__ = ["pick_primary_table", "resolve_bindings"]

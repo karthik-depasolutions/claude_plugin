@@ -52,6 +52,16 @@ def compile_kpi(kpi: CanonicalKpi, bindings: SchemaBindings) -> CompiledKpi:
     if not isinstance(parsed, ALLOWED_ROOT_EXPRESSIONS):
         raise KpiCompileError(f"KPI {kpi.id!r} must compile to a SELECT/WITH statement, got {type(parsed)}")
 
+    # Cross-table roles: add a LEFT JOIN to each related table the KPI touches.
+    cross_tables = [t for t in bindings.tables if t.join_on]
+    if cross_tables:
+        if not isinstance(parsed, Select):
+            raise KpiCompileError(
+                f"KPI {kpi.id!r} needs a cross-table join but its template isn't a plain SELECT"
+            )
+        for tb in cross_tables:
+            parsed = parsed.join(tb.physical, on=tb.join_on, join_type="LEFT", dialect="duckdb")
+
     result_columns = [
         (col.alias_or_name or "column") for col in parsed.selects
     ] if isinstance(parsed, Select) else []

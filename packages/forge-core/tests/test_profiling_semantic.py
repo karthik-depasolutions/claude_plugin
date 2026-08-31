@@ -1,35 +1,25 @@
-"""Semantic profiling test — runs against a recorded cassette by default so
-CI never needs a live Gemini key. Re-record with:
+"""Semantic profiling test.
 
-    $env:FORGE_LLM_CASSETTE_MODE = "record"
-    uv run pytest packages/forge-core/tests/test_profiling_semantic.py
+Runs against `FakeLLMProvider` (deterministic, no key, no cassette). To
+exercise the real prompt/response loop against Gemini, set
+`FORGE_LLM_CASSETTE_MODE=record` and swap in `get_provider(role="profiling")`.
 """
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
-import pytest
 from forge_core.ingestion.registry import ingest
-from forge_core.llm import get_provider
-from forge_core.llm.provider import LLMProvider
 from forge_core.profiling import build_structural_only
-from forge_core.profiling.semantic import REDACTED, run_semantic_profile
-
-
-@pytest.fixture(autouse=True)
-def _cassette_mode(monkeypatch):
-    monkeypatch.setenv("FORGE_LLM_CASSETTE_MODE", os.environ.get("FORGE_LLM_CASSETTE_MODE", "replay"))
-    monkeypatch.setenv("FORGE_LLM_CASSETTE_DIR", "fixtures/cassettes")
+from forge_core.profiling.semantic import run_semantic_profile
+from forge_core.testing import FakeLLMProvider
 
 
 def test_semantic_profile_proposes_grounded_insights(bookings_csv: Path):
     ds = ingest(bookings_csv)
     structural = build_structural_only(ds)
-    provider = get_provider(role="profiling")
 
-    semantic = run_semantic_profile(ds, structural, provider)
+    semantic = run_semantic_profile(ds, structural, FakeLLMProvider())
 
     valid_columns = {c.name.lower() for c in structural.columns}
     for insight in semantic.candidate_insights:
@@ -39,37 +29,22 @@ def test_semantic_profile_proposes_grounded_insights(bookings_csv: Path):
     assert len(semantic.candidate_insights) >= 1
 
 
-class _CapturingProvider(LLMProvider):
-    """Wraps a real provider only to assert on the outgoing prompt text —
-    used to prove the privacy boundary holds regardless of cassette mode."""
-
-    def __init__(self, inner: LLMProvider) -> None:
-        self.inner = inner
-        self.last_prompt: str = ""
-
-    def generate_json(self, prompt: str, *, system: str | None = None) -> dict:
-        self.last_prompt = prompt
-        return self.inner.generate_json(prompt, system=system)
-
-    def generate_text(self, prompt: str, *, system: str | None = None) -> str:
-        self.last_prompt = prompt
-        return self.inner.generate_text(prompt, system=system)
-
-
-def test_semantic_profile_never_leaks_raw_pii_values(bookings_csv: Path):
+def test_semantic_profile_sends_real_sample_values(bookings_csv: Path):
+    """Sample rows now reach the model unredacted - the privacy boundary
+    that used to mask flagged columns was removed."""
     ds = ingest(bookings_csv)
     structural = build_structural_only(ds)
-    provider = _CapturingProvider(get_provider(role="profiling"))
 
-    run_semantic_profile(ds, structural, provider)
+    seen: dict[str, str] = {}
 
-    pii_columns = {c.name for c in structural.columns if c.is_likely_pii}
-    assert pii_columns, "fixture should have at least one PII-flagged column"
+    class _Capturing(FakeLLMProvider):
+        def generate_json(self, prompt: str, *, system: str | None = None) -> dict:
+            seen["prompt"] = prompt
+            return super().generate_json(prompt, system=system)
 
-    for row in ds.table("bookings").sample_rows:
-        for col in pii_columns:
-            raw_value = row.get(col)
-            if raw_value not in (None, ""):
-                assert str(raw_value) not in provider.last_prompt
+    run_semantic_profile(ds, structural, _Capturing())
 
-    assert REDACTED in provider.last_prompt
+    row = ds.table("bookings").sample_rows[0]
+    a_value = next((str(v) for v in row.values() if v not in (None, "")), None)
+    assert a_value is not None
+    assert a_value in seen["prompt"]

@@ -47,7 +47,6 @@ from forge_core.profiling.quality import analyze_quality, build_data_review, gen
 from forge_core.profiling import build_structural_only
 from forge_core.runtime_session import open_session
 from forge_core.validation.harness import run_harness
-from forge_core.validation.pii import check_pii
 from forge_core.validation.sql_safety import check_sql_safety
 
 from mis_mcp_runtime.config import RuntimeConfig, load_runtime_config
@@ -183,7 +182,11 @@ class TestProfilingStress:
         ds = ingest(csv_file)
         prof = build_structural_only(ds)
         assert len(prof.columns) == 3
-        grains = infer_grains(ds, prof.columns)
+        con = open_session(ds)
+        try:
+            grains = infer_grains(ds, prof.columns, con)
+        finally:
+            con.close()
         assert len(grains) == 1
 
     def test_massive_column_count(self, tmp_path: Path):
@@ -352,9 +355,9 @@ class TestMcpRuntimeHardening:
         assert "error" in res
 
     def test_run_safe_query_denied_column_rejection(self, mock_runtime_config):
-        """Attacker queries the denied phone column."""
+        """Attacker queries the denied free-text column."""
         config, con = mock_runtime_config
-        res = run_safe_query(config, con, "SELECT phone FROM src_bookings")
+        res = run_safe_query(config, con, "SELECT customer_name FROM src_bookings")
         assert "error" in res
         assert "denied" in res["error"].lower() or "policy" in res["error"].lower()
 
@@ -402,7 +405,7 @@ class TestMcpRuntimeHardening:
             config,
             con,
             table="bookings",
-            filters={"phone": "555-1234"},
+            filters={"customer_name": "anything"},
         )
         assert "error" in res_denied_col
 
@@ -412,7 +415,7 @@ class TestMcpRuntimeHardening:
         res = get_data_profile(config, con, "bookings")
         assert "error" not in res
         col_names = [col["column"] for col in res.get("columns", [])]
-        assert "phone" not in col_names
+        assert "customer_name" not in col_names
 
 
 # ============================================================================
@@ -447,66 +450,6 @@ class TestRuntimeConcurrencyStress:
                 future.result()
 
         assert errors == [], f"Concurrency errors encountered: {errors}"
-
-
-# ============================================================================
-# 6. PII SCANNER & REGEX BOUNDARY TESTS
-# ============================================================================
-
-class TestPiiScannerBoundaries:
-    """Testing PII scanner regex for detection and evasion edge cases."""
-
-    def test_pii_scanner_detects_real_patterns(self):
-        """Verifies PII scanner catches various sensitive data shapes."""
-        dummy_kpis = KpiDefsFile(
-            pack_slug="p",
-            generated_at=datetime.now(UTC).isoformat(),
-            kpis=[],
-            skipped=[],
-        )
-        dummy_bindings = SchemaBindings(
-            pack_slug="p",
-            data_source_id="ds",
-            tables=[],
-            columns=[],
-            allowed_tables=[],
-            denied_columns=[],
-            unresolved_roles=[],
-        )
-        samples = [
-            ("Customer email: alice.smith+work@company.co.uk", "email"),
-            ("Call at +919876543210 for support", "phone"),
-            ("PAN Number: ABCDE1234F registered", "pan"),
-            ("Aadhaar: 1234 5678 9012 valid", "aadhaar"),
-            ("SSN is 000-12-3456", "ssn"),
-        ]
-        for text, pii_type in samples:
-            res = check_pii(dummy_kpis, dummy_bindings, {"artifact": text})
-            assert len(res.issues) > 0, f"Failed to detect {pii_type} in: {text}"
-
-    def test_pii_scanner_avoids_false_positives_on_clean_kpi_text(self):
-        """Verifies clean text (revenue, dates, percentages) doesn't trigger false alarms."""
-        dummy_kpis = KpiDefsFile(
-            pack_slug="p",
-            generated_at=datetime.now(UTC).isoformat(),
-            kpis=[],
-            skipped=[],
-        )
-        dummy_bindings = SchemaBindings(
-            pack_slug="p",
-            data_source_id="ds",
-            tables=[],
-            columns=[],
-            allowed_tables=[],
-            denied_columns=[],
-            unresolved_roles=[],
-        )
-        clean_text = (
-            "Total Revenue for Q1 2026 was $1,234,567.89 across 45,000 completed transactions. "
-            "Average order value increased by 12.5% compared to 2025-12-31."
-        )
-        res = check_pii(dummy_kpis, dummy_bindings, {"artifact": clean_text})
-        assert res.issues == []
 
 
 # ============================================================================

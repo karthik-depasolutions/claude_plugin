@@ -47,9 +47,14 @@ class QualityFinding(BaseModel):
 class DataQuestion(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    id: str = Field(description="Equals the finding.id it's grounded in, or 'general_notes'.")
+    id: str = Field(description="Equals the finding.id it's grounded in, 'general_notes', or 'biz:<slug>'.")
     question: str
     context: str = Field(default="", description="The finding summary, shown under the question.")
+    kind: str = Field(
+        default="quality",
+        description="'quality' (grounded in a data-quality finding) or 'business' "
+        "(a clarification about what the data means).",
+    )
 
 
 class DataReview(BaseModel):
@@ -62,8 +67,10 @@ class DataReview(BaseModel):
     generated_at: str
     findings: list[QualityFinding] = Field(default_factory=list)
     questions: list[DataQuestion] = Field(default_factory=list)
-    skipped_tables: list[str] = Field(
-        default_factory=list, description="Tables too large for the frequency pass - see MAX_ROWS_FOR_FREQUENCY."
+    sampled_tables: list[str] = Field(
+        default_factory=list,
+        description="Tables analyzed from a seeded row sample rather than a full scan "
+        "(row count over MAX_ROWS_FOR_FREQUENCY) - their finding numbers are estimates.",
     )
 
     def to_context(self, answers: dict[str, str]) -> dict[str, Any]:

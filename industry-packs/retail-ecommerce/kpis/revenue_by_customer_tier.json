@@ -1,0 +1,19 @@
+{
+  "id": "revenue_by_customer_tier",
+  "label": "Revenue by Customer Tier",
+  "description": "Order count and revenue grouped by the customer's loyalty tier. Joins the order table to the customer table on a verified relationship.",
+  "formula_plain_english": "count(*) and sum(revenue_amount) grouped by customer_tier",
+  "grain": "transaction",
+  "requires": {
+    "measures": [
+      "revenue_amount"
+    ],
+    "dimensions": [
+      "customer_tier"
+    ]
+  },
+  "sql": "SELECT {{customer_tier}} AS tier, COUNT(*) AS order_count, SUM({{revenue_amount}}) AS revenue FROM {{fact}} GROUP BY {{customer_tier}} ORDER BY revenue DESC",
+  "unit": "mixed",
+  "assertions": [],
+  "optional": true
+}

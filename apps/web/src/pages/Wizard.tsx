@@ -4,49 +4,69 @@ import {
   confirmIndustry,
   createRunFromPath,
   createRunFromUpload,
-  downloadUrl,
   listPacks,
   setBindingOverrides,
+  submitDataAnswers,
 } from "../lib/api";
 import { useRunStream } from "../hooks/useRunStream";
-import StageTimeline from "../components/StageTimeline";
+import PipelineConsole from "../components/PipelineConsole";
+import ClarifyPanel from "../components/ClarifyPanel";
+import PluginResult from "../components/PluginResult";
 import ValidationReportView from "../components/ValidationReportView";
 import BindingEditor from "../components/BindingEditor";
-import PublishPanel from "../components/PublishPanel";
-import WarehouseCredentialsPanel from "../components/WarehouseCredentialsPanel";
 import type { RankedMatch } from "../lib/types";
 
 export default function Wizard() {
   const [runId, setRunId] = useState<string | null>(null);
   const [streamKey, setStreamKey] = useState(0);
+  const [sourceLabel, setSourceLabel] = useState("");
 
   if (!runId) {
-    return <ConnectStep onStarted={setRunId} />;
+    return (
+      <ConnectForm
+        onStarted={(id, label) => {
+          setRunId(id);
+          setSourceLabel(label);
+        }}
+      />
+    );
   }
-  return <RunProgress runId={runId} streamKey={streamKey} onResumed={() => setStreamKey((k) => k + 1)} />;
+  return (
+    <RunView
+      runId={runId}
+      streamKey={streamKey}
+      sourceLabel={sourceLabel}
+      onResumed={() => setStreamKey((k) => k + 1)}
+    />
+  );
 }
 
-function ConnectStep({ onStarted }: { onStarted: (runId: string) => void }) {
+/* -------------------------------------------------------------------------- */
+/* Before a run: the thesis line + the connect form, on the machine ground.   */
+/* -------------------------------------------------------------------------- */
+function ConnectForm({ onStarted }: { onStarted: (runId: string, label: string) => void }) {
   const { data: packs } = useQuery({ queryKey: ["packs"], queryFn: listPacks });
   const [mode, setMode] = useState<"upload" | "path">("upload");
   const [files, setFiles] = useState<File[]>([]);
   const [path, setPath] = useState("");
   const [industry, setIndustry] = useState("");
-  const [useLlm, setUseLlm] = useState(true);
   const [label, setLabel] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const canSubmit = mode === "upload" ? files.length > 0 : path.trim().length > 0;
 
   async function submit() {
     setError(null);
     setSubmitting(true);
     try {
-      const opts = { industry: industry || undefined, useLlm, label: label.trim() || undefined };
+      const opts = { industry: industry || undefined, label: label.trim() || undefined };
       const run =
         mode === "upload" && files.length > 0
           ? await createRunFromUpload(files, opts)
           : await createRunFromPath(path, opts);
-      onStarted(run.run_id);
+      const shown = label.trim() || files.map((f) => f.name).join(", ") || path;
+      onStarted(run.run_id, shown);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -54,161 +74,151 @@ function ConnectStep({ onStarted }: { onStarted: (runId: string) => void }) {
     }
   }
 
-  const canSubmit = mode === "upload" ? files.length > 0 : path.trim().length > 0;
-
   return (
-    <div className="space-y-6">
-      <div className="flex gap-2 text-sm">
-        <TabButton active={mode === "upload"} onClick={() => setMode("upload")}>
-          Upload a file
-        </TabButton>
-        <TabButton active={mode === "path"} onClick={() => setMode("path")}>
-          Server path
-        </TabButton>
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:items-center">
+      <div>
+        <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-jade">Plugin foundry</p>
+        <h1 className="mt-3 font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl">
+          Point Forge at a dataset.
+        </h1>
+        <p className="mt-4 max-w-md text-sm leading-relaxed text-dim">
+          It profiles your tables, asks a few questions about what the data means, then compiles a
+          Claude Code plugin scoped to it &mdash; verified metrics, a query cookbook, and an eight-check
+          safety gate before anything ships.
+        </p>
       </div>
 
-      {mode === "upload" ? (
-        <div className="space-y-2">
-          <input
-            type="file"
-            multiple
-            accept=".csv,.tsv,.json,.ndjson,.parquet,.xlsx,.xls,.sqlite,.db,.zip"
-            onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-            className="block w-full text-sm text-slate-300 file:mr-3 file:rounded file:border-0 file:bg-sky-600 file:px-3 file:py-1.5 file:text-white"
-          />
-          <p className="text-xs text-slate-500">
-            Select multiple CSV/Excel/JSON/Parquet files for a multi-table source, or a single{" "}
-            <code>.zip</code> containing them.
-          </p>
-          {files.length > 0 && (
-            <ul className="text-xs text-slate-400">
-              {files.map((f) => (
-                <li key={f.name}>{f.name}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ) : (
-        <input
-          value={path}
-          onChange={(e) => setPath(e.target.value)}
-          placeholder="/path/to/dataset.csv or a directory of tables"
-          className="w-full rounded border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
-        />
-      )}
-
-      <label className="block text-sm text-slate-300">
-        Project / business name (optional)
-        <input
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-          placeholder="e.g. Sparda Music Academy"
-          className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2"
-        />
-        <span className="mt-1 block text-xs text-slate-500">
-          Names the plugin and (for warehouse-backed uploads) the database schema. Defaults to a
-          generic name based on the detected industry if left blank.
-        </span>
-      </label>
-
-      <label className="block text-sm text-slate-300">
-        Industry (optional - skips auto-classification)
-        <select
-          value={industry}
-          onChange={(e) => setIndustry(e.target.value)}
-          className="mt-1 w-full rounded border border-slate-700 bg-slate-900 px-3 py-2"
-        >
-          <option value="">Auto-detect</option>
-          {packs?.map((p) => (
-            <option key={p.slug} value={p.slug}>
-              {p.name}
-            </option>
+      <div className="rounded-xl border border-hair bg-panel p-5 sm:p-6">
+        <div className="flex gap-1 rounded-lg bg-void p-1 text-xs">
+          {(["upload", "path"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={
+                "flex-1 rounded-md px-3 py-1.5 transition-colors " +
+                (mode === m ? "bg-panel text-paper" : "text-dim hover:text-paper")
+              }
+            >
+              {m === "upload" ? "Upload files" : "Server path"}
+            </button>
           ))}
-        </select>
-      </label>
+        </div>
 
-      <label className="flex items-center gap-2 text-sm text-slate-300">
-        <input type="checkbox" checked={useLlm} onChange={(e) => setUseLlm(e.target.checked)} />
-        Use Gemini for semantic profiling, prose generation, and self-critique
-      </label>
+        <div className="mt-4 space-y-4">
+          {mode === "upload" ? (
+            <div>
+              <input
+                type="file"
+                multiple
+                accept=".csv,.tsv,.json,.ndjson,.parquet,.xlsx,.xls,.sqlite,.db,.zip"
+                onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
+                className="block w-full text-xs text-dim file:mr-3 file:rounded-md file:border-0 file:bg-jade file:px-3 file:py-1.5 file:text-doc-ink file:transition-opacity hover:file:opacity-90"
+              />
+              <p className="mt-1.5 text-[11px] text-dim">
+                One row of tables per file, or a single <code className="text-paper/70">.zip</code>.
+              </p>
+              {files.length > 0 && (
+                <ul className="mt-2 space-y-0.5 font-mono text-[11px] text-dim">
+                  {files.map((f) => (
+                    <li key={f.name}>{f.name}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : (
+            <input
+              value={path}
+              onChange={(e) => setPath(e.target.value)}
+              placeholder="/data/orders.csv, a folder of tables, or postgresql://…"
+              className="w-full rounded-md border border-hair bg-void px-3 py-2 text-sm placeholder:text-dim focus:border-jade focus:outline-none focus:ring-2 focus:ring-jade/25"
+            />
+          )}
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+          <Field label="Project name" hint="Names the plugin and its repo. Optional.">
+            <input
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="e.g. Sparda Music Academy"
+              className="w-full rounded-md border border-hair bg-void px-3 py-2 text-sm placeholder:text-dim focus:border-jade focus:outline-none focus:ring-2 focus:ring-jade/25"
+            />
+          </Field>
 
-      <button
-        type="button"
-        disabled={!canSubmit || submitting}
-        onClick={submit}
-        className="rounded bg-sky-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
-      >
-        {submitting ? "Starting…" : "Generate plugin"}
-      </button>
+          <Field label="Industry" hint="Skips auto-detection.">
+            <select
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              className="w-full rounded-md border border-hair bg-void px-3 py-2 text-sm focus:border-jade focus:outline-none focus:ring-2 focus:ring-jade/25"
+            >
+              <option value="">Auto-detect</option>
+              {packs?.map((p) => (
+                <option key={p.slug} value={p.slug}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          {error && <p className="text-xs text-clay">{error}</p>}
+
+          <button
+            type="button"
+            disabled={!canSubmit || submitting}
+            onClick={submit}
+            className="w-full rounded-md bg-amber px-4 py-2.5 text-sm font-medium text-doc-ink transition-opacity hover:opacity-90 disabled:opacity-40"
+          >
+            {submitting ? "Starting…" : "Build plugin"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
+function Field({ label, hint, children }: { label: string; hint: string; children: React.ReactNode }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded px-3 py-1.5 ${active ? "bg-slate-800 text-white" : "text-slate-400 hover:text-slate-200"}`}
-    >
-      {children}
-    </button>
+    <label className="block">
+      <span className="text-xs font-medium text-paper/80">{label}</span>
+      <span className="ml-2 text-[11px] text-dim">{hint}</span>
+      <div className="mt-1.5">{children}</div>
+    </label>
   );
 }
 
-function RunProgress({
+/* -------------------------------------------------------------------------- */
+/* During / after a run: the console is the page.                            */
+/* -------------------------------------------------------------------------- */
+function RunView({
   runId,
   streamKey,
+  sourceLabel,
   onResumed,
 }: {
   runId: string;
   streamKey: number;
+  sourceLabel: string;
   onResumed: () => void;
 }) {
-  const { events, status, currentStage } = useRunStream(runId, streamKey);
+  const { events, status, currentStage, questions } = useRunStream(runId, streamKey);
   const [busy, setBusy] = useState(false);
 
-  // The classify stage logs 3 events ("Classifying industry" -> "Top match:
-  // ..." -> "Awaiting confirmation"); only the middle one carries
-  // ranked_matches, so grab that one specifically rather than the first
-  // classify event (which would leave the confirm UI with no options).
   const classifyEvent = [...events].reverse().find((e) => e.stage === "classify" && e.data.ranked_matches);
   const bindEvent = [...events].reverse().find((e) => e.stage === "bind");
-  const validateEvent = [...events].reverse().find((e) => e.stage === "validate");
-  const packageEvent = [...events].reverse().find((e) => e.stage === "package" && e.data.plugin_dir);
+  const validateEvent = [...events].reverse().find((e) => e.stage === "validate" && e.data.report);
+  const report = validateEvent?.data.report ?? null;
   const unresolvedRoles: string[] = bindEvent?.data.unresolved_roles ?? [];
-  // plugin_dir is a server filesystem path (e.g. "generated\runs\<id>\output\
-  // <pack>-mis-plugin") - only the last segment (the plugin's own directory
-  // name, which is also its manifest `name`) is meaningful client-side.
-  const pluginDirPath: string | undefined = packageEvent?.data.plugin_dir;
-  const pluginName = pluginDirPath?.split(/[\\/]/).filter(Boolean).pop();
+
+  const paused = status === "needs_input";
+  const askingQuestions = paused && currentStage === "profile" && questions.length > 0;
+  const confirmingIndustry = paused && !askingQuestions && !!classifyEvent;
   const canEditBindings =
-    unresolvedRoles.length > 0 && (status === "succeeded" || status === "failed" || status === "needs_input");
+    unresolvedRoles.length > 0 &&
+    (status === "succeeded" || status === "failed" || (paused && !askingQuestions));
 
-  async function handleConfirmIndustry(slug: string) {
+  async function guard<T>(fn: () => Promise<T>) {
     setBusy(true);
     try {
-      await confirmIndustry(runId, slug);
-      onResumed();
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleBindingOverrides(overrides: Record<string, string>) {
-    setBusy(true);
-    try {
-      await setBindingOverrides(runId, overrides);
+      await fn();
       onResumed();
     } finally {
       setBusy(false);
@@ -216,52 +226,64 @@ function RunProgress({
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-4">
-        <div className="mb-3 flex items-center justify-between border-b border-slate-800/80 pb-3">
-          <span className="text-xs text-slate-500">
-            Run <span className="font-mono text-slate-400">{runId}</span>
-          </span>
-        </div>
-        <StageTimeline events={events} status={status} currentStage={currentStage} />
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-dim">
+        <span className="truncate font-medium text-paper/80">{sourceLabel || "your data"}</span>
+        <span className="font-mono">· run {runId}</span>
       </div>
 
-      {status === "needs_input" && classifyEvent && (
+      <PipelineConsole events={events} status={status} currentStage={currentStage} runId={runId} />
+
+      {askingQuestions && (
+        <ClarifyPanel
+          questions={questions}
+          busy={busy}
+          onSubmit={(answers) => guard(() => submitDataAnswers(runId, answers))}
+        />
+      )}
+
+      {confirmingIndustry && (
         <IndustryConfirm
-          matches={classifyEvent.data.ranked_matches ?? []}
-          onConfirm={handleConfirmIndustry}
+          matches={classifyEvent!.data.ranked_matches ?? []}
           submitting={busy}
+          onConfirm={(slug) => guard(() => confirmIndustry(runId, slug))}
         />
       )}
 
       {canEditBindings && (
-        <BindingEditor unresolvedRoles={unresolvedRoles} onSubmit={handleBindingOverrides} submitting={busy} />
+        <div className="rounded-xl border border-hair bg-panel p-5">
+          <BindingEditor
+            unresolvedRoles={unresolvedRoles}
+            submitting={busy}
+            onSubmit={(o) => guard(() => setBindingOverrides(runId, o))}
+          />
+        </div>
       )}
 
       {status === "failed" && (
-        <p className="rounded border border-red-800/50 bg-red-950/20 p-3 text-sm text-red-300">
-          Run failed. Check the timeline above for the stage that raised the error.
-        </p>
+        <section className="rounded-xl bg-doc p-6 text-doc-ink shadow-lg shadow-black/20">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-clay">Build stopped</p>
+          <h2 className="mt-1.5 font-display text-xl font-semibold">
+            It stopped at &ldquo;{currentStage ?? "an early stage"}&rdquo;.
+          </h2>
+          <p className="mt-2 text-sm text-doc-ink/70">
+            {bindEvent && status === "failed"
+              ? "See the console above for the stage that raised the error."
+              : "The console above has the full trace."}
+          </p>
+        </section>
       )}
 
-      {validateEvent?.data.report && <ValidationReportView report={validateEvent.data.report} />}
+      {status === "succeeded" && <PluginResult runId={runId} events={events} report={report} />}
 
-      {status === "succeeded" && (
-        <div className="space-y-4">
-          <WarehouseCredentialsPanel runId={runId} />
-          <a
-            href={downloadUrl(runId)}
-            className="inline-block rounded bg-emerald-600 px-4 py-2 text-sm font-medium text-white"
-          >
-            Download plugin (.zip)
-          </a>
-          <PublishPanel runId={runId} defaultRepoName={pluginName} />
-        </div>
-      )}
+      {report && status !== "succeeded" && <ValidationReportView report={report} />}
     </div>
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/* Low-confidence industry pick (ported, rethemed).                          */
+/* -------------------------------------------------------------------------- */
 function IndustryConfirm({
   matches,
   onConfirm,
@@ -273,34 +295,16 @@ function IndustryConfirm({
 }) {
   if (matches.length === 0) {
     return (
-      <p className="rounded border border-amber-800/50 bg-amber-950/20 p-3 text-sm text-amber-300">
-        Waiting on the classify stage's ranked matches to arrive…
+      <p className="rounded-xl border border-hair bg-panel p-4 text-xs text-amber">
+        Waiting on the match scores…
       </p>
     );
   }
 
-  // Mirrors forge_core.classification.matcher.AUTO_ACCEPT_THRESHOLD - this
-  // screen only ever renders when the top match was *below* that, so every
-  // option here is a low-confidence guess, not a real detection. The top
-  // one being listed first (by confidence) doesn't mean it's a good fit -
-  // e.g. a B2B sales-pipeline CSV scores "finance" and "retail-ecommerce"
-  // almost identically at ~35%, and neither one's KPI assumptions actually
-  // match deal-stage values like "Won"/"Lost". Flag that plainly, and
-  // point at generic-analytics (no rigid value-set assumptions to mismatch
-  // against) as the safe choice when nothing here is a confident, clear
-  // description of the data.
-  const allLowConfidence = matches.every((m) => m.confidence < 0.45);
-  const hasGenericFallback = matches.some((m) => m.pack_slug === "generic-analytics");
-  // When every match is a low-confidence guess, the highest-scoring one is
-  // *not* a reliable "top pick" - e.g. a sales-pipeline CSV scores "finance"
-  // and "retail-ecommerce" almost identically at ~35%, and both would fail
-  // validation on deal-stage value mismatches. Users were consistently
-  // clicking the first "Use this" button out of habit/position, landing on
-  // finance every time despite the warning text above the list. Promoting
-  // generic-analytics to the first, visually distinct slot fixes that -
-  // the safe option is now what a reflexive first click lands on.
-  const promoteGeneric = allLowConfidence && hasGenericFallback;
-  const orderedMatches = promoteGeneric
+  const allLow = matches.every((m) => m.confidence < 0.45);
+  const hasGeneric = matches.some((m) => m.pack_slug === "generic-analytics");
+  const promoteGeneric = allLow && hasGeneric;
+  const ordered = promoteGeneric
     ? [
         matches.find((m) => m.pack_slug === "generic-analytics")!,
         ...matches.filter((m) => m.pack_slug !== "generic-analytics"),
@@ -308,52 +312,50 @@ function IndustryConfirm({
     : matches;
 
   return (
-    <div className="space-y-3 rounded border border-sky-800/50 bg-sky-950/20 p-4">
-      <p className="text-sm text-sky-300">
-        Industry classification was ambiguous. Pick the best match to continue:
+    <section className="rounded-xl bg-doc p-6 text-doc-ink shadow-lg shadow-black/20">
+      <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-amber">Your move</p>
+      <h2 className="mt-1.5 font-display text-xl font-semibold tracking-tight">Which industry fits?</h2>
+      <p className="mt-2 text-sm text-doc-ink/70">
+        No single pack matched confidently. Pick the one whose signals actually describe your data.
+        {promoteGeneric && " generic-analytics makes no value assumptions and is the safe choice."}
       </p>
-      {allLowConfidence && (
-        <p className="rounded border border-amber-800/50 bg-amber-950/20 p-2 text-xs text-amber-300">
-          Every match below is under 45% confidence — these are rough guesses from column names and
-          entity hints, not confident detections.
-          {hasGenericFallback &&
-            " generic-analytics is listed first and recommended below because it has no industry-specific value assumptions (like transaction status wording) that can silently fail validation. Only pick a specialized pack if its \"Matched on\" signals genuinely describe your data."}
-        </p>
-      )}
-      <ul className="space-y-2">
-        {orderedMatches.map((match) => {
-          const isSafeFallback = promoteGeneric && match.pack_slug === "generic-analytics";
+
+      <ul className="mt-5 space-y-2">
+        {ordered.map((m) => {
+          const safe = promoteGeneric && m.pack_slug === "generic-analytics";
           return (
             <li
-              key={match.pack_slug}
+              key={m.pack_slug}
               className={
-                "flex items-center justify-between gap-3 rounded p-2 text-sm" +
-                (isSafeFallback ? " border border-emerald-700/60 bg-emerald-950/20" : "")
+                "flex items-center justify-between gap-3 rounded-lg border p-3 " +
+                (safe ? "border-jade/50 bg-jade/5" : "border-doc-hair")
               }
             >
               <div className="min-w-0">
-                <div>
-                  {match.pack_slug}{" "}
-                  <span className="text-slate-500">({Math.round(match.confidence * 100)}% confidence)</span>
-                  {isSafeFallback && (
-                    <span className="ml-2 rounded bg-emerald-900/50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-300">
-                      recommended · safe fallback
+                <div className="text-sm font-medium">
+                  {m.pack_slug}{" "}
+                  <span className="text-doc-ink/45">{Math.round(m.confidence * 100)}%</span>
+                  {safe && (
+                    <span className="ml-2 rounded bg-jade/15 px-1.5 py-0.5 text-[10px] font-medium text-jade">
+                      recommended
                     </span>
                   )}
                 </div>
-                {match.matched_signals.length > 0 && (
-                  <div className="truncate text-xs text-slate-500">
-                    Matched on: {match.matched_signals.join(", ")}
+                {m.matched_signals.length > 0 && (
+                  <div className="truncate text-xs text-doc-ink/50">
+                    matched on {m.matched_signals.join(", ")}
                   </div>
                 )}
               </div>
               <button
                 type="button"
                 disabled={submitting}
-                onClick={() => onConfirm(match.pack_slug)}
+                onClick={() => onConfirm(m.pack_slug)}
                 className={
-                  "shrink-0 rounded px-3 py-1 text-xs font-medium disabled:opacity-40" +
-                  (isSafeFallback ? " bg-emerald-600 text-white" : " border border-slate-700 text-slate-300")
+                  "shrink-0 rounded-md px-3 py-1.5 text-xs font-medium disabled:opacity-40 " +
+                  (safe
+                    ? "bg-jade text-doc-ink"
+                    : "border border-doc-hair text-doc-ink hover:bg-doc-ink/5")
                 }
               >
                 Use this
@@ -362,6 +364,6 @@ function IndustryConfirm({
           );
         })}
       </ul>
-    </div>
+    </section>
   );
 }

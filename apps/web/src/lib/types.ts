@@ -37,12 +37,37 @@ export interface RunSummary {
   error: string | null;
 }
 
+export interface DataQuestion {
+  id: string;
+  question: string;
+  context: string;
+  kind: "quality" | "business";
+}
+
+export interface QualityFinding {
+  id: string;
+  code: string;
+  severity: string;
+  table: string;
+  column: string;
+  summary: string;
+}
+
+export interface DataReview {
+  generated_at: string;
+  findings: QualityFinding[];
+  questions: DataQuestion[];
+  sampled_tables: string[];
+}
+
 export interface RunDetail extends RunSummary {
   source_path: string;
   industry_override: string | null;
   output_dir: string;
   label: string | null;
   events: StageEvent[];
+  data_review: DataReview | null;
+  data_answers: Record<string, string> | null;
   created_at: string;
   updated_at: string;
 }

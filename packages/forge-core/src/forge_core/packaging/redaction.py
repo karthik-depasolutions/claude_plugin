@@ -1,14 +1,13 @@
 """Part of Stage 7 (PACKAGE) — writes each table's data into the plugin's
-`data/` directory with every denied column (PII, or a role category the
-industry pack's guardrails deny) dropped from the bytes on disk, not just
-excluded from compiled SQL.
+`data/` directory with every denied column (a role category the industry
+pack's guardrails deny, e.g. `free_text`) dropped from the bytes on disk,
+not just excluded from compiled SQL.
 
-Why this exists: `sql_safety`/`pii_policy` (see docs/security.md) only gate
-what a *query* can return. Before this module, the raw source file was
-copied into the plugin verbatim — a denied column that no KPI or
-`run_safe_query` call ever projects would still sit in the packaged
-plugin's `data/` folder in plaintext, readable by anyone with filesystem
-access to it (e.g. after unzipping a published plugin).
+Why this exists: the runtime's denied-column policy only gates what a
+*query* can return. Before this module, the raw source file was copied
+into the plugin verbatim — a denied column that no KPI or `run_safe_query`
+call ever projects would still sit in the packaged plugin's `data/` folder
+in plaintext.
 
 Reuses `forge_core.runtime_session.open_session` (the same DuckDB
 reconnection logic the profiler/dry-run/validation harness already use) so
@@ -36,12 +35,11 @@ _EXCEL_EXTENSIONS = {".xlsx", ".xls"}
 
 def denied_columns_by_table(profile: SchemaProfile, pack: IndustryPack) -> dict[str, set[str]]:
     """Every column, across *all* tables (not just the fact table `resolve_
-    bindings` binds KPIs against), that the pack's guardrails say must never
-    be exposed: likely PII by profiling heuristics, or a structural role
-    category the pack denies outright (e.g. `free_text`, `email`, `phone`)."""
+    bindings` binds KPIs against), whose structural role category the pack's
+    guardrails deny outright (e.g. `free_text`)."""
     denied: dict[str, set[str]] = {}
     for col in profile.structural.columns:
-        if col.is_likely_pii or col.guessed_role.value in pack.guardrails.denied_role_categories:
+        if col.guessed_role.value in pack.guardrails.denied_role_categories:
             denied.setdefault(col.table, set()).add(col.name)
     return denied
 

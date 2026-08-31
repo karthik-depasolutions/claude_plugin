@@ -7,7 +7,7 @@ Gemini is used in three roles (`forge_core.llm.get_provider(role=...)`):
 agents/commands, and proposing novel KPI SQL *templates*), and `critique`
 (self-review). In every role, its output is either:
 
-- **prose**, scanned by the `pii_scan` and `self_critique` checks, or
+- **prose**, reviewed by the `self_critique` check, or
 - a **canonical-role binding proposal**, which the deterministic compiler
   (`forge_core.compiler`) turns into concrete SQL and `sqlglot`-validates —
   the LLM's proposed binding never reaches a customer as executable SQL
@@ -18,15 +18,17 @@ The generic MCP runtime (`packages/mcp-runtime/`) never executes anything
 the LLM wrote directly — it only executes `config/kpi_defs.json`, which is
 compiler output, not LLM output.
 
-## Profiling privacy boundary
+## Profiling: what reaches the LLM
 
-`forge_core.profiling.semantic` sends the LLM **column metadata (name,
-dtype, cardinality, a structural role guess) and a capped sample of row
-values** — never a full column dump, and callers can tighten or disable
-sampling entirely by omitting a `profiling_provider`. There is no path from
-raw customer data to the LLM other than this bounded, inspectable payload.
+`forge_core.profiling.semantic` and `forge_core.profiling.synthesis` send
+the LLM **column metadata (name, dtype, cardinality, a structural role
+guess), full value sets for low-cardinality columns, statistical pattern
+summaries, and a capped sample of real row values** — never a full column
+dump. The `is_likely_pii` heuristic and the sample-redaction step were
+removed: sample values now reach the model unmasked. The understanding
+phase is mandatory, so there is no "omit the provider" path.
 
-## The validation harness — eight checks, `harness.py`
+## The validation harness — seven checks, `harness.py`
 
 Every check produces a `ValidationCheckResult` (`pass|warn|fail|skipped`);
 a hard `fail` on any of them blocks a run from being considered
@@ -44,23 +46,26 @@ inspection (`forge_core.orchestrator`).
 3. **`dry_run`** (`validation/dry_run.py`) — actually executes every
    compiled KPI against the real (or sampled) data in DuckDB and evaluates
    each KPI's `assertions` (e.g. `total_revenue >= 0`) against the result.
-4. **`pii_scan`** (`validation/pii.py`) — asserts no `denied_columns` value
-   reaches compiled SQL, and regex-scans every generated prose/artifact
-   string for value shapes that look like email/phone/PAN/Aadhaar/SSN/DOB.
-5. **`plugin_spec`** (`validation/plugin_spec.py`) — structural validation
+4. **`plugin_spec`** (`validation/plugin_spec.py`) — structural validation
    against the models in [plugin-format.md](plugin-format.md), including a
    BOM check on every written file.
-6. **`cli_validate`** (`validation/cli_validate.py`) — shells out to the
+5. **`cli_validate`** (`validation/cli_validate.py`) — shells out to the
    real `claude plugin validate <dir> --strict`. Warns (doesn't fail) if
    the CLI isn't on `PATH`, since most dev sandboxes won't have it; CI
    always installs it, so this is enforced for real before merge/release.
-7. **`mcp_smoke`** (`validation/mcp_smoke.py`) — spawns the bundled
+6. **`mcp_smoke`** (`validation/mcp_smoke.py`) — spawns the bundled
    `mis-mcp-runtime` over stdio with the generated config and calls each
    tool through a real MCP client, asserting non-error responses.
-8. **`self_critique`** (`validation/self_critique.py`) — an LLM review pass
+7. **`self_critique`** (`validation/self_critique.py`) — an LLM review pass
    of the generated skill/agent/command prose against the profile and
-   guardrails; `error`-severity findings block the run. Skipped (not
-   failed) when no `critique_provider` is configured.
+   guardrails; `error`-severity findings block the run.
+
+There is no longer a dedicated PII scanner. `is_likely_pii` and
+`validation/pii.py` were removed; `sql_safety` still rejects any projection
+of a `denied_columns` entry, but `denied_columns` is now populated only
+from pack-declared role categories (e.g. `free_text`), not a PII heuristic.
+The cookbook and schema-model fact-checks run inside `synthesis.py` at
+build time rather than as harness checks.
 
 ## Data at rest: redaction before packaging (`packaging/redaction.py`)
 

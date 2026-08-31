@@ -1,9 +1,9 @@
-"""Stage 6 - the validation harness. Runs all eight checks described in
-plan §5 and gates packaging on `fail`.
+"""Stage 6 - the validation harness. Runs all eight checks and gates
+packaging on `fail`.
 
-Checks 5-7 (`plugin_spec`, `cli_validate`, `mcp_smoke`) need an
-already-packaged plugin directory / config directory - before M9 exists (or
-when called mid-pipeline, pre-packaging) they report `skipped` rather than
+Checks that need something not yet available when called mid-pipeline
+(`plugin_spec`, `cli_validate`, `mcp_smoke` need a packaged directory;
+`schema_model` needs a synthesized model) report `skipped` rather than
 being silently omitted, so a `ValidationReport` always accounts for all
 eight checks by name.
 """
@@ -19,14 +19,15 @@ from forge_core.llm.provider import LLMProvider
 from forge_core.models.bindings import SchemaBindings
 from forge_core.models.industry_pack import IndustryPack
 from forge_core.models.kpi import KpiDefsFile
+from forge_core.models.schema_model import SchemaModel
 from forge_core.models.schema_profile import SchemaProfile
 from forge_core.models.validation import ValidationCheckResult, ValidationReport
 from forge_core.validation.cli_validate import check_cli_validate
 from forge_core.validation.dry_run import check_dry_run
 from forge_core.validation.facts import check_facts
 from forge_core.validation.mcp_smoke import check_mcp_smoke
-from forge_core.validation.pii import check_pii
 from forge_core.validation.plugin_spec import check_plugin_spec
+from forge_core.validation.schema_model_check import check_schema_model
 from forge_core.validation.self_critique import check_self_critique
 from forge_core.validation.sql_safety import check_sql_safety
 
@@ -50,12 +51,6 @@ def _prose_texts(generated: GeneratedPlugin) -> dict[str, str]:
     return texts
 
 
-def _pii_scan_texts(generated: GeneratedPlugin) -> dict[str, str]:
-    texts = dict(_prose_texts(generated))
-    texts["artifacts/dashboard.html"] = generated.dashboard_html
-    return texts
-
-
 def run_harness(
     *,
     pack: IndustryPack,
@@ -64,6 +59,7 @@ def run_harness(
     kpi_defs: KpiDefsFile,
     generated: GeneratedPlugin,
     provider: LLMProvider | None = None,
+    schema_model: SchemaModel | None = None,
     plugin_dir: Path | None = None,
     config_dir: Path | None = None,
     data_dir: Path | None = None,
@@ -85,11 +81,11 @@ def run_harness(
         _run(check_facts, pack, bindings, profile, kpi_defs.skipped),
         _run(check_sql_safety, kpi_defs, bindings),
         _run(check_dry_run, kpi_defs, profile.source),
-        _run(check_pii, kpi_defs, bindings, _pii_scan_texts(generated)),
         _run(check_plugin_spec, plugin_dir),
         _run(check_cli_validate, plugin_dir),
         _run(check_mcp_smoke, config_dir, data_dir, kpi_defs),
         _run(check_self_critique, pack, kpi_defs, _prose_texts(generated), provider),
+        _run(check_schema_model, schema_model, profile),
     ]
 
     return ValidationReport(

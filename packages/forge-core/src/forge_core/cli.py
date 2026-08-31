@@ -98,9 +98,6 @@ def run(
     pack: str | None = typer.Option(
         None, "--pack", help="Industry pack slug to force (skips auto-classification)."
     ),
-    use_llm: bool = typer.Option(
-        True, "--llm/--no-llm", help="Use Gemini for semantic profiling/generation/critique."
-    ),
     use_agent: bool = typer.Option(
         False,
         "--agent/--no-agent",
@@ -131,9 +128,9 @@ def run(
         label=label,
     )
 
-    profiling_provider = get_provider(role="profiling") if use_llm else None
-    generation_provider = get_provider(role="generation") if use_llm else None
-    critique_provider = get_provider(role="critique") if use_llm else None
+    profiling_provider = get_provider(role="profiling")
+    generation_provider = get_provider(role="generation")
+    critique_provider = get_provider(role="critique")
 
     with Live(_render_checklist(record), console=console, refresh_per_second=8) as live:
         record.on_event(lambda _event: live.update(_render_checklist(record)))

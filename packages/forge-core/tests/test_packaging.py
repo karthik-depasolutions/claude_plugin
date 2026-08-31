@@ -123,11 +123,11 @@ def test_write_plugin_produces_a_bom_less_spec_valid_plugin(bookings_csv: Path, 
     assert (plugin_dir / "skills" / "healthcare-diagnostics-data-visualizer" / "SKILL.md").is_file()
     assert (plugin_dir / "skills" / "healthcare-diagnostics-root-cause-investigator" / "SKILL.md").is_file()
 
-    # `phone` is denied (healthcare-diagnostics denies the `phone` role
-    # category) - it must be dropped from the shipped file, not just from
-    # compiled SQL/generated prose.
+    # `customer_name` is a free_text column (a role category
+    # healthcare-diagnostics denies) - it must be dropped from the shipped
+    # file, not just from compiled SQL/generated prose.
     header = (plugin_dir / "data" / "bookings.csv").read_text(encoding="utf-8").splitlines()[0]
-    assert "phone" not in header.split(",")
+    assert "customer_name" not in header.split(",")
     assert "booking_id" in header.split(",")
 
     for path in plugin_dir.rglob("*"):
@@ -179,7 +179,7 @@ def test_end_to_end_run_harness_against_a_real_packaged_plugin(bookings_csv: Pat
         data_dir=data_dir,
     )
 
-    for name in ("fact_check", "sql_safety", "dry_run", "pii_scan", "plugin_spec", "mcp_smoke"):
+    for name in ("fact_check", "sql_safety", "dry_run", "plugin_spec", "mcp_smoke"):
         result = report.check(name)
         assert result.status in (CheckStatus.PASS, CheckStatus.WARN), f"{name}: {result.issues}"
     assert report.overall != CheckStatus.FAIL

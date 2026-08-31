@@ -45,7 +45,6 @@ async def start_run(
     output_dir: str,
     *,
     industry_override: str | None,
-    use_llm: bool,
     use_agent: bool = False,
     label: str | None = None,
 ) -> registry.RunContext:
@@ -61,22 +60,22 @@ async def start_run(
     ctx.use_agent = use_agent
     registry.put(run_id, ctx)
     await _persist(ctx)
-    logger.info("[%s] started - source=%s industry=%s use_llm=%s", run_id, source_path, industry_override, use_llm)
-    asyncio.create_task(_execute(ctx, use_llm=use_llm))  # noqa: RUF006 - fire-and-forget job, tracked via ctx
+    logger.info("[%s] started - source=%s industry=%s", run_id, source_path, industry_override)
+    asyncio.create_task(_execute(ctx))  # noqa: RUF006 - fire-and-forget job, tracked via ctx
     return ctx
 
 
-async def resume_run(ctx: registry.RunContext, *, use_llm: bool) -> None:
-    asyncio.create_task(_execute(ctx, use_llm=use_llm))  # noqa: RUF006
+async def resume_run(ctx: registry.RunContext) -> None:
+    asyncio.create_task(_execute(ctx))  # noqa: RUF006
 
 
-async def _execute(ctx: registry.RunContext, *, use_llm: bool) -> None:
+async def _execute(ctx: registry.RunContext) -> None:
     ctx.running = True
     record = ctx.record
     try:
-        profiling = get_provider(role="profiling") if use_llm else None
-        generation = get_provider(role="generation") if use_llm else None
-        critique = get_provider(role="critique") if use_llm else None
+        profiling = get_provider(role="profiling")
+        generation = get_provider(role="generation")
+        critique = get_provider(role="critique")
         await asyncio.to_thread(
             run_pipeline,
             record,

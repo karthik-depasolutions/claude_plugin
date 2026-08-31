@@ -30,6 +30,7 @@ from forge_core.models.plugin_spec import (
     PluginSpec,
     UserConfigOption,
 )
+from forge_core.models.schema_model import SchemaModel
 from forge_core.models.schema_profile import SchemaProfile
 from forge_core.packaging.mcp_bundle import bundle_runtime
 from forge_core.packaging.redaction import write_redacted_data_files
@@ -63,20 +64,28 @@ def plugin_name_for(pack: IndustryPack, customer_label: str | None = None) -> st
 
 
 def _column_profiles_by_table(profile: SchemaProfile) -> dict[str, list[dict]]:
-    """Per-table `column_profiles`, PII-safe by construction: denied/PII
-    columns are simply never in `profile.structural.columns` for a table the
-    binder didn't select from, and `get_data_profile` already excludes denied
-    columns on its live-compute fallback - this pre-computed path must match."""
+    """Per-table `column_profiles` for `schema_summary.json`. Includes
+    `guessed_role` so the runtime's `describe_data` can classify columns into
+    dimensions / measures / time fields without recomputing anything."""
     by_table: dict[str, list[dict]] = {}
     for col in profile.structural.columns:
         by_table.setdefault(col.table, []).append(
-            {"column": col.name, "null_percent": col.null_percent, "cardinality": col.cardinality}
+            {
+                "column": col.name,
+                "guessed_role": col.guessed_role.value,
+                "null_percent": col.null_percent,
+                "cardinality": col.cardinality,
+            }
         )
     return by_table
 
 
 def _config_files(
-    pack: IndustryPack, profile: SchemaProfile, bindings: SchemaBindings, kpi_defs: KpiDefsFile
+    pack: IndustryPack,
+    profile: SchemaProfile,
+    bindings: SchemaBindings,
+    kpi_defs: KpiDefsFile,
+    schema_model: SchemaModel | None,
 ) -> list[GeneratedFile]:
     source = profile.source
     data_source_json = {
@@ -110,36 +119,7 @@ def _config_files(
         },
     }
 
-    # Derive high-level business context
-    dims, measures, time_cols = [], [], []
-    for t_summary in schema_summary_json["tables"]:
-        for p in t_summary["column_profiles"]:
-            c_name = p["column"]
-            role = p.get("guessed_role", "")
-            if role in ("categorical", "geographic", "boolean_flag"):
-                dims.append(c_name)
-            elif role in ("numeric", "currency"):
-                measures.append(c_name)
-            elif role in ("date", "datetime"):
-                time_cols.append(c_name)
-
-    business_context_json = {
-        "business_domain": pack.slug,
-        "business_process": pack.name,
-        "record_grain": f"one business record per row in {source.tables[0].name}" if source.tables else "one record per row",
-        "entities": [t.name for t in source.tables if t.name in bindings.allowed_tables],
-        "dimensions": list(dict.fromkeys(dims)),
-        "measures": list(dict.fromkeys(measures)),
-        "time_fields": list(dict.fromkeys(time_cols)),
-        "concepts": {
-            "entities": [t.name for t in source.tables if t.name in bindings.allowed_tables],
-            "dimensions": list(dict.fromkeys(dims)),
-            "measures": list(dict.fromkeys(measures)),
-            "events": [f"{t.name}_recorded" for t in source.tables if t.name in bindings.allowed_tables],
-        },
-    }
-
-    return [
+    files = [
         GeneratedFile(
             relative_path="config/data_source.json",
             content=json.dumps(data_source_json, indent=2),
@@ -158,12 +138,21 @@ def _config_files(
             content=json.dumps(schema_summary_json, indent=2),
             is_json=True,
         ),
-        GeneratedFile(
-            relative_path="config/business_context.json",
-            content=json.dumps(business_context_json, indent=2),
-            is_json=True,
-        ),
     ]
+
+    # The knowledge pack the MCP client reads: overview, per-table docs,
+    # pattern notes, verified cookbook. Replaces the old deterministic-only
+    # business_context.json (which shipped near-empty).
+    if schema_model is not None:
+        files.append(
+            GeneratedFile(
+                relative_path="config/schema_model.json",
+                content=schema_model.model_dump_json(indent=2),
+                is_json=True,
+            )
+        )
+
+    return files
 
 
 def _mcp_config(*, inject_source_db_url: bool = False) -> McpConfig:
@@ -270,6 +259,7 @@ def build_plugin_spec(
     kpi_defs: KpiDefsFile,
     generated: GeneratedPlugin,
     *,
+    schema_model: SchemaModel | None = None,
     plugin_name: str | None = None,
     customer_label: str | None = None,
     version: str = INITIAL_VERSION,
@@ -352,7 +342,7 @@ def build_plugin_spec(
                 content=render_frontmatter(command.frontmatter.to_frontmatter_dict(), command.body),
             )
         )
-    files.extend(_config_files(pack, profile, bindings, kpi_defs))
+    files.extend(_config_files(pack, profile, bindings, kpi_defs, schema_model))
 
     return PluginSpec(
         manifest=manifest,

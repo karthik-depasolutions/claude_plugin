@@ -87,7 +87,7 @@ flowchart TD
 
 **6. Generate** — Now we write the actual plugin content: a skill document describing what the assistant can do, a specialist sub-agent for deep-dive analysis, one slash-command per common report, a session-start guardrail (e.g. "this data is read-only, never guess at PII"), and a small HTML dashboard pre-computed from the client's real KPI numbers.
 
-**7. Validate** — Nothing reaches a client without passing **eight independent automated checks**: every fact we generated is grounded in the real schema, every SQL statement is provably read-only and safe, a dry-run actually executes against the real data, a PII scanner checks nothing sensitive leaked into generated text, the plugin file structure matches Claude's exact spec, the real `claude` CLI's own validator approves it, the bundled MCP server smoke-tests successfully, and (optionally) an AI self-critique pass reviews the output for quality issues a machine check wouldn't catch.
+**7. Validate** — Nothing reaches a client without passing **seven independent automated checks**: every fact we generated is grounded in the real schema, every SQL statement is provably read-only and safe, a dry-run actually executes against the real data, the plugin file structure matches Claude's exact spec, the real `claude` CLI's own validator approves it, the bundled MCP server smoke-tests successfully, and an AI self-critique pass reviews the output for quality issues a machine check wouldn't catch. (The knowledge pack's own fact-check and query-cookbook verification happen earlier, during synthesis.)
 
 **8. Package** — Assemble everything into the exact folder structure Claude Code/Desktop expects (manifest, skills, agents, commands, hooks, bundled server, and the client's data — with sensitive columns automatically redacted before anything is bundled).
 
@@ -177,7 +177,7 @@ We built this in incremental, independently-testable milestones (M0 → M12), ea
 | M0 | Foundation | Project skeleton, workspace, linting/type-checking/tests wired into CI |
 | M1 | Contracts | The typed data models every stage agrees on |
 | M2 | Ingestion | File/SQLite/Postgres adapters, unified through DuckDB |
-| M3 | Profiling | Deterministic column/table profiler + optional AI semantic layer |
+| M3 | Profiling | Deterministic column/table/relationship/pattern profiler + mandatory AI synthesis into a shipped knowledge pack |
 | M4 | Industry packs | The pack format + the classifier that matches a dataset to one |
 | M5 | Binding & compiling | Canonical-role-to-column mapping + SQL compilation |
 | M6 | Generic MCP runtime | The one executable server every plugin uses |

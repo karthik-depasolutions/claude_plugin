@@ -24,9 +24,9 @@ def get_value_set(
     limit: int = 50,
 ) -> dict[str, Any]:
     """Retrieve the distinct values and frequency counts for a categorical field."""
-    # 1. PII / Denied column check
+    # 1. Denied column check
     if field in config.bindings.denied_columns:
-        return {"error": f"Column {field!r} is a denied/PII column and cannot be inspected."}
+        return {"error": f"Column {field!r} is a denied column and cannot be inspected."}
 
     # 2. Syntax sanitize
     if not _IDENTIFIER_PATTERN.match(field):

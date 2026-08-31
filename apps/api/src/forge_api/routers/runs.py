@@ -33,6 +33,7 @@ from forge_api.schemas import (
     BindingOverridesRequest,
     ConfirmIndustryRequest,
     CreateRunFromPathRequest,
+    DataAnswersRequest,
     PublishGithubRequest,
     PublishGithubResponse,
     RunDetail,
@@ -69,7 +70,6 @@ async def create_run_from_path(body: CreateRunFromPathRequest) -> RunSummary:
         source_for_run,
         output_dir,
         industry_override=body.industry,
-        use_llm=body.use_llm,
         use_agent=body.use_agent,
         label=body.label,
     )
@@ -80,7 +80,6 @@ async def create_run_from_path(body: CreateRunFromPathRequest) -> RunSummary:
 async def create_run_from_upload(
     files: list[UploadFile],
     industry: str | None = None,
-    use_llm: bool = True,
     use_agent: bool = False,
     label: str | None = None,
 ) -> RunSummary:
@@ -121,7 +120,6 @@ async def create_run_from_upload(
         source_for_run,
         output_dir,
         industry_override=industry,
-        use_llm=use_llm,
         use_agent=use_agent,
         label=label,
     )
@@ -275,7 +273,18 @@ async def confirm_industry(run_id: str, body: ConfirmIndustryRequest, session: S
     ctx = await _require_live_context(run_id, session)
     _require_status(ctx.record, RunStatus.NEEDS_INPUT)
     ctx.record.industry_override = body.industry
-    await pipeline_runner.resume_run(ctx, use_llm=True)
+    await pipeline_runner.resume_run(ctx)
+    return _summary(ctx.record)
+
+
+@router.post("/{run_id}/answers", response_model=RunSummary)
+async def submit_data_answers(run_id: str, body: DataAnswersRequest, session: SessionDep) -> RunSummary:
+    """Answer the pre-synthesis data-clarification questions (or submit an
+    empty object to skip). Resumes a run paused at PROFILE."""
+    ctx = await _require_live_context(run_id, session)
+    _require_status(ctx.record, RunStatus.NEEDS_INPUT)
+    ctx.record.data_answers = {k: v for k, v in body.answers.items() if v.strip()}
+    await pipeline_runner.resume_run(ctx)
     return _summary(ctx.record)
 
 
@@ -287,7 +296,7 @@ async def set_binding_overrides(
     if ctx.record.status not in (RunStatus.NEEDS_INPUT, RunStatus.SUCCEEDED, RunStatus.FAILED):
         raise HTTPException(409, f"Cannot set binding overrides while run is {ctx.record.status.value}.")
     ctx.binding_overrides.update(body.overrides)
-    await pipeline_runner.resume_run(ctx, use_llm=True)
+    await pipeline_runner.resume_run(ctx)
     return _summary(ctx.record)
 
 
