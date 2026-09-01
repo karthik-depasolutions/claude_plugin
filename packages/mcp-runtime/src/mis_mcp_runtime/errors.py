@@ -25,6 +25,8 @@ import time
 from collections.abc import Callable
 from typing import Any
 
+import duckdb
+
 from mis_mcp_runtime.security.allowlist import AllowlistError
 from mis_mcp_runtime.security.limits import QueryTimeoutError
 from mis_mcp_runtime.security.pii_policy import PiiPolicyError
@@ -55,6 +57,11 @@ _CODE_BY_TYPE: tuple[tuple[type[BaseException], str], ...] = (
     (QueryTimeoutError, "timeout"),
     (KeyError, "not_found"),
     (LookupError, "not_found"),
+    # A DuckDB execution error (unknown column, type mismatch, ...) is the
+    # caller's SQL being wrong, not the server breaking - keep the (redacted)
+    # message so the model can correct it. Checked before ValueError because
+    # duckdb.Error subclasses it.
+    (duckdb.Error, "query_failed"),
     (ValueError, "invalid_argument"),
 )
 

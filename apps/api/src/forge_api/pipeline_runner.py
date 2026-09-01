@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from forge_core.llm import TokenUsage, get_provider
+from forge_core.llm import get_provider
 from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.run import RunRecord, StageEvent
 from forge_core.orchestrator import DEFAULT_PACKS_ROOT, run_pipeline
@@ -72,7 +72,7 @@ async def resume_run(ctx: registry.RunContext) -> None:
 async def _execute(ctx: registry.RunContext) -> None:
     ctx.running = True
     record = ctx.record
-    usage = TokenUsage()
+    usage = ctx.token_usage_acc  # one accumulator for the run, across pause/resume
     try:
         profiling = get_provider(role="profiling", usage=usage)
         generation = get_provider(role="generation", usage=usage)

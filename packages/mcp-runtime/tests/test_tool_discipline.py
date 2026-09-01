@@ -51,10 +51,21 @@ def test_redact_strips_dsn_paths_and_internal_table_names():
 
 
 def test_classify_maps_known_errors_and_hides_unexpected_ones():
+    import duckdb
+
     assert classify(SqlPolicyError("only SELECT allowed"))[0] == "denied"
     assert classify(AllowlistError("nope"))[0] == "denied"
     assert classify(KeyError("kpi_x"))[0] == "not_found"
     assert classify(ToolError("invalid_argument", "bad limit")) == ("invalid_argument", "bad limit")
+
+    # A bad-SQL DuckDB error is the caller's fault, not a server crash: keep
+    # the (redacted) message so the model can fix its query.
+    try:
+        duckdb.connect(":memory:").execute("SELECT missing_col FROM (SELECT 1 AS a)")
+    except duckdb.Error as exc:
+        code, message = classify(exc)
+    assert code == "query_failed"
+    assert "missing_col" in message
 
     code, message = classify(RuntimeError("boom postgresql://u:p@h/db"))
     assert code == "internal_error"

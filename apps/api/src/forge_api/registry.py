@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from forge_core.llm import TokenUsage
 from forge_core.models.run import RunRecord
 
 
@@ -25,8 +26,13 @@ class RunContext:
     # a persisted JSON file. Lost on API restart; that's the point (see
     # /runs/{run_id}/warehouse-credentials - "show once").
     warehouse_connection_string: str | None = None
-    # Snapshot of the run's LLM token usage (forge_core.llm.TokenUsage.snapshot),
-    # taken when the pipeline thread exits and written to the `runs` table.
+    # One accumulator for the whole run - reused across every pause/resume of
+    # `_execute` so a run that stops for clarification still counts all its
+    # tokens. `token_usage` is its snapshot, refreshed each time the pipeline
+    # thread exits and written to the `runs` table.
+    # ponytail: in-memory only; a resume after an API restart (ctx gone) starts
+    # a fresh count. Acceptable - the common path (no restart mid-run) is exact.
+    token_usage_acc: TokenUsage = field(default_factory=TokenUsage)
     token_usage: dict | None = None
 
 
