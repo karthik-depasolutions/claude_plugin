@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from mis_mcp_runtime.config import load_runtime_config
 from mis_mcp_runtime.engine.duckdb_session import open_session
+from mis_mcp_runtime.security.allowlist import AllowlistError
+from mis_mcp_runtime.security.pii_policy import PiiPolicyError
+from mis_mcp_runtime.security.sql_policy import SqlPolicyError
 from mis_mcp_runtime.tools.describe_schema import describe_schema
 from mis_mcp_runtime.tools.get_data_profile import get_data_profile
 from mis_mcp_runtime.tools.get_kpi import get_kpi, list_kpis
@@ -71,28 +76,28 @@ def test_run_safe_query_allows_explicit_select(bookings_config_dir: Path):
 def test_run_safe_query_rejects_select_star(bookings_config_dir: Path):
     config, con = _load(bookings_config_dir)
     fact_ref = config.data_source.tables[0].physical_ref
-    result = run_safe_query(config, con, f"SELECT * FROM {fact_ref}")
-    assert "error" in result
+    with pytest.raises(SqlPolicyError):
+        run_safe_query(config, con, f"SELECT * FROM {fact_ref}")
 
 
 def test_run_safe_query_rejects_denied_column(bookings_config_dir: Path):
     config, con = _load(bookings_config_dir)
     fact_ref = config.data_source.tables[0].physical_ref
-    result = run_safe_query(config, con, f'SELECT "customer_name" FROM {fact_ref}')
-    assert "error" in result
+    with pytest.raises(PiiPolicyError):
+        run_safe_query(config, con, f'SELECT "customer_name" FROM {fact_ref}')
 
 
 def test_run_safe_query_rejects_disallowed_table(bookings_config_dir: Path):
     config, con = _load(bookings_config_dir)
-    result = run_safe_query(config, con, 'SELECT "x" FROM some_other_table')
-    assert "error" in result
+    with pytest.raises(AllowlistError):
+        run_safe_query(config, con, 'SELECT "x" FROM some_other_table')
 
 
 def test_run_safe_query_rejects_mutations(bookings_config_dir: Path):
     config, con = _load(bookings_config_dir)
     fact_ref = config.data_source.tables[0].physical_ref
-    result = run_safe_query(config, con, f'DELETE FROM {fact_ref}')
-    assert "error" in result
+    with pytest.raises(SqlPolicyError):
+        run_safe_query(config, con, f"DELETE FROM {fact_ref}")
 
 
 def test_run_safe_query_injects_row_limit(bookings_config_dir: Path):

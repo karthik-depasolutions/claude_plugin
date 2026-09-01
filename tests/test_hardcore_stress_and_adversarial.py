@@ -351,15 +351,14 @@ class TestMcpRuntimeHardening:
     def test_run_safe_query_sql_injection_stacked_queries(self, mock_runtime_config):
         """Attacker passes stacked queries with semicolons."""
         config, con = mock_runtime_config
-        res = run_safe_query(config, con, "SELECT amount_inr FROM src_bookings; DROP TABLE src_bookings;")
-        assert "error" in res
+        with pytest.raises(SqlPolicyError):
+            run_safe_query(config, con, "SELECT amount_inr FROM src_bookings; DROP TABLE src_bookings;")
 
     def test_run_safe_query_denied_column_rejection(self, mock_runtime_config):
         """Attacker queries the denied free-text column."""
         config, con = mock_runtime_config
-        res = run_safe_query(config, con, "SELECT customer_name FROM src_bookings")
-        assert "error" in res
-        assert "denied" in res["error"].lower() or "policy" in res["error"].lower()
+        with pytest.raises(PiiPolicyError, match="denied"):
+            run_safe_query(config, con, "SELECT customer_name FROM src_bookings")
 
     def test_run_safe_query_row_limit(self, mock_runtime_config):
         """Verify queries respect max_query_rows."""

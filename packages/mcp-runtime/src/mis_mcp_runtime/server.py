@@ -16,9 +16,11 @@ from typing import Any
 from mcp.server.apps import Apps, ResourceCsp, client_supports_apps
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.context import Context
+from mcp_types import ToolAnnotations
 
 from mis_mcp_runtime.config import ConfigError, RuntimeConfig, load_runtime_config
 from mis_mcp_runtime.engine.duckdb_session import open_session
+from mis_mcp_runtime.errors import tool_guard
 from mis_mcp_runtime.resources import build_instructions, register_resources
 from mis_mcp_runtime.schema_drift import schema_drift_report
 from mis_mcp_runtime.tools.describe_data import (
@@ -70,6 +72,17 @@ _FALLBACK_INSTRUCTIONS = (
 
 _CHART_RESOURCE_URI = "ui://mis/chart.html"
 
+# Every tool is read-only and idempotent. `_META` tools answer from config/*.json
+# alone; `_DATA` tools run a query and so reach the (possibly remote) source DB -
+# that is the only distinction the `open_world_hint` captures. These are hints
+# for the client, never a substitute for the structural guards in security/.
+_META = ToolAnnotations(
+    read_only_hint=True, idempotent_hint=True, destructive_hint=False, open_world_hint=False
+)
+_DATA = ToolAnnotations(
+    read_only_hint=True, idempotent_hint=True, destructive_hint=False, open_world_hint=True
+)
+
 
 def _read_ui(filename: str) -> str:
     return importlib.resources.files("mis_mcp_runtime.ui").joinpath(filename).read_text(encoding="utf-8")
@@ -94,23 +107,23 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
 
     apps = Apps()
 
-    @apps.tool(resource_uri=_CHART_RESOURCE_URI, visibility=["model"])
     def render_chart(kpi_id: str, ctx: Context) -> dict[str, Any]:
         """Render a KPI as an interactive chart instead of raw numbers - prefer
         this over get_kpi whenever the user wants to *see* the data, not just
         read it. Falls back to a markdown table on clients that can't render
         the chart, so it's always safe to call."""
-        try:
-            config, con = resolve()
-            result = _get_kpi(config, con, kpi_id)
-        except Exception as exc:  # noqa: BLE001 - never crash the MCP session over one KPI
-            return {"error": str(exc)}
-        if "error" in result:
+        config, con = resolve()
+        result = _get_kpi(config, con, kpi_id)
+        if isinstance(result, dict) and "error" in result:
             return result
         payload = {**result, "rendered": _markdown_table(result)}
         if client_supports_apps(ctx):
             payload["chart"] = _chart_payload(result)
         return payload
+
+    apps.tool(
+        resource_uri=_CHART_RESOURCE_URI, visibility=["model"], name="render_chart", annotations=_DATA
+    )(tool_guard(render_chart))
 
     apps.add_html_resource(
         _CHART_RESOURCE_URI,
@@ -136,11 +149,20 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
     )
     register_resources(mcp, resolve)
 
+    def _tool(annotations: ToolAnnotations) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        """Register a tool through `tool_guard` (uniform error envelope + one
+        stderr audit line per call) with the given read-only annotations."""
+
+        def register(fn: Callable[..., Any]) -> Callable[..., Any]:
+            return mcp.tool(name=fn.__name__, annotations=annotations)(tool_guard(fn))
+
+        return register
+
     # -------------------------------------------------------------------------
     # Tier 1: Semantic Discovery Tools
     # -------------------------------------------------------------------------
 
-    @mcp.tool()
+    @_tool(_DATA)
     def describe_data() -> dict[str, Any]:
         """Return the high-level data overview: domain, core entities, record
         grain, dimensions, measures, time fields, relationships, and KPI count.
@@ -152,28 +174,28 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
             out["schema_drift_warning"] = drift
         return out
 
-    @mcp.tool()
+    @_tool(_META)
     def list_business_concepts() -> dict[str, Any]:
         """List all recognized business entities, dimensions, measures, and business
         events without requiring database schema knowledge."""
         config, _ = resolve()
         return _list_business_concepts(config)
 
-    @mcp.tool()
+    @_tool(_META)
     def describe_schema(table: str | None = None) -> dict[str, Any]:
         """Return table schemas, column data types, guessed roles, and denied column
         status. Pass table="name" for targeted single-table inspection."""
         config, _ = resolve()
         return _describe_schema(config, table=table)
 
-    @mcp.tool()
+    @_tool(_DATA)
     def get_data_profile(table: str) -> dict[str, Any]:
         """Return per-column data quality statistics (null percentages, cardinality,
         sample values) for one table. Denied columns are always excluded."""
         config, con = resolve()
         return _get_data_profile(config, con, table)
 
-    @mcp.tool()
+    @_tool(_DATA)
     def get_value_set(field: str, table: str | None = None, limit: int = 50) -> dict[str, Any]:
         """Retrieve distinct values and percentage distributions for a categorical field.
         Always use this instead of writing exploratory SQL to see distinct values."""
@@ -184,31 +206,28 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
     # Tier 2: Business Analytics & KPI Tools
     # -------------------------------------------------------------------------
 
-    @mcp.tool()
+    @_tool(_META)
     def list_kpis() -> dict[str, Any]:
         """List all verified business KPIs available in the catalog with descriptions,
         labels, and measurement units."""
         config, _ = resolve()
         return _list_kpis(config)
 
-    @mcp.tool()
+    @_tool(_DATA)
     def get_kpi(kpi_id: str) -> dict[str, Any]:
         """Execute a verified business KPI from the catalog (see list_kpis).
         Always prefer this over run_safe_query whenever a matching KPI exists."""
-        try:
-            config, con = resolve()
-            return _get_kpi(config, con, kpi_id)
-        except Exception as exc:  # noqa: BLE001
-            return {"error": str(exc)}
+        config, con = resolve()
+        return _get_kpi(config, con, kpi_id)
 
-    @mcp.tool()
+    @_tool(_META)
     def explain_metric(metric_id: str) -> dict[str, Any]:
         """Get the transparent formula definition, unit, description, and source
         fields of a business metric/KPI without executing a query."""
         config, _ = resolve()
         return _explain_metric(config, metric_id)
 
-    @mcp.tool()
+    @_tool(_DATA)
     def compare_kpi(
         kpi_id: str,
         period_a: dict[str, Any] | None = None,
@@ -219,7 +238,7 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
         config, con = resolve()
         return _compare_kpi(config, con, kpi_id, period_a, period_b)
 
-    @mcp.tool()
+    @_tool(_DATA)
     def rank_entities(
         entity: str,
         metric: str | None = None,
@@ -232,7 +251,7 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
         config, con = resolve()
         return _rank_entities(config, con, entity_dimension=entity, metric=metric, table=table, limit=limit, order=order)
 
-    @mcp.tool()
+    @_tool(_DATA)
     def breakdown_metric(
         dimension: str,
         metric: str | None = None,
@@ -244,7 +263,7 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
         config, con = resolve()
         return _breakdown_metric(config, con, dimension=dimension, metric_or_kpi_id=metric, table=table, limit=limit)
 
-    @mcp.tool()
+    @_tool(_DATA)
     def query_metric(
         metric_id: str,
         group_by: list[str] | None = None,
@@ -260,7 +279,7 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
     # Tier 3: Record & Entity Exploration Tools
     # -------------------------------------------------------------------------
 
-    @mcp.tool()
+    @_tool(_DATA)
     def search_records(
         table: str, filters: dict[str, Any] | None = None, limit: int = 20
     ) -> dict[str, Any]:
@@ -269,7 +288,7 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
         config, con = resolve()
         return _search_records(config, con, table, filters, limit)
 
-    @mcp.tool()
+    @_tool(_DATA)
     def get_record(
         table: str, id_value: str, id_column: str | None = None
     ) -> dict[str, Any]:
@@ -277,7 +296,7 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
         config, con = resolve()
         return _get_record(config, con, table_or_entity=table, id_value=id_value, id_column=id_column)
 
-    @mcp.tool()
+    @_tool(_DATA)
     def get_related_records(
         source_table: str,
         source_id: str,
@@ -293,7 +312,7 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
     # Tier 5: Escape Hatch
     # -------------------------------------------------------------------------
 
-    @mcp.tool()
+    @_tool(_DATA)
     def run_safe_query(sql: str) -> dict[str, Any]:
         """Run a read-only SQL SELECT against allowed table(s) ONLY when no existing
         semantic or KPI tool can answer the question. Must be a single SELECT statement
