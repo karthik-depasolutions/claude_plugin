@@ -207,10 +207,21 @@ def run_id_from_plugin_dir(plugin_dir: Path) -> str | None:
     return parts[index + 1]
 
 
+_NGROK_HOST_MARKERS = ("ngrok-free.dev", "ngrok-free.app", "ngrok.io", "ngrok.app", "ngrok.dev")
+
+
 def bind_http_mcp(plugin_dir: Path, url: str) -> None:
     """Point an already-written plugin at a hosted MCP URL so Claude Desktop
-    can connect from GitHub install without local Python / claude_desktop_config."""
-    spec = McpConfig(mcpServers={MCP_SERVER_NAME: McpRemoteServer(type="http", url=url)})
+    can connect from GitHub install without local Python / claude_desktop_config.
+
+    When the URL is an ngrok tunnel (local testing), attach the header that
+    skips ngrok-free's browser-warning interstitial - it otherwise breaks the
+    MCP handshake. Absent for a real production origin (Cloudflare etc.).
+    """
+    remote_kwargs: dict[str, object] = {"type": "http", "url": url}
+    if any(marker in url for marker in _NGROK_HOST_MARKERS):
+        remote_kwargs["headers"] = {"ngrok-skip-browser-warning": "true"}
+    spec = McpConfig(mcpServers={MCP_SERVER_NAME: McpRemoteServer(**remote_kwargs)})
     _write_text(plugin_dir / ".mcp.json", json.dumps(spec.to_json_dict(), indent=2))
     manifest_path = plugin_dir / ".claude-plugin" / "plugin.json"
     if manifest_path.is_file():

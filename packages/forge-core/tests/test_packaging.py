@@ -152,8 +152,22 @@ def test_bind_http_mcp_rewrites_stdio_to_a_remote_url(bookings_csv: Path, tmp_pa
     assert server["type"] == "http"
     assert server["url"] == "https://forge.example/mcp/abc/tok"
     assert "command" not in server
+    assert not server.get("headers")  # no ngrok header for a real origin
     manifest = json.loads((plugin_dir / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
     assert "source_db_url" not in (manifest.get("userConfig") or {})
+
+
+def test_bind_http_mcp_adds_ngrok_skip_warning_header_for_a_tunnel_url(bookings_csv: Path, tmp_path: Path):
+    profile, pack, bindings, kpi_defs, generated = _pipeline(bookings_csv, "healthcare-diagnostics")
+    spec = build_plugin_spec(pack, profile, bindings, kpi_defs, generated)
+    plugin_dir = tmp_path / spec.manifest.name
+    write_plugin(spec, plugin_dir, bundle_mcp_runtime=False)
+
+    from forge_core.packaging import bind_http_mcp
+
+    bind_http_mcp(plugin_dir, "https://gimmick-swell-hull.ngrok-free.dev/mcp/abc/tok")
+    mcp = json.loads((plugin_dir / ".mcp.json").read_text(encoding="utf-8"))
+    assert mcp["mcpServers"]["mis-mcp-runtime"]["headers"] == {"ngrok-skip-browser-warning": "true"}
 
 
 def test_end_to_end_run_harness_against_a_real_packaged_plugin(bookings_csv: Path, tmp_path: Path):
