@@ -17,7 +17,7 @@ from rich.text import Text
 
 from forge_core.classification import load_all_packs
 from forge_core.ingestion.registry import default_run_id, prepare_source_for_persistence
-from forge_core.llm import get_provider
+from forge_core.llm import TokenUsage, get_provider
 from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.run import RunRecord
 from forge_core.orchestrator import DEFAULT_PACKS_ROOT, run_pipeline
@@ -128,9 +128,10 @@ def run(
         label=label,
     )
 
-    profiling_provider = get_provider(role="profiling")
-    generation_provider = get_provider(role="generation")
-    critique_provider = get_provider(role="critique")
+    usage = TokenUsage()
+    profiling_provider = get_provider(role="profiling", usage=usage)
+    generation_provider = get_provider(role="generation", usage=usage)
+    critique_provider = get_provider(role="critique", usage=usage)
 
     with Live(_render_checklist(record), console=console, refresh_per_second=8) as live:
         record.on_event(lambda _event: live.update(_render_checklist(record)))
@@ -152,6 +153,13 @@ def run(
     for event in result.events:
         stamp = event.timestamp.strftime("%H:%M:%S")
         console.print(f"  [dim]{stamp}[/] [cyan]{event.stage.value:>14}[/] {event.message}")
+
+    s = usage.snapshot()
+    if s["calls"]:
+        console.print(
+            f"\n[bold]LLM tokens:[/] {s['input_tokens']:,} in / {s['output_tokens']:,} out / "
+            f"{s['total_tokens']:,} total across {s['calls']} calls"
+        )
 
     if result.status == RunStatus.NEEDS_INPUT:
         console.print(

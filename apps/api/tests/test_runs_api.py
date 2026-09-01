@@ -58,6 +58,21 @@ async def test_full_run_lifecycle_succeeds_and_is_downloadable(client: AsyncClie
     assert download.headers["content-type"] == "application/zip"
     assert len(download.content) > 0
 
+    # LLM token-usage columns are populated on the run row. The hermetic suite
+    # uses a fake provider (no real tokens), so the counts are 0 - what this
+    # guards is that the columns exist and the snapshot is written.
+    from forge_api.db import session_factory
+    from forge_api.models_orm import RunORM
+    from sqlalchemy import select
+
+    async with session_factory()() as session:
+        row = (await session.execute(select(RunORM).where(RunORM.run_id == run_id))).scalar_one()
+    assert row.llm_input_tokens == 0
+    assert row.llm_output_tokens == 0
+    assert row.llm_token_usage_json == {
+        "input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "calls": 0, "by_model": {}, "by_role": {}
+    }
+
     confirm_url = f"/runs/{run_id}/confirm-industry"
     confirm_after_success = await client.post(confirm_url, json={"industry": "finance"})
     assert confirm_after_success.status_code == 409

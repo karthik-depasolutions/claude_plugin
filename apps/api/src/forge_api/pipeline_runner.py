@@ -10,7 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from forge_core.llm import get_provider
+from forge_core.llm import TokenUsage, get_provider
 from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.run import RunRecord, StageEvent
 from forge_core.orchestrator import DEFAULT_PACKS_ROOT, run_pipeline
@@ -72,10 +72,11 @@ async def resume_run(ctx: registry.RunContext) -> None:
 async def _execute(ctx: registry.RunContext) -> None:
     ctx.running = True
     record = ctx.record
+    usage = TokenUsage()
     try:
-        profiling = get_provider(role="profiling")
-        generation = get_provider(role="generation")
-        critique = get_provider(role="critique")
+        profiling = get_provider(role="profiling", usage=usage)
+        generation = get_provider(role="generation", usage=usage)
+        critique = get_provider(role="critique", usage=usage)
         await asyncio.to_thread(
             run_pipeline,
             record,
@@ -97,12 +98,24 @@ async def _execute(ctx: registry.RunContext) -> None:
         record.log(record.current_stage or RunStage.INGEST, f"Run failed to start: {exc}")
     finally:
         ctx.running = False
+        ctx.token_usage = usage.snapshot()
         await _persist(ctx)
-        logger.info("[%s] finished - status=%s%s", record.run_id, record.status.value, f" ({record.error})" if record.error else "")
+        tu = ctx.token_usage
+        logger.info(
+            "[%s] finished - status=%s%s - llm %d in / %d out / %d total (%d calls)",
+            record.run_id,
+            record.status.value,
+            f" ({record.error})" if record.error else "",
+            tu["input_tokens"],
+            tu["output_tokens"],
+            tu["total_tokens"],
+            tu["calls"],
+        )
 
 
 async def _persist(ctx: registry.RunContext) -> None:
     record = ctx.record
+    tu = ctx.token_usage or {}
     row = RunORM(
         run_id=record.run_id,
         status=record.status.value,
@@ -113,6 +126,11 @@ async def _persist(ctx: registry.RunContext) -> None:
         error=record.error,
         record_json=record.model_dump(mode="json"),
         binding_overrides_json=ctx.binding_overrides,
+        llm_input_tokens=tu.get("input_tokens", 0),
+        llm_output_tokens=tu.get("output_tokens", 0),
+        llm_total_tokens=tu.get("total_tokens", 0),
+        llm_calls=tu.get("calls", 0),
+        llm_token_usage_json=tu or None,
     )
     async with session_factory()() as session:
         await session.merge(row)

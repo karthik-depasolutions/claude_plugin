@@ -10,12 +10,23 @@ import threading
 from typing import Any
 
 from forge_core.llm.provider import LLMError, LLMProvider
+from forge_core.llm.usage import TokenUsage
 
 
 class GeminiProvider(LLMProvider):
-    def __init__(self, model: str, api_key: str | None = None, temperature: float = 0.2) -> None:
+    def __init__(
+        self,
+        model: str,
+        api_key: str | None = None,
+        temperature: float = 0.2,
+        *,
+        role: str = "generation",
+        usage: TokenUsage | None = None,
+    ) -> None:
         self.model = model
         self.temperature = temperature
+        self._role = role
+        self._usage = usage
         self._api_key = api_key or os.environ.get("GEMINI_API_KEY")
         if not self._api_key:
             raise LLMError(
@@ -24,6 +35,25 @@ class GeminiProvider(LLMProvider):
             )
         self._client = None  # lazy — keeps import cost out of code paths that use cassettes only
         self._client_lock = threading.Lock()
+
+    def _record_usage(self, response: Any) -> None:
+        """Add this response's reported token counts to the run accumulator.
+        Best-effort: a response without usage_metadata is simply not counted."""
+        if self._usage is None:
+            return
+        meta = getattr(response, "usage_metadata", None)
+        if meta is None:
+            return
+        prompt = int(getattr(meta, "prompt_token_count", 0) or 0)
+        candidates = int(getattr(meta, "candidates_token_count", 0) or 0)
+        total = int(getattr(meta, "total_token_count", 0) or 0)
+        self._usage.record(
+            model=self.model,
+            role=self._role,
+            input_tokens=prompt,
+            output_tokens=candidates,
+            total_tokens=total or None,
+        )
 
     def _get_client(self):
         # Double-checked lock: synthesis fans the per-table calls across a
@@ -46,6 +76,7 @@ class GeminiProvider(LLMProvider):
             system_instruction=system,
         )
         response = client.models.generate_content(model=self.model, contents=prompt, config=config)
+        self._record_usage(response)
         text = response.text
         if not text:
             raise LLMError("Gemini returned an empty response for a JSON-mode request.")
@@ -60,6 +91,7 @@ class GeminiProvider(LLMProvider):
         client = self._get_client()
         config = types.GenerateContentConfig(temperature=self.temperature, system_instruction=system)
         response = client.models.generate_content(model=self.model, contents=prompt, config=config)
+        self._record_usage(response)
         text = response.text
         if not text:
             raise LLMError("Gemini returned an empty text response.")

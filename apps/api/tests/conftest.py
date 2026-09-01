@@ -24,7 +24,7 @@ def isolated_env(tmp_path, monkeypatch):
 
     from forge_api import pipeline_runner as _pr
 
-    monkeypatch.setattr(_pr, "get_provider", lambda role="generation": FakeLLMProvider())
+    monkeypatch.setattr(_pr, "get_provider", lambda role="generation", usage=None: FakeLLMProvider())
     # A developer's local .env may configure the client warehouse (it's
     # loaded by `Settings(env_file=".env")` regardless of monkeypatch) - the
     # API test suite must stay hermetic and exercise the plain-local-files

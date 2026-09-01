@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from forge_core.llm.cassette import CassetteProvider
 from forge_core.llm.gemini import GeminiProvider
 from forge_core.llm.provider import LLMError, LLMProvider
+from forge_core.llm.usage import TokenUsage
 
 Role = Literal["profiling", "generation", "critique"]
 
@@ -25,12 +26,14 @@ _ROLE_ENV_VAR = {
 _DEFAULT_MODEL = "gemini-2.5-flash"
 
 
-def get_provider(role: Role = "generation") -> LLMProvider:
+def get_provider(role: Role = "generation", *, usage: TokenUsage | None = None) -> LLMProvider:
     # The single choke point every entry point (CLI, API background task,
     # tests) goes through to touch an LLM, so this is the one place that
     # needs to load `.env` - covers processes (like the API's uvicorn
     # reloader subprocess) that don't inherit a shell's exported vars.
     # Never overrides a var the environment already set explicitly.
+    # `usage`, when given, is a per-run accumulator every response's reported
+    # token counts are added to (see forge_core.llm.usage).
     load_dotenv()
     model = os.environ.get(_ROLE_ENV_VAR[role], _DEFAULT_MODEL)
     cassette_mode = os.environ.get("FORGE_LLM_CASSETTE_MODE", "off").lower()
@@ -40,7 +43,7 @@ def get_provider(role: Role = "generation") -> LLMProvider:
         # Avoid requiring an API key at all when purely replaying fixtures.
         wrapped: LLMProvider = _NullProvider()
     else:
-        wrapped = GeminiProvider(model=model)
+        wrapped = GeminiProvider(model=model, role=role, usage=usage)
 
     if cassette_mode not in ("off", "record", "replay"):
         raise LLMError(f"Invalid FORGE_LLM_CASSETTE_MODE: {cassette_mode!r}")
@@ -58,4 +61,4 @@ class _NullProvider:
         raise LLMError("Attempted a live LLM call while FORGE_LLM_CASSETTE_MODE=replay.")
 
 
-__all__ = ["LLMError", "LLMProvider", "get_provider"]
+__all__ = ["LLMError", "LLMProvider", "TokenUsage", "get_provider"]
