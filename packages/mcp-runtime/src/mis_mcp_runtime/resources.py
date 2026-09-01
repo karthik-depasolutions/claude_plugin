@@ -4,8 +4,9 @@
 deterministic `schema_summary.json` are exposed under `schema://...` URIs so
 a connecting client can read the overview, per-table docs, verified
 cookbook, relationships, and column profiles on demand - not just call
-tools. `build_instructions` turns the same overview + caveats into the
-server's top-level `instructions` string.
+tools. `build_instructions` folds the overview, grain, caveats and the
+top pattern notes into the server's top-level `instructions` string, so
+the key findings reach the model on connect without a `resources/read`.
 """
 
 from __future__ import annotations
@@ -14,7 +15,27 @@ import json
 from collections.abc import Callable
 from typing import Any
 
-_MAX_CAVEATS_IN_INSTRUCTIONS = 4
+# These land in the model's context on every request, so they are capped. The
+# rest is one `resources/read` away in schema://model, schema://patterns and
+# schema://statistics.
+# ponytail: fixed caps; if a dataset routinely overflows them, make the cap a
+# guardrail setting rather than raising the constant.
+_MAX_CAVEATS_IN_INSTRUCTIONS = 6
+_MAX_PATTERNS_IN_INSTRUCTIONS = 12
+
+
+def _pattern_lines(patterns: list[dict[str, Any]]) -> list[str]:
+    lines: list[str] = []
+    for p in patterns:
+        finding = str(p.get("finding", "")).strip()
+        if not finding:
+            continue
+        line = f"- [{p.get('kind', '?')}] {finding}"
+        directive = str(p.get("directive", "")).strip()
+        if directive:
+            line += f" -> {directive}"
+        lines.append(line)
+    return lines
 
 
 def build_instructions(schema_model: dict[str, Any]) -> str:
@@ -26,6 +47,7 @@ def build_instructions(schema_model: dict[str, Any]) -> str:
         for t in tables
         if t.get("grain_prose") or t.get("purpose")
     ]
+    pattern_lines = _pattern_lines(schema_model.get("patterns", []))
 
     parts = ["Tools for querying this business's data."]
     if overview:
@@ -35,6 +57,16 @@ def build_instructions(schema_model: dict[str, Any]) -> str:
     if caveats:
         shown = caveats[:_MAX_CAVEATS_IN_INSTRUCTIONS]
         parts.append("CRITICAL CAVEATS:\n" + "\n".join(f"- {c}" for c in shown))
+    if pattern_lines:
+        shown_p = pattern_lines[:_MAX_PATTERNS_IN_INSTRUCTIONS]
+        block = (
+            "KEY PATTERNS (profiled from the data - the numbers behind each are in "
+            "schema://statistics):\n" + "\n".join(shown_p)
+        )
+        hidden = len(pattern_lines) - len(shown_p)
+        if hidden > 0:
+            block += f"\n- (+{hidden} more in schema://patterns)"
+        parts.append(block)
     parts.append(
         "BEFORE WRITING SQL: read resource schema://model (per-column meaning + enum decodes), "
         "schema://cookbook (verified example queries), and schema://relationships (join keys). "

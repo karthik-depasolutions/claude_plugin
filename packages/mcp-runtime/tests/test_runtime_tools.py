@@ -3,7 +3,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from mis_mcp_runtime.config import load_runtime_config
 from mis_mcp_runtime.engine.duckdb_session import open_session
 from mis_mcp_runtime.security.allowlist import AllowlistError
@@ -267,3 +266,42 @@ async def test_schema_resources_are_registered_and_readable(bookings_config_dir:
         c.content if isinstance(c.content, str) else c.content.decode("utf-8") for c in contents
     )
     _json.loads(text)  # schema://model must be valid JSON
+
+
+def test_build_instructions_folds_key_patterns_and_caveats_into_the_connect_string():
+    from mis_mcp_runtime.resources import build_instructions
+
+    model = {
+        "overview": "Lead tracking for a music school.",
+        "caveats": [f"caveat {i}" for i in range(9)],
+        "tables": [{"name": "leads", "grain_prose": "one row per lead interaction"}],
+        "patterns": [
+            {
+                "kind": "dependency",
+                "finding": "campaign_id determines agent_id",
+                "directive": "treat agent_id as redundant when campaign_id is present",
+            },
+            {"kind": "quality", "finding": "agent_id is 94.9% 'spardha-staging'"},
+            *[{"kind": "segment", "finding": f"segment {i}"} for i in range(15)],
+        ],
+    }
+    text = build_instructions(model)
+
+    assert "GRAIN:" in text
+    assert "one row per lead interaction" in text
+    assert "CRITICAL CAVEATS:" in text
+    assert text.count("caveat ") == 6  # capped
+    assert "KEY PATTERNS" in text
+    assert "campaign_id determines agent_id -> treat agent_id as redundant" in text
+    assert "agent_id is 94.9% 'spardha-staging'" in text
+    assert "(+5 more in schema://patterns)" in text  # 17 patterns, 12 shown
+    assert "schema://cookbook" in text  # the pointer line still there
+
+
+def test_build_instructions_is_stable_with_an_empty_model():
+    from mis_mcp_runtime.resources import build_instructions
+
+    text = build_instructions({})
+    assert "BEFORE WRITING SQL" in text
+    assert "KEY PATTERNS" not in text
+    assert "CRITICAL CAVEATS" not in text
