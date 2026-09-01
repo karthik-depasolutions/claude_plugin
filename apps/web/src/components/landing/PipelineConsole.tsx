@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
-/** Mirrors STAGE_ORDER / StageTimeline's labels in lib/types.ts exactly -
- * this is the real 8-stage pipeline every run goes through, not an
- * invented marketing sequence. */
+/** Mirrors STAGE_ORDER in lib/types.ts exactly: this is the real 8-stage
+ * pipeline every run goes through, not an invented marketing sequence.
+ * The detail strings are from a real bookings.csv run. */
 const STAGES: { label: string; detail?: string }[] = [
   { label: "Ingest data", detail: "1 table detected" },
   { label: "Profile schema", detail: "17 columns" },

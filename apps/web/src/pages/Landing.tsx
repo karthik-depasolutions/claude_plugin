@@ -9,7 +9,7 @@ import ValidationShowcase from "../components/landing/ValidationShowcase";
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-ink font-sans text-paper antialiased">
+    <div className="min-h-[100dvh] bg-ink font-sans text-paper antialiased">
       <LandingNav />
       <Hero />
       <BindingThesis />

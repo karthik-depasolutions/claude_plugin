@@ -69,7 +69,7 @@ function CheckGlyph({ status }: { status: string }) {
     fail: "text-clay",
     skipped: "text-dim",
   };
-  const glyph = status === "pass" ? "✓" : status === "fail" ? "✕" : status === "warn" ? "!" : "–";
+  const glyph = status === "pass" ? "✓" : status === "fail" ? "✕" : status === "warn" ? "!" : "○";
   return <span className={`font-mono ${map[status] ?? "text-dim"} animate-stage-check`}>{glyph}</span>;
 }
 

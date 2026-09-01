@@ -13,7 +13,7 @@ export default function FinalCta() {
             Point it at your data.
           </h2>
           <p className="mx-auto mt-4 max-w-md text-[15px] text-muted">
-            One dataset in, one validated plugin out — scoped to that dataset alone.
+            One dataset in, one validated plugin out, scoped to that dataset alone.
           </p>
           <Link
             to="/app"

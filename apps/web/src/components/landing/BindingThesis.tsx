@@ -9,8 +9,7 @@ export default function BindingThesis() {
     <section className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
       <div className="grid gap-14 lg:grid-cols-2 lg:items-center lg:gap-20">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">The actual mechanism</p>
-          <h2 className="mt-4 font-display text-3xl font-medium tracking-tight text-paper sm:text-4xl">
+          <h2 className="font-display text-3xl font-medium tracking-tight text-paper sm:text-4xl">
             Industry knowledge is data.
             <br />
             Your schema is a fact.
@@ -18,7 +17,7 @@ export default function BindingThesis() {
             <span className="text-muted">They never touch.</span>
           </h2>
           <p className="mt-6 max-w-md text-[15px] leading-relaxed text-muted">
-            An industry pack defines what &ldquo;revenue&rdquo; means once, in the abstract — never in terms
+            An industry pack defines what &ldquo;revenue&rdquo; means once, in the abstract, never in terms
             of any one customer&rsquo;s column names. A deterministic binder maps that concept onto{" "}
             <em className="text-paper not-italic">your</em> real column, for your dataset only. Nothing about
             one customer&rsquo;s schema is ever hard-coded into what a KPI means.
@@ -47,7 +46,7 @@ export default function BindingThesis() {
             ))}
           </ul>
           <p className="mt-4 font-mono text-xs text-muted">
-            resolved by <span className="text-paper">binding/scorer.py</span> — token overlap + type
+            resolved by <span className="text-paper">binding/scorer.py</span>: token overlap and type
             compatibility, never guessed by an LLM.
           </p>
         </div>

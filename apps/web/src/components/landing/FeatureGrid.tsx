@@ -1,7 +1,7 @@
 const FEATURES: { title: string; body: string }[] = [
   {
     title: "Industry packs",
-    body: "Healthcare, retail, finance, edtech, and a no-assumptions generic fallback — each one a folder of canonical KPI definitions, not a branch of code.",
+    body: "Healthcare, retail, finance, edtech, and a no-assumptions generic fallback. Each one is a folder of canonical KPI definitions, not a branch of code.",
   },
   {
     title: "Deterministic SQL",
@@ -9,15 +9,15 @@ const FEATURES: { title: string; body: string }[] = [
   },
   {
     title: "8-check validation gate",
-    body: "Schema fact-check, SQL safety, a real dry-run, a PII scan, plugin-spec validation, the actual claude CLI validator, an MCP smoke test, and an LLM self-critique — before anything packages.",
+    body: "Schema fact-check, SQL safety, a real dry-run, a PII scan, plugin-spec validation, the actual claude CLI validator, an MCP smoke test, and an LLM self-critique, all before anything packages.",
   },
   {
     title: "A real MCP tool surface",
-    body: "describe_schema, get_kpi, run_safe_query, render_chart — the same tools Claude calls at install time, guarded by a table allow-list and row/timeout limits.",
+    body: "describe_schema, get_kpi, run_safe_query, render_chart: the same tools Claude calls at install time, guarded by a table allow-list and row/timeout limits.",
   },
   {
     title: "PII stays out, by construction",
-    body: "Denied columns are identified and stripped before packaging — every run, not a checklist step someone can forget.",
+    body: "Denied columns are identified and stripped before packaging on every run, not as a checklist step someone can forget.",
   },
   {
     title: "Publish in one step",

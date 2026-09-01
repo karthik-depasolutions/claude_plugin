@@ -19,14 +19,13 @@ export default function ValidationShowcase() {
     <section className="mx-auto max-w-6xl px-6 py-24 sm:py-32">
       <div className="grid gap-14 lg:grid-cols-2 lg:gap-20">
         <div>
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">The trust gate</p>
-          <h2 className="mt-4 font-display text-3xl font-medium tracking-tight text-paper sm:text-4xl">
+          <h2 className="font-display text-3xl font-medium tracking-tight text-paper sm:text-4xl">
             A model proposes.
             <br />
             It never ships unchecked.
           </h2>
           <p className="mt-6 max-w-md text-[15px] leading-relaxed text-muted">
-            Every run passes through the same eight checks before packaging finishes — the same gate,
+            Every run passes through the same eight checks before packaging finishes, the same gate
             whether the source is a three-column CSV or a live production database. A hard failure means
             the plugin sits on disk for inspection; it doesn&rsquo;t reach an install command.
           </p>

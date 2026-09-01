@@ -28,8 +28,8 @@ export default function Hero() {
             could have.
           </h1>
           <p className="mt-6 max-w-lg text-[15px] leading-relaxed text-muted sm:text-base">
-            Point it at a CSV, a warehouse, or a live database. Get back real skills, KPIs, and MCP tools —
-            bound to that dataset&rsquo;s actual columns, validated by eight checks before anything installs.
+            Point it at a CSV, a warehouse, or a live database. Get back real skills, KPIs, and MCP tools,
+            bound to that dataset&rsquo;s actual columns and validated by eight checks before anything installs.
           </p>
           <div className="mt-9 flex flex-wrap items-center gap-4">
             <Link
@@ -39,7 +39,7 @@ export default function Hero() {
               Start a run
             </Link>
             <a href="#mechanism" className="text-sm text-muted transition-colors hover:text-paper">
-              See how it works ↓
+              See how it works
             </a>
           </div>
         </div>

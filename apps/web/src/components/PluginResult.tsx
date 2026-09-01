@@ -33,9 +33,9 @@ export default function PluginResult({ runId, events, report, tokenUsage }: Prop
     .filter(Boolean)
     .pop();
 
-  const tableCount = (last("ingest")?.data.tables as unknown[] | undefined)?.length ?? "—";
+  const tableCount = (last("ingest")?.data.tables as unknown[] | undefined)?.length ?? "-";
   const kpiMatch = /Compiled\s+(\d+)/.exec(last("compile_kpis")?.message ?? "");
-  const kpiCount = kpiMatch ? kpiMatch[1] : "—";
+  const kpiCount = kpiMatch ? kpiMatch[1] : "-";
   const passed = report ? report.checks.filter((c) => c.status === "pass").length : 0;
   const total = report ? report.checks.length : 0;
 
@@ -52,7 +52,7 @@ export default function PluginResult({ runId, events, report, tokenUsage }: Prop
         <Stat value={kpiCount} label="metrics" />
         <Stat value={`${passed}/${total}`} label="checks passed" />
         <Stat
-          value={tokenUsage ? compact(tokenUsage.total_tokens) : "—"}
+          value={tokenUsage ? compact(tokenUsage.total_tokens) : "-"}
           label={
             tokenUsage
               ? `LLM tokens · ${compact(tokenUsage.input_tokens)} in / ${compact(tokenUsage.output_tokens)} out`
