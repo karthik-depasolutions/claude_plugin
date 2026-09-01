@@ -19,6 +19,7 @@ written back out in the same filename/format the runtime's
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import duckdb
@@ -95,23 +96,46 @@ def _write_redacted_files(
         _export_table(con, select_sql, original_path.suffix.lower(), destination)
 
 
+_COPY_OPTIONS = {
+    ".csv": "(HEADER, DELIMITER ',')",
+    ".tsv": "(HEADER, DELIMITER '\t')",
+    ".parquet": "(FORMAT PARQUET)",
+    ".json": "(FORMAT JSON, ARRAY true)",
+    ".ndjson": "(FORMAT JSON, ARRAY false)",
+    ".jsonl": "(FORMAT JSON, ARRAY false)",
+}
+
+# Writing `data/<file>` can hit a transient sharing violation on Windows - a
+# virus scanner or the search indexer grabs the file the instant DuckDB's
+# `COPY ... TO` creates it. Retry a few times; each attempt starts clean.
+_WRITE_ATTEMPTS = 4
+_WRITE_BACKOFF_S = 0.3
+
+
 def _export_table(
     con: duckdb.DuckDBPyConnection, select_sql: str, extension: str, destination: Path
 ) -> None:
-    if extension == ".csv":
-        con.execute(f"COPY ({select_sql}) TO '{destination.as_posix()}' (HEADER, DELIMITER ',')")
-    elif extension == ".tsv":
-        con.execute(f"COPY ({select_sql}) TO '{destination.as_posix()}' (HEADER, DELIMITER '\t')")
-    elif extension == ".parquet":
-        con.execute(f"COPY ({select_sql}) TO '{destination.as_posix()}' (FORMAT PARQUET)")
-    elif extension == ".json":
-        con.execute(f"COPY ({select_sql}) TO '{destination.as_posix()}' (FORMAT JSON, ARRAY true)")
-    elif extension in (".ndjson", ".jsonl"):
-        con.execute(f"COPY ({select_sql}) TO '{destination.as_posix()}' (FORMAT JSON, ARRAY false)")
+    if extension in _COPY_OPTIONS:
+        opts = _COPY_OPTIONS[extension]
+
+        def write() -> None:
+            con.execute(f"COPY ({select_sql}) TO '{destination.as_posix()}' {opts}")
     elif extension in _EXCEL_EXTENSIONS:
-        con.execute(select_sql).df().to_excel(destination, index=False)
+
+        def write() -> None:
+            con.execute(select_sql).df().to_excel(destination, index=False)
     else:
         raise ValueError(f"Don't know how to write a redacted copy of a {extension!r} file.")
+
+    for attempt in range(1, _WRITE_ATTEMPTS + 1):
+        try:
+            destination.unlink(missing_ok=True)
+            write()
+            return
+        except (duckdb.IOException, OSError):
+            if attempt == _WRITE_ATTEMPTS:
+                raise
+            time.sleep(_WRITE_BACKOFF_S * attempt)
 
 
 def _write_redacted_sqlite(

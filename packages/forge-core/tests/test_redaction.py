@@ -84,5 +84,51 @@ def test_write_redacted_data_files_handles_the_plain_single_file_case(tmp_path: 
     assert "booking_id" in header
 
 
+class _FlakyCon:
+    """Forwards to a real DuckDB connection but makes the first `fail_times`
+    COPY statements raise a Windows-style sharing violation."""
+
+    def __init__(self, real: duckdb.DuckDBPyConnection, fail_times: int) -> None:
+        self._real = real
+        self._left = fail_times
+        self.copy_calls = 0
+
+    def execute(self, sql: str, *args, **kwargs):
+        if sql.lstrip().startswith("COPY"):
+            self.copy_calls += 1
+            if self._left > 0:
+                self._left -= 1
+                raise duckdb.IOException("Cannot open file: used by another process")
+        return self._real.execute(sql, *args, **kwargs)
+
+
+def test_export_table_retries_a_transient_sharing_violation(tmp_path: Path, monkeypatch):
+    from forge_core.packaging import redaction
+
+    monkeypatch.setattr(redaction, "_WRITE_BACKOFF_S", 0.001)
+    real = duckdb.connect(":memory:")
+    real.execute("CREATE TABLE t AS SELECT 1 AS a")
+    con = _FlakyCon(real, fail_times=2)
+    dest = tmp_path / "out.csv"
+
+    redaction._export_table(con, "SELECT * FROM t", ".csv", dest)
+
+    assert con.copy_calls == 3  # 2 failures + 1 success
+    assert dest.read_text(encoding="utf-8").splitlines()[0] == "a"
+
+
+def test_export_table_gives_up_after_the_retry_budget(tmp_path: Path, monkeypatch):
+    from forge_core.packaging import redaction
+
+    monkeypatch.setattr(redaction, "_WRITE_BACKOFF_S", 0.001)
+    real = duckdb.connect(":memory:")
+    real.execute("CREATE TABLE t AS SELECT 1 AS a")
+    con = _FlakyCon(real, fail_times=99)
+
+    with pytest.raises(duckdb.IOException):
+        redaction._export_table(con, "SELECT * FROM t", ".csv", tmp_path / "out.csv")
+    assert con.copy_calls == redaction._WRITE_ATTEMPTS
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
