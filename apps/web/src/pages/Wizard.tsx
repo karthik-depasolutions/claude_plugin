@@ -4,6 +4,7 @@ import {
   confirmIndustry,
   createRunFromPath,
   createRunFromUpload,
+  getRun,
   listPacks,
   setBindingOverrides,
   submitDataAnswers,
@@ -202,6 +203,14 @@ function RunView({
   const { events, status, currentStage, questions } = useRunStream(runId, streamKey);
   const [busy, setBusy] = useState(false);
 
+  // Token usage is finalized only when the pipeline thread exits; the SSE
+  // stream doesn't carry it, so pull the run detail once on success.
+  const { data: detail } = useQuery({
+    queryKey: ["run", runId, "detail"],
+    queryFn: () => getRun(runId),
+    enabled: status === "succeeded",
+  });
+
   const classifyEvent = [...events].reverse().find((e) => e.stage === "classify" && e.data.ranked_matches);
   const bindEvent = [...events].reverse().find((e) => e.stage === "bind");
   const validateEvent = [...events].reverse().find((e) => e.stage === "validate" && e.data.report);
@@ -274,7 +283,14 @@ function RunView({
         </section>
       )}
 
-      {status === "succeeded" && <PluginResult runId={runId} events={events} report={report} />}
+      {status === "succeeded" && (
+        <PluginResult
+          runId={runId}
+          events={events}
+          report={report}
+          tokenUsage={detail?.token_usage ?? null}
+        />
+      )}
 
       {report && status !== "succeeded" && <ValidationReportView report={report} />}
     </div>

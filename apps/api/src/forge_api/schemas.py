@@ -33,17 +33,31 @@ class CreateRunFromPathRequest(BaseModel):
     )
 
 
+class TokenUsageOut(BaseModel):
+    """LLM tokens spent generating a run (forge_core.llm.TokenUsage.snapshot)."""
+
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
+    calls: int = 0
+    by_model: dict[str, dict[str, int]] = Field(default_factory=dict)
+    by_role: dict[str, dict[str, int]] = Field(default_factory=dict)
+
+
 class RunSummary(BaseModel):
     run_id: str
     status: str
     current_stage: str | None
     error: str | None
+    total_tokens: int = 0
 
 
 class RunDetail(RunRecord):
-    """`RunRecord` plus anything the API layer tracks that the core model
-    doesn't (currently nothing extra — kept as a distinct type so API
-    consumers have a stable response contract even if that changes)."""
+    """`RunRecord` plus what the API layer tracks that the core model doesn't
+    — currently the LLM token usage, kept off `RunRecord` because it's an API
+    concern (persisted on the `runs` row, not in the pipeline's own state)."""
+
+    token_usage: TokenUsageOut | None = None
 
 
 class ConfirmIndustryRequest(BaseModel):

@@ -38,6 +38,7 @@ from forge_api.schemas import (
     PublishGithubResponse,
     RunDetail,
     RunSummary,
+    TokenUsageOut,
     WarehouseCredentialsResponse,
 )
 
@@ -229,14 +230,32 @@ async def list_runs(session: SessionDep) -> list[RunSummary]:
     result = await session.execute(select(RunORM).order_by(RunORM.created_at.desc()))
     rows = result.scalars().all()
     return [
-        RunSummary(run_id=r.run_id, status=r.status, current_stage=r.current_stage, error=r.error)
+        RunSummary(
+            run_id=r.run_id,
+            status=r.status,
+            current_stage=r.current_stage,
+            error=r.error,
+            total_tokens=r.llm_total_tokens,
+        )
         for r in rows
     ]
 
 
 @router.get("/{run_id}", response_model=RunDetail)
 async def get_run(run_id: str, session: SessionDep) -> RunDetail:
-    return RunDetail.model_validate((await _load_record(run_id, session)).model_dump())
+    detail = RunDetail.model_validate((await _load_record(run_id, session)).model_dump())
+    usage = await _token_usage(run_id, session)
+    detail.token_usage = TokenUsageOut(**usage) if usage else None
+    return detail
+
+
+async def _token_usage(run_id: str, session: SessionDep) -> dict | None:
+    """Live snapshot while the pipeline thread is alive, else the persisted row."""
+    ctx = registry.get(run_id)
+    if ctx is not None and ctx.token_usage:
+        return ctx.token_usage
+    row = await session.get(RunORM, run_id)
+    return row.llm_token_usage_json if row is not None else None
 
 
 @router.get("/{run_id}/events")

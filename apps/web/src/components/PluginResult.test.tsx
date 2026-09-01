@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import PluginResult from "./PluginResult";
-import type { StageEvent, ValidationReport } from "../lib/types";
+import type { StageEvent, TokenUsage, ValidationReport } from "../lib/types";
 
 const ev = (over: Partial<StageEvent>): StageEvent => ({
   stage: "ingest",
@@ -39,5 +39,25 @@ describe("PluginResult", () => {
       "href",
       expect.stringContaining("/runs/run-1/download")
     );
+  });
+
+  it("shows the LLM token stat when usage is available", () => {
+    const tokenUsage: TokenUsage = {
+      input_tokens: 12300,
+      output_tokens: 3100,
+      total_tokens: 15400,
+      calls: 9,
+      by_model: {},
+      by_role: {},
+    };
+    render(<PluginResult runId="run-1" events={[]} report={report} tokenUsage={tokenUsage} />);
+
+    expect(screen.getByText("15k")).toBeInTheDocument(); // compact total
+    expect(screen.getByText(/12k in \/ 3\.1k out/)).toBeInTheDocument();
+  });
+
+  it("shows a placeholder token stat when usage is not yet loaded", () => {
+    render(<PluginResult runId="run-1" events={[]} report={report} />);
+    expect(screen.getByText("LLM tokens")).toBeInTheDocument();
   });
 });

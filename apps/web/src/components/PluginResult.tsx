@@ -1,5 +1,5 @@
 import { downloadUrl } from "../lib/api";
-import type { StageEvent, ValidationReport } from "../lib/types";
+import type { StageEvent, TokenUsage, ValidationReport } from "../lib/types";
 import PublishPanel from "./PublishPanel";
 import WarehouseCredentialsPanel from "./WarehouseCredentialsPanel";
 
@@ -7,6 +7,13 @@ interface Props {
   runId: string;
   events: StageEvent[];
   report: ValidationReport | null;
+  tokenUsage?: TokenUsage | null;
+}
+
+function compact(n: number): string {
+  if (n < 1000) return String(n);
+  if (n < 1_000_000) return `${(n / 1000).toFixed(n < 10_000 ? 1 : 0)}k`;
+  return `${(n / 1_000_000).toFixed(1)}M`;
 }
 
 function Stat({ value, label }: { value: string | number; label: string }) {
@@ -18,7 +25,7 @@ function Stat({ value, label }: { value: string | number; label: string }) {
   );
 }
 
-export default function PluginResult({ runId, events, report }: Props) {
+export default function PluginResult({ runId, events, report, tokenUsage }: Props) {
   const last = (stage: string) => [...events].reverse().find((e) => e.stage === stage);
   const pkg = [...events].reverse().find((e) => e.stage === "package" && e.data.plugin_dir);
   const pluginName = String(pkg?.data.plugin_dir ?? "")
@@ -40,10 +47,18 @@ export default function PluginResult({ runId, events, report }: Props) {
       </h2>
       <p className="mt-1 font-mono text-xs text-doc-ink/55">run {runId}</p>
 
-      <div className="mt-6 grid grid-cols-3 gap-4 border-y border-doc-hair py-5">
+      <div className="mt-6 grid grid-cols-2 gap-4 border-y border-doc-hair py-5 sm:grid-cols-4">
         <Stat value={tableCount} label="tables" />
         <Stat value={kpiCount} label="metrics" />
         <Stat value={`${passed}/${total}`} label="checks passed" />
+        <Stat
+          value={tokenUsage ? compact(tokenUsage.total_tokens) : "—"}
+          label={
+            tokenUsage
+              ? `LLM tokens · ${compact(tokenUsage.input_tokens)} in / ${compact(tokenUsage.output_tokens)} out`
+              : "LLM tokens"
+          }
+        />
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-3">

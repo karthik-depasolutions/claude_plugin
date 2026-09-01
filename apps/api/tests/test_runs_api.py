@@ -73,6 +73,12 @@ async def test_full_run_lifecycle_succeeds_and_is_downloadable(client: AsyncClie
         "input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "calls": 0, "by_model": {}, "by_role": {}
     }
 
+    # ...and surfaced on the API response.
+    assert final["token_usage"]["total_tokens"] == 0
+    assert final["token_usage"]["calls"] == 0
+    summary = next(r for r in (await client.get("/runs")).json() if r["run_id"] == run_id)
+    assert summary["total_tokens"] == 0
+
     confirm_url = f"/runs/{run_id}/confirm-industry"
     confirm_after_success = await client.post(confirm_url, json={"industry": "finance"})
     assert confirm_after_success.status_code == 409

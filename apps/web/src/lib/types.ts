@@ -35,6 +35,16 @@ export interface RunSummary {
   status: RunStatus;
   current_stage: RunStage | null;
   error: string | null;
+  total_tokens: number;
+}
+
+export interface TokenUsage {
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  calls: number;
+  by_model: Record<string, Record<string, number>>;
+  by_role: Record<string, Record<string, number>>;
 }
 
 export interface DataQuestion {
@@ -68,6 +78,7 @@ export interface RunDetail extends RunSummary {
   events: StageEvent[];
   data_review: DataReview | null;
   data_answers: Record<string, string> | null;
+  token_usage: TokenUsage | null;
   created_at: string;
   updated_at: string;
 }
