@@ -29,6 +29,27 @@ class RequiredRoles(BaseModel):
     entities: list[str] = Field(default_factory=list)
 
 
+class EntityDef(BaseModel):
+    """A business entity other than the fact table, and the canonical roles
+    that live on it. Used with `CanonicalKpi.joins`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    roles: list[str] = Field(default_factory=list)
+    description: str = ""
+
+
+class JoinSpec(BaseModel):
+    """A KPI's explicit request for a join to a business entity other than the
+    fact table. `via` is the canonical role that is the join key (present on
+    both the fact table and the target entity)."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    entity: str
+    via: str
+
+
 class CanonicalKpi(BaseModel):
     """A KPI defined once, in canonical-role terms, industry-wide.
 
@@ -57,6 +78,20 @@ class CanonicalKpi(BaseModel):
     optional: bool = Field(
         default=False, description="If true, absence of required roles is a warn, not a fail."
     )
+    joins: list[JoinSpec] = Field(
+        default_factory=list,
+        description="Explicit joins this KPI needs to reach roles on non-fact entities. The "
+        "resolver finds the verified relationship path; the compiler emits the LEFT JOINs.",
+    )
+
+
+# Applied on top of every pack's own `denied_role_categories`, regardless of
+# what the pack declares. These structural roles (see forge_core.models.common
+# .ColumnRole) are direct personal identifiers or uncontrolled strings that
+# must never reach a shipped artifact. `geographic` is deliberately NOT here -
+# city/state/region are core analytic dimensions (e.g. `bookings_by_location`);
+# a pack that handles sensitive addresses adds `geographic` to its own list.
+BASELINE_DENIED_ROLES: frozenset[str] = frozenset({"email", "phone", "free_text"})
 
 
 class Guardrails(BaseModel):
@@ -65,12 +100,18 @@ class Guardrails(BaseModel):
     denied_role_categories: list[str] = Field(
         default_factory=lambda: ["pii_direct_identifier"],
         description="Canonical role categories that must never appear in a KPI "
-        "projection, artifact, or generated example (e.g. name, phone, email).",
+        "projection, artifact, or generated example (e.g. name, phone, email). "
+        "BASELINE_DENIED_ROLES is always unioned in on top of this.",
     )
     require_read_only: bool = True
     max_query_rows: int = 200
     query_timeout_seconds: int = 10
     notes: list[str] = Field(default_factory=list)
+
+    def effective_denied_categories(self) -> set[str]:
+        """The pack's declared denied roles plus the always-on baseline. Every
+        redaction / denied-column check goes through this, not the raw field."""
+        return set(self.denied_role_categories) | BASELINE_DENIED_ROLES
 
 
 class PackSignature(BaseModel):
@@ -124,6 +165,12 @@ class IndustryPack(BaseModel):
     table_aliases: dict[str, str] = Field(
         default_factory=dict,
         description="Canonical table alias -> description, e.g. 'fact': 'the primary transaction table'.",
+    )
+    entities: dict[str, EntityDef] = Field(
+        default_factory=dict,
+        description="Business entity -> the canonical roles that live on it, e.g. "
+        "'customer': {roles: ['customer_tier', 'customer_segment']}. 'fact' is implicit. "
+        "Lets a KPI declare `joins` to reach a role on another entity.",
     )
     kpis: list[CanonicalKpi] = Field(default_factory=list)
     value_set_hints: dict[str, list[str]] = Field(

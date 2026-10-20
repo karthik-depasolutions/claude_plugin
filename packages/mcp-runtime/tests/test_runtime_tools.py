@@ -43,8 +43,9 @@ def test_get_data_profile_excludes_denied_columns(bookings_config_dir: Path):
     config, con = _load(bookings_config_dir)
     result = get_data_profile(config, con, "bookings")
     columns = {c["column"] for c in result["columns"]}
-    assert "phone" in columns  # a normal column, no longer denied
-    assert "customer_name" not in columns
+    assert "amount_inr" in columns  # a normal measure column
+    assert "customer_name" not in columns  # free_text -> denied
+    assert "phone" not in columns  # phone -> denied by the baseline role guard
 
 
 def test_list_and_get_kpi(bookings_config_dir: Path):
@@ -56,6 +57,29 @@ def test_list_and_get_kpi(bookings_config_dir: Path):
     assert result["row_count"] == 1
     assert result["rows"][0]["total_revenue"] > 0
     assert all(a["passed"] for a in result["assertions"])
+    assert result["chart"] == {"type": "number"}  # single scalar -> number tile
+
+
+def test_chart_spec_is_attached_by_shape(bookings_config_dir: Path):
+    config, con = _load(bookings_config_dir)
+    fact_ref = config.data_source.tables[0].physical_ref
+
+    # date + numeric -> line
+    trend = run_safe_query(
+        config, con,
+        f'SELECT "booking_date", SUM("amount_inr") AS total FROM {fact_ref} '
+        'GROUP BY 1 ORDER BY 1',
+    )
+    assert trend["chart"]["type"] == "line"
+    assert trend["chart"]["series"][0]["name"] == "total"
+    assert len(trend["chart"]["x"]) == len(trend["chart"]["series"][0]["values"])
+
+    # label + count, few non-negative rows -> pie
+    from mis_mcp_runtime.tools.metric_analytics import breakdown_metric
+
+    breakdown = breakdown_metric(config, con, dimension="status")
+    assert breakdown["chart"]["type"] in ("pie", "bar")
+    assert breakdown["chart"]["labels"]
 
 
 def test_get_kpi_unknown_id(bookings_config_dir: Path):

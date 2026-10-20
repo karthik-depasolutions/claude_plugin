@@ -18,15 +18,26 @@ _SKIP_ROLES = {"free_text", "identifier", "email", "phone", "date", "datetime"}
 
 
 def capture_value_sets(
-    data_source: DataSource, columns: list[ColumnProfile], con: duckdb.DuckDBPyConnection
+    data_source: DataSource,
+    columns: list[ColumnProfile],
+    con: duckdb.DuckDBPyConnection,
+    *,
+    max_columns: int | None = None,
 ) -> dict[str, list[str]]:
+    """`max_columns` caps how many columns get a `SELECT DISTINCT` probe (one
+    query each) - `None` keeps the legacy unbounded behaviour. Under a cap the
+    lowest-cardinality eligible columns (the most enum-like) are probed first."""
     physical_ref = {t.name: t.physical_ref for t in data_source.tables}
+    eligible = [
+        col
+        for col in columns
+        if col.guessed_role.value not in _SKIP_ROLES and 0 < col.cardinality <= MAX_VALUE_SET_SIZE
+    ]
+    if max_columns is not None:
+        eligible.sort(key=lambda c: c.cardinality)
+        eligible = eligible[:max_columns]
     out: dict[str, list[str]] = {}
-    for col in columns:
-        if col.guessed_role.value in _SKIP_ROLES:
-            continue
-        if not (0 < col.cardinality <= MAX_VALUE_SET_SIZE):
-            continue
+    for col in eligible:
         ref = physical_ref.get(col.table)
         if ref is None:
             continue

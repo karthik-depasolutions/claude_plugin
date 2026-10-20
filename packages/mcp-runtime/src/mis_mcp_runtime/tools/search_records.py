@@ -13,6 +13,7 @@ import duckdb
 from mis_mcp_runtime.config import RuntimeConfig
 from mis_mcp_runtime.engine.rows import to_json_rows
 from mis_mcp_runtime.security.limits import QueryTimeoutError, run_with_timeout
+from mis_mcp_runtime.tools.render_chart import attach_chart
 
 
 def search_records(
@@ -55,4 +56,4 @@ def search_records(
         return {"error": str(exc)}
 
     rows = to_json_rows(df)
-    return {"rows": rows, "row_count": len(rows)}
+    return attach_chart({"rows": rows, "row_count": len(rows)})

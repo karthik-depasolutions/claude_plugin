@@ -16,6 +16,7 @@ from mis_mcp_runtime.config import RuntimeConfig
 from mis_mcp_runtime.engine.kpi_executor import execute_kpi
 from mis_mcp_runtime.engine.rows import to_json_rows
 from mis_mcp_runtime.security.limits import run_with_timeout
+from mis_mcp_runtime.tools.render_chart import attach_chart, delta_chart
 
 _IDENTIFIER_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
@@ -121,6 +122,7 @@ def compare_kpi(
                 f"{kpi.label} changed by {abs_change:+} {kpi.unit} "
                 f"({pct_change:+}% relative change)" if pct_change is not None else "No baseline for percentage"
             ),
+            "chart": delta_chart(val_a, val_b, label=kpi.label),
         }
     except Exception as exc:  # noqa: BLE001
         return {"error": f"Failed to compare KPI {kpi_id!r}: {exc}"}
@@ -196,13 +198,16 @@ def breakdown_metric(
             val = r.get("metric_value", 0)
             r["share_percent"] = round((val / total * 100.0) if total else 0.0, 2)
 
-        return {
-            "dimension": dimension,
-            "metric": metric_label,
-            "table": target_table.name,
-            "total_metric_value": total,
-            "slices": rows,
-        }
+        return attach_chart(
+            {
+                "dimension": dimension,
+                "metric": metric_label,
+                "table": target_table.name,
+                "total_metric_value": total,
+                "slices": rows,
+            },
+            rows_key="slices",
+        )
     except Exception as exc:  # noqa: BLE001
         return {"error": f"Failed to execute breakdown for {dimension!r}: {exc}"}
 
@@ -272,13 +277,16 @@ def rank_entities(
         for rank, r in enumerate(rows, start=1):
             r["rank"] = rank
 
-        return {
-            "entity": entity_dimension,
-            "metric": metric_label,
-            "table": target_table.name,
-            "order": order_sql.lower(),
-            "ranked_results": rows,
-        }
+        return attach_chart(
+            {
+                "entity": entity_dimension,
+                "metric": metric_label,
+                "table": target_table.name,
+                "order": order_sql.lower(),
+                "ranked_results": rows,
+            },
+            rows_key="ranked_results",
+        )
     except Exception as exc:  # noqa: BLE001
         return {"error": f"Failed to rank entities for {entity_dimension!r}: {exc}"}
 
@@ -343,11 +351,13 @@ def query_metric(
         else:
             df = run_with_timeout(con, sql, config.query_timeout_seconds)
 
-        return {
-            "metric": metric_id,
-            "table": table.name,
-            "group_by": group_by or [],
-            "rows": to_json_rows(df),
-        }
+        return attach_chart(
+            {
+                "metric": metric_id,
+                "table": table.name,
+                "group_by": group_by or [],
+                "rows": to_json_rows(df),
+            }
+        )
     except Exception as exc:  # noqa: BLE001
         return {"error": f"Failed to query metric {metric_id!r}: {exc}"}

@@ -25,6 +25,21 @@ def test_record_accumulates_scalars_and_breakdowns():
     assert s["by_model"]["gemini-2.5-flash"]["calls"] == 2
 
 
+def test_estimated_cost_from_per_model_list_prices():
+    u = TokenUsage()
+    # gemini-2.5-flash: $0.30 in / $2.50 out per 1M
+    u.record(model="gemini-2.5-flash", role="profiling", input_tokens=1_000_000, output_tokens=200_000)
+    # claude-sonnet-5 (prefix-matched from a dated id): $3 in / $15 out per 1M
+    u.record(model="claude-sonnet-5-20260101", role="generation", input_tokens=100_000, output_tokens=10_000)
+    # unknown model -> contributes $0, never a wrong guess
+    u.record(model="mystery-model", role="critique", input_tokens=9_999_999, output_tokens=9_999_999)
+
+    cost = u.estimated_cost_usd()
+    expected = (0.30 + 0.2 * 2.50) + (0.1 * 3.00 + 0.01 * 15.00)
+    assert cost == round(expected, 4)
+    assert u.snapshot()["estimated_cost_usd"] == cost
+
+
 def test_record_is_thread_safe():
     u = TokenUsage()
 

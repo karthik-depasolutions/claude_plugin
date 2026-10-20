@@ -22,6 +22,9 @@ from typing import Any
 # guardrail setting rather than raising the constant.
 _MAX_CAVEATS_IN_INSTRUCTIONS = 6
 _MAX_PATTERNS_IN_INSTRUCTIONS = 12
+# Above this table count, the per-table GRAIN block is replaced by a pointer to
+# the retrieval tools - one line per table does not scale to a warehouse.
+_MAX_GRAIN_LINES_IN_INSTRUCTIONS = 40
 
 
 def _pattern_lines(patterns: list[dict[str, Any]]) -> list[str]:
@@ -38,7 +41,7 @@ def _pattern_lines(patterns: list[dict[str, Any]]) -> list[str]:
     return lines
 
 
-def build_instructions(schema_model: dict[str, Any]) -> str:
+def build_instructions(schema_model: dict[str, Any], *, has_catalog: bool = False) -> str:
     overview = (schema_model.get("overview") or "").strip()
     caveats = [str(c).strip() for c in schema_model.get("caveats", []) if str(c).strip()]
     tables = schema_model.get("tables", [])
@@ -52,6 +55,16 @@ def build_instructions(schema_model: dict[str, Any]) -> str:
     parts = ["Tools for querying this business's data."]
     if overview:
         parts.append(overview)
+    # A large (agent_schema) database: never dump one grain line per table into
+    # every request - point at the retrieval tools instead.
+    if has_catalog or len(grain_lines) > _MAX_GRAIN_LINES_IN_INSTRUCTIONS:
+        parts.append(
+            f"This database has {len(tables)} tables - too many to list here. "
+            "Call search_schema(<what you need>) to find the relevant ones, then "
+            "get_table_schema([names]) for their columns, and find_join_path(a, b) for joins. "
+            "list_domains() shows the subject areas."
+        )
+        grain_lines = []
     if grain_lines:
         parts.append("GRAIN:\n" + "\n".join(grain_lines))
     if caveats:
@@ -67,13 +80,23 @@ def build_instructions(schema_model: dict[str, Any]) -> str:
         if hidden > 0:
             block += f"\n- (+{hidden} more in schema://patterns)"
         parts.append(block)
-    parts.append(
-        "BEFORE WRITING SQL: read resource schema://model (per-column meaning + enum decodes), "
-        "schema://cookbook (verified example queries), and schema://relationships (join keys). "
-        "Check list_kpis() first - a vetted metric may already exist. Consult schema://patterns "
-        "and schema://statistics for correlations, trends, and data-quality issues that affect "
-        "your result. All access is read-only."
-    )
+    if has_catalog:
+        parts.append(
+            "BEFORE WRITING SQL: call search_schema(<what you need>) to find the right tables, "
+            "then get_table_schema([names]) for per-column meaning + enum decodes, and "
+            "find_join_path(a, b) for join keys. Do NOT read schema://model - on this database "
+            "it is a summary only. Check list_kpis() first - a vetted metric may already exist. "
+            "Consult schema://patterns and schema://statistics for trends and data-quality "
+            "issues. All access is read-only."
+        )
+    else:
+        parts.append(
+            "BEFORE WRITING SQL: read resource schema://model (per-column meaning + enum decodes), "
+            "schema://cookbook (verified example queries), and schema://relationships (join keys). "
+            "Check list_kpis() first - a vetted metric may already exist. Consult schema://patterns "
+            "and schema://statistics for correlations, trends, and data-quality issues that affect "
+            "your result. All access is read-only."
+        )
     return "\n\n".join(parts)
 
 

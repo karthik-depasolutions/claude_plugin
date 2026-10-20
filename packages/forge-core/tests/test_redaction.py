@@ -40,6 +40,59 @@ def test_denied_columns_are_collected_across_every_table_not_just_the_fact_table
     assert "full_name" in denied.get("customers", set())
 
 
+def test_baseline_denied_roles_catch_email_and_phone_regardless_of_pack():
+    # retail-ecommerce's own guardrails only deny `free_text`; the baseline
+    # (`email`, `phone`) is unioned in on top for every pack.
+    retail = load_pack(PACKS_ROOT / "retail-ecommerce")
+    denied = denied_columns_by_table(_profile_for(FIXTURES_ROOT / "retail_orders"), retail)
+    assert "email_address" in denied.get("customers", set())
+
+    healthcare = load_pack(PACKS_ROOT / "healthcare-diagnostics")
+    b_denied = denied_columns_by_table(_profile_for(FIXTURES_ROOT / "bookings.csv"), healthcare)
+    assert "phone" in b_denied.get("bookings", set())
+    assert "customer_name" in b_denied.get("bookings", set())
+
+
+def test_geographic_columns_are_not_baseline_denied():
+    # city / region are analytic dimensions (e.g. `bookings_by_location`), not
+    # baseline PII - a run must still be able to bind and query them.
+    retail = load_pack(PACKS_ROOT / "retail-ecommerce")
+    denied = denied_columns_by_table(_profile_for(FIXTURES_ROOT / "retail_orders"), retail)
+    assert "city" not in denied.get("customers", set())
+    assert "shipping_city" not in denied.get("orders", set())
+
+
+def test_redact_schema_model_dict_strips_sample_values_for_denied_columns():
+    from forge_core.packaging.redaction import redact_schema_model_dict
+
+    model = {
+        "tables": [
+            {
+                "name": "customers",
+                "columns": [
+                    {"name": "email_address", "meaning": "the email", "example": "a@b.com", "enum": None},
+                    {"name": "loyalty_tier", "meaning": "tier", "example": "gold", "enum": {"g": "gold"}},
+                ],
+            }
+        ],
+        "value_sets": {
+            "customers.email_address": ["a@b.com", "c@d.com"],
+            "customers.loyalty_tier": ["gold", "silver"],
+        },
+        "quality_findings": [
+            {"table": "customers", "column": "email_address", "summary": "all distinct"},
+            {"table": "customers", "column": "loyalty_tier", "summary": "3 values"},
+        ],
+    }
+    out = redact_schema_model_dict(model, {"email_address"})
+
+    assert out["tables"][0]["columns"][0]["example"] is None
+    assert out["tables"][0]["columns"][1]["example"] == "gold"  # untouched
+    assert "customers.email_address" not in out["value_sets"]
+    assert "customers.loyalty_tier" in out["value_sets"]
+    assert [f["column"] for f in out["quality_findings"]] == ["loyalty_tier"]
+
+
 def test_write_redacted_data_files_drops_denied_columns_from_a_multi_table_source(tmp_path: Path):
     profile = _profile_for(FIXTURES_ROOT / "retail_orders")
     pack = load_pack(PACKS_ROOT / "retail-ecommerce")

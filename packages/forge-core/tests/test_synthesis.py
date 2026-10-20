@@ -102,6 +102,10 @@ def test_cookbook_entries_must_execute(bookings_csv: Path, tmp_path: Path):
     model = build_schema_model(structural, ds, _WithCookbook(), cache_dir=tmp_path)
     assert [e.question for e in model.cookbook] == ["How many bookings?"]
     assert all(e.verified for e in model.cookbook)
+    # coverage: 1 of 2 cookbook entries verified; ratio helper reflects it
+    assert model.coverage["cookbook_total"] == 2
+    assert model.coverage["cookbook_verified"] == 1
+    assert model.cookbook_pass_rate() == 0.5
 
 
 def test_schema_model_is_cached_by_schema_hash(bookings_csv: Path, tmp_path: Path):
@@ -115,8 +119,10 @@ def test_schema_model_is_cached_by_schema_hash(bookings_csv: Path, tmp_path: Pat
             return super().generate_json(prompt, system=system)
 
     provider = _Counting()
-    build_schema_model(structural, ds, provider, cache_dir=tmp_path)
+    fresh = build_schema_model(structural, ds, provider, cache_dir=tmp_path)
     first = _Counting.calls
     assert first > 0
-    build_schema_model(structural, ds, provider, cache_dir=tmp_path)
+    assert fresh.from_cache is False
+    cached = build_schema_model(structural, ds, provider, cache_dir=tmp_path)
     assert _Counting.calls == first  # second call served entirely from cache
+    assert cached.from_cache is True  # ... and it says so, for the misleading-log fix

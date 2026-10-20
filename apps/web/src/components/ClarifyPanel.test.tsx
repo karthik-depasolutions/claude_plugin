@@ -16,10 +16,12 @@ describe("ClarifyPanel", () => {
     expect(screen.getByText("3 distinct values")).toBeInTheDocument();
   });
 
-  it("submits an empty object when skipped", async () => {
+  it("Continue works with nothing typed (skip path) and submits an empty object", async () => {
     const onSubmit = vi.fn();
     render(<ClarifyPanel questions={questions} onSubmit={onSubmit} busy={false} />);
-    await userEvent.click(screen.getByRole("button", { name: /skip all/i }));
+    const cta = screen.getByRole("button", { name: /continue/i });
+    expect(cta).toBeEnabled();
+    await userEvent.click(cta);
     expect(onSubmit).toHaveBeenCalledWith({});
   });
 

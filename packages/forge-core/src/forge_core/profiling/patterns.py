@@ -56,13 +56,26 @@ def mine_patterns(
     columns: list[ColumnProfile],
     con: duckdb.DuckDBPyConnection,
     relationships: list[RelationshipCandidate] | None = None,
+    *,
+    max_tables: int | None = None,
 ) -> PatternsRaw:
+    """`max_tables` caps how many tables get the O(cols²) correlation / FD /
+    redundancy mining (largest tables first, where patterns matter most).
+    `None` = legacy (mine every table)."""
     by_table: dict[str, list[ColumnProfile]] = {}
     for c in columns:
         by_table.setdefault(c.table, []).append(c)
 
     raw = PatternsRaw()
-    for table in data_source.tables:
+    if max_tables == 0:
+        # Fast mode: no pattern mining at all, and no denormalization probes.
+        return raw
+
+    tables = list(data_source.tables)
+    if max_tables is not None and len(tables) > max_tables:
+        tables = sorted(tables, key=lambda t: t.row_count, reverse=True)[:max_tables]
+
+    for table in tables:
         cols = by_table.get(table.name, [])
         raw.correlations.extend(_correlations(con, table, cols))
         raw.temporal.extend(_temporal(con, table, cols))

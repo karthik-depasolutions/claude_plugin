@@ -4,26 +4,17 @@ This document records the defects, edge cases, and security boundary gaps discov
 
 ---
 
-## 1. 🐛 Bug: Data Review Fallback Question Generation Mismatch
-- **Severity**: Medium (Unit test failure & logic ambiguity)
-- **Files**:
-  - Implementation: [`packages/forge-core/src/forge_core/profiling/quality.py`](file:///d:/claude-plugin-poc/packages/forge-core/src/forge_core/profiling/quality.py#L362-L400)
-  - Failing Test: [`packages/forge-core/tests/test_profiling_quality.py`](file:///d:/claude-plugin-poc/packages/forge-core/tests/test_profiling_quality.py#L195-L208)
-- **Observed Behavior**:
-  Running `test_build_data_review_end_to_end_with_no_provider` fails:
-  ```text
-  FAILED packages/forge-core/tests/test_profiling_quality.py::test_build_data_review_end_to_end_with_no_provider - AssertionError: assert [DataQuestion(...), ...] == []
-  ```
-- **Root Cause**:
-  `build_data_review()` unconditionally calls `generate_questions(findings, provider, hints)`. Even when `provider=None` (meaning no LLM provider is passed), `generate_questions()` falls back to deterministic template questions (`_fallback_question`) for every finding, plus the `GENERAL_NOTES_ID` question. The test `test_build_data_review_end_to_end_with_no_provider` asserts that `review.questions == []` when `provider=None`.
-- **Reproduction**:
-  ```bash
-  uv run pytest packages/forge-core/tests/test_profiling_quality.py::test_build_data_review_end_to_end_with_no_provider
-  ```
-- **Recommended Fix**:
-  Either:
-  1. Add an explicit parameter `include_questions: bool = True` to `build_data_review()`, or
-  2. Clarify whether `provider=None` should produce deterministic fallback questions or an empty list, and align the test assertion or `build_data_review()` logic accordingly.
+## 1. ✅ RESOLVED: Data Review Fallback Question Generation Mismatch
+- **Status**: RESOLVED. `test_build_data_review_end_to_end_with_no_provider` now
+  asserts the deterministic fallback path explicitly (`len(review.questions) == 6`
+  with `provider=None`: one `_fallback_question` per finding plus `general_notes`)
+  and passes. The intended contract is settled: `build_data_review(provider=None)`
+  still emits deterministic quality questions — they are useful even without an
+  LLM ("what does this dominant value mean?"). A future `include_questions=False`
+  path for LLM-degraded runs (roadmap Phase 1.3) can suppress the pause.
+- **Severity**: Medium → none.
+- **Files**: `packages/forge-core/src/forge_core/profiling/quality.py` (`build_data_review`,
+  `generate_questions`), `packages/forge-core/tests/test_profiling_quality.py`.
 
 ---
 

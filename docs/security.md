@@ -2,10 +2,12 @@
 
 ## The core boundary: the LLM never writes code that ships
 
-Gemini is used in three roles (`forge_core.llm.get_provider(role=...)`):
+An LLM is used in three roles (`forge_core.llm.get_provider(role=...)`):
 `profiling` (semantic column annotations), `generation` (prose for skills/
 agents/commands, and proposing novel KPI SQL *templates*), and `critique`
-(self-review). In every role, its output is either:
+(self-review). The backend is `FORGE_LLM_PROVIDER` — `gemini` (default) or
+`anthropic` — optionally overridden per role by
+`FORGE_LLM_{ROLE}_PROVIDER`. Whichever backend, its output is either:
 
 - **prose**, reviewed by the `self_critique` check, or
 - a **canonical-role binding proposal**, which the deterministic compiler
@@ -26,7 +28,9 @@ guess), full value sets for low-cardinality columns, statistical pattern
 summaries, and a capped sample of real row values** — never a full column
 dump. The `is_likely_pii` heuristic and the sample-redaction step were
 removed: sample values now reach the model unmasked. The understanding
-phase is mandatory, so there is no "omit the provider" path.
+phase is normally mandatory; `FORGE_LLM_DEGRADED_OK=true` is an explicit
+opt-in to run with no provider (structural docs, template prose, no
+verified cookbook) for an LLM outage or a no-external-AI policy.
 
 ## The validation harness — seven checks, `harness.py`
 
@@ -60,12 +64,17 @@ inspection (`forge_core.orchestrator`).
    of the generated skill/agent/command prose against the profile and
    guardrails; `error`-severity findings block the run.
 
-There is no longer a dedicated PII scanner. `is_likely_pii` and
-`validation/pii.py` were removed; `sql_safety` still rejects any projection
-of a `denied_columns` entry, but `denied_columns` is now populated only
-from pack-declared role categories (e.g. `free_text`), not a PII heuristic.
-The cookbook and schema-model fact-checks run inside `synthesis.py` at
-build time rather than as harness checks.
+There is no longer a dedicated value-scanning PII detector. `is_likely_pii`
+and `validation/pii.py` were removed. Redaction is now purely role-based:
+`denied_columns` is every column whose deterministic structural role is in
+`Guardrails.effective_denied_categories()` — an always-on baseline of
+`{email, phone, free_text}` (`industry_pack.BASELINE_DENIED_ROLES`) unioned
+with whatever the matched pack additionally denies. `geographic` is
+deliberately *not* baseline-denied: city/region are core analytic
+dimensions. A direct identifier hidden behind an unusual column name is
+caught only if its role still resolves to `free_text`. The cookbook and
+schema-model fact-checks run inside `synthesis.py` at build time rather than
+as harness checks.
 
 ## Data at rest: redaction before packaging (`packaging/redaction.py`)
 
@@ -103,6 +112,21 @@ The connection string itself never reaches disk:
   real credential via that env var when they install the plugin, the same
   way `GEMINI_API_KEY` is supplied to this repo's own CLI/API.
 
+**Exception — hosted (Pattern B) runs.** When a run is published over
+Streamable-HTTP (`bind_http_mcp`, only with `FORGE_PUBLIC_BASE_URL` set), the
+runtime executes inside the Forge API, not on the customer's machine, and
+there is no per-customer environment to read the credential from. So a
+successful API run writes its resolved source connection string to
+`<FORGE_RUNS_DIR>/<run_id>/.mcp_source_env.json`
+(`plugin_builder.write_mcp_source_env`), a sibling of `.mcp_token`. This file
+is **server-side only**: it is never inside the packaged plugin directory,
+the downloaded zip, the published GitHub repo, a `RunRecord`, the jobs
+database, a log line, or an API response, and both filenames are
+`.gitignore`d. `hosted_mcp._get_state` passes it to `open_session` as a
+per-run `env` overlay so each hosted run reaches its own database rather than
+the API process's single global `FORGE_SOURCE_DB_URL`. Stdio (Pattern A)
+runs never write it.
+
 ## Runtime security (`packages/mcp-runtime/src/mis_mcp_runtime/security/`)
 
 The runtime is generic and config-driven, but it enforces its own
@@ -123,3 +147,27 @@ plugin-run time:
 
 All four modules **fail closed**: malformed or missing configuration
 results in a refusal to execute, never a permissive default.
+
+## The one write path, and it is opt-in (`publishing/agents_schema.py`)
+
+The shipped plugin is read-only, always — `mis_mcp_runtime` refuses to start
+unless `data_source.read_only` is true and `ATTACH`es `READ_ONLY`. Nothing
+below changes that; the plugin never writes anywhere.
+
+The Forge *pipeline* has exactly one optional write into a customer database,
+`publish_agents_to_source` (off by default, live-Postgres sources only). When
+set, after a successful run the pipeline creates an `AGENTS` schema
+(dbt-labs/agents_schema shape: `ROOT`, `OSI_DATASET`, `OSI_FIELD`,
+`OSI_METRIC`, `OSI_RELATIONSHIP`, `SKILL_USE`) in the customer's own source
+database, so their *other* SQL agents can discover the tables without the
+Forge plugin. Scope of that write:
+
+- Only `CREATE SCHEMA IF NOT EXISTS "AGENTS"` + `CREATE TABLE IF NOT EXISTS`
+  + `DELETE`/`INSERT` of rows this run owns (`provider = 'forge'` /
+  `model_name = <source schema>`). It never touches a business table.
+- Uses the same credential the customer supplied for reading; if that role
+  lacks `CREATE`, the attempt fails, is logged as non-fatal, and the run
+  still succeeds. The bundled `config/catalog/` remains the source of truth.
+- Without the flag (the default), Forge only ever *reads* a customer
+  database, and the `AGENTS.*` projection goes to the Forge-owned warehouse
+  for warehouse-backed runs.

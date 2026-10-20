@@ -8,11 +8,14 @@ never on the original file format or connection details.
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from forge_core.models.common import SourceKind
+
+if TYPE_CHECKING:
+    pass
 
 
 class ConnectionContract(BaseModel):
@@ -65,7 +68,7 @@ class TableDescriptor(BaseModel):
 class DataSource(BaseModel):
     """Output of Stage 1 — INGEST. Fully self-describing, source-format-agnostic."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
     id: str = Field(description="Stable id for this ingestion run, e.g. a content hash.")
     kind: SourceKind
@@ -73,6 +76,9 @@ class DataSource(BaseModel):
     connection: ConnectionContract
     total_row_count: int
     ingested_at: str = Field(description="ISO-8601 timestamp.")
+    # Set by orchestrator when agent_schema=True; None otherwise (backward-compat).
+    # Excluded from serialization — never written to config/*.json files.
+    catalog: Any | None = Field(default=None, exclude=True, repr=False)
 
     def table(self, name: str) -> TableDescriptor:
         for t in self.tables:

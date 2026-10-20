@@ -24,9 +24,26 @@ export function listPacks(): Promise<PackSummary[]> {
   return fetch(`${BASE}/packs`).then((r) => asJson(r));
 }
 
+export interface HealthInfo {
+  status: string;
+  /** whether the Forge data warehouse is configured — gates "clone a source database" */
+  client_warehouse: boolean;
+}
+
+export function getHealth(): Promise<HealthInfo> {
+  return fetch(`${BASE}/health`).then((r) => asJson(r));
+}
+
 export function createRunFromPath(
   sourcePath: string,
-  opts: { industry?: string; label?: string }
+  opts: {
+    industry?: string;
+    label?: string;
+    clone?: boolean;
+    agentSchema?: boolean;
+    noLlm?: boolean;
+    publishAgentsToSource?: boolean;
+  }
 ): Promise<RunSummary> {
   return fetch(`${BASE}/runs`, {
     method: "POST",
@@ -35,17 +52,29 @@ export function createRunFromPath(
       source_path: sourcePath,
       industry: opts.industry ?? null,
       label: opts.label ?? null,
+      clone: opts.clone ?? false,
+      agent_schema: opts.agentSchema ?? false,
+      no_llm: opts.noLlm ?? false,
+      publish_agents_to_source: opts.publishAgentsToSource ?? false,
     }),
   }).then((r) => asJson(r));
 }
 
+export function deleteRun(runId: string): Promise<void> {
+  return fetch(`${BASE}/runs/${runId}`, { method: "DELETE" }).then((r) => {
+    if (!r.ok && r.status !== 404) throw new Error(`${r.status} ${r.statusText}`);
+  });
+}
+
 export function createRunFromUpload(
   files: File[],
-  opts: { industry?: string; label?: string }
+  opts: { industry?: string; label?: string; agentSchema?: boolean; noLlm?: boolean }
 ): Promise<RunSummary> {
   const params = new URLSearchParams();
   if (opts.industry) params.set("industry", opts.industry);
   if (opts.label) params.set("label", opts.label);
+  if (opts.agentSchema) params.set("agent_schema", "true");
+  if (opts.noLlm) params.set("no_llm", "true");
   const form = new FormData();
   for (const file of files) form.append("files", file);
   const qs = params.toString();

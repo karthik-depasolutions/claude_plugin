@@ -9,19 +9,13 @@ import ValidationShowcase from "../components/landing/ValidationShowcase";
 
 export default function Landing() {
   return (
-    <div className="min-h-[100dvh] bg-ink font-sans text-paper antialiased">
+    <div className="min-h-[100dvh] bg-bg text-text">
       <LandingNav />
       <Hero />
       <BindingThesis />
-      <div id="features">
-        <FeatureGrid />
-      </div>
-      <div id="mechanism">
-        <HowItWorks />
-      </div>
-      <div id="validation">
-        <ValidationShowcase />
-      </div>
+      <HowItWorks />
+      <FeatureGrid />
+      <ValidationShowcase />
       <FinalCta />
       <LandingFooter />
     </div>

@@ -55,9 +55,10 @@ Each stage is a pure function over the previous stage's typed output
    Every table/column reference is fact-checked against the structural
    profile and every cookbook query is executed once against the real data
    before it is kept. The result is cached on disk by a hash of the
-   structural facts, so an unchanged schema is never re-synthesized. No
-   provider configured ⇒ the run fails fast; there is no deterministic-only
-   fallback.
+   structural facts, so an unchanged schema is never re-synthesized. The
+   backend is `FORGE_LLM_PROVIDER` (`gemini` or `anthropic`). No provider
+   configured ⇒ the run fails fast, unless `FORGE_LLM_DEGRADED_OK=true`,
+   which allows a reduced run (structural docs, no cookbook).
 3. **Classify** (`forge_core/classification/`) — scores every
    `industry-packs/*/signatures.json` against the profile (entity-name
    hints, column-name hints, required canonical roles, table-count range)
@@ -65,18 +66,24 @@ Each stage is a pure function over the previous stage's typed output
    the orchestrator pauses (`RunStatus.NEEDS_INPUT`) for a human to pick.
 4. **Bind** (`forge_core/binding/`) — the deterministic scorer
    (`scorer.py`) maps each canonical role the chosen pack needs (e.g.
-   `revenue_amount`) to a real `table.column` on the one **primary** table,
-   using pack-authored hints and token overlap. Whatever it can't resolve,
-   an LLM proposer attempts; whatever neither can resolve stays `unresolved`
-   and any KPI that requires it is skipped (or the whole run pauses if the
-   caller wants to supply overrides — see `binding_overrides`). Pack KPIs
-   bind to the primary table only, but **every** ingested table is exposed
-   for querying (`allowed_tables`), and verified relationships (possibly
-   empty) are carried through for the runtime to serve.
+   `revenue_amount`) to a real `table.column`, starting on the **primary**
+   table, using pack-authored hints and token overlap. A role the primary
+   lacks (or binds only weakly), or one a pack explicitly assigns to another
+   `entity`, can bind to a related table reachable by a chain of **verified
+   relationships** (`_join_chains` does a BFS over the FK graph); the
+   `TableBinding` chain to reach it, and whether each hop is many-to-one
+   (safe) or one-to-many (fans out), travel in `SchemaBindings.tables`.
+   Whatever neither the scorer nor the LLM proposer can resolve stays
+   `unresolved` and any KPI that requires it is skipped (or the run pauses
+   for `binding_overrides`). Every ingested table is queryable
+   (`allowed_tables`) regardless.
 5. **Compile** (`forge_core/compiler/`) — joins each pack KPI's canonical
    SQL template with the resolved bindings, renders concrete SQL, and
-   validates it with `sqlglot`. The LLM never touches this step — it only
-   ever proposes *bindings*, never SQL that ships as-is.
+   validates it with `sqlglot`. A KPI that references a cross-table role
+   gets a `LEFT JOIN` per hop on the path to that table (intermediate hops
+   pulled in transitively); a one-to-many join that would inflate the KPI's
+   aggregates is **refused**, not silently emitted. The LLM never touches
+   this step — it only ever proposes *bindings*, never SQL that ships.
 6. **Generate** (`forge_core/generation/`) — produces the plugin's prose:
    `SKILL.md`, a deep-dive subagent, one slash command per recipe, a
    `SessionStart` guardrail hook, and a static KPI-snapshot dashboard
@@ -115,6 +122,34 @@ This is what lets the same generator run against a healthcare bookings CSV,
 a three-table retail orders dataset, and an EdTech SQLite database and
 produce three different, fully valid, differently-shaped plugins — see
 `tests/e2e/test_genericity.py` for the acceptance test that proves it.
+
+### Knowledge-pack-only mode
+
+When classification can't confidently place a dataset in a vertical it lands
+on `generic-analytics`: the plugin ships **no** curated KPI catalog, but it
+still ships the full knowledge pack — `schema_model.json` (per-table docs,
+enum decodes, and a dry-run-verified NL→SQL cookbook), the `schema://`
+resources, and `run_safe_query` / `search_records` / the metric-analytics
+tools. That is a coherent, sellable deliverable on its own: a client asking
+ad-hoc questions gets grounded, schema-aware answers without a single
+hand-written KPI. `RunDetail.knowledge_pack` (`cookbook_pass_rate`,
+`schema_coverage`) measures how strong that pack is; the `schema_model`
+harness check WARNs when the cookbook pass rate drops below 0.7 or column
+coverage below 1.0 (e.g. on a degraded, no-LLM run).
+
+### Agent Schema mode (large databases)
+
+`--agent-schema` / `POST /runs {agent_schema: true}` is an opt-in mode for
+25–500 table databases. It reads `information_schema` for declared keys (so
+relationship detection skips its O(n²) value-overlap probes), caps the
+deterministic profiling passes with `AGENT_SCHEMA_BUDGET`, chunks the two
+single-shot LLM passes so they can't silently overflow, and ships the knowledge
+pack **sharded and BM25-indexed** under `config/catalog/` — the runtime's
+`search_schema` / `get_table_schema` / `find_join_path` tools query it on demand
+instead of loading one multi-megabyte `schema_model.json`. Warehouse-backed runs
+also get an `AGENTS.*` projection in the Forge warehouse for cross-tool
+interop. Off by default; output is byte-identical to a normal run when off. Full
+detail in [agent-schema.md](agent-schema.md).
 
 ## Repository layout
 

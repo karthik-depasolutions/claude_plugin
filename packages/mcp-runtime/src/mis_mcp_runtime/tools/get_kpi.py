@@ -10,6 +10,7 @@ import duckdb
 
 from mis_mcp_runtime.config import RuntimeConfig
 from mis_mcp_runtime.engine.kpi_executor import execute_kpi
+from mis_mcp_runtime.tools.render_chart import attach_chart
 
 
 def get_kpi(config: RuntimeConfig, con: duckdb.DuckDBPyConnection, kpi_id: str) -> dict[str, Any]:
@@ -17,7 +18,7 @@ def get_kpi(config: RuntimeConfig, con: duckdb.DuckDBPyConnection, kpi_id: str) 
     if kpi is None:
         available = [k.id for k in config.kpis]
         return {"error": f"Unknown kpi_id {kpi_id!r}. Available: {available}"}
-    return execute_kpi(con, kpi, config.query_timeout_seconds)
+    return attach_chart(execute_kpi(con, kpi, config.query_timeout_seconds))
 
 
 def list_kpis(config: RuntimeConfig) -> dict[str, Any]:

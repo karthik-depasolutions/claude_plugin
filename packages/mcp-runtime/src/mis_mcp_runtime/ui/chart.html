@@ -125,12 +125,18 @@
     }
     wrap.appendChild(h1);
 
-    var rows = data.rows || [];
+    var rows = data.rows || data.slices || data.ranked_results || [];
     var chart = data.chart;
     if (chart && chart.type === "number" && rows.length) {
       wrap.appendChild(renderNumber(rows[0]));
     } else if (chart && chart.type === "bar" && chart.labels && chart.values) {
       wrap.appendChild(renderBarChart(chart.labels, chart.values));
+    } else if (chart && chart.type === "line" && chart.x && chart.series) {
+      wrap.appendChild(renderLineChart(chart.x, chart.series));
+    } else if (chart && chart.type === "pie" && chart.labels && chart.values) {
+      wrap.appendChild(renderPieChart(chart.labels, chart.values));
+    } else if (chart && chart.type === "delta") {
+      wrap.appendChild(renderNumber({ change: chart.change, from: chart.from, to: chart.to }));
     } else {
       wrap.appendChild(renderTable(rows));
     }
@@ -230,6 +236,69 @@
       stroke: "currentColor", "stroke-opacity": "0.3"
     }));
 
+    return svg;
+  }
+
+  function renderLineChart(x, series) {
+    var width = 480, height = 220, padding = 32;
+    var n = x.length || 1;
+    var all = series.reduce(function (acc, s) { return acc.concat(s.values.map(Number)); }, [0]);
+    var max = Math.max.apply(null, all) || 1;
+    var min = Math.min.apply(null, all.concat([0]));
+    var span = (max - min) || 1;
+    var chartW = width - padding * 2, chartH = height - padding * 2;
+    var colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"];
+    var svg = svgEl("svg", { viewBox: "0 0 " + width + " " + height, width: "100%", height: height, role: "img" });
+
+    svg.appendChild(svgEl("line", {
+      x1: padding, y1: height - padding, x2: width - padding, y2: height - padding,
+      stroke: "currentColor", "stroke-opacity": "0.3"
+    }));
+
+    series.forEach(function (s, si) {
+      var pts = s.values.map(function (v, i) {
+        var px = padding + (n === 1 ? chartW / 2 : (i / (n - 1)) * chartW);
+        var py = height - padding - ((Number(v) - min) / span) * chartH;
+        return px.toFixed(1) + "," + py.toFixed(1);
+      }).join(" ");
+      svg.appendChild(svgEl("polyline", {
+        points: pts, fill: "none", stroke: colors[si % colors.length], "stroke-width": "2"
+      }));
+    });
+
+    [x[0], x[x.length - 1]].forEach(function (label, i) {
+      var t = svgEl("text", {
+        x: i === 0 ? padding : width - padding, y: height - padding + 12,
+        "text-anchor": i === 0 ? "start" : "end", class: "bar-label", fill: "currentColor"
+      });
+      t.textContent = truncate(String(label), 12);
+      svg.appendChild(t);
+    });
+    return svg;
+  }
+
+  function renderPieChart(labels, values) {
+    var size = 220, r = 88, cx = size / 2, cy = size / 2;
+    var nums = values.map(function (v) { return Math.max(Number(v) || 0, 0); });
+    var total = nums.reduce(function (a, b) { return a + b; }, 0) || 1;
+    var colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6", "#64748b"];
+    var svg = svgEl("svg", { viewBox: "0 0 " + (size + 160) + " " + size, width: "100%", height: size, role: "img" });
+    var angle = -Math.PI / 2;
+    nums.forEach(function (v, i) {
+      var frac = v / total;
+      var next = angle + frac * 2 * Math.PI;
+      var large = frac > 0.5 ? 1 : 0;
+      var x1 = cx + r * Math.cos(angle), y1 = cy + r * Math.sin(angle);
+      var x2 = cx + r * Math.cos(next), y2 = cy + r * Math.sin(next);
+      svg.appendChild(svgEl("path", {
+        d: "M " + cx + " " + cy + " L " + x1.toFixed(1) + " " + y1.toFixed(1) +
+           " A " + r + " " + r + " 0 " + large + " 1 " + x2.toFixed(1) + " " + y2.toFixed(1) + " Z",
+        fill: colors[i % colors.length], opacity: "0.9"
+      }));
+      var lt = svgEl("text", { x: size + 12, y: 20 + i * 18, class: "bar-label", fill: "currentColor" });
+      lt.textContent = truncate(String(labels[i]), 18) + "  " + Math.round(frac * 100) + "%";
+      svg.appendChild(lt);
+    });
     return svg;
   }
 

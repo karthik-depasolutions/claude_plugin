@@ -71,6 +71,11 @@ class RuntimeConfig:
     schema_model: dict
     max_query_rows: int
     query_timeout_seconds: int
+    # Present only for an agent_schema plugin (a large database): the
+    # config/catalog/ directory holding the sharded, BM25-indexed knowledge
+    # pack the runtime's search_schema / get_table_schema tools read. None for
+    # every classic plugin - those tools then report "no catalog".
+    catalog_dir: Path | None = None
 
 
 def _resolve_dir(env_var: str, plugin_root_subpath: str, default_relative: str) -> Path:
@@ -150,6 +155,9 @@ def load_runtime_config(
 
     guardrails = schema_summary.get("guardrails", {}) if isinstance(schema_summary, dict) else {}
 
+    catalog_dir = config_dir / "catalog"
+    has_catalog = (catalog_dir / "index.json").exists()
+
     return RuntimeConfig(
         config_dir=config_dir,
         data_dir=data_dir,
@@ -160,4 +168,5 @@ def load_runtime_config(
         schema_model=schema_model,
         max_query_rows=int(guardrails.get("max_query_rows", 200)),
         query_timeout_seconds=int(guardrails.get("query_timeout_seconds", 10)),
+        catalog_dir=catalog_dir if has_catalog else None,
     )

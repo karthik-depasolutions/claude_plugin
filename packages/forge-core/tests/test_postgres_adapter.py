@@ -11,7 +11,13 @@ import socket
 from urllib.parse import urlparse
 
 import pytest
-from forge_core.ingestion.postgres import CREDENTIAL_ENV_VAR, PostgresAdapter, extract_schema, redact
+from forge_core.ingestion.postgres import (
+    CREDENTIAL_ENV_VAR,
+    PostgresAdapter,
+    extract_schema,
+    normalize_pg_url,
+    redact,
+)
 from forge_core.ingestion.registry import default_run_id, ingest, prepare_source_for_persistence
 from forge_core.models.common import SourceKind
 
@@ -39,9 +45,40 @@ def test_supports_matches_only_postgres_schemes():
     adapter = PostgresAdapter()
     assert adapter.supports("postgresql://user:pw@host/db")
     assert adapter.supports("postgres://user:pw@host/db")
+    assert adapter.supports("postgresql+asyncpg://user:pw@host/db")  # SQLAlchemy driver suffix
+    assert adapter.supports("postgres+psycopg://user:pw@host/db")
     assert not adapter.supports("mysql://user:pw@host/db")
     assert not adapter.supports("/some/file/path.csv")
     assert not adapter.supports(r"D:\data\bookings.csv")
+
+
+def test_normalize_pg_url_makes_a_driver_and_ssl_url_libpq_ready():
+    # asyncpg-style URL people paste straight from an app config
+    assert (
+        normalize_pg_url("postgresql+asyncpg://u:pw@h:5432/db?ssl=require")
+        == "postgresql://u:pw@h:5432/db?sslmode=require"
+    )
+    # ssl=true -> sslmode=require, other params kept, order preserved
+    assert (
+        normalize_pg_url("postgres+psycopg://u:pw@h/db?ssl=true&application_name=x")
+        == "postgres://u:pw@h/db?sslmode=require&application_name=x"
+    )
+    # already-clean strings are returned untouched (no needless re-encoding)
+    for clean in (
+        "postgresql://u:pw@h/db",
+        "postgresql://u:pw@h/db?sslmode=require",
+        "postgresql://u:pw@h/db?options=-csearch_path%3Dclient_x",
+    ):
+        assert normalize_pg_url(clean) == clean
+
+
+def test_prepare_source_persists_the_normalized_connection_string(monkeypatch):
+    creds: dict[str, str] = {}
+    placeholder = prepare_source_for_persistence(
+        "postgresql+asyncpg://u:pw@h:5432/db?ssl=require", into=creds
+    )
+    assert placeholder == f"${{{CREDENTIAL_ENV_VAR}}}"
+    assert creds[CREDENTIAL_ENV_VAR] == "postgresql://u:pw@h:5432/db?sslmode=require"
 
 
 def test_redact_strips_the_password_but_keeps_everything_else_useful():

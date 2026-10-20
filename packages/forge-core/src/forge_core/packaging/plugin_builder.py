@@ -32,8 +32,13 @@ from forge_core.models.plugin_spec import (
 )
 from forge_core.models.schema_model import SchemaModel
 from forge_core.models.schema_profile import SchemaProfile
+from forge_core.packaging.catalog_shard import write_catalog_shards
 from forge_core.packaging.mcp_bundle import bundle_runtime
-from forge_core.packaging.redaction import write_redacted_data_files
+from forge_core.packaging.redaction import (
+    denied_columns_by_table,
+    redact_schema_model_dict,
+    write_redacted_data_files,
+)
 from forge_core.packaging.versioning import INITIAL_VERSION
 from forge_core.validation.frontmatter import render_frontmatter
 
@@ -46,6 +51,16 @@ def _slugify_label(text: str) -> str:
     packaging is a stage *before* publishing and shouldn't depend on it."""
     slug = re.sub(r"[^a-z0-9]+", "-", text.strip().lower()).strip("-")
     return slug[:40]
+
+
+def server_name_for(pack: IndustryPack, customer_label: str | None = None) -> str:
+    """The `.mcp.json` server key for this plugin. Per-plugin, not the shared
+    `mis-mcp-runtime`, so two Forge plugins installed side by side (a retail
+    and a finance one, say) don't both register under the same name and
+    collide in Claude Desktop's connector list. Mirrors `plugin_name_for`:
+    a customer label wins over the pack slug when present."""
+    slug = _slugify_label(customer_label) if customer_label else pack.slug
+    return f"mis-mcp-{slug}"
 
 
 def plugin_name_for(pack: IndustryPack, customer_label: str | None = None) -> str:
@@ -142,12 +157,14 @@ def _config_files(
 
     # The knowledge pack the MCP client reads: overview, per-table docs,
     # pattern notes, verified cookbook. Replaces the old deterministic-only
-    # business_context.json (which shipped near-empty).
+    # business_context.json (which shipped near-empty). Denied columns' sample
+    # values / value-sets are stripped here, same as schema_summary.json above.
     if schema_model is not None:
+        redacted_model = redact_schema_model_dict(schema_model.model_dump(mode="json"), denied)
         files.append(
             GeneratedFile(
                 relative_path="config/schema_model.json",
-                content=schema_model.model_dump_json(indent=2),
+                content=json.dumps(redacted_model, indent=2),
                 is_json=True,
             )
         )
@@ -155,18 +172,18 @@ def _config_files(
     return files
 
 
-def _mcp_config(*, inject_source_db_url: bool = False) -> McpConfig:
+def _mcp_config(*, server_name: str = MCP_SERVER_NAME, inject_source_db_url: bool = False) -> McpConfig:
     env = {
         "MIS_MCP_CONFIG_DIR": "${CLAUDE_PLUGIN_ROOT}/config",
         "MIS_MCP_DATA_DIR": "${CLAUDE_PLUGIN_ROOT}/data",
     }
     if inject_source_db_url:
         # Desktop prompts for this via plugin.json userConfig when the user
-        # clicks Connect on mis-mcp-runtime — never bake the credential in.
+        # clicks Connect — never bake the credential in.
         env["FORGE_SOURCE_DB_URL"] = "${user_config.source_db_url}"
     return McpConfig(
         mcpServers={
-            MCP_SERVER_NAME: McpStdioServer(
+            server_name: McpStdioServer(
                 command="python",
                 args=["${CLAUDE_PLUGIN_ROOT}/mcp_server/run_server.py"],
                 env=env,
@@ -196,6 +213,43 @@ def ensure_mcp_token(output_dir: Path) -> str:
     return token
 
 
+MCP_SOURCE_ENV_FILENAME = ".mcp_source_env.json"
+
+
+def mcp_source_env_path(output_dir: Path) -> Path:
+    return output_dir / MCP_SOURCE_ENV_FILENAME
+
+
+def write_mcp_source_env(output_dir: Path, env: dict[str, str]) -> None:
+    """Persist the `${VAR}=value` credential(s) the *hosted* (Pattern B)
+    runtime needs to resolve this run's `data_source.json` at query time.
+
+    Server-side only: a sibling of `.mcp_token` under `FORGE_RUNS_DIR`, never
+    inside the packaged plugin directory, the downloaded zip, or the published
+    GitHub repo. A stdio (Pattern A) plugin never needs it - it reads its
+    credential from the customer's own environment. Absent for a file source.
+    """
+    if not env:
+        return
+    output_dir.mkdir(parents=True, exist_ok=True)
+    mcp_source_env_path(output_dir).write_text(
+        json.dumps(dict(env), separators=(",", ":")), encoding="utf-8"
+    )
+
+
+def read_mcp_source_env(output_dir: Path) -> dict[str, str]:
+    """The map written by `write_mcp_source_env`, or `{}` if this run has none
+    (a file source, or a stdio-only run)."""
+    path = mcp_source_env_path(output_dir)
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return {str(k): str(v) for k, v in data.items()} if isinstance(data, dict) else {}
+
+
 def run_id_from_plugin_dir(plugin_dir: Path) -> str | None:
     """`generated/runs/<run_id>/output/<plugin>` → run_id."""
     parts = plugin_dir.resolve().parts
@@ -221,8 +275,16 @@ def bind_http_mcp(plugin_dir: Path, url: str) -> None:
     remote_kwargs: dict[str, object] = {"type": "http", "url": url}
     if any(marker in url for marker in _NGROK_HOST_MARKERS):
         remote_kwargs["headers"] = {"ngrok-skip-browser-warning": "true"}
-    spec = McpConfig(mcpServers={MCP_SERVER_NAME: McpRemoteServer(**remote_kwargs)})
-    _write_text(plugin_dir / ".mcp.json", json.dumps(spec.to_json_dict(), indent=2))
+    # Keep whatever per-plugin server key build_plugin_spec already wrote, so
+    # the switch stdio -> http doesn't rename the connector (and the generated
+    # `tools:` refs keep resolving).
+    mcp_path = plugin_dir / ".mcp.json"
+    server_name = MCP_SERVER_NAME
+    if mcp_path.is_file():
+        existing = json.loads(mcp_path.read_text(encoding="utf-8")).get("mcpServers", {})
+        server_name = next(iter(existing), MCP_SERVER_NAME)
+    spec = McpConfig(mcpServers={server_name: McpRemoteServer(**remote_kwargs)})
+    _write_text(mcp_path, json.dumps(spec.to_json_dict(), indent=2))
     manifest_path = plugin_dir / ".claude-plugin" / "plugin.json"
     if manifest_path.is_file():
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -355,9 +417,23 @@ def build_plugin_spec(
         )
     files.extend(_config_files(pack, profile, bindings, kpi_defs, schema_model))
 
+    # Generation bakes the shared `mcp__mis-mcp-runtime__<tool>` refs into
+    # agent/command/skill prose (see generation.constants.mcp_tool_ref). Repoint
+    # them at this plugin's own server key so the `tools:` frontmatter still
+    # resolves once the .mcp.json key below is per-plugin.
+    server_name = server_name_for(pack, customer_label)
+    if server_name != MCP_SERVER_NAME:
+        old, new = f"mcp__{MCP_SERVER_NAME}__", f"mcp__{server_name}__"
+        files = [
+            f.model_copy(update={"content": f.content.replace(old, new)})
+            if f.relative_path.endswith(".md")
+            else f
+            for f in files
+        ]
+
     return PluginSpec(
         manifest=manifest,
-        mcp_config=_mcp_config(inject_source_db_url=needs_source_db),
+        mcp_config=_mcp_config(server_name=server_name, inject_source_db_url=needs_source_db),
         hooks=generated.hooks,
         files=files,
         readme=_readme(pack, kpi_defs, name, version),
@@ -371,12 +447,16 @@ def write_plugin(
     source: DataSource | None = None,
     profile: SchemaProfile | None = None,
     pack: IndustryPack | None = None,
+    schema_model: SchemaModel | None = None,
+    agent_schema: bool = False,
     bundle_mcp_runtime: bool = True,
 ) -> Path:
     """Serialize a `PluginSpec` to disk as BOM-less UTF-8, write the source
     data it references (redacted per `pack`'s guardrails - see
     forge_core.packaging.redaction), and bundle the generic MCP runtime next
-    to it. Returns `output_dir`."""
+    to it.  Pass `agent_schema=True` to also write the sharded, BM25-indexed
+    `config/catalog/` the runtime's `search_schema` tool reads.
+    Returns `output_dir`."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
     manifest_dir = output_dir / ".claude-plugin"
@@ -407,6 +487,22 @@ def write_plugin(
                 "the data ships inside the plugin - see forge_core.packaging.redaction."
             )
         write_redacted_data_files(source, profile, pack, output_dir)
+
+    # Write the sharded catalog ONLY in agent_schema mode. With the flag off,
+    # nothing under config/catalog/ is written and the plugin is byte-identical
+    # to today - the sharded catalog is strictly additive, opt-in surface.
+    if agent_schema and schema_model is not None and schema_model.tables:
+        config_dir = output_dir / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        # Shard the SAME redacted dict that config/schema_model.json ships -
+        # denied-column sample values / enums / value-sets must not leak into
+        # the shards either.
+        denied: set[str] = set()
+        if profile is not None and pack is not None:
+            for cols in denied_columns_by_table(profile, pack).values():
+                denied |= cols
+        redacted = redact_schema_model_dict(schema_model.model_dump(mode="json"), denied)
+        write_catalog_shards(redacted, config_dir)
 
     if bundle_mcp_runtime:
         bundle_runtime(output_dir)

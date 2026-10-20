@@ -2,13 +2,16 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
 from forge_core.binding import resolve_bindings
 from forge_core.classification import load_pack
 from forge_core.compiler import compile_all
 from forge_core.ingestion.registry import ingest
+from forge_core.models.common import CheckStatus
 from forge_core.models.schema_profile import SchemaProfile
 from forge_core.profiling import build_structural_only
 from forge_core.runtime_session import open_session
+from forge_core.validation.sql_safety import check_sql_safety
 
 PACKS_ROOT = Path(__file__).resolve().parents[3] / "industry-packs"
 
@@ -82,6 +85,36 @@ def test_edtech_sqlite_binds_and_compiles(edtech_sqlite: Path):
         con.close()
 
 
+def test_a_role_is_not_bound_to_a_column_name_denied_on_another_table(tmp_path: Path):
+    """`denied_columns` is a flat set of bare names (that's the granularity
+    check_sql_safety enforces). If one table's `provider` is free text and
+    another's is a clean category, the resolver must not bind category_dim to
+    `provider` on the primary - the KPI would compile and then fail the
+    validation gate. Regression for run 6c9069f32bd5."""
+    src = tmp_path / "src"
+    src.mkdir()
+    rows = "\n".join(
+        f"e{i},{100 + i},{'google' if i % 2 else 'meta'},2026-01-{i + 1:02d}" for i in range(12)
+    )
+    (src / "events.csv").write_text(f"event_id,impressions,provider,event_date\n{rows}\n", encoding="utf-8")
+    notes = "\n".join(
+        f"n{i},a fairly long unique free-text note number {i} that will not look categorical"
+        for i in range(12)
+    )
+    (src / "provider_notes.csv").write_text(f"note_id,provider\n{notes}\n", encoding="utf-8")
+
+    profile = _profile_for(src)
+    pack = load_pack(PACKS_ROOT / "generic-analytics")
+    bindings = resolve_bindings(profile, pack)
+
+    assert "provider" in bindings.denied_columns
+    assert all(c.physical != "provider" for c in bindings.columns)
+
+    kpi_defs = compile_all(pack, bindings)
+    assert kpi_defs.get("sum_measure") is not None  # measure KPIs still compile
+    assert check_sql_safety(kpi_defs, bindings).status is CheckStatus.PASS
+
+
 def test_every_table_is_exposed_even_when_the_tables_are_unrelated(tmp_path: Path):
     src = tmp_path / "src"
     src.mkdir()
@@ -126,6 +159,79 @@ def test_cross_table_kpi_binds_via_a_relationship_and_compiles_a_join(retail_ord
         assert rows.shape[0] >= 1 and "revenue" in rows.columns
     finally:
         con.close()
+
+    # per-KPI join selection: a KPI that does NOT use `customer_tier` must not
+    # get the customers LEFT JOIN welded on.
+    plain = kpi_defs.get("total_revenue")
+    assert plain is not None and "JOIN" not in plain.sql.upper()
+
+
+def test_a_one_to_many_cross_table_join_is_refused_not_silently_inflated():
+    from forge_core.compiler.kpi_compiler import KpiCompileError, compile_kpi
+    from forge_core.models.bindings import ColumnBinding, SchemaBindings, TableBinding
+    from forge_core.models.industry_pack import CanonicalKpi, RequiredRoles
+
+    bindings = SchemaBindings(
+        pack_slug="x", data_source_id="d",
+        tables=[
+            TableBinding(alias="fact", physical="orders", grain="order"),
+            TableBinding(
+                alias="items", physical="order_items", grain="item",
+                join_on='"orders"."order_id" = "order_items"."order_id"',
+                join_is_to_parent=False,  # one-to-many: fans out
+            ),
+        ],
+        columns=[
+            ColumnBinding(role="revenue_amount", table_alias="fact", physical="order_total", confidence=1.0),
+            ColumnBinding(role="line_qty", table_alias="items", physical="quantity", confidence=1.0),
+        ],
+        allowed_tables=["orders", "order_items"],
+    )
+    kpi = CanonicalKpi(
+        id="bad", label="bad", description="d", formula_plain_english="f", grain="g",
+        requires=RequiredRoles(measures=["revenue_amount", "line_qty"]),
+        sql="SELECT SUM({{revenue_amount}}) AS r, SUM({{line_qty}}) AS q FROM {{fact}}",
+    )
+    with pytest.raises(KpiCompileError, match="one-to-many"):
+        compile_kpi(kpi, bindings)
+
+
+def test_multi_hop_join_chain_emits_one_left_join_per_hop_in_order():
+    from forge_core.compiler.kpi_compiler import compile_kpi
+    from forge_core.models.bindings import ColumnBinding, SchemaBindings, TableBinding
+    from forge_core.models.industry_pack import CanonicalKpi, RequiredRoles
+
+    # orders -> customers -> regions ; the region_name role lives two hops out.
+    bindings = SchemaBindings(
+        pack_slug="x", data_source_id="d",
+        tables=[
+            TableBinding(alias="fact", physical="orders", grain="order"),
+            TableBinding(
+                alias="customers", physical="customers", grain="customer",
+                join_on='"orders"."customer_id" = "customers"."customer_id"', join_is_to_parent=True,
+            ),
+            TableBinding(
+                alias="regions", physical="regions", grain="region",
+                join_on='"customers"."region_id" = "regions"."region_id"', join_is_to_parent=True,
+            ),
+        ],
+        columns=[
+            ColumnBinding(role="revenue_amount", table_alias="fact", physical="order_total", confidence=1.0),
+            ColumnBinding(role="region_name", table_alias="regions", physical="name",
+                          confidence=0.9, source="cross_table"),
+        ],
+        allowed_tables=["orders", "customers", "regions"],
+    )
+    kpi = CanonicalKpi(
+        id="rev_by_region", label="x", description="d", formula_plain_english="f", grain="g",
+        requires=RequiredRoles(measures=["revenue_amount"], dimensions=["region_name"]),
+        sql='SELECT {{region_name}} AS region, SUM({{revenue_amount}}) AS revenue '
+            'FROM {{fact}} GROUP BY {{region_name}}',
+    )
+    out = compile_kpi(kpi, bindings).sql.upper()
+    assert out.count("LEFT JOIN") == 2
+    # customers must be joined before regions (regions' ON references customers).
+    assert out.index("CUSTOMERS") < out.index("REGIONS ")
 
 
 def test_denied_columns_never_appear_in_compiled_sql(bookings_csv: Path):

@@ -32,6 +32,10 @@ def isolated_env(tmp_path, monkeypatch):
     monkeypatch.setenv("FORGE_CLIENT_WAREHOUSE_URL", "")
     monkeypatch.setenv("FORGE_CLIENT_WAREHOUSE_PUBLIC_HOST", "")
     monkeypatch.setenv("FORGE_PUBLIC_BASE_URL", "")
+    # Same reasoning for a dev .env that has a real GITHUB_TOKEN/ORG - publish
+    # tests set their own fake token; default is "not configured".
+    monkeypatch.setenv("GITHUB_TOKEN", "")
+    monkeypatch.setenv("GITHUB_ORG", "")
 
     from forge_api import db as db_module
     from forge_api import registry as registry_module

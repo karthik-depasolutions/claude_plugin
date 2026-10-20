@@ -10,7 +10,7 @@ function mockFetch(body: unknown) {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("api", () => {
-  it("createRunFromPath posts source_path + industry + label, never use_llm", async () => {
+  it("createRunFromPath posts source_path + industry + label + clone + agent_schema, never use_llm", async () => {
     const fetchFn = mockFetch({ run_id: "r1" });
     await createRunFromPath("/data/orders.csv", { industry: "retail-ecommerce", label: "Acme" });
 
@@ -22,6 +22,10 @@ describe("api", () => {
       source_path: "/data/orders.csv",
       industry: "retail-ecommerce",
       label: "Acme",
+      clone: false,
+      agent_schema: false,
+      no_llm: false,
+      publish_agents_to_source: false,
     });
     expect(sent).not.toHaveProperty("use_llm");
   });

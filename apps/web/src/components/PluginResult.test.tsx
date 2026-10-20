@@ -47,13 +47,15 @@ describe("PluginResult", () => {
       output_tokens: 3100,
       total_tokens: 15400,
       calls: 9,
+      estimated_cost_usd: 0.0234,
       by_model: {},
-      by_role: {},
+      by_role: { profiling: { total_tokens: 12000 }, generation: { total_tokens: 3400 } },
     };
     render(<PluginResult runId="run-1" events={[]} report={report} tokenUsage={tokenUsage} />);
 
     expect(screen.getByText("15k")).toBeInTheDocument(); // compact total
-    expect(screen.getByText(/12k in \/ 3\.1k out/)).toBeInTheDocument();
+    expect(screen.getByText(/~\$0\.023/)).toBeInTheDocument(); // cost label
+    expect(screen.getByText("profiling")).toBeInTheDocument(); // per-role breakdown row
   });
 
   it("shows a placeholder token stat when usage is not yet loaded", () => {

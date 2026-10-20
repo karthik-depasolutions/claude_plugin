@@ -13,6 +13,7 @@ sets `record.industry_override` and calls `run_pipeline` again to continue.
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -29,6 +30,7 @@ from forge_core.models.run import RunRecord
 from forge_core.models.schema_model import SchemaModel
 from forge_core.packaging import build_plugin_spec, write_plugin
 from forge_core.profiling import build_schema_profile
+from forge_core.profiling.budget import AGENT_SCHEMA_BUDGET, FAST_AGENT_SCHEMA_BUDGET
 from forge_core.profiling.quality import build_data_review
 from forge_core.profiling.synthesis import build_schema_model
 from forge_core.runtime_session import open_session
@@ -47,18 +49,29 @@ def run_pipeline(
     critique_provider: LLMProvider | None = None,
     binding_overrides: dict[str, str] | None = None,
     use_agent: bool = False,
+    agent_schema: bool = False,
+    fast: bool = False,
 ) -> RunRecord:
-    # The understanding phase is not optional: profiling synthesis, generation
-    # prose, and self-critique all require a live model. Fail fast and loud
-    # rather than silently degrading to a deterministic-only run.
+    # The understanding phase normally requires a live model: profiling
+    # synthesis, generation prose, and self-critique all use one. Fail fast
+    # and loud rather than silently degrading - UNLESS the operator has opted
+    # into a degraded run with FORGE_LLM_DEGRADED_OK, in which case a missing
+    # provider is allowed and the pipeline produces structural docs, template
+    # prose, and no verified cookbook (every stage already degrades per-call).
     if profiling_provider is None or generation_provider is None or critique_provider is None:
-        record.status = RunStatus.FAILED
-        record.error = (
-            "MIS Plugin Forge requires an LLM provider for the understanding phase. "
-            "Set GEMINI_API_KEY, or FORGE_LLM_CASSETTE_MODE=replay with recorded fixtures."
+        if os.environ.get("FORGE_LLM_DEGRADED_OK", "").lower() not in ("1", "true", "yes"):
+            record.status = RunStatus.FAILED
+            record.error = (
+                "MIS Plugin Forge requires an LLM provider for the understanding phase. "
+                "Set GEMINI_API_KEY (or ANTHROPIC_API_KEY + FORGE_LLM_PROVIDER=anthropic), or "
+                "FORGE_LLM_CASSETTE_MODE=replay, or FORGE_LLM_DEGRADED_OK=true for a reduced run."
+            )
+            record.log(RunStage.INGEST, record.error)
+            return record
+        record.log(
+            RunStage.PROFILE,
+            "LLM unavailable - degraded run: structural docs only, template prose, no verified cookbook.",
         )
-        record.log(RunStage.INGEST, record.error)
-        return record
 
     record.status = RunStatus.RUNNING
     try:
@@ -70,12 +83,43 @@ def run_pipeline(
             critique_provider=critique_provider,
             binding_overrides=binding_overrides,
             use_agent=use_agent,
+            agent_schema=agent_schema,
+            fast=fast or os.environ.get("FORGE_AGENT_SCHEMA_FAST", "").lower() in ("1", "true", "yes"),
         )
     except Exception as exc:  # the orchestrator must never raise past the caller
         record.status = RunStatus.FAILED
         record.error = str(exc)
         record.log(record.current_stage or RunStage.INGEST, f"Run failed: {exc}")
     return record
+
+
+def _read_catalog_for(record: RunRecord, data_source):  # type: ignore[no-untyped-def]
+    """Best-effort declared-constraint read for agent_schema mode. Any failure
+    (unsupported source, unreachable catalog, permission) logs and returns None
+    so the run falls back to today's purely heuristic relationship detection."""
+    from forge_core.ingestion.catalog import read_catalog  # noqa: PLC0415
+    from forge_core.ingestion.postgres import extract_schema  # noqa: PLC0415
+    from forge_core.ingestion.registry import _resolve_placeholder  # noqa: PLC0415
+
+    record.log(RunStage.INGEST, "agent_schema: reading catalog (information_schema / PRAGMA)")
+    try:
+        is_pg = data_source.kind.value in ("postgres", "postgresql")
+        schema = "public"
+        if is_pg:
+            try:
+                schema = extract_schema(_resolve_placeholder(record.source_path)) or "public"
+            except Exception:  # noqa: BLE001 - fall back to public if the URL can't be resolved
+                schema = "public"
+        con = open_session(data_source)
+        try:
+            return read_catalog(
+                con, source_kind=data_source.kind, catalog_alias="srcdb", schema=schema
+            )
+        finally:
+            con.close()
+    except Exception as exc:  # noqa: BLE001 - catalog read is strictly best-effort
+        record.log(RunStage.INGEST, f"Catalog read skipped (non-fatal): {exc}")
+        return None
 
 
 def _run_pipeline_inner(
@@ -87,27 +131,68 @@ def _run_pipeline_inner(
     critique_provider: LLMProvider | None,
     binding_overrides: dict[str, str] | None,
     use_agent: bool = False,
+    agent_schema: bool = False,
+    fast: bool = False,
 ) -> None:
-    record.log(RunStage.INGEST, f"Ingesting {redact_connection_string(record.source_path)}")
-    # Pass the raw string, not Path(record.source_path) - a live-database
-    # connection string must reach registry.ingest() unmangled (Path()
-    # would rewrite its "//" and turn "/" into "\" on Windows).
-    data_source = ingest(record.source_path)
-    record.log(
-        RunStage.INGEST,
-        f"Ingested {len(data_source.tables)} table(s)",
-        tables=[t.name for t in data_source.tables],
-    )
+    if record.profile is not None:
+        # Resume after a NEEDS_INPUT pause: reuse the profile from the first
+        # pass. Re-ingesting + re-profiling here is pure waste - and on a
+        # remote database it's minutes of query traffic every time the caller
+        # answers a question or confirms an industry. The DataSource rides
+        # along on the profile (`.source`).
+        profile = record.profile
+        data_source = profile.source
+        record.log(
+            RunStage.PROFILE,
+            f"Reusing profile from the first pass ({len(profile.structural.columns)} column(s))",
+        )
+    else:
+        record.log(RunStage.INGEST, f"Ingesting {redact_connection_string(record.source_path)}")
+        # Pass the raw string, not Path(record.source_path) - a live-database
+        # connection string must reach registry.ingest() unmangled (Path()
+        # would rewrite its "//" and turn "/" into "\" on Windows).
+        data_source = ingest(record.source_path)
+        record.log(
+            RunStage.INGEST,
+            f"Ingested {len(data_source.tables)} table(s)",
+            tables=[t.name for t in data_source.tables],
+        )
 
-    record.log(RunStage.PROFILE, "Profiling schema")
-    profile = build_schema_profile(data_source, profiling_provider)
-    record.log(RunStage.PROFILE, "Profile complete", columns=len(profile.structural.columns))
+        # agent_schema mode: read declared FK/PK facts from information_schema
+        # BEFORE profiling so the structural pass can use them.
+        catalog = _read_catalog_for(record, data_source) if agent_schema else None
+        if catalog is not None:
+            data_source.catalog = catalog  # type: ignore[attr-defined]
+            record.log(
+                RunStage.INGEST,
+                f"Catalog: {len(catalog.foreign_keys)} declared FK(s), "
+                f"{len(catalog.primary_keys)} PK table(s), {len(catalog.comments)} comment(s)",
+            )
+
+        mode_tag = " [agent_schema" + (", fast" if fast else "") + " mode]" if agent_schema else ""
+        record.log(RunStage.PROFILE, "Profiling schema" + mode_tag)
+        if not agent_schema:
+            _budget = None
+        elif fast:
+            _budget = FAST_AGENT_SCHEMA_BUDGET
+        else:
+            _budget = AGENT_SCHEMA_BUDGET
+        profile = build_schema_profile(
+            data_source, profiling_provider, catalog=catalog, budget=_budget
+        )
+        record.profile = profile
+        record.log(RunStage.PROFILE, "Profile complete", columns=len(profile.structural.columns))
 
     # Data-quality review first - its deterministic findings feed the schema
     # synthesis below. Wrapped in its own try/except: a data-quality review
     # must inform, never block, so it can never be what turns this whole run
     # into a FAILED one. Computed once, reused on every resume.
-    if record.data_review is None:
+    if record.data_review is None and fast:
+        # Fast mode skips the deterministic quality analysis (per-table
+        # reservoir sampling + top-value scans) - another round-trip per table.
+        record.data_review = DataReview(generated_at=datetime.now(UTC).isoformat())
+        record.log(RunStage.PROFILE, "Data-quality review skipped (fast mode)")
+    elif record.data_review is None:
         con = open_session(data_source)
         try:
             record.data_review = build_data_review(
@@ -157,12 +242,19 @@ def _run_pipeline_inner(
                 quality_findings=record.data_review.findings,
                 user_context=user_context,
             )
+            sm = record.schema_model
+            verb = "Reused cached" if sm.from_cache else "Synthesized"
+            fail_note = (
+                f", {len(sm.synthesis_failures)} table failure(s): {sm.synthesis_failures}"
+                if sm.synthesis_failures
+                else ""
+            )
             record.log(
                 RunStage.PROFILE,
-                f"Synthesized schema model: {len(record.schema_model.tables)} table doc(s), "
-                f"{sum(len(t.columns) for t in record.schema_model.tables)} column doc(s), "
-                f"{len(record.schema_model.cookbook)} verified cookbook quer(ies), "
-                f"{len(record.schema_model.patterns)} pattern note(s)",
+                f"{verb} schema model: {len(sm.tables)} table doc(s), "
+                f"{sum(len(t.columns) for t in sm.tables)} column doc(s), "
+                f"{len(sm.cookbook)}/{sm.coverage.get('cookbook_total', 0)} verified cookbook quer(ies), "
+                f"{len(sm.patterns)} pattern note(s), coverage {sm.schema_coverage():.0%}{fail_note}",
             )
         except Exception as exc:  # noqa: BLE001 - degrade, don't crash the run
             record.schema_model = SchemaModel(schema_hash="", generated_by="unavailable")
@@ -214,7 +306,10 @@ def _run_pipeline_inner(
         schema_model=record.schema_model, customer_label=record.label,
     )
     plugin_dir = Path(record.output_dir) / spec.manifest.name
-    write_plugin(spec, plugin_dir, source=data_source, profile=profile, pack=pack)
+    write_plugin(
+        spec, plugin_dir, source=data_source, profile=profile, pack=pack,
+        schema_model=record.schema_model, agent_schema=agent_schema,
+    )
     record.log(RunStage.PACKAGE, f"Packaged to {plugin_dir}", plugin_dir=str(plugin_dir))
 
     record.log(RunStage.VALIDATE, "Running validation harness (8 checks)")

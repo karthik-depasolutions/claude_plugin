@@ -10,8 +10,10 @@ independent implementation, because this package ships standalone.
 
 from __future__ import annotations
 
+import contextlib
 import os
 import re
+from collections.abc import Mapping
 from pathlib import Path
 
 import duckdb
@@ -37,10 +39,10 @@ def _normalize_env_value(value: str) -> str:
     return stripped
 
 
-def _resolve_env_vars(stmt: str) -> str:
+def _resolve_env_vars(stmt: str, lookup: Mapping[str, str]) -> str:
     def _replace(match: re.Match[str]) -> str:
         var_name = match.group(1)
-        value = os.environ.get(var_name)
+        value = lookup.get(var_name)
         if not value:
             raise ConfigError(
                 f"data_source.json references ${{{var_name}}}, but that environment variable "
@@ -51,12 +53,20 @@ def _resolve_env_vars(stmt: str) -> str:
     return _ENV_VAR_PATTERN.sub(_replace, stmt)
 
 
-def open_session(data_source: DataSourceConfig, data_dir: Path) -> duckdb.DuckDBPyConnection:
+def open_session(
+    data_source: DataSourceConfig, data_dir: Path, *, env: Mapping[str, str] | None = None
+) -> duckdb.DuckDBPyConnection:
     """Replay duckdb_attach_sql. ATTACH to a pooled Postgres (Supabase
     Supavisor) can fail transiently right after connect, so a failed ATTACH
-    is retried on a fresh DuckDB connection rather than reused."""
+    is retried on a fresh DuckDB connection rather than reused.
+
+    `env`, when given, is consulted for `${VAR}` credentials before
+    `os.environ` - the hosted (Pattern B) gateway passes this run's own
+    source credential, which never sits in the API process's environment.
+    Stdio plugins pass nothing and resolve straight from `os.environ`."""
     import time
 
+    lookup: Mapping[str, str] = {**os.environ, **env} if env else os.environ
     resolved_dir = data_dir.resolve()
     last_error: Exception | None = None
     for attempt in range(_ATTACH_RETRY_ATTEMPTS):
@@ -69,9 +79,18 @@ def open_session(data_source: DataSourceConfig, data_dir: Path) -> duckdb.DuckDB
                     df = pd.read_excel(excel_path)
                     con.register(view_name, df)
                     continue
-                resolved_stmt = _resolve_env_vars(stmt.replace("{DATA_DIR}", resolved_dir.as_posix()))
+                resolved_stmt = _resolve_env_vars(
+                    stmt.replace("{DATA_DIR}", resolved_dir.as_posix()), lookup
+                )
                 con.execute(resolved_stmt)
             con.execute("SET enable_progress_bar = false")
+            # Make DuckDB's Postgres scanner tolerant of real-world schemas
+            # (jsonb columns the catalog reports as numeric, mixed arrays, ...).
+            # No-op when this session has no live-Postgres attach. Kept in sync
+            # with forge_core.ingestion.postgres.apply_pg_compat.
+            for pg_stmt in ("SET pg_array_as_varchar = true", "SET pg_use_binary_copy = false"):
+                with contextlib.suppress(duckdb.Error):
+                    con.execute(pg_stmt)
             return con
         except duckdb.Error as exc:
             last_error = exc

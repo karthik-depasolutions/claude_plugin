@@ -30,12 +30,21 @@ export interface StageEvent {
   data: Record<string, any>;
 }
 
+export interface PackFit {
+  primary_pack_slug: string | null;
+  pack_confidence: number | null;
+  kpis_compiled: number;
+  kpis_skipped: number;
+}
+
 export interface RunSummary {
   run_id: string;
   status: RunStatus;
   current_stage: RunStage | null;
   error: string | null;
   total_tokens: number;
+  estimated_cost_usd: number;
+  pack_fit: PackFit | null;
 }
 
 export interface TokenUsage {
@@ -43,8 +52,15 @@ export interface TokenUsage {
   output_tokens: number;
   total_tokens: number;
   calls: number;
+  estimated_cost_usd: number;
   by_model: Record<string, Record<string, number>>;
   by_role: Record<string, Record<string, number>>;
+}
+
+export interface KnowledgePack {
+  cookbook_pass_rate: number | null;
+  schema_coverage: number | null;
+  schema_model_cache_hit: boolean | null;
 }
 
 export interface DataQuestion {
@@ -79,6 +95,10 @@ export interface RunDetail extends RunSummary {
   data_review: DataReview | null;
   data_answers: Record<string, string> | null;
   token_usage: TokenUsage | null;
+  pack_fit: PackFit | null;
+  knowledge_pack: KnowledgePack | null;
+  /** isolated warehouse schema backing this run's data, or null for a live-DB / file run */
+  warehouse_schema: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import Button from "../ui/Button";
+import { cx } from "../ui/cx";
 
 const LINKS = [
   { href: "#mechanism", label: "How it works" },
-  { href: "#features", label: "What's in it" },
+  { href: "#whats-in-it", label: "What's in it" },
   { href: "#validation", label: "Validation" },
 ];
 
@@ -11,23 +13,29 @@ export default function LandingNav() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-line/80 bg-ink/80 backdrop-blur-md">
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link to="/" className="font-display text-sm font-semibold tracking-tight text-paper">
-          MIS Plugin Forge
+    <header className="sticky top-0 z-30 border-b border-border bg-bg/85 backdrop-blur">
+      <nav className="mx-auto flex h-14 w-full max-w-[var(--container-page)] items-center justify-between px-6">
+        <Link to="/" className="flex items-baseline gap-2">
+          <span className="font-display text-[15px] font-semibold tracking-[-0.02em] text-text">
+            Forge
+          </span>
+          <span className="hidden font-mono text-[11px] text-text-faint sm:inline">plugin foundry</span>
         </Link>
 
-        <div className="hidden items-center gap-8 sm:flex">
+        <div className="hidden items-center gap-7 md:flex">
           {LINKS.map((link) => (
-            <a key={link.href} href={link.href} className="text-sm text-muted transition-colors hover:text-paper">
+            <a
+              key={link.href}
+              href={link.href}
+              className="text-[13px] text-text-muted transition-colors hover:text-text"
+            >
               {link.label}
             </a>
           ))}
-          <Link
-            to="/app"
-            className="rounded-full border border-line px-4 py-1.5 text-sm text-paper transition-colors hover:border-canonical/60 hover:text-canonical"
-          >
-            Start a run
+          <Link to="/app">
+            <Button variant="primary" size="sm">
+              Start a run
+            </Button>
           </Link>
         </div>
 
@@ -36,7 +44,7 @@ export default function LandingNav() {
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
           aria-label="Toggle navigation menu"
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-line text-paper sm:hidden"
+          className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] border border-border text-text md:hidden"
         >
           <svg viewBox="0 0 20 20" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.75}>
             {open ? (
@@ -48,28 +56,25 @@ export default function LandingNav() {
         </button>
       </nav>
 
-      {open && (
-        <div className="border-t border-line/80 px-6 py-4 sm:hidden">
-          <div className="flex flex-col gap-4">
-            {LINKS.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={() => setOpen(false)}
-                className="text-sm text-muted hover:text-paper"
-              >
-                {link.label}
-              </a>
-            ))}
-            <Link
-              to="/app"
-              className="mt-1 rounded-full border border-line px-4 py-2 text-center text-sm text-paper"
+      <div className={cx("border-t border-border px-6 md:hidden", open ? "block" : "hidden")}>
+        <div className="flex flex-col gap-1 py-3">
+          {LINKS.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              className="rounded-[var(--radius-sm)] px-2 py-2 text-[13px] text-text-muted hover:bg-surface-2 hover:text-text"
             >
+              {link.label}
+            </a>
+          ))}
+          <Link to="/app" onClick={() => setOpen(false)} className="mt-1">
+            <Button variant="primary" size="sm" className="w-full">
               Start a run
-            </Link>
-          </div>
+            </Button>
+          </Link>
         </div>
-      )}
+      </div>
     </header>
   );
 }

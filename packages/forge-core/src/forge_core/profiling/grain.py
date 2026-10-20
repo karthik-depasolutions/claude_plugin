@@ -67,8 +67,15 @@ def _composite_key(
 
 
 def infer_grains(
-    data_source: DataSource, columns: list[ColumnProfile], con: duckdb.DuckDBPyConnection
+    data_source: DataSource,
+    columns: list[ColumnProfile],
+    con: duckdb.DuckDBPyConnection,
+    *,
+    skip_composite_above_columns: int | None = None,
 ) -> list[TableGrain]:
+    """`skip_composite_above_columns` caps the C(6,2)+C(6,3) composite-key
+    brute force: a table wider than the cap gets single-column PK detection
+    only, then falls back to full-row grain. `None` = legacy (always probe)."""
     grains: list[TableGrain] = []
     for table in data_source.tables:
         table_cols = [c for c in columns if c.table == table.name]
@@ -84,7 +91,11 @@ def infer_grains(
             )
             continue
 
-        combo = _composite_key(con, table, table_cols)
+        over_cap = (
+            skip_composite_above_columns is not None
+            and len(table_cols) > skip_composite_above_columns
+        )
+        combo = None if over_cap else _composite_key(con, table, table_cols)
         if combo:
             grains.append(
                 TableGrain(

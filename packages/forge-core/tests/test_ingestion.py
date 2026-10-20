@@ -16,6 +16,23 @@ def test_single_csv_becomes_one_table(bookings_csv: Path):
     assert len(table.sample_rows) == 5
 
 
+def test_sample_rows_are_json_native_and_survive_a_json_dump(tmp_path: Path):
+    """`describe_relation` used to `.to_dict()` a DataFrame, leaking numpy
+    int64/float64/Timestamp into `sample_rows` - which then blew up
+    `RunRecord.model_dump(mode="json")` in `_persist` with 'float object cannot
+    be interpreted as an integer'. Regression for run baaeac2c1e26."""
+    csv = tmp_path / "mixed.csv"
+    csv.write_text(
+        "id,amount,ratio,ts,note\n1,1000,0.5,2026-01-02,ok\n2,2500,0.75,2026-03-04,\n",
+        encoding="utf-8",
+    )
+    ds = ingest(csv)
+    ds.model_dump(mode="json")  # must not raise
+    for row in ds.tables[0].sample_rows:
+        for v in row.values():
+            assert v is None or type(v) in (str, int, float, bool), (type(v), v)
+
+
 def test_directory_of_csvs_becomes_multi_table(retail_orders_dir: Path):
     ds = ingest(retail_orders_dir)
     assert len(ds.tables) == 3

@@ -23,6 +23,7 @@ has no rule granting it remote access, by design. See
 
 from __future__ import annotations
 
+import os
 import re
 import secrets
 import time
@@ -32,14 +33,27 @@ from urllib.parse import quote
 
 import duckdb
 
+from forge_core.ingestion.postgres import extract_schema
+
 GROUP_ROLE = "forge_client_group"
 CONNECTION_LIMIT = 5
 STATEMENT_TIMEOUT = "15s"
 RUN_ID_PATTERN = re.compile(r"^[a-z0-9]{1,32}$")
 LABEL_MAX_LEN = 20
 _LABEL_SEPARATOR_PATTERN = re.compile(r"[^a-z0-9]+")
-_WARMUP_ATTEMPTS = 6
+_WARMUP_ATTEMPTS = 8
 _WARMUP_BASE_DELAY_S = 2.0
+
+# Caps on cloning a live source database into the warehouse (see
+# provision_client_schema_from_postgres). A source over either limit is
+# rejected outright - nothing partial is stored. Overridable per deployment.
+MAX_CLONE_TABLES = int(os.environ.get("FORGE_MAX_CLONE_TABLES", os.environ.get("FORGE_CLONE_MAX_TABLES", "200")))
+MAX_CLONE_TOTAL_ROWS = int(os.environ.get("FORGE_CLONE_MAX_ROWS", "2000000"))
+
+
+class CloneTooLargeError(RuntimeError):
+    """The source schema exceeds a clone cap. Raised *before* anything is
+    created on the warehouse, so there is nothing to roll back."""
 
 _EXTENSION_TABLE_SQL: dict[str, str] = {
     ".csv": "read_csv_auto('{path}')",
@@ -182,6 +196,102 @@ def provision_client_schema(
     )
 
 
+def provision_client_schema_from_postgres(
+    admin_connection_string: str,
+    run_id: str,
+    source_connection_string: str,
+    *,
+    public_host: str,
+    public_port: int = 5432,
+    database: str = "forge_warehouse",
+    catalog: str = "srcdb",
+    source_schema: str | None = None,
+    label: str | None = None,
+    public_username_suffix: str | None = None,
+) -> WarehouseCredentials:
+    """Clone one schema of a live source Postgres into a brand-new
+    `client_<run_id>` schema (or `client_<label>_<run_id>`) on the warehouse,
+    with a narrow read-only role scoped to just that schema - the live-DB
+    equivalent of `provision_client_schema` (which does the same for files).
+
+    `source_schema` defaults to whatever the source connection string's
+    `search_path` names (via `postgres.extract_schema`), else `'public'` -
+    matching what a plain live run would read.
+
+    Raises `CloneTooLargeError`, *before creating anything*, when the source
+    schema has more than `MAX_CLONE_TABLES` tables or more than
+    `MAX_CLONE_TOTAL_ROWS` rows in total. Every row is streamed through this
+    process (DuckDB `CREATE TABLE … AS SELECT`), so the caps also bound how
+    much data transits and how long the run's INGEST stage blocks.
+    """
+    _validate_run_id(run_id)
+    schema_name = schema_name_for(run_id, label)
+    role_name = f"{schema_name}_ro"
+    password = secrets.token_urlsafe(24)
+    src_schema = source_schema or extract_schema(source_connection_string)
+
+    con = duckdb.connect(":memory:")
+    con.execute("SET enable_progress_bar = false")
+    try:
+        con.execute("INSTALL postgres; LOAD postgres;")
+        from forge_core.ingestion.postgres import apply_pg_compat  # noqa: PLC0415
+
+        apply_pg_compat(con)
+        con.execute(f"ATTACH '{source_connection_string}' AS clonesrc (TYPE POSTGRES, READ_ONLY)")
+
+        table_names = [
+            row[0]
+            for row in con.execute(
+                "SELECT table_name FROM duckdb_tables() WHERE database_name = 'clonesrc' "
+                "AND schema_name = ? ORDER BY table_name",
+                [src_schema],
+            ).fetchall()
+        ]
+        if not table_names:
+            raise ValueError(
+                f"No tables found in schema '{src_schema}' of the source database - nothing to clone."
+            )
+        if len(table_names) > MAX_CLONE_TABLES:
+            raise CloneTooLargeError(
+                f"The source schema '{src_schema}' has {len(table_names)} tables; the clone limit "
+                f"is {MAX_CLONE_TABLES}. Use live mode, or point the connection string at a schema "
+                "with fewer tables."
+            )
+        total_rows = 0
+        for name in table_names:
+            count_row = con.execute(
+                f'SELECT COUNT(*) FROM clonesrc."{src_schema}"."{name}"'
+            ).fetchone()
+            assert count_row is not None
+            total_rows += int(count_row[0])
+        if total_rows > MAX_CLONE_TOTAL_ROWS:
+            raise CloneTooLargeError(
+                f"The source schema '{src_schema}' holds ~{total_rows:,} rows; the clone limit is "
+                f"{MAX_CLONE_TOTAL_ROWS:,}. Use live mode instead."
+            )
+
+        con.execute(f"ATTACH '{admin_connection_string}' AS {catalog} (TYPE POSTGRES)")
+        con.execute(f'CALL postgres_execute(\'{catalog}\', $ddl$CREATE SCHEMA "{schema_name}"$ddl$)')
+        for name in table_names:
+            con.execute(
+                f'CREATE TABLE {catalog}."{schema_name}"."{name}" AS '
+                f'SELECT * FROM clonesrc."{src_schema}"."{name}"'
+            )
+        _create_scoped_role(con, catalog, schema_name, role_name, password)
+    finally:
+        con.close()
+
+    public_user = f"{role_name}.{public_username_suffix}" if public_username_suffix else role_name
+    _wait_until_role_is_connectable(public_host, public_port, database, public_user, password)
+    connection_string = (
+        f"postgresql://{quote(public_user)}:{quote(password)}@{public_host}:{public_port}/{database}"
+        f"?options=-csearch_path%3D{schema_name}&sslmode=require"
+    )
+    return WarehouseCredentials(
+        connection_string=connection_string, schema_name=schema_name, role_name=role_name
+    )
+
+
 def _wait_until_role_is_connectable(
     public_host: str, public_port: int, database: str, public_user: str, password: str
 ) -> None:
@@ -193,10 +303,15 @@ def _wait_until_role_is_connectable(
     Retrying here, before `provision_client_schema` ever hands out the
     connection string, means callers only ever see credentials that already
     work. Near-instant (one attempt) against a direct, non-pooled Postgres.
-    Best-effort: gives up silently after the last retry rather than raising,
-    since by then a genuine first use is likely to succeed anyway, and if
-    the role really is broken that will surface naturally at query time."""
+
+    Raises `RuntimeError` if the role is still unreachable after the last
+    retry: a connection string that never verified here is one the shipped
+    plugin can't use either, and both provisioning callers already roll the
+    partial schema back on any exception. Failing the run now beats packaging
+    a plugin whose every query dies with an auth error - which is exactly
+    what "give up silently" produced against a pooler mid-propagation."""
     probe_url = f"postgresql://{quote(public_user)}:{quote(password)}@{public_host}:{public_port}/{database}?sslmode=require"
+    last_error: Exception | None = None
     for attempt in range(_WARMUP_ATTEMPTS):
         con = duckdb.connect(":memory:")
         con.execute("SET enable_progress_bar = false")
@@ -204,11 +319,17 @@ def _wait_until_role_is_connectable(
             con.execute("INSTALL postgres; LOAD postgres;")
             con.execute(f"ATTACH '{probe_url}' AS warmup (TYPE POSTGRES, READ_ONLY)")
             return
-        except Exception:  # noqa: BLE001 - any failure just means "not ready yet"
+        except Exception as exc:  # noqa: BLE001 - any failure just means "not ready yet"
+            last_error = exc
             if attempt < _WARMUP_ATTEMPTS - 1:
                 time.sleep(_WARMUP_BASE_DELAY_S * (attempt + 1))
         finally:
             con.close()
+    raise RuntimeError(
+        f"warehouse role {public_user!r} was not connectable after {_WARMUP_ATTEMPTS} attempts; "
+        "the connection pooler may still be propagating it, or repeated auth failures tripped a "
+        f"circuit breaker. Last error: {last_error}"
+    ) from last_error
 
 
 def _create_scoped_role(
@@ -232,14 +353,23 @@ def _create_scoped_role(
 
 
 def deprovision_client_schema(
-    admin_connection_string: str, run_id: str, *, catalog: str = "srcdb", label: str | None = None
+    admin_connection_string: str,
+    run_id: str,
+    *,
+    catalog: str = "srcdb",
+    label: str | None = None,
+    schema_name: str | None = None,
 ) -> None:
     """Symmetric teardown: drops the schema (with everything in it) and the
     role. Safe to call even if provisioning only got partway through.
-    `label` must match whatever was passed to `provision_client_schema` -
-    otherwise this looks for (and safely no-ops on) the wrong schema name."""
+
+    Pass `schema_name` when it's known exactly (e.g. persisted on the run
+    row) - it's used verbatim. Otherwise it's recomputed from `run_id` +
+    `label`, which must match what `provision_*` was given or this safely
+    no-ops on the wrong name."""
     _validate_run_id(run_id)
-    schema_name = schema_name_for(run_id, label)
+    if schema_name is None:
+        schema_name = schema_name_for(run_id, label)
     role_name = f"{schema_name}_ro"
 
     con = duckdb.connect(":memory:")
@@ -259,10 +389,14 @@ def deprovision_client_schema(
 __all__ = [
     "CONNECTION_LIMIT",
     "GROUP_ROLE",
+    "MAX_CLONE_TABLES",
+    "MAX_CLONE_TOTAL_ROWS",
     "STATEMENT_TIMEOUT",
     "SUPPORTED_EXTENSIONS",
+    "CloneTooLargeError",
     "WarehouseCredentials",
     "deprovision_client_schema",
     "provision_client_schema",
+    "provision_client_schema_from_postgres",
     "schema_name_for",
 ]

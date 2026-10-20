@@ -2300,6 +2300,14 @@ The generated plugin then runs in the customer's Claude environment.
 
 # 22. The Generic MCP Server Deployment Decision
 
+> **Status (decided):** Pattern A is the default and the only delivery a
+> plain `forge run` / `POST /runs` produces. Pattern B (hosted HTTP) is an
+> opt-in rewrite applied by `POST /runs/{id}/publish/github` when
+> `FORGE_PUBLIC_BASE_URL` is set. The current Pattern B is the Forge API
+> hosting a Streamable-HTTP endpoint at `/mcp/{run_id}/{token}`, not a
+> customer-run service. See **[delivery-model.md](delivery-model.md)** — the
+> rest of this section is background on why both shapes exist.
+
 The MCP server is different from the generator.
 
 The generator creates:

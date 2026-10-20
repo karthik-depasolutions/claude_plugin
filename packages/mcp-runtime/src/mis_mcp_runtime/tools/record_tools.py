@@ -111,8 +111,19 @@ def get_related_records(
     denied = set(config.bindings.denied_columns)
     safe_columns = [c for c in target.columns if c not in denied]
 
-    # Resolve foreign key in target table
+    # Resolve foreign key in target table: a declared FK from the catalog wins
+    # over the name-guess heuristic (agent_schema plugins only).
     fk = foreign_key
+    if not fk and config.catalog_dir is not None:
+        from mis_mcp_runtime.catalog import load_catalog  # noqa: PLC0415
+
+        cat = load_catalog(config.catalog_dir)
+        if cat is not None:
+            path = cat.join_path(target_table, source_table, max_hops=1)
+            if path and path[0]["from"] == target_table:
+                cand = path[0]["from_column"]
+                if cand and cand in target.columns and cand not in denied:
+                    fk = cand
     if not fk:
         candidate_fks = [
             f"{source_table.lower()}_id",

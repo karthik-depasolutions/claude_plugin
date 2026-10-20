@@ -52,3 +52,19 @@ apps/api/generated/
 
 # Downloaded/collected skills (not source)
 collected_skills/
+
+# Ruflo local secrets and runtime data
+.env.local
+.env.*.local
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/
+
+# Codex local configuration
+.codex/
+# Claude Flow runtime data
+# Environment variables
+
+# Hosted-MCP per-run secrets (never commit - see docs/security.md)
+.mcp_token
+.mcp_source_env.json

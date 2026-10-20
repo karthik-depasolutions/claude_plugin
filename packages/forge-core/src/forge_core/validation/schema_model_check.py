@@ -7,6 +7,8 @@ stale on-disk cache:
 
   - every table / column the model names must exist in the structural profile
   - every `verified` cookbook query must still execute against the data
+  - a thin knowledge pack (low cookbook pass rate / column coverage) WARNs -
+    it still ships, but it's the weakest, most-copyable deliverable
 """
 
 from __future__ import annotations
@@ -18,6 +20,8 @@ from forge_core.models.validation import ValidationCheckResult, ValidationIssue
 from forge_core.runtime_session import open_session
 
 _MAX_COOKBOOK_CHECKED = 60
+_MIN_COOKBOOK_PASS_RATE = 0.7
+_MIN_SCHEMA_COVERAGE = 1.0
 
 
 def check_schema_model(
@@ -62,6 +66,26 @@ def check_schema_model(
                         message=f"relationship references {ref!r}, which is not a real column",
                     )
                 )
+
+    if schema_model.coverage:
+        pass_rate = schema_model.cookbook_pass_rate()
+        coverage = schema_model.schema_coverage()
+        if schema_model.coverage.get("cookbook_total", 0) and pass_rate < _MIN_COOKBOOK_PASS_RATE:
+            issues.append(
+                ValidationIssue(
+                    severity="warning", location="cookbook",
+                    message=f"cookbook pass rate {pass_rate:.0%} is below "
+                    f"{_MIN_COOKBOOK_PASS_RATE:.0%} - the NL->SQL knowledge pack is thin",
+                )
+            )
+        if coverage < _MIN_SCHEMA_COVERAGE:
+            issues.append(
+                ValidationIssue(
+                    severity="warning", location="tables",
+                    message=f"only {coverage:.0%} of columns have a specific meaning "
+                    "(the rest are structural-role fallbacks)",
+                )
+            )
 
     verified = [e for e in schema_model.cookbook if e.verified][:_MAX_COOKBOOK_CHECKED]
     if verified:

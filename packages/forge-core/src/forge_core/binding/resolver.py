@@ -15,6 +15,7 @@ Resolution order per canonical role:
 from __future__ import annotations
 
 import re
+from collections import deque
 from datetime import UTC, datetime
 
 from forge_core.binding.scorer import MIN_BIND_CONFIDENCE, best_candidate
@@ -31,7 +32,7 @@ MAX_DISTINCT_VALUES_SCANNED = 50
 
 
 def _is_denied(column: ColumnProfile, pack: IndustryPack) -> bool:
-    return column.guessed_role.value in pack.guardrails.denied_role_categories
+    return column.guessed_role.value in pack.guardrails.effective_denied_categories()
 
 
 def pick_primary_table(profile: SchemaProfile, pack: IndustryPack) -> str:
@@ -201,7 +202,17 @@ def resolve_bindings(
     # category (free_text) is stripped wherever it appears.
     primary_cols = [c for c in profile.structural.columns if c.table == primary_table_name]
     denied_columns = sorted({c.name for c in profile.structural.columns if _is_denied(c, pack)})
-    bindable_cols = [c for c in primary_cols if not _is_denied(c, pack)]
+    # A bare column name denied on *any* table is treated as denied on every
+    # table: that's the granularity check_sql_safety enforces downstream (it
+    # matches denied_columns by name, not by table), and _resolve_cross_table
+    # already filters this way. Without this, the resolver can bind a role to
+    # e.g. `report_rows.provider` while a `provider` column elsewhere in the
+    # schema is a denied free-text field - the KPI compiles, then fails
+    # sql_safety at the validation gate.
+    denied_names = set(denied_columns)
+    bindable_cols = [
+        c for c in primary_cols if not _is_denied(c, pack) and c.name not in denied_names
+    ]
 
     columns, unresolved = _resolve_columns(
         primary_table_name,
@@ -223,16 +234,22 @@ def resolve_bindings(
     # clearly-better related column should win.
     _WEAK = 0.55
     primary_conf = {c.role: c.confidence for c in columns if c.source == "deterministic"}
-    candidates = [*unresolved, *(r for r, c in primary_conf.items() if c < _WEAK)]
+    # Roles a pack explicitly assigns to a non-fact entity are always tried
+    # cross-table, not just when the primary bound them weakly.
+    entity_roles = {r for e in pack.entities.values() for r in e.roles}
+    candidates = list(
+        {*unresolved, *(r for r, c in primary_conf.items() if c < _WEAK), *entity_roles}
+    )
     cross = _resolve_cross_table(candidates, pack, profile, primary_table_name, denied_columns)
-    for cb, tb in cross:
+    for cb, chain in cross:
         prior = primary_conf.get(cb.role)
-        if prior is not None and cb.confidence <= prior + 0.1:
+        if cb.role not in entity_roles and prior is not None and cb.confidence <= prior + 0.1:
             continue  # the primary's weak bind still stands - not a clear enough improvement
         columns = [c for c in columns if c.role != cb.role]
         columns.append(cb)
-        if all(existing.alias != tb.alias for existing in table_bindings):
-            table_bindings.append(tb)
+        for tb in chain:
+            if all(existing.alias != tb.alias for existing in table_bindings):
+                table_bindings.append(tb)
     bound_cross = {cb.role for cb, _ in cross}
     still_unresolved = [r for r in unresolved if r not in bound_cross]
 
@@ -258,38 +275,60 @@ def resolve_bindings(
     )
 
 
+def _join_chains(
+    primary_table_name: str, profile: SchemaProfile
+) -> dict[str, list[TableBinding]]:
+    """For every table reachable from the primary by a chain of *verified*
+    relationships, the ordered list of TableBindings (one LEFT JOIN per hop)
+    that reaches it via the shortest such path. Relationship direction is
+    child(from) -> parent(to): a hop toward a parent PK is many-to-one (safe);
+    a hop toward a child is one-to-many (`join_is_to_parent=False`)."""
+    physical = {t.name: t.physical_ref for t in profile.source.tables}
+    adj: dict[str, list[tuple[str, str, str, bool]]] = {}
+    for r in profile.structural.relationships:
+        if r.from_table in physical and r.to_table in physical:
+            adj.setdefault(r.from_table, []).append((r.to_table, r.from_column, r.to_column, True))
+            adj.setdefault(r.to_table, []).append((r.from_table, r.to_column, r.from_column, False))
+
+    chains: dict[str, list[TableBinding]] = {}
+    seen = {primary_table_name}
+    queue: deque[tuple[str, list[TableBinding]]] = deque([(primary_table_name, [])])
+    while queue:
+        cur, chain = queue.popleft()
+        for nxt, cur_col, nxt_col, to_parent in adj.get(cur, []):
+            if nxt in seen:
+                continue
+            seen.add(nxt)
+            on = f'"{physical[cur]}"."{cur_col}" = "{physical[nxt]}"."{nxt_col}"'
+            tb = TableBinding(
+                alias=nxt, physical=physical[nxt], grain=nxt, join_on=on, join_is_to_parent=to_parent
+            )
+            new_chain = [*chain, tb]
+            chains[nxt] = new_chain
+            queue.append((nxt, new_chain))
+    return chains
+
+
 def _resolve_cross_table(
     roles: list[str],
     pack: IndustryPack,
     profile: SchemaProfile,
     primary_table_name: str,
     denied_columns: list[str],
-) -> list[tuple[ColumnBinding, TableBinding]]:
-    """For each role, try the best column on a table one verified relationship
-    hop from the primary. The caller decides whether it beats an existing bind."""
+) -> list[tuple[ColumnBinding, list[TableBinding]]]:
+    """For each role, the best column on any table reachable from the primary
+    by a verified relationship path, plus the chain of joins to get there. The
+    caller decides whether it beats an existing bind."""
     if not roles:
         return []
 
-    physical = {t.name: t.physical_ref for t in profile.source.tables}
-    # table_name -> ON expression joining it to the primary
-    joinable: dict[str, str] = {}
-    for r in profile.structural.relationships:
-        p = physical.get(primary_table_name)
-        if r.from_table == primary_table_name and r.to_table in physical:
-            joinable[r.to_table] = (
-                f'"{p}"."{r.from_column}" = "{physical[r.to_table]}"."{r.to_column}"'
-            )
-        elif r.to_table == primary_table_name and r.from_table in physical:
-            joinable[r.from_table] = (
-                f'"{p}"."{r.to_column}" = "{physical[r.from_table]}"."{r.from_column}"'
-            )
-
+    chains = _join_chains(primary_table_name, profile)
     denied = set(denied_columns)
-    out: list[tuple[ColumnBinding, TableBinding]] = []
+    out: list[tuple[ColumnBinding, list[TableBinding]]] = []
     for role in roles:
         hints = tuple(pack.role_hints.get(role, ()))
         best: tuple[float, str, str] | None = None  # (confidence, table_name, column_name)
-        for table_name in joinable:
+        for table_name in chains:
             cols = [
                 c
                 for c in profile.structural.columns
@@ -303,6 +342,7 @@ def _resolve_cross_table(
         if best is None:
             continue
         _, table_name, column_name = best
+        hops = len(chains[table_name])
         out.append(
             (
                 ColumnBinding(
@@ -310,15 +350,10 @@ def _resolve_cross_table(
                     table_alias=table_name,
                     physical=column_name,
                     confidence=best[0],
-                    evidence=f"resolved on related table {table_name!r} (one relationship hop)",
+                    evidence=f"resolved on related table {table_name!r} ({hops} relationship hop(s))",
                     source="cross_table",
                 ),
-                TableBinding(
-                    alias=table_name,
-                    physical=physical[table_name],
-                    grain=table_name,
-                    join_on=joinable[table_name],
-                ),
+                chains[table_name],
             )
         )
     return out

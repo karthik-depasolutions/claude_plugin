@@ -14,6 +14,7 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.quality import DataReview
 from forge_core.models.schema_model import SchemaModel
+from forge_core.models.schema_profile import SchemaProfile
 
 
 class StageEvent(BaseModel):
@@ -39,10 +40,15 @@ class RunRecord(BaseModel):
     Academy") - feeds the packaged plugin's displayName, its on-disk/repo
     name, and (for a warehouse-backed upload) the Postgres schema name.
     Purely cosmetic; every uniqueness guarantee still comes from run_id."""
+    profile: SchemaProfile | None = None
+    """The deterministic + semantic profile (structural facts, relationships,
+    grains, value sets, patterns, and the DataSource itself via `.source`).
+    Computed once during PROFILE; on resume it's reused instead of re-ingesting
+    and re-profiling - which on a remote database is minutes of query traffic
+    per pass. None = not computed yet."""
     data_review: DataReview | None = None
     """Computed once during PROFILE and reused on every resume - regenerating
-    it would drift finding/question ids and orphan answers keyed to them
-    (resume re-runs the whole pipeline from ingest, see orchestrator.py).
+    it would drift finding/question ids and orphan answers keyed to them.
     None = not computed yet. Set = never recomputed, even on replay."""
     schema_model: SchemaModel | None = None
     """The LLM-synthesized knowledge pack (overview, per-table docs, pattern

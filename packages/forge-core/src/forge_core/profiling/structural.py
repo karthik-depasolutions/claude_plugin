@@ -6,12 +6,16 @@ a possibly multi-table DataSource.
 from __future__ import annotations
 
 import re
+from typing import TYPE_CHECKING
 
 import duckdb
 
 from forge_core.models.common import ColumnRole
 from forge_core.models.datasource import DataSource, TableDescriptor
 from forge_core.models.schema_profile import ColumnProfile, StructuralProfile
+
+if TYPE_CHECKING:
+    from forge_core.ingestion.catalog import CatalogFacts
 
 _NAME_PATTERNS: list[tuple[re.Pattern[str], ColumnRole]] = [
     (re.compile(r"email"), ColumnRole.EMAIL),
@@ -66,8 +70,30 @@ def _guess_role(name: str, dtype: str, cardinality: int, row_count: int) -> Colu
 
 
 def _profile_table(
-    con: duckdb.DuckDBPyConnection, table: TableDescriptor
+    con: duckdb.DuckDBPyConnection,
+    table: TableDescriptor,
+    *,
+    declared_fk_columns: set[str] | None = None,
+    distinct_query_budget: list[int] | None = None,
 ) -> list[ColumnProfile]:
+    """Profile one table.
+
+    `declared_fk_columns` is the set of column names (unqualified) that are
+    declared FK participants for this table — they get `ColumnRole.FOREIGN_KEY`
+    regardless of the name-heuristic result.
+
+    `distinct_query_budget` is a single-element `[remaining]` list shared across
+    all tables: while > 0 a non-numeric column gets a `SELECT DISTINCT ... LIMIT
+    5` query for its sample values (and the counter decrements); once exhausted,
+    sample values are read from `table.sample_rows` (fetched at INGEST) with no
+    extra query. `None` = unlimited (legacy).
+    """
+    fk_cols = declared_fk_columns or set()
+    ingest_samples: dict[str, list[str]] = {}
+    for row in table.sample_rows[:5]:
+        for k, v in row.items():
+            if v is not None and len(ingest_samples.setdefault(k, [])) < 5:
+                ingest_samples[k].append(str(v))
     ref = table.physical_ref
     row_count = table.row_count
     if not table.columns:
@@ -105,15 +131,24 @@ def _profile_table(
                 min_value, max_value = res[res_idx], res[res_idx + 1]
                 res_idx += 2
             elif row_count > 0:
-                quoted = f'"{col.name}"'
-                rows = con.execute(
-                    f"SELECT DISTINCT {quoted} FROM {ref} WHERE {quoted} IS NOT NULL LIMIT 5"
-                ).fetchall()
-                sample_values = [str(r[0]) for r in rows]
+                use_query = distinct_query_budget is None or distinct_query_budget[0] > 0
+                if use_query:
+                    quoted = f'"{col.name}"'
+                    rows = con.execute(
+                        f"SELECT DISTINCT {quoted} FROM {ref} WHERE {quoted} IS NOT NULL LIMIT 5"
+                    ).fetchall()
+                    sample_values = [str(r[0]) for r in rows]
+                    if distinct_query_budget is not None:
+                        distinct_query_budget[0] -= 1
+                else:
+                    sample_values = ingest_samples.get(col.name, [])
 
             null_percent = round((null_count / row_count * 100.0) if row_count else 0.0, 2)
             distinct_ratio = round((cardinality / row_count) if row_count else 0.0, 4)
             role = _guess_role(col.name, col.raw_dtype, cardinality, row_count)
+            # Declared FK columns override the heuristic (fills the dead FOREIGN_KEY enum member).
+            if col.name in fk_cols:
+                role = ColumnRole.FOREIGN_KEY
 
             profiles.append(
                 ColumnProfile(
@@ -134,8 +169,44 @@ def _profile_table(
     return profiles
 
 
-def build_structural_profile(data_source: DataSource, con: duckdb.DuckDBPyConnection) -> StructuralProfile:
+def build_structural_profile(
+    data_source: DataSource,
+    con: duckdb.DuckDBPyConnection,
+    *,
+    catalog: CatalogFacts | None = None,  # type: ignore[name-defined]
+    max_distinct_sample_columns: int | None = None,
+) -> StructuralProfile:
+    """Build the deterministic structural profile.
+
+    Parameters
+    ----------
+    catalog:
+        When supplied (agent_schema mode), declared FK columns in each table
+        receive ``ColumnRole.FOREIGN_KEY`` instead of whatever the name-heuristic
+        would guess.
+    max_distinct_sample_columns:
+        Cap on per-column ``SELECT DISTINCT`` sample-value queries across the
+        whole source (``None`` = unlimited). The single biggest lever on a
+        remote database - beyond the cap, sample values come from the INGEST
+        rows with no extra query.
+    """
     columns: list[ColumnProfile] = []
+    # Build per-table FK column sets from the catalog.
+    fk_sets: dict[str, set[str]] = {}
+    if catalog:
+        for fk in catalog.foreign_keys:
+            fk_sets.setdefault(fk.from_table, set()).update(fk.from_columns)
+
+    distinct_budget = (
+        None if max_distinct_sample_columns is None else [max_distinct_sample_columns]
+    )
     for table in data_source.tables:
-        columns.extend(_profile_table(con, table))
+        declared_fk_cols = fk_sets.get(table.name)
+        columns.extend(
+            _profile_table(
+                con, table,
+                declared_fk_columns=declared_fk_cols,
+                distinct_query_budget=distinct_budget,
+            )
+        )
     return StructuralProfile(columns=columns)

@@ -57,8 +57,14 @@ jobs:
       - name: Mypy
         run: uv run mypy packages/forge-core/src packages/mcp-runtime/src apps/api/src
 
+      # The genericity gate runs first and on its own so "the generator only
+      # works on the tuned dataset" regressions are the first red X, not buried
+      # in the full suite. Uses FakeLLMProvider - no API key.
+      - name: E2E genericity gate
+        run: uv run pytest tests/e2e -q
+
       - name: Pytest
-        run: uv run pytest --cov=forge_core --cov=mis_mcp_runtime --cov=forge_api --cov-report=term-missing
+        run: uv run pytest --ignore=tests/e2e --cov=forge_core --cov=mis_mcp_runtime --cov=forge_api --cov-report=term-missing
 
   web:
     runs-on: ubuntu-latest

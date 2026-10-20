@@ -1,5 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from "react";
 import { STAGE_ORDER, type RunStage, type RunStatus, type StageEvent } from "../lib/types";
+import { StatusGlyph } from "./ui/StatusBadge";
+import { cx } from "./ui/cx";
 
 /** Stage names from the operator's side of the screen, not the pipeline's. */
 const STAGE_LABEL: Record<RunStage, string> = {
@@ -50,27 +52,16 @@ type DotKind = "pending" | "running" | "done" | "failed" | "input";
 
 function StageDot({ kind }: { kind: DotKind }) {
   if (kind === "running")
-    return <span className="mt-1 h-2 w-2 shrink-0 animate-pulse-amber rounded-full bg-amber" />;
+    return <span className="animate-pulse-ring mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent" />;
   const cls =
     kind === "done"
-      ? "bg-jade"
+      ? "bg-ok"
       : kind === "failed"
-        ? "bg-clay"
+        ? "bg-danger"
         : kind === "input"
-          ? "bg-amber"
-          : "border border-hair bg-transparent";
-  return <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${cls}`} />;
-}
-
-function CheckGlyph({ status }: { status: string }) {
-  const map: Record<string, string> = {
-    pass: "text-jade",
-    warn: "text-amber",
-    fail: "text-clay",
-    skipped: "text-dim",
-  };
-  const glyph = status === "pass" ? "✓" : status === "fail" ? "✕" : status === "warn" ? "!" : "○";
-  return <span className={`font-mono ${map[status] ?? "text-dim"} animate-stage-check`}>{glyph}</span>;
+          ? "bg-warn"
+          : "border border-border bg-transparent";
+  return <span className={cx("mt-1.5 h-2 w-2 shrink-0 rounded-full", cls)} />;
 }
 
 function DataStrip({ data }: { data: Record<string, unknown> }) {
@@ -79,18 +70,16 @@ function DataStrip({ data }: { data: Record<string, unknown> }) {
       !["report", "questions", "review", "check", "status"].includes(k) &&
       v !== null &&
       v !== undefined &&
-      !(Array.isArray(v) && v.length === 0)
+      !(Array.isArray(v) && v.length === 0),
   );
   if (entries.length === 0) return null;
   return (
-    <dl className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-dim">
+    <dl className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-text-faint">
       {entries.slice(0, 6).map(([k, v]) => (
         <Fragment key={k}>
           <span>
-            <span className="text-dim/70">{k.replace(/_/g, " ")}=</span>
-            <span className="text-paper/70">
-              {Array.isArray(v) ? v.slice(0, 6).join(",") : String(v)}
-            </span>
+            <span>{k.replace(/_/g, " ")}=</span>
+            <span className="text-text-muted">{Array.isArray(v) ? v.slice(0, 6).join(",") : String(v)}</span>
           </span>
         </Fragment>
       ))}
@@ -126,38 +115,41 @@ export default function PipelineConsole({ events, status, currentStage, runId }:
   const running = status === "running" || status === "pending";
 
   return (
-    <section className="overflow-hidden rounded-xl border border-hair bg-panel">
-      <header className="flex items-center gap-2 border-b border-hair px-4 py-2.5 text-xs">
-        <span className="font-mono text-jade">▸</span>
-        <span className="font-mono font-medium text-paper">forge build</span>
-        {runId && <span className="font-mono text-dim">· {runId}</span>}
+    <section className="overflow-hidden rounded-[var(--radius)] border border-border bg-surface">
+      <header className="flex items-center gap-2 border-b border-border px-4 py-2.5 text-[12px]">
+        <span className="font-mono text-text-faint">▸</span>
+        <span className="font-mono font-medium text-text">forge build</span>
+        {runId && <span className="font-mono text-text-faint">· {runId}</span>}
         <span className="flex-1" />
         {started && running && (
-          <span className="font-mono text-dim">
+          <span className="font-mono text-text-faint">
             <LiveClock from={started} />
           </span>
         )}
         <span
-          className={
-            "rounded-full px-2 py-0.5 font-mono text-[11px] " +
-            (status === "succeeded"
-              ? "bg-jade/15 text-jade"
+          className={cx(
+            "rounded-[var(--radius-sm)] px-1.5 py-0.5 font-mono text-[11px] font-medium",
+            status === "succeeded"
+              ? "bg-ok/10 text-ok"
               : status === "failed"
-                ? "bg-clay/15 text-clay"
+                ? "bg-danger/10 text-danger"
                 : status === "needs_input"
-                  ? "bg-amber/15 text-amber"
-                  : "bg-paper/10 text-dim")
-          }
+                  ? "bg-warn/10 text-warn"
+                  : "bg-surface-2 text-text-muted",
+          )}
         >
           {status === "needs_input" ? "your move" : status}
         </span>
       </header>
 
-      <div ref={scroller} className="max-h-[26rem] overflow-y-auto px-4 py-3 font-mono text-[13px] leading-relaxed">
+      <div
+        ref={scroller}
+        className="max-h-[26rem] overflow-y-auto px-4 py-3 font-mono text-[12.5px] leading-relaxed"
+      >
         {events.length === 0 && (
-          <p className="text-dim">
+          <p className="text-text-faint">
             waiting for a build
-            <span className="ml-1 inline-block h-3.5 w-2 translate-y-0.5 animate-caret bg-dim" />
+            <span className="ml-1 inline-block h-3.5 w-1.5 translate-y-0.5 animate-caret bg-text-faint" />
           </p>
         )}
 
@@ -198,22 +190,30 @@ export default function PipelineConsole({ events, status, currentStage, runId }:
                 className="flex w-full items-baseline gap-2 py-0.5 text-left disabled:cursor-default"
               >
                 <StageDot kind={kind} />
-                <span className={isDone || isCurrent ? "text-paper" : "text-dim"}>{STAGE_LABEL[stage]}</span>
+                <span className={isDone || isCurrent ? "text-text" : "text-text-faint"}>
+                  {STAGE_LABEL[stage]}
+                </span>
                 <span className="flex-1" />
                 {start && end && end !== start && !isCurrent && (
-                  <span className="text-dim">{fmtDur(new Date(end).getTime() - new Date(start).getTime())}</span>
+                  <span className="text-text-faint">
+                    {fmtDur(new Date(end).getTime() - new Date(start).getTime())}
+                  </span>
                 )}
-                {isCurrent && running && start && <span className="text-amber"><LiveClock from={start} /></span>}
+                {isCurrent && running && start && (
+                  <span className="text-accent">
+                    <LiveClock from={start} />
+                  </span>
+                )}
               </button>
 
               {open && (
-                <div className="mb-1 ml-[9px] border-l border-hair/70 pl-3">
+                <div className="mb-1 ml-[9px] border-l border-border pl-3">
                   {list
                     .filter((e) => typeof e.data?.check !== "string")
                     .map((e, idx) => (
                       <div key={idx} className="animate-line-in py-px">
-                        <span className="text-dim">{fmtClock(e.timestamp)}  </span>
-                        <span className="text-paper/85">{e.message}</span>
+                        <span className="text-text-faint">{fmtClock(e.timestamp)} </span>
+                        <span className="text-text-muted">{e.message}</span>
                         <DataStrip data={e.data} />
                       </div>
                     ))}
@@ -221,12 +221,14 @@ export default function PipelineConsole({ events, status, currentStage, runId }:
                     <ul className="mt-1 grid gap-y-0.5">
                       {checks.map((e, idx) => (
                         <li key={idx} className="flex items-center gap-2 py-px">
-                          <CheckGlyph status={String(e.data.status)} />
-                          <span className="text-paper/80">
+                          <span className="animate-stage-check">
+                            <StatusGlyph status={String(e.data.status)} />
+                          </span>
+                          <span className="text-text-muted">
                             {CHECK_LABEL[String(e.data.check)] ?? String(e.data.check)}
                           </span>
                           <span className="flex-1" />
-                          <span className="text-[11px] text-dim">{String(e.data.status)}</span>
+                          <span className="text-[11px] text-text-faint">{String(e.data.status)}</span>
                         </li>
                       ))}
                     </ul>

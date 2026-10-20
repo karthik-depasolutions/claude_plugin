@@ -9,7 +9,7 @@ from contextvars import ContextVar
 from pathlib import Path
 from typing import Any
 
-from forge_core.packaging.plugin_builder import mcp_token_path
+from forge_core.packaging.plugin_builder import mcp_token_path, read_mcp_source_env
 from mis_mcp_runtime.config import RuntimeConfig, load_runtime_config
 from mis_mcp_runtime.engine.duckdb_session import open_session
 from mis_mcp_runtime.server import create_server
@@ -55,7 +55,12 @@ def _get_state() -> tuple[RuntimeConfig, Any]:
         return cached
     config_dir, data_dir = _plugin_dirs(run_id)
     config = load_runtime_config(config_dir, data_dir)
-    con = open_session(config.data_source, config.data_dir)
+    # This run's own source credential, persisted server-side at publish time.
+    # The API process's own FORGE_SOURCE_DB_URL (if any) is a single global and
+    # is almost never the right database for an arbitrary hosted run.
+    con = open_session(
+        config.data_source, config.data_dir, env=read_mcp_source_env(_output_dir(run_id))
+    )
     _sessions[run_id] = (config, con)
     return config, con
 

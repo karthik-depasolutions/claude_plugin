@@ -50,6 +50,14 @@
           "description": "If true, absence of required roles is a warn, not a fail.",
           "title": "Optional",
           "type": "boolean"
+        },
+        "joins": {
+          "description": "Explicit joins this KPI needs to reach roles on non-fact entities. The resolver finds the verified relationship path; the compiler emits the LEFT JOINs.",
+          "items": {
+            "$ref": "#/$defs/JoinSpec"
+          },
+          "title": "Joins",
+          "type": "array"
         }
       },
       "required": [
@@ -64,11 +72,31 @@
       "title": "CanonicalKpi",
       "type": "object"
     },
+    "EntityDef": {
+      "additionalProperties": false,
+      "description": "A business entity other than the fact table, and the canonical roles\nthat live on it. Used with `CanonicalKpi.joins`.",
+      "properties": {
+        "roles": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Roles",
+          "type": "array"
+        },
+        "description": {
+          "default": "",
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "title": "EntityDef",
+      "type": "object"
+    },
     "Guardrails": {
       "additionalProperties": false,
       "properties": {
         "denied_role_categories": {
-          "description": "Canonical role categories that must never appear in a KPI projection, artifact, or generated example (e.g. name, phone, email).",
+          "description": "Canonical role categories that must never appear in a KPI projection, artifact, or generated example (e.g. name, phone, email). BASELINE_DENIED_ROLES is always unioned in on top of this.",
           "items": {
             "type": "string"
           },
@@ -99,6 +127,26 @@
         }
       },
       "title": "Guardrails",
+      "type": "object"
+    },
+    "JoinSpec": {
+      "additionalProperties": false,
+      "description": "A KPI's explicit request for a join to a business entity other than the\nfact table. `via` is the canonical role that is the join key (present on\nboth the fact table and the target entity).",
+      "properties": {
+        "entity": {
+          "title": "Entity",
+          "type": "string"
+        },
+        "via": {
+          "title": "Via",
+          "type": "string"
+        }
+      },
+      "required": [
+        "entity",
+        "via"
+      ],
+      "title": "JoinSpec",
       "type": "object"
     },
     "PackSignature": {
@@ -288,6 +336,14 @@
       },
       "description": "Canonical table alias -> description, e.g. 'fact': 'the primary transaction table'.",
       "title": "Table Aliases",
+      "type": "object"
+    },
+    "entities": {
+      "additionalProperties": {
+        "$ref": "#/$defs/EntityDef"
+      },
+      "description": "Business entity -> the canonical roles that live on it, e.g. 'customer': {roles: ['customer_tier', 'customer_segment']}. 'fact' is implicit. Lets a KPI declare `joins` to reach a role on another entity.",
+      "title": "Entities",
       "type": "object"
     },
     "kpis": {

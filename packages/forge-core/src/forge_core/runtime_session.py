@@ -16,13 +16,13 @@ the shipped runtime will on the customer's machine.
 
 from __future__ import annotations
 
-import os
 import re
 from pathlib import Path
 
 import duckdb
 import pandas as pd
 
+from forge_core.ingestion.credentials import resolve_env
 from forge_core.models.datasource import DataSource
 
 _ENV_VAR_PATTERN = re.compile(r"\$\{(\w+)\}")
@@ -37,7 +37,7 @@ def default_data_dir(data_source: DataSource) -> Path:
 def _resolve_env_vars(stmt: str) -> str:
     def _replace(match: re.Match[str]) -> str:
         var_name = match.group(1)
-        value = os.environ.get(var_name)
+        value = resolve_env(var_name)
         if not value:
             raise ValueError(
                 f"duckdb_attach_sql references ${{{var_name}}}, but that environment variable isn't set."
@@ -76,4 +76,7 @@ def open_session(data_source: DataSource, data_dir: Path | None = None) -> duckd
         resolved_stmt = stmt if resolved_dir is None else stmt.replace("{DATA_DIR}", resolved_dir.as_posix())
         con.execute(_resolve_env_vars(resolved_stmt))
 
+    from forge_core.ingestion.postgres import apply_pg_compat  # noqa: PLC0415 - avoid import cycle
+
+    apply_pg_compat(con)  # no-op unless a live-Postgres attach just ran
     return con

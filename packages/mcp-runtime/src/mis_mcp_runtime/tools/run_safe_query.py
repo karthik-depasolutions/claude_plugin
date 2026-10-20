@@ -16,6 +16,7 @@ from mis_mcp_runtime.security.allowlist import check_tables_allowed
 from mis_mcp_runtime.security.limits import enforce_row_limit, run_with_timeout
 from mis_mcp_runtime.security.pii_policy import check_no_denied_columns
 from mis_mcp_runtime.security.sql_policy import parse_single_select
+from mis_mcp_runtime.tools.render_chart import attach_chart
 
 
 def run_safe_query(config: RuntimeConfig, con: duckdb.DuckDBPyConnection, sql: str) -> dict[str, Any]:
@@ -30,4 +31,4 @@ def run_safe_query(config: RuntimeConfig, con: duckdb.DuckDBPyConnection, sql: s
     df = run_with_timeout(con, final_sql, config.query_timeout_seconds)
 
     rows = to_json_rows(df)
-    return {"rows": rows, "row_count": len(rows), "executed_sql": final_sql}
+    return attach_chart({"rows": rows, "row_count": len(rows), "executed_sql": final_sql})

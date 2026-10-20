@@ -51,6 +51,7 @@ class RelationshipCandidate(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     strength: Literal["strong", "weak"] = "strong"
     evidence: str
+    source: Literal["declared", "inferred"] = "inferred"
 
 
 class TableGrain(BaseModel):

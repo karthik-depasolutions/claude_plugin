@@ -13,8 +13,10 @@ import pytest
 from forge_core.ingestion.postgres import PostgresAdapter, redact
 from forge_core.ingestion.warehouse import (
     GROUP_ROLE,
+    CloneTooLargeError,
     deprovision_client_schema,
     provision_client_schema,
+    provision_client_schema_from_postgres,
 )
 
 TEST_ADMIN_URL = os.environ.get(
@@ -122,6 +124,46 @@ def test_provision_creates_a_schema_scoped_role_that_can_read_its_own_tables(sam
 
 
 @requires_live_postgres
+def test_a_runs_role_cannot_read_another_runs_schema(sample_upload):
+    """Guiding principle #6: one client's data never reaches another's plugin.
+    Provision two schemas, then use run A's own connection string to try to
+    read run B's table by its fully-qualified name (which bypasses the pinned
+    search_path). The `_ro` role has no USAGE on schema B, so it must fail."""
+    run_a, run_b = "wisoa01", "wisob01"
+    try:
+        creds_a = provision_client_schema(
+            TEST_ADMIN_URL, run_a, sample_upload,
+            public_host=TEST_PUBLIC_HOST, public_port=TEST_PUBLIC_PORT, database=TEST_DATABASE,
+            public_username_suffix=TEST_PUBLIC_USERNAME_SUFFIX,
+        )
+        provision_client_schema(
+            TEST_ADMIN_URL, run_b, sample_upload,
+            public_host=TEST_PUBLIC_HOST, public_port=TEST_PUBLIC_PORT, database=TEST_DATABASE,
+            public_username_suffix=TEST_PUBLIC_USERNAME_SUFFIX,
+        )
+
+        a_url = creds_a.connection_string.replace("sslmode=require", "sslmode=prefer")
+        con = duckdb.connect(":memory:")
+        try:
+            con.execute("INSTALL postgres; LOAD postgres;")
+            con.execute(f"ATTACH '{a_url}' AS a (TYPE POSTGRES)")
+            # sanity: role A CAN read its own schema
+            own = con.execute("SELECT count(*) FROM postgres_query('a', 'SELECT * FROM orders')").fetchone()
+            assert own[0] == 2
+            # ...and CANNOT read schema B, even fully qualified
+            with pytest.raises((duckdb.Error, RuntimeError)):
+                con.execute(
+                    "SELECT * FROM postgres_query('a', "
+                    f"'SELECT count(*) FROM \"client_{run_b}\".\"orders\"')"
+                ).fetchall()
+        finally:
+            con.close()
+    finally:
+        deprovision_client_schema(TEST_ADMIN_URL, run_a)
+        deprovision_client_schema(TEST_ADMIN_URL, run_b)
+
+
+@requires_live_postgres
 def test_provision_with_a_label_makes_the_schema_name_identifiable(sample_upload):
     run_id = "wtest03"
     try:
@@ -192,3 +234,114 @@ def test_deprovision_actually_removes_the_schema_and_role(sample_upload):
         assert schemas == []
     finally:
         con.close()
+
+
+# --------------------------------------------------------------------------- #
+# Cloning a source Postgres schema into the warehouse.
+# --------------------------------------------------------------------------- #
+def _make_source_schema(schema: str, *, rows_b: int = 3) -> str:
+    """Create `<schema>.a` (2 rows) and `<schema>.b` (`rows_b` rows) on the
+    test server, and return a connection string whose search_path selects it -
+    the shape a customer's `postgresql://…?options=-csearch_path%3D<schema>`
+    connection has."""
+    con = duckdb.connect(":memory:")
+    try:
+        con.execute("INSTALL postgres; LOAD postgres;")
+        con.execute(f"ATTACH '{TEST_ADMIN_URL}' AS srcdb (TYPE POSTGRES)")
+        con.execute(f'CALL postgres_execute(\'srcdb\', $d$DROP SCHEMA IF EXISTS "{schema}" CASCADE$d$)')
+        con.execute(f'CALL postgres_execute(\'srcdb\', $d$CREATE SCHEMA "{schema}"$d$)')
+        con.execute(f'CREATE TABLE srcdb."{schema}"."a" AS SELECT * FROM (VALUES (1), (2)) t(id)')
+        vals = ", ".join(f"({i})" for i in range(rows_b))
+        con.execute(f'CREATE TABLE srcdb."{schema}"."b" AS SELECT * FROM (VALUES {vals}) t(id)')
+    finally:
+        con.close()
+    sep = "&" if "?" in TEST_ADMIN_URL else "?"
+    return f"{TEST_ADMIN_URL}{sep}options=-csearch_path%3D{schema}"
+
+
+def _drop_source_schema(schema: str) -> None:
+    con = duckdb.connect(":memory:")
+    try:
+        con.execute("INSTALL postgres; LOAD postgres;")
+        con.execute(f"ATTACH '{TEST_ADMIN_URL}' AS srcdb (TYPE POSTGRES)")
+        con.execute(f'CALL postgres_execute(\'srcdb\', $d$DROP SCHEMA IF EXISTS "{schema}" CASCADE$d$)')
+    finally:
+        con.close()
+
+
+@requires_live_postgres
+def test_clone_from_postgres_copies_the_schema_with_matching_row_counts():
+    run_id = "wtestc1"
+    src_schema = "wtest_clonesrc1"
+    source_url = _make_source_schema(src_schema, rows_b=4)
+    try:
+        creds = provision_client_schema_from_postgres(
+            TEST_ADMIN_URL,
+            run_id,
+            source_url,
+            public_host=TEST_PUBLIC_HOST,
+            public_port=TEST_PUBLIC_PORT,
+            database=TEST_DATABASE,
+            public_username_suffix=TEST_PUBLIC_USERNAME_SUFFIX,
+        )
+        assert creds.schema_name == f"client_{run_id}"
+        assert f"search_path%3Dclient_{run_id}" in creds.connection_string
+
+        readback_url = creds.connection_string.replace("sslmode=require", "sslmode=prefer")
+        ds = PostgresAdapter().ingest(readback_url)
+        by_name = {t.name: t.row_count for t in ds.tables}
+        assert by_name == {"a": 2, "b": 4}  # the copy, read via the scoped _ro role
+    finally:
+        deprovision_client_schema(TEST_ADMIN_URL, run_id)
+        _drop_source_schema(src_schema)
+
+
+@requires_live_postgres
+def test_clone_hard_fails_over_the_row_cap_and_leaves_nothing(monkeypatch):
+    monkeypatch.setattr("forge_core.ingestion.warehouse.MAX_CLONE_TOTAL_ROWS", 1)
+    run_id = "wtestc2"
+    src_schema = "wtest_clonesrc2"
+    source_url = _make_source_schema(src_schema)
+    try:
+        with pytest.raises(CloneTooLargeError):
+            provision_client_schema_from_postgres(
+                TEST_ADMIN_URL, run_id, source_url, public_host=TEST_PUBLIC_HOST,
+                public_port=TEST_PUBLIC_PORT, database=TEST_DATABASE,
+                public_username_suffix=TEST_PUBLIC_USERNAME_SUFFIX,
+            )
+        con = duckdb.connect(":memory:")
+        try:
+            con.execute("INSTALL postgres; LOAD postgres;")
+            con.execute(f"ATTACH '{TEST_ADMIN_URL}' AS srcdb (TYPE POSTGRES)")
+            left = con.execute(
+                "SELECT * FROM postgres_query('srcdb', "
+                f"'SELECT 1 FROM information_schema.schemata WHERE schema_name = ''client_{run_id}''')"
+            ).fetchall()
+            assert left == []  # caps checked before anything is created
+        finally:
+            con.close()
+    finally:
+        deprovision_client_schema(TEST_ADMIN_URL, run_id)
+        _drop_source_schema(src_schema)
+
+
+def test_wait_until_role_is_connectable_raises_when_the_role_never_comes_up(monkeypatch):
+    """No live Postgres: a role that never becomes reachable must raise (so the
+    caller rolls the partial schema back) instead of silently handing out a
+    connection string the shipped plugin can't use either."""
+    from forge_core.ingestion import warehouse
+
+    class _FakeCon:
+        def execute(self, sql: str):
+            if sql.startswith("ATTACH"):
+                raise RuntimeError("password authentication failed for user")
+            return self
+
+        def close(self) -> None:
+            pass
+
+    monkeypatch.setattr(warehouse.duckdb, "connect", lambda *a, **k: _FakeCon())
+    monkeypatch.setattr(warehouse.time, "sleep", lambda *_a, **_k: None)
+
+    with pytest.raises(RuntimeError, match="not connectable"):
+        warehouse._wait_until_role_is_connectable("host", 5432, "db", "role.project", "pw")

@@ -15,6 +15,7 @@ from forge_core.packaging.plugin_builder import (
     hosted_mcp_url,
     plugin_name_for,
     run_id_from_plugin_dir,
+    server_name_for,
     write_plugin,
 )
 from forge_core.packaging.versioning import INITIAL_VERSION, bump
@@ -30,6 +31,7 @@ __all__ = [
     "run_id_from_plugin_dir",
     "bump",
     "plugin_name_for",
+    "server_name_for",
     "write_plugin",
     "zip_plugin",
 ]

@@ -151,7 +151,7 @@ sequenceDiagram
 ```
 
 Once a run succeeds, one click:
-1. Wraps the plugin in a self-contained marketplace structure.
+1. Wraps the plugin in a self-contained marketplace structure. By default the plugin carries its own MCP runtime and runs entirely on the client's machine (delivery Pattern A). If we have configured a public Forge API endpoint, this step instead points the plugin at that hosted runtime so the client needs no local Python (Pattern B) — see `docs/delivery-model.md`.
 2. Writes a README with the exact install commands.
 3. Creates a brand-new GitHub repository (one per client) and pushes everything as a single commit.
 4. Hands back the two commands the client needs to install it in their own Claude Desktop/Code — no manual packaging, no manual repo setup on our side.
@@ -164,7 +164,7 @@ A generator that produces client-facing plugins automatically is only useful if 
 
 - **The AI never writes code that runs.** It only proposes column mappings and business-context summaries. All executable SQL is generated deterministically from a validated template and re-checked by a real SQL parser.
 - **Every generated fact is grounded.** The validation harness cross-checks every claim in the generated text against the client's actual schema/data — an unverifiable claim fails the build.
-- **PII protection is automatic, not manual.** Sensitive columns are identified and redacted from the bundle *before* anything is packaged, and a dedicated scanner double-checks nothing sensitive leaked into generated text.
+- **Direct-identifier columns are redacted automatically, not manually.** Columns whose structural role is `email`, `phone`, or uncontrolled free text (plus anything a specific industry pack additionally denies) are dropped from the bundled data files, kept out of KPI queries, and filtered out of the knowledge pack's sample values — by code, on every run. This is role-based redaction, not a value-scanning PII detector.
 
 ---
 

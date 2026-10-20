@@ -62,8 +62,22 @@ class GeminiProvider(LLMProvider):
             with self._client_lock:
                 if self._client is None:
                     from google import genai
+                    from google.genai import types
 
-                    self._client = genai.Client(api_key=self._api_key)
+                    # Gemini returns transient 429/5xx (esp. 503 UNAVAILABLE)
+                    # under load; without this a single blip aborts a run that
+                    # is minutes deep. The SDK does not retry unless asked.
+                    retry = types.HttpRetryOptions(
+                        attempts=5,
+                        initial_delay=1.0,
+                        max_delay=30.0,
+                        exp_base=2.0,
+                        http_status_codes=[429, 500, 502, 503, 504],
+                    )
+                    self._client = genai.Client(
+                        api_key=self._api_key,
+                        http_options=types.HttpOptions(retry_options=retry),
+                    )
         return self._client
 
     def generate_json(self, prompt: str, *, system: str | None = None) -> dict[str, Any]:

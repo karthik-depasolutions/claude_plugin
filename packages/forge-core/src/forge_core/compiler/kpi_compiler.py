@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import sqlglot
-from sqlglot.expressions import Select
+from sqlglot.expressions import Expression, Select
 from sqlglot.expressions import With as WithExpr
 
 from forge_core.compiler.sql_render import UnresolvedTokenError, render_sql
@@ -22,6 +22,18 @@ ALLOWED_ROOT_EXPRESSIONS = (Select, WithExpr)
 
 class KpiCompileError(ValueError):
     pass
+
+
+def _outermost_select(parsed: Expression) -> Select | None:
+    """The SELECT that produces the final result set: `parsed` itself for a
+    plain SELECT, or the query body of a `WITH ... SELECT` (never a CTE's own
+    SELECT). That is where a cross-table JOIN must be attached."""
+    if isinstance(parsed, Select):
+        return parsed
+    if isinstance(parsed, WithExpr):
+        body = parsed.this
+        return body if isinstance(body, Select) else None
+    return None
 
 
 def _all_required_roles(kpi: CanonicalKpi) -> list[str]:
@@ -52,15 +64,43 @@ def compile_kpi(kpi: CanonicalKpi, bindings: SchemaBindings) -> CompiledKpi:
     if not isinstance(parsed, ALLOWED_ROOT_EXPRESSIONS):
         raise KpiCompileError(f"KPI {kpi.id!r} must compile to a SELECT/WITH statement, got {type(parsed)}")
 
-    # Cross-table roles: add a LEFT JOIN to each related table the KPI touches.
-    cross_tables = [t for t in bindings.tables if t.join_on]
-    if cross_tables:
-        if not isinstance(parsed, Select):
+    # Cross-table roles: LEFT JOIN only the related tables THIS KPI actually
+    # references (via a required role), plus any intermediate table on the join
+    # path to one of those (a multi-hop chain) - never every cross-table bind.
+    cross_by_alias = {t.alias: t for t in bindings.tables if t.join_on}
+    needed = {
+        cb.table_alias
+        for role in _all_required_roles(kpi)
+        if (cb := bindings.column(role)) is not None and cb.table_alias in cross_by_alias
+    }
+    # transitively pull in any cross-table whose physical name a needed join
+    # references (the intermediate hops of a chain).
+    changed = True
+    while changed:
+        changed = False
+        for alias, tb in cross_by_alias.items():
+            if alias in needed:
+                continue
+            # tb is an intermediate hop if a table we already need joins through it.
+            if any(tb.physical in (cross_by_alias[a].join_on or "") for a in needed):
+                needed.add(alias)
+                changed = True
+    joins = [t for t in bindings.tables if t.alias in needed]
+    if joins:
+        # Refuse a one-to-many (child) join: a blind LEFT JOIN multiplies the
+        # primary's rows and corrupts SUM/COUNT. Declarative pre-aggregation is
+        # the path for those (see the join-graph work); until then, be honest.
+        fanning = [t.alias for t in joins if not t.join_is_to_parent]
+        if fanning:
             raise KpiCompileError(
-                f"KPI {kpi.id!r} needs a cross-table join but its template isn't a plain SELECT"
+                f"KPI {kpi.id!r} needs a one-to-many join to {fanning} which would inflate its "
+                "aggregates; not supported yet"
             )
-        for tb in cross_tables:
-            parsed = parsed.join(tb.physical, on=tb.join_on, join_type="LEFT", dialect="duckdb")
+        target = _outermost_select(parsed)
+        if target is None:
+            raise KpiCompileError(f"KPI {kpi.id!r}: could not find a SELECT to attach the join to")
+        for tb in joins:
+            target.join(tb.physical, on=tb.join_on, join_type="LEFT", dialect="duckdb", copy=False)
 
     result_columns = [
         (col.alias_or_name or "column") for col in parsed.selects

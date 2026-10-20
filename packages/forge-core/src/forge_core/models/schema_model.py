@@ -28,6 +28,11 @@ class ColumnDoc(BaseModel):
     )
     example: str | None = None
     confidence: Confidence = "low"
+    synonyms: list[str] = Field(
+        default_factory=list,
+        description="Alternative names/business terms an analyst might use for this column "
+        "(e.g. 'spend' -> ['ad cost', 'advertising spend']). Feeds the agent_schema BM25 index.",
+    )
 
 
 class TableDoc(BaseModel):
@@ -38,6 +43,11 @@ class TableDoc(BaseModel):
     role: TableRole = "unknown"
     grain_prose: str = ""
     columns: list[ColumnDoc] = Field(default_factory=list)
+    synonyms: list[str] = Field(
+        default_factory=list,
+        description="Alternative names / domain terms for this table (e.g. 'v_gads_*' -> "
+        "['google ads', 'adwords', 'paid search']). Feeds the agent_schema BM25 index.",
+    )
 
 
 class RelationshipDoc(BaseModel):
@@ -98,6 +108,30 @@ class SchemaModel(BaseModel):
         "format drift, numeric outliers) — each with a table/column, severity, and summary.",
     )
     cookbook: list[CookbookEntry] = Field(default_factory=list)
+    coverage: dict[str, int] = Field(
+        default_factory=dict,
+        description="How complete this knowledge pack is: cookbook_verified/cookbook_total "
+        "(NL->SQL entries that executed) and columns_documented/columns_total (columns with a "
+        "specific, non-fallback meaning). Both ratios are 1.0 for a full LLM synthesis.",
+    )
+    synthesis_failures: list[str] = Field(
+        default_factory=list,
+        description="Table names for which the per-table LLM synthesis call failed. "
+        "Non-empty only in agent_schema mode or on a very unreliable LLM backend; "
+        "the affected tables fall back to structural-only docs.",
+    )
+    # Transient: set to True when this model was loaded from the on-disk cache
+    # rather than freshly synthesized. Never persisted (the cached file itself
+    # is always a fresh synthesis) - excluded from every dump.
+    from_cache: bool = Field(default=False, exclude=True)
 
     def table(self, name: str) -> TableDoc | None:
         return next((t for t in self.tables if t.name == name), None)
+
+    def cookbook_pass_rate(self) -> float:
+        total = self.coverage.get("cookbook_total", 0)
+        return self.coverage.get("cookbook_verified", 0) / total if total else 0.0
+
+    def schema_coverage(self) -> float:
+        total = self.coverage.get("columns_total", 0)
+        return self.coverage.get("columns_documented", 0) / total if total else 0.0

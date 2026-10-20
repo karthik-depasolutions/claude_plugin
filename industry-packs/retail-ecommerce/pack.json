@@ -134,5 +134,13 @@
       "plan",
       "class"
     ]
+  },
+  "entities": {
+    "customer": {
+      "roles": [
+        "customer_tier"
+      ],
+      "description": "the account that placed the order; joined via the order's customer id"
+    }
   }
 }

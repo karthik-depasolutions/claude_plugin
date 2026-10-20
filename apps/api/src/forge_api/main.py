@@ -3,7 +3,6 @@ console script installed by this package)."""
 
 from __future__ import annotations
 
-import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -23,8 +22,11 @@ def create_app() -> FastAPI:
         settings = get_settings()
         settings.runs_dir.mkdir(parents=True, exist_ok=True)
         await init_db()
-        if settings.client_warehouse_url:
-            os.environ.setdefault("FORGE_SOURCE_DB_URL", settings.client_warehouse_url)
+        # No process-global source credential: every run carries its own (the
+        # per-run credential overlay during the pipeline, and
+        # `<run>/.mcp_source_env.json` for the hosted MCP gateway). A global
+        # FORGE_SOURCE_DB_URL here would just be a wrong default for every run
+        # that isn't the one database it points at.
         async with mcp_inner.router.lifespan_context(mcp_inner):
             yield
 
@@ -41,7 +43,10 @@ def create_app() -> FastAPI:
 
     @app.get("/health")
     async def health() -> dict:
-        return {"status": "ok"}
+        # `client_warehouse` tells the web app whether to offer "clone a
+        # source database" - it needs the warehouse configured to have
+        # somewhere to put the copy.
+        return {"status": "ok", "client_warehouse": get_settings().client_warehouse_enabled}
 
     return app
 

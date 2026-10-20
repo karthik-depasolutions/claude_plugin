@@ -46,6 +46,11 @@ shared marketplace.
 
 ## What happens on first use
 
+This section describes the **default delivery (Pattern A)**. If the plugin
+was published with `FORGE_PUBLIC_BASE_URL` set, its `.mcp.json` points at a
+hosted HTTP runtime instead and there is no local Python step — see
+[delivery-model.md](delivery-model.md).
+
 The bundled `mcp_server/` (a copy of `mis-mcp-runtime`, see
 [architecture.md](architecture.md)) starts over stdio the first time the
 plugin's skill or agent is invoked. It reads `config/schema_bindings.json`

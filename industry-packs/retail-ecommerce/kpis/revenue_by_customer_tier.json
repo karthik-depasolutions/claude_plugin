@@ -15,5 +15,11 @@
   "sql": "SELECT {{customer_tier}} AS tier, COUNT(*) AS order_count, SUM({{revenue_amount}}) AS revenue FROM {{fact}} GROUP BY {{customer_tier}} ORDER BY revenue DESC",
   "unit": "mixed",
   "assertions": [],
-  "optional": true
+  "optional": true,
+  "joins": [
+    {
+      "entity": "customer",
+      "via": "customer_ref"
+    }
+  ]
 }

@@ -27,6 +27,12 @@ class TableBinding(BaseModel):
         description="For a non-primary table: the ON expression that joins it to the primary "
         "(a verified relationship). None for the primary table itself.",
     )
+    join_is_to_parent: bool = Field(
+        default=True,
+        description="True when this join goes from the primary (many) to a parent PK (one) - "
+        "safe to LEFT JOIN without inflating aggregates. False for a one-to-many (child) join, "
+        "which the compiler refuses rather than corrupt a SUM/COUNT.",
+    )
 
 
 class ColumnBinding(BaseModel):

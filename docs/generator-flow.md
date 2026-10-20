@@ -17,6 +17,13 @@ render identical progress regardless of which front end started the run.
   independently-selectable `LLMProvider`s (`forge_core.llm.get_provider`).
   All three are **required**: `run_pipeline` fails fast if any is `None`.
   Tests pass `forge_core.testing.FakeLLMProvider` (deterministic, keyless).
+  `forge run --no-llm` does the same from the CLI: it swaps in
+  `FakeLLMProvider` for every role (no API key) and auto-answers the
+  clarification pause with "nothing to add", so a run always reaches a
+  terminal state. Used by the CI genericity gates in
+  `.github/workflows/{validate-plugins,release}.yml`. The generated plugin
+  ships template prose and no verified cookbook — it is a structural smoke
+  check, not a real generation.
 
 ## 1. Ingest — `forge_core.ingestion.registry.ingest`
 
@@ -52,10 +59,12 @@ as `config/schema_model.json`. Output: `SchemaModel`
 ## 3. Classify — `forge_core.classification.classify`
 
 Loads every pack under `packs_root` (`load_all_packs`) and scores each
-pack's `signatures.json` against the profile: entity-name hints matching
-table names, column-name hints matching column names, required canonical
-roles present in the data, and table count within the pack's expected
-range. Returns a `ClassificationResult` with `ranked_matches`.
+pack's `signature` block (inside its `pack.json`) against the profile:
+entity-name hints matching table names, column-name hints matching column
+names, required canonical roles present in the data, and table count within
+the pack's expected range. Returns a `ClassificationResult` with
+`ranked_matches`. Authoring and iterating on a pack: see
+[pack-authoring.md](pack-authoring.md) (`forge packs new|lint|test`).
 
 If the top match's confidence is below the auto-accept threshold and no
 `industry_override` was supplied, the orchestrator sets
@@ -80,6 +89,13 @@ For the chosen pack, resolves every canonical role its KPIs need to a real
    always wins, whether supplied up front or via
    `POST /runs/{id}/bindings` after seeing `unresolved_roles`.
 
+**Multi-table:** a role the primary lacks / binds weakly, or one a pack
+assigns to a non-fact `entity`, is resolved against a related table found
+by a BFS over the verified relationship graph (`_join_chains`). Its
+`TableBinding` chain (one per hop) and each hop's fan-out direction ride in
+`SchemaBindings.tables`. `forge packs test <slug> <dataset>` shows every
+role's bind, table, confidence, and `deterministic` / `cross_table` source.
+
 Output: `SchemaBindings`, including `denied_columns` (anything the pack
 says must never be projected — see [security.md](security.md)).
 
@@ -87,8 +103,12 @@ says must never be projected — see [security.md](security.md)).
 
 For each `CanonicalKpi` in the pack, renders its Jinja-style SQL template
 using the resolved bindings, then parses and validates the result with
-`sqlglot` (dialect `duckdb`). A KPI whose required roles didn't resolve is
-recorded in `KpiDefsFile.skipped` rather than failing the whole run. Output:
+`sqlglot` (dialect `duckdb`). A KPI referencing a cross-table role gets one
+`LEFT JOIN` per hop on the path to that table (intermediate hops added
+transitively, in order); a one-to-many join that would inflate the KPI's
+aggregates raises `KpiCompileError`. A KPI whose required roles didn't
+resolve, or that needs an unsupported join, is recorded in
+`KpiDefsFile.skipped` rather than failing the whole run. Output:
 `KpiDefsFile` — the *only* thing the MCP runtime ever executes.
 
 ## 6. Generate — `forge_core.generation.generate_plugin_content`
@@ -121,7 +141,12 @@ considered successful.
 files into `data/` so the bundled runtime can resolve
 `${CLAUDE_PLUGIN_ROOT}`-relative paths at install time.
 
-## 9. Publish — `forge_core.publishing` (`forge publish ...` / not yet wired into the API)
+## 9. Publish — `forge_core.publishing` (`forge publish ...`, and `POST /runs/{id}/publish/github`)
+
+All publish paths ship the **stdio, self-contained** plugin (delivery
+Pattern A) by default. The one exception: `POST /runs/{id}/publish/github`
+rewrites `.mcp.json` to a hosted HTTP URL (Pattern B) when
+`FORGE_PUBLIC_BASE_URL` is set — see [delivery-model.md](delivery-model.md).
 
 - `local.publish_local` — copy or zip to a path.
 - `github.push_plugin_to_repo` — one commit via the Git Data API.

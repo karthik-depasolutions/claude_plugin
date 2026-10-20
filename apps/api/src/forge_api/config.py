@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +15,12 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./generated/forge.db"
     runs_dir: Path = Path("./generated/runs")
     api_cors_origins: str = "http://localhost:5173"
+
+    # Publishing. Bare names (no FORGE_ prefix) - matches .env.example and how
+    # a deploy environment conventionally sets them. Read from .env or the
+    # process environment like everything else here.
+    github_token: str | None = Field(default=None, validation_alias="GITHUB_TOKEN")
+    github_org: str | None = Field(default=None, validation_alias="GITHUB_ORG")
     # Public origin Claude Desktop uses to reach hosted MCP (HTTPS in prod;
     # a tunnel URL for local demos). Required for GitHub publish.
     public_base_url: str | None = None

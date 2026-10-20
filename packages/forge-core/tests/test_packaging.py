@@ -93,8 +93,14 @@ def test_live_db_plugin_prompts_for_the_connection_string_in_user_config(booking
     assert "source_db_url" in spec.manifest.userConfig
     assert spec.manifest.userConfig["source_db_url"].required is True
     assert spec.manifest.userConfig["source_db_url"].sensitive is True
-    mcp_env = spec.mcp_config.mcpServers["mis-mcp-runtime"].env
+    server_name = next(iter(spec.mcp_config.mcpServers))
+    assert server_name == "mis-mcp-healthcare-diagnostics"  # per-plugin, not the shared name
+    mcp_env = spec.mcp_config.mcpServers[server_name].env
     assert mcp_env["FORGE_SOURCE_DB_URL"] == "${user_config.source_db_url}"
+    # the generated tool refs point at the same per-plugin server
+    agent_md = next(f.content for f in spec.files if f.relative_path.startswith("agents/"))
+    assert "mcp__mis-mcp-healthcare-diagnostics__get_kpi" in agent_md
+    assert "mcp__mis-mcp-runtime__" not in agent_md
     relative_paths = {f.relative_path for f in spec.files}
     assert f"skills/{generated.skill_name}/SKILL.md" in relative_paths
     assert f"agents/{generated.agent_name}.md" in relative_paths
@@ -148,7 +154,7 @@ def test_bind_http_mcp_rewrites_stdio_to_a_remote_url(bookings_csv: Path, tmp_pa
 
     bind_http_mcp(plugin_dir, "https://forge.example/mcp/abc/tok")
     mcp = json.loads((plugin_dir / ".mcp.json").read_text(encoding="utf-8"))
-    server = mcp["mcpServers"]["mis-mcp-runtime"]
+    server = mcp["mcpServers"]["mis-mcp-healthcare-diagnostics"]  # key kept across stdio->http
     assert server["type"] == "http"
     assert server["url"] == "https://forge.example/mcp/abc/tok"
     assert "command" not in server
@@ -167,7 +173,27 @@ def test_bind_http_mcp_adds_ngrok_skip_warning_header_for_a_tunnel_url(bookings_
 
     bind_http_mcp(plugin_dir, "https://gimmick-swell-hull.ngrok-free.dev/mcp/abc/tok")
     mcp = json.loads((plugin_dir / ".mcp.json").read_text(encoding="utf-8"))
-    assert mcp["mcpServers"]["mis-mcp-runtime"]["headers"] == {"ngrok-skip-browser-warning": "true"}
+    assert mcp["mcpServers"]["mis-mcp-healthcare-diagnostics"]["headers"] == {
+        "ngrok-skip-browser-warning": "true"
+    }
+
+
+def test_server_name_is_per_plugin_so_two_forge_plugins_do_not_collide(
+    bookings_csv: Path, retail_orders_dir: Path
+):
+    from forge_core.packaging import server_name_for
+
+    p1, pk1, b1, k1, g1 = _pipeline(bookings_csv, "healthcare-diagnostics")
+    p2, pk2, b2, k2, g2 = _pipeline(retail_orders_dir, "retail-ecommerce")
+    s1 = build_plugin_spec(pk1, p1, b1, k1, g1)
+    s2 = build_plugin_spec(pk2, p2, b2, k2, g2)
+
+    n1 = next(iter(s1.mcp_config.mcpServers))
+    n2 = next(iter(s2.mcp_config.mcpServers))
+    assert n1 == "mis-mcp-healthcare-diagnostics"
+    assert n2 == "mis-mcp-retail-ecommerce"
+    assert n1 != n2
+    assert server_name_for(pk1, "Acme Corp") == "mis-mcp-acme-corp"  # a label wins
 
 
 def test_end_to_end_run_harness_against_a_real_packaged_plugin(bookings_csv: Path, tmp_path: Path):
@@ -219,3 +245,27 @@ def test_versioning_bump():
     assert bump("0.1.0", "patch") == "0.1.1"
     assert bump("0.1.0", "minor") == "0.2.0"
     assert bump("0.1.0", "major") == "1.0.0"
+
+
+def test_mcp_source_env_round_trips_and_is_absent_for_a_file_source(tmp_path: Path):
+    """The hosted-runtime per-run credential file: server-side, never inside
+    the plugin dir, no-op when there's nothing to persist."""
+    from forge_core.packaging.plugin_builder import (
+        mcp_source_env_path,
+        read_mcp_source_env,
+        write_mcp_source_env,
+    )
+
+    out = tmp_path / "run123"
+    assert read_mcp_source_env(out) == {}          # nothing written yet
+    write_mcp_source_env(out, {})                   # a file source -> no file
+    assert not mcp_source_env_path(out).exists()
+
+    write_mcp_source_env(out, {"FORGE_SOURCE_DB_URL": "postgresql://u:p@h:5432/db?sslmode=require"})
+    assert mcp_source_env_path(out) == out / ".mcp_source_env.json"
+    assert read_mcp_source_env(out) == {
+        "FORGE_SOURCE_DB_URL": "postgresql://u:p@h:5432/db?sslmode=require"
+    }
+    # corrupt file -> {} rather than an exception
+    mcp_source_env_path(out).write_text("not json", encoding="utf-8")
+    assert read_mcp_source_env(out) == {}

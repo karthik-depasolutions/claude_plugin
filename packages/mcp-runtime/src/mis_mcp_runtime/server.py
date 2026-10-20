@@ -18,6 +18,7 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.context import Context
 from mcp_types import ToolAnnotations
 
+from mis_mcp_runtime.catalog import Catalog, load_catalog
 from mis_mcp_runtime.config import ConfigError, RuntimeConfig, load_runtime_config
 from mis_mcp_runtime.engine.duckdb_session import open_session
 from mis_mcp_runtime.errors import tool_guard
@@ -134,9 +135,26 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
         prefers_border=True,
     )
 
+    _catalogs: dict[str, Catalog] = {}
+
+    def _catalog() -> Catalog | None:
+        """The sharded knowledge pack, if this is an agent_schema plugin."""
+        cfg, _ = resolve()
+        if cfg.catalog_dir is None:
+            return None
+        key = str(cfg.catalog_dir)
+        if key not in _catalogs:
+            cat = load_catalog(cfg.catalog_dir)
+            if cat is None:
+                return None
+            _catalogs[key] = cat
+        return _catalogs[key]
+
     try:
         _cfg, _con = resolve()
-        instructions = build_instructions(_cfg.schema_model or {})
+        instructions = build_instructions(
+            _cfg.schema_model or {}, has_catalog=_cfg.catalog_dir is not None
+        )
         drift = schema_drift_report(_cfg, _con)
         if drift:
             print(drift, file=sys.stderr)  # noqa: T201 - the MCP host's log is the only channel here
@@ -307,6 +325,65 @@ def create_server(get_state: StateFn | None = None) -> MCPServer:
         """Traverse relational foreign keys between tables to find related entity records."""
         config, con = resolve()
         return _get_related_records(config, con, source_table=source_table, source_id=source_id, target_table=target_table, foreign_key=foreign_key, limit=limit)
+
+    # -------------------------------------------------------------------------
+    # Tier 4: Large-schema retrieval (agent_schema plugins only)
+    # -------------------------------------------------------------------------
+    _NO_CATALOG = {
+        "error": "This plugin ships the full schema_model.json, not a sharded catalog. "
+        "Use describe_data / describe_schema / read resource schema://model instead."
+    }
+
+    @_tool(_META)
+    def search_schema(query: str, limit: int = 8) -> dict[str, Any]:
+        """Find the tables most relevant to a question, ranked by BM25 over their
+        documented meaning + synonyms. On a large database ALWAYS call this
+        before writing SQL, then get_table_schema() on the hits. Returns table
+        names, roles, one-line purposes and match scores - not full column docs."""
+        cat = _catalog()
+        if cat is None:
+            return _NO_CATALOG
+        hits = cat.search(query, limit=max(1, min(limit, 25)))
+        return {"query": query, "matches": hits, "next": "get_table_schema([names])"}
+
+    @_tool(_META)
+    def get_table_schema(tables: list[str]) -> dict[str, Any]:
+        """Full documentation - purpose, grain, every column's meaning + enum
+        decode + synonyms - for the named tables. Loads only the shards needed,
+        so this is cheap even on a 500-table database. Cap: 25 tables per call."""
+        cat = _catalog()
+        if cat is None:
+            return _NO_CATALOG
+        names = list(tables)[:25]
+        found = {n: cat.get_table(n) for n in names}
+        return {
+            "tables": {n: d for n, d in found.items() if d is not None},
+            "not_found": [n for n, d in found.items() if d is None],
+        }
+
+    @_tool(_META)
+    def find_join_path(from_table: str, to_table: str, max_hops: int = 4) -> dict[str, Any]:
+        """The verified foreign-key path between two tables as an ordered edge
+        list. Use this instead of guessing join keys on a wide schema."""
+        cat = _catalog()
+        if cat is None:
+            return _NO_CATALOG
+        path = cat.join_path(from_table, to_table, max_hops=max(1, min(max_hops, 8)))
+        if not path:
+            return {"from": from_table, "to": to_table, "path": [], "reachable": False}
+        on = " AND ".join(
+            f'{e["from"]}.{e["from_column"]} = {e["to"]}.{e["to_column"]}' for e in path
+        )
+        return {"from": from_table, "to": to_table, "path": path, "on_clause": on, "reachable": True}
+
+    @_tool(_META)
+    def list_domains() -> dict[str, Any]:
+        """The FK-graph domains (subject areas) this database was clustered into,
+        each with its member tables. Use to orient before searching."""
+        cat = _catalog()
+        if cat is None:
+            return _NO_CATALOG
+        return {"table_count": cat.table_count(), "domains": cat.domains()}
 
     # -------------------------------------------------------------------------
     # Tier 5: Escape Hatch

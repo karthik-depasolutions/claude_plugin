@@ -48,7 +48,7 @@ fixture specifically to catch regressions in this enforcement.
 ```text
 <pack-slug>-mis-plugin/
 ├── .claude-plugin/plugin.json
-├── .mcp.json                    # points at the bundled mis-mcp-runtime
+├── .mcp.json                    # bundled runtime; server key is per-plugin (mis-mcp-<slug>)
 ├── skills/<pack-slug>-analyst/SKILL.md
 ├── agents/<pack-slug>-deep-dive.md
 ├── commands/<pack-slug>-report.md

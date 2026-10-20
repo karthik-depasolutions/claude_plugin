@@ -1,46 +1,50 @@
+import Section from "../ui/Section";
+
 const PHASES: { stages: string; title: string; body: string }[] = [
   {
     stages: "ingest → profile",
     title: "Point it at your data",
-    body: "A CSV, a directory of tables, a SQLite file, or a live read-only Postgres connection. Every column gets typed, profiled, and scanned for likely PII before anything else happens.",
+    body: "A CSV, a directory of tables, a SQLite file, or a live read-only Postgres connection. Every column is typed and profiled; direct identifiers and free text are marked for redaction before anything else runs.",
   },
   {
     stages: "classify → bind",
-    title: "It figures out the shape",
-    body: "Column names and structure are scored against every industry pack. Below a confidence threshold, it stops and asks a human. It never silently guesses the wrong industry.",
+    title: "It works out the shape",
+    body: "Column names and structure are scored against every industry pack. Below a confidence threshold it stops and asks a human. It never silently guesses the wrong industry.",
   },
   {
     stages: "compile → generate",
     title: "It builds only what's provable",
-    body: "Each KPI a pack defines gets compiled to real SQL against your bound columns. Anything that can't be resolved is skipped, not faked. Skills, agents, and commands are then written from what actually compiled.",
+    body: "Each KPI compiles to real SQL against your bound columns. Anything that can't be resolved is skipped, not faked. Skills, agents, and commands are written from what actually compiled.",
   },
   {
     stages: "validate → package",
     title: "Nothing ships unchecked",
-    body: "Eight checks have to pass, including the same claude CLI validator a human install would hit, before the plugin is considered done rather than just generated.",
+    body: "Eight checks have to pass, including the same claude CLI validator a real install hits, before the plugin is done rather than merely generated.",
   },
 ];
 
 export default function HowItWorks() {
   return (
-    <section className="border-y border-line bg-[#0A0D13] py-24 sm:py-32">
-      <div className="mx-auto max-w-6xl px-6">
-        <h2 className="max-w-xl font-display text-3xl font-medium tracking-tight text-paper sm:text-4xl">
-          Four phases. Same engine, every time.
-        </h2>
-
-        <ol className="mt-16 grid gap-x-8 gap-y-12 sm:grid-cols-2 lg:grid-cols-4">
-          {PHASES.map((phase) => (
-            <li key={phase.title} className="relative pl-0">
-              <div className="flex items-center gap-3 border-t border-canonical/40 pt-5">
-                <span className="font-mono text-[11px] text-muted">{phase.stages}</span>
-              </div>
-              <h3 className="mt-4 font-display text-lg font-medium text-paper">{phase.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted">{phase.body}</p>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
+    <Section
+      id="mechanism"
+      divided
+      eyebrow="The mechanism"
+      title="Four phases. Same engine, every run."
+    >
+      <ol className="grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+        {PHASES.map((phase, i) => (
+          <li key={phase.title} className="border-t border-border pt-4">
+            <div className="flex items-center gap-2 font-mono text-[11px] text-text-faint">
+              <span className="text-text-muted">{String(i + 1).padStart(2, "0")}</span>
+              <span>{phase.stages}</span>
+            </div>
+            <h3 className="mt-3 font-display text-[16px] font-semibold tracking-[-0.01em] text-text">
+              {phase.title}
+            </h3>
+            <p className="mt-2 text-[13px] leading-relaxed text-text-muted">{phase.body}</p>
+          </li>
+        ))}
+      </ol>
+    </Section>
   );
 }

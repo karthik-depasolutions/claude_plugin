@@ -89,7 +89,7 @@ def _load_env() -> None:
 
 
 @app.command()
-def run(
+def run(  # noqa: PLR0917 - a CLI command's options are all keyword flags, not a positional API
     source: str = typer.Argument(
         ...,
         help="Path to a data file, directory, or SQLite database - or a postgresql:// connection string.",
@@ -105,11 +105,33 @@ def run(
         "search) for schema roles the deterministic scorer and single-shot LLM proposer "
         "both fail to resolve, instead of leaving them unresolved.",
     ),
+    agent_schema: bool = typer.Option(
+        False,
+        "--agent-schema/--no-agent-schema",
+        help="Enable Agent Schema mode for large databases (50-500 tables). "
+        "Reads information_schema to skip O(n\u00b2) relationship probing, caps profiling budgets, "
+        "and chunks LLM synthesis so large warehouses finish in reasonable time. "
+        "Output is identical to --no-agent-schema when the flag is off.",
+    ),
     label: str | None = typer.Option(
         None,
         "--label",
         help="Optional project/business name (e.g. 'Sparda Music Academy') - personalizes the "
         "plugin's displayName and on-disk/repo name instead of the generic '<pack>-mis-plugin'.",
+    ),
+    no_llm: bool = typer.Option(
+        False,
+        "--no-llm",
+        help="Use the deterministic in-process FakeLLMProvider for every LLM role instead of a "
+        "real backend. No API key needed. For CI genericity gates and offline smoke tests - the "
+        "generated plugin ships template prose and no verified cookbook. Implies --fast.",
+    ),
+    fast: bool = typer.Option(
+        False,
+        "--fast/--no-fast",
+        help="With --agent-schema: the minimum deterministic profiling - declared PK/FK only, "
+        "no O(n²) probing, no pattern mining, no quality analysis. A 70-table remote database "
+        "profiles in ~2 minutes. For exercising the pipeline quickly, not a production pack.",
     ),
 ) -> None:
     """Run the full pipeline end-to-end against SOURCE."""
@@ -128,10 +150,30 @@ def run(
         label=label,
     )
 
+    from forge_core.llm import LLMError, LLMProvider
+
     usage = TokenUsage()
-    profiling_provider = get_provider(role="profiling", usage=usage)
-    generation_provider = get_provider(role="generation", usage=usage)
-    critique_provider = get_provider(role="critique", usage=usage)
+    profiling_provider: LLMProvider | None
+    generation_provider: LLMProvider | None
+    critique_provider: LLMProvider | None
+    if no_llm:
+        from forge_core.testing import FakeLLMProvider
+
+        profiling_provider = generation_provider = critique_provider = FakeLLMProvider()
+        # --no-llm is a non-interactive mode (CI gates, smoke tests). The CLI
+        # has no way to answer the pre-synthesis clarification pause, so take
+        # the explicit "nothing to add" path, exactly like the e2e helpers.
+        record.data_answers = {}
+    else:
+        try:
+            profiling_provider = get_provider(role="profiling", usage=usage)
+            generation_provider = get_provider(role="generation", usage=usage)
+            critique_provider = get_provider(role="critique", usage=usage)
+        except LLMError:
+            if os.environ.get("FORGE_LLM_DEGRADED_OK", "").lower() not in ("1", "true", "yes"):
+                raise
+            profiling_provider = generation_provider = critique_provider = None
+            record.data_answers = {}  # a degraded run cannot use clarification answers
 
     with Live(_render_checklist(record), console=console, refresh_per_second=8) as live:
         record.on_event(lambda _event: live.update(_render_checklist(record)))
@@ -142,6 +184,8 @@ def run(
             generation_provider=generation_provider,
             critique_provider=critique_provider,
             use_agent=use_agent,
+            agent_schema=agent_schema,
+            fast=fast or no_llm,
         )
         # The final `record.status` transition (SUCCEEDED/FAILED) happens
         # after the last `log()` call, so the checklist needs one more
@@ -201,6 +245,92 @@ def packs_validate(
     for pack in packs:
         console.print(f"[green]OK[/]  {pack.slug} v{pack.version} - {len(pack.kpis)} KPI(s)")
     console.print(f"[bold green]{len(packs)} pack(s) valid.[/]")
+
+
+@packs_app.command("new")
+def packs_new(
+    slug: str = typer.Argument(..., help="Kebab-case pack slug, e.g. 'logistics-ops'."),
+    packs_root: Path = typer.Option(DEFAULT_PACKS_ROOT, "--root", help="industry-packs/ directory."),
+) -> None:
+    """Scaffold a new pack: pack.json + one example KPI + empty skills/agents/recipes dirs."""
+    from forge_core.packs import scaffold_pack
+
+    try:
+        pack_dir = scaffold_pack(slug, packs_root)
+    except (ValueError, FileExistsError) as exc:
+        console.print(f"[bold red]{exc}[/]")
+        raise typer.Exit(code=1) from exc
+    console.print(f"[bold green]Created[/] {pack_dir}")
+    console.print("Next: fill in canonical_roles / signature in pack.json, add KPIs under kpis/, then")
+    console.print(f"  forge packs lint {slug}   and   forge packs test {slug} <dataset>")
+
+
+@packs_app.command("lint")
+def packs_lint(
+    slug: str = typer.Argument(..., help="Pack slug (a subdir of --root)."),
+    packs_root: Path = typer.Option(DEFAULT_PACKS_ROOT, "--root", help="industry-packs/ directory."),
+) -> None:
+    """Semantic checks beyond the JSON schema: role references resolve, every
+    KPI template token is a real role/alias/value-set, templates exist,
+    assertions reference real result columns."""
+    from forge_core.packs import lint_pack
+
+    try:
+        findings = lint_pack(packs_root / slug)
+    except Exception as exc:  # noqa: BLE001 - pydantic/json/FileNotFound: report and exit
+        console.print(f"[bold red]Could not load pack:[/] {exc}")
+        raise typer.Exit(code=1) from exc
+
+    errors = [f for f in findings if f.level == "error"]
+    for f in findings:
+        colour = "red" if f.level == "error" else "yellow"
+        console.print(f"  [{colour}]{f.level:5}[/] [{f.where}] {f.message}")
+    if errors:
+        console.print(f"[bold red]{len(errors)} error(s), {len(findings) - len(errors)} warning(s).[/]")
+        raise typer.Exit(code=1)
+    console.print(f"[bold green]lint clean[/] ({len(findings)} warning(s)).")
+
+
+@packs_app.command("test")
+def packs_test(
+    slug: str = typer.Argument(..., help="Pack slug (a subdir of --root)."),
+    dataset: Path = typer.Argument(..., help="A file / directory / SQLite DB to bind the pack against."),
+    packs_root: Path = typer.Option(DEFAULT_PACKS_ROOT, "--root", help="industry-packs/ directory."),
+) -> None:
+    """Bind + compile + dry-run this pack against DATASET, no LLM. Reports the
+    match score, per-role bind + confidence, and every KPI's compile/dry-run
+    result - the fast iteration loop for pack authoring."""
+    from forge_core.packs import run_pack_test
+
+    try:
+        report = run_pack_test(packs_root / slug, dataset)
+    except Exception as exc:  # noqa: BLE001
+        console.print(f"[bold red]{exc}[/]")
+        raise typer.Exit(code=1) from exc
+
+    console.print(f"[bold]{report.pack_slug}[/] vs [bold]{dataset.name}[/]")
+    console.print(f"  match confidence : {report.match_confidence:.2f}")
+    console.print(
+        f"  bind rate        : {report.bind_rate:.0%} "
+        f"({report.bound_roles}/{report.total_roles} roles)"
+    )
+    for rb in report.role_binds:
+        if rb.bound_to:
+            console.print(
+                f"    [green]{rb.role}[/] -> {rb.table_alias}.{rb.bound_to} "
+                f"(conf {rb.confidence:.2f}, {rb.source})"
+            )
+        else:
+            console.print(f"    [red]{rb.role}[/] -> unresolved")
+    console.print(f"  KPIs compiled    : {len(report.compiled_kpis)}  {report.compiled_kpis}")
+    if report.skipped_kpis:
+        console.print(f"  KPIs skipped     : {report.skipped_kpis}")
+    for kpi_id, outcome in report.dry_run:
+        colour = "red" if outcome.startswith("ERROR") else "green"
+        console.print(f"    [{colour}]{kpi_id}[/]: {outcome}")
+
+    if report.skipped_kpis or any(o.startswith("ERROR") for _, o in report.dry_run):
+        raise typer.Exit(code=1)
 
 
 @publish_app.command("local")

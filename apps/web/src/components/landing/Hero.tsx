@@ -1,51 +1,50 @@
 import { Link } from "react-router-dom";
-import PipelineConsole from "./PipelineConsole";
+import Button from "../ui/Button";
+import StageRail from "../ui/StageRail";
 
 export default function Hero() {
   return (
-    <section className="relative overflow-hidden">
-      <div
-        aria-hidden
-        className="animate-drift pointer-events-none absolute -left-40 top-0 h-[420px] w-[420px] rounded-full bg-canonical/15 blur-[120px]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-32 top-40 h-[380px] w-[380px] rounded-full bg-physical/10 blur-[120px]"
-      />
+    <section className="border-b border-border">
+      <div className="mx-auto w-full max-w-[var(--container-page)] px-6 pb-12 pt-14 sm:pb-16 sm:pt-20">
+        <p className="font-eyebrow text-[11px] font-medium uppercase tracking-[0.18em] text-text-faint">
+          Data source → validated Claude plugin
+        </p>
 
-      <div className="relative mx-auto grid max-w-6xl gap-16 px-6 py-20 sm:py-28 lg:grid-cols-[1.1fr_1fr] lg:items-center lg:py-32">
-        <div className="animate-reveal-up">
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-muted">
-            data source → validated claude plugin
-          </p>
-          <h1 className="mt-5 font-display text-4xl font-medium leading-[1.08] tracking-tight text-paper sm:text-6xl">
-            Turn one company&rsquo;s data
-            <br />
-            into a plugin only{" "}
-            <span className="bg-gradient-to-r from-canonical to-physical bg-clip-text text-transparent">
-              they
-            </span>{" "}
-            could have.
-          </h1>
-          <p className="mt-6 max-w-lg text-[15px] leading-relaxed text-muted sm:text-base">
-            Point it at a CSV, a warehouse, or a live database. Get back real skills, KPIs, and MCP tools,
-            bound to that dataset&rsquo;s actual columns and validated by eight checks before anything installs.
-          </p>
-          <div className="mt-9 flex flex-wrap items-center gap-4">
-            <Link
-              to="/app"
-              className="rounded-full bg-paper px-6 py-3 text-sm font-medium text-ink transition-transform hover:scale-[1.03]"
-            >
+        <h1 className="mt-4 max-w-3xl font-display text-[34px] font-semibold leading-[1.06] tracking-[-0.03em] text-text sm:text-[52px]">
+          Turn one company&rsquo;s data into a plugin only they could have.
+        </h1>
+
+        <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-text-muted">
+          Point Forge at a CSV, a directory of tables, or a live read-only database. It profiles the
+          schema, binds industry KPIs to your real columns, and ships an installable Claude Code plugin
+          &mdash; skills, metrics, and MCP tools, all scoped to that dataset alone.
+        </p>
+
+        <div className="mt-7 flex flex-wrap items-center gap-4">
+          <Link to="/app">
+            <Button variant="primary" size="md">
               Start a run
-            </Link>
-            <a href="#mechanism" className="text-sm text-muted transition-colors hover:text-paper">
-              See how it works
-            </a>
-          </div>
+            </Button>
+          </Link>
+          <a
+            href="#mechanism"
+            className="text-[13px] text-text-muted underline-offset-4 transition-colors hover:text-text hover:underline"
+          >
+            See how it works
+          </a>
         </div>
 
-        <div className="flex justify-center lg:justify-end">
-          <PipelineConsole />
+        <div className="mt-12 rounded-[var(--radius)] border border-border bg-surface p-5 sm:p-6">
+          <p className="font-eyebrow text-[10px] font-medium uppercase tracking-[0.16em] text-text-faint">
+            The pipeline
+          </p>
+          <div className="mt-4">
+            <StageRail variant="spec" />
+          </div>
+          <p className="mt-5 border-t border-border pt-4 text-[12px] leading-relaxed text-text-muted">
+            Eight deterministic stages, one validation gate &mdash; the same path whether the source is
+            a three-column CSV or a forty-table warehouse.
+          </p>
         </div>
       </div>
     </section>

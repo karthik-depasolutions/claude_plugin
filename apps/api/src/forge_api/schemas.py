@@ -25,11 +25,42 @@ class CreateRunFromPathRequest(BaseModel):
         "web search) to resolve schema roles the deterministic scorer and single-shot LLM "
         "proposer both fail on, instead of leaving them unresolved.",
     )
+    agent_schema: bool = Field(
+        False,
+        description="Agent Schema mode for large databases (50-500 tables): read "
+        "information_schema to skip O(n²) relationship probing, cap profiling budgets, "
+        "chunk LLM synthesis, and ship a sharded, BM25-indexed config/catalog/ the runtime's "
+        "search_schema tool reads instead of one monolithic schema_model.json. "
+        "Output is unchanged from today when false.",
+    )
+    no_llm: bool = Field(
+        False,
+        description="Fast test run: every LLM role is a deterministic stub (no API calls, no "
+        "cost), the clarification pause is skipped, and with agent_schema the minimal fast "
+        "profiling budget is used. Completes a large database in minutes for $0 - it exercises "
+        "the whole pipeline, but the generated plugin has template prose and no verified "
+        "cookbook. Not for a production plugin.",
+    )
     label: str | None = Field(
         None,
         description="Optional project/business name (e.g. 'Sparda Music Academy') - personalizes "
         "the packaged plugin's displayName/name and, for an upload loaded into the client "
         "warehouse, the Postgres schema name. Defaults to a generic '<pack>-mis-plugin' name.",
+    )
+    publish_agents_to_source: bool = Field(
+        False,
+        description="Live-database sources only: after a successful run, also create an "
+        "`AGENTS.*` metadata schema (dbt-labs/agents_schema shape) inside the customer's own "
+        "source database so their other SQL agents can discover the tables. Best-effort - the "
+        "supplied credential must hold CREATE rights; a failure is logged, not fatal. The "
+        "generated plugin is unaffected (still read-only, still reads its bundled catalog).",
+    )
+    clone: bool = Field(
+        False,
+        description="For a postgresql:// source only: when true, clone a point-in-time copy of the "
+        "target schema into an isolated schema on the Forge data warehouse and build the plugin "
+        "against that copy, instead of reading the customer's database live. Requires the warehouse "
+        "to be configured; a source over the size cap is rejected (HTTP 413).",
     )
 
 
@@ -40,8 +71,29 @@ class TokenUsageOut(BaseModel):
     output_tokens: int = 0
     total_tokens: int = 0
     calls: int = 0
+    estimated_cost_usd: float = 0.0
     by_model: dict[str, dict[str, int]] = Field(default_factory=dict)
     by_role: dict[str, dict[str, int]] = Field(default_factory=dict)
+
+
+class KnowledgePackOut(BaseModel):
+    """How complete the shipped knowledge pack is (schema_model.json). A run on
+    a generic dataset with a thin cookbook is still a sellable deliverable, but
+    a weaker one - this is what the wizard shows and the harness WARNs on."""
+
+    cookbook_pass_rate: float | None = None
+    schema_coverage: float | None = None
+    schema_model_cache_hit: bool | None = None
+
+
+class PackFitOut(BaseModel):
+    """Which vertical a run landed on and how much of the pack it could use -
+    the demand signal for pack authoring (see models_orm.RunORM)."""
+
+    primary_pack_slug: str | None = None
+    pack_confidence: float | None = None
+    kpis_compiled: int = 0
+    kpis_skipped: int = 0
 
 
 class RunSummary(BaseModel):
@@ -50,14 +102,23 @@ class RunSummary(BaseModel):
     current_stage: str | None
     error: str | None
     total_tokens: int = 0
+    estimated_cost_usd: float = 0.0
+    pack_fit: PackFitOut | None = None
 
 
 class RunDetail(RunRecord):
     """`RunRecord` plus what the API layer tracks that the core model doesn't
-    — currently the LLM token usage, kept off `RunRecord` because it's an API
-    concern (persisted on the `runs` row, not in the pipeline's own state)."""
+    — LLM token usage, the pack-fit signal and knowledge-pack coverage, kept
+    off `RunRecord` because they are API concerns (persisted on the `runs`
+    row, not pipeline state)."""
 
     token_usage: TokenUsageOut | None = None
+    pack_fit: PackFitOut | None = None
+    knowledge_pack: KnowledgePackOut | None = None
+    # The isolated warehouse schema backing this run's data (an upload loaded
+    # into the warehouse, or a cloned source database), or null for a live-DB
+    # / bundled-file run. A bare identifier, not a credential.
+    warehouse_schema: str | None = None
 
 
 class ConfirmIndustryRequest(BaseModel):

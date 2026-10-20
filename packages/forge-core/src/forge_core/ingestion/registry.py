@@ -24,8 +24,9 @@ import re
 from pathlib import Path
 
 from forge_core.ingestion.base import IngestionAdapter, stable_source_id
+from forge_core.ingestion.credentials import resolve_env
 from forge_core.ingestion.files import FileAdapter
-from forge_core.ingestion.postgres import PostgresAdapter, redact
+from forge_core.ingestion.postgres import PostgresAdapter, normalize_pg_url, redact
 from forge_core.ingestion.sqlite import SqliteAdapter
 from forge_core.models.datasource import DataSource
 
@@ -41,20 +42,33 @@ def _connection_string_adapter_for(source: str) -> PostgresAdapter | None:
     return None
 
 
-def prepare_source_for_persistence(raw_source: str) -> str:
+def prepare_source_for_persistence(raw_source: str, *, into: dict[str, str] | None = None) -> str:
     """Call this exactly once, right when a source is first accepted from a
     user (a CLI argument, an API request body) - *before* it's stored on a
     `RunRecord`, logged, or persisted to the jobs database.
 
     A plain filesystem path is resolved to an absolute path, as before. A
-    live-database connection string is instead stashed in this process's
-    environment and replaced with a `${VAR}` placeholder: the only thing
-    that's safe to log, persist, and echo back over the API is the env var's
-    *name*, never the credential itself.
+    live-database connection string is instead stashed somewhere the rest of
+    the run can resolve, and replaced with a `${VAR}` placeholder: the only
+    thing that's safe to log, persist, and echo back over the API is the env
+    var's *name*, never the credential itself.
+
+    `into`: when given (concurrent callers, i.e. the API), the credential is
+    written into this mapping instead of `os.environ` - the caller then binds
+    it for just its own run via `credentials.set_credentials`. Omitted (the
+    CLI - one run, one process), it falls back to `os.environ`.
     """
     adapter = _connection_string_adapter_for(raw_source)
     if adapter is not None:
-        os.environ[adapter.credential_env_var] = raw_source
+        # Store the libpq-normalized form (drop a `+asyncpg`/`+psycopg` scheme
+        # suffix, map asyncpg's `ssl=` to `sslmode=`) so every later re-open -
+        # profiling, dry-run, dashboard, and the shipped plugin - gets a string
+        # DuckDB's postgres extension can actually connect with.
+        clean = normalize_pg_url(raw_source)
+        if into is not None:
+            into[adapter.credential_env_var] = clean
+        else:
+            os.environ[adapter.credential_env_var] = clean
         return f"${{{adapter.credential_env_var}}}"
     return str(Path(raw_source).resolve())
 
@@ -74,7 +88,7 @@ def _resolve_placeholder(source: str) -> str:
     if not match:
         return source
     var_name = match.group(1)
-    value = os.environ.get(var_name)
+    value = resolve_env(var_name)
     if not value:
         raise ValueError(f"Source references ${{{var_name}}}, but that environment variable isn't set.")
     return value

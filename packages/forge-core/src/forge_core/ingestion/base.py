@@ -8,6 +8,7 @@ kind of source it was. See docs/architecture.md §4.1.
 from __future__ import annotations
 
 import hashlib
+import json
 from abc import ABC, abstractmethod
 from datetime import UTC, datetime
 from pathlib import Path
@@ -40,7 +41,12 @@ def describe_relation(con: duckdb.DuckDBPyConnection, table_name: str, ref_sql: 
     assert count_row is not None
     row_count = count_row[0]
     sample_df = con.execute(f"SELECT * FROM {ref_sql} LIMIT {SAMPLE_ROWS}").fetchdf()
-    sample_rows = sample_df.where(sample_df.notnull(), None).to_dict(orient="records")
+    # `.to_dict()` on a DataFrame keeps numpy/pandas scalars (int64, float64,
+    # Timestamp) as the values; those ride into TableDescriptor.sample_rows and
+    # later break `model_dump(mode="json")` on the whole RunRecord. pandas' own
+    # JSON writer normalises to plain str/int/float/bool/None (and NaN/NaT ->
+    # null), which is all a profiling sample ever needs.
+    sample_rows = json.loads(sample_df.to_json(orient="records", date_format="iso"))
     return TableDescriptor(
         name=table_name,
         physical_ref=ref_sql,

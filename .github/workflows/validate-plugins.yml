@@ -15,12 +15,16 @@ on:
       - "plugin-templates/**"
       - "marketplace/**"
       - "packages/forge-core/**"
+      - "fixtures/datasets/**"
+      - ".github/workflows/validate-plugins.yml"
   pull_request:
     paths:
       - "industry-packs/**"
       - "plugin-templates/**"
       - "marketplace/**"
       - "packages/forge-core/**"
+      - "fixtures/datasets/**"
+      - ".github/workflows/validate-plugins.yml"
 
 jobs:
   validate:
@@ -64,3 +68,5 @@ jobs:
           claude plugin validate generated/ci/bookings/healthcare-diagnostics-mis-plugin --strict
           uv run forge run fixtures/datasets/retail_orders --pack retail-ecommerce --out generated/ci/retail --no-llm
           claude plugin validate generated/ci/retail/retail-ecommerce-mis-plugin --strict
+          uv run forge run fixtures/datasets/saas_subscriptions --pack generic-analytics --out generated/ci/saas --no-llm
+          claude plugin validate generated/ci/saas/generic-analytics-mis-plugin --strict

@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { publishToGithub } from "../lib/api";
 import type { PublishGithubResponse } from "../lib/types";
+import Button from "./ui/Button";
+import CopyButton from "./ui/CopyButton";
+import Field from "./ui/Field";
+import Input from "./ui/Input";
 
-/** Shown once a run has succeeded (on the "paper" surface). Creates a new
- * GitHub repo for the plugin and pushes it, so anyone can install it into
- * Claude Code straight from that repo. */
+/** Shown once a run has succeeded. Creates a new GitHub repo for the plugin and
+ *  pushes it, so anyone can install it into Claude Code from that repo. */
 export default function PublishPanel({
   runId,
   defaultRepoName,
@@ -20,9 +23,6 @@ export default function PublishPanel({
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<PublishGithubResponse | null>(null);
 
-  const field =
-    "mt-1 w-full rounded-md border border-doc-hair bg-white/60 px-3 py-2 text-sm text-doc-ink placeholder:text-doc-ink/35 focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/25";
-
   async function submit() {
     setSubmitting(true);
     setError(null);
@@ -32,7 +32,7 @@ export default function PublishPanel({
           repoName: repoName.trim() || undefined,
           owner: owner.trim() || undefined,
           private: isPrivate,
-        })
+        }),
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -42,76 +42,92 @@ export default function PublishPanel({
   }
 
   if (result) {
+    const commands = `${result.marketplace_add_command}\n${result.install_command}\n/reload-plugins`;
     return (
-      <div className="rounded-lg border border-jade/40 bg-jade/5 p-4 text-doc-ink">
-        <p className="text-sm">
+      <div className="rounded-[var(--radius)] border border-border border-l-2 border-l-ok bg-surface p-4">
+        <p className="text-[13px] text-text">
           Published to{" "}
-          <a href={result.html_url} target="_blank" rel="noreferrer" className="font-medium underline">
+          <a
+            href={result.html_url}
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-text underline underline-offset-4"
+          >
             {result.repo_full_name}
           </a>
         </p>
-        <pre className="mt-2 overflow-x-auto rounded-md bg-doc-ink p-3 font-mono text-xs text-doc">
-          {result.marketplace_add_command}
-          {"\n"}
-          {result.install_command}
-          {"\n/reload-plugins"}
+        <pre className="mt-2 overflow-x-auto rounded-[var(--radius-sm)] border border-border bg-surface-2 p-3 font-mono text-[12px] text-text-muted">
+          {commands}
         </pre>
-        <button
-          type="button"
-          onClick={() => setResult(null)}
-          className="mt-2 text-xs text-doc-ink/55 underline underline-offset-4 hover:text-doc-ink"
-        >
-          Publish to a different repo
-        </button>
+        <div className="mt-2 flex items-center gap-2">
+          <CopyButton value={commands} label="Copy commands" />
+          <Button type="button" variant="ghost" size="sm" onClick={() => setResult(null)}>
+            Publish to a different repo
+          </Button>
+        </div>
       </div>
     );
   }
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="rounded-md border border-doc-hair px-4 py-2 text-sm font-medium text-doc-ink hover:bg-doc-ink/5"
-      >
+      <Button type="button" variant="secondary" onClick={() => setOpen(true)}>
         Publish to GitHub
-      </button>
+      </Button>
     );
   }
 
   return (
-    <div className="rounded-lg border border-doc-hair p-4 text-doc-ink">
-      <p className="text-sm text-doc-ink/70">
-        Creates a GitHub repo and pushes this plugin. If the name is taken, it makes name-v1, name-v2,
+    <div className="rounded-[var(--radius)] border border-border bg-surface p-4">
+      <p className="text-[13px] leading-relaxed text-text-muted">
+        Creates a GitHub repo and pushes this plugin. If the name is taken it makes name-v1, name-v2,
         &hellip; rather than overwriting.
       </p>
-      <label className="mt-3 block text-sm font-medium">
-        Repo name
-        <input value={repoName} onChange={(e) => setRepoName(e.target.value)} placeholder={defaultRepoName ?? "my-mis-plugin"} className={field} />
-      </label>
-      <label className="mt-3 block text-sm font-medium">
-        Owner <span className="font-normal text-doc-ink/50">org or user; blank = your account</span>
-        <input value={owner} onChange={(e) => setOwner(e.target.value)} placeholder="blank for your account" className={field} />
-      </label>
-      <label className="mt-3 flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} />
-        Private repo
-      </label>
+      <div className="mt-3 space-y-3">
+        <Field label="Repo name">
+          <Input
+            value={repoName}
+            onChange={(e) => setRepoName(e.target.value)}
+            placeholder={defaultRepoName ?? "my-mis-plugin"}
+          />
+        </Field>
+        <Field label="Owner" hint="org or user; blank = your account">
+          <Input
+            value={owner}
+            onChange={(e) => setOwner(e.target.value)}
+            placeholder="blank for your account"
+          />
+        </Field>
+        <label className="flex items-center gap-2 text-[13px] text-text-muted">
+          <input
+            type="checkbox"
+            checked={isPrivate}
+            onChange={(e) => setIsPrivate(e.target.checked)}
+            className="h-3.5 w-3.5 accent-accent"
+          />
+          Private repo
+        </label>
+      </div>
 
-      {error && <p className="mt-2 text-sm text-clay">{error}</p>}
+      {error && (
+        <p className="mt-2 text-[13px] text-danger" role="alert">
+          {error}
+        </p>
+      )}
 
       <div className="mt-4 flex gap-2">
-        <button
-          type="button"
-          disabled={submitting}
-          onClick={submit}
-          className="rounded-md bg-doc-ink px-4 py-2 text-sm font-medium text-doc transition-opacity hover:opacity-90 disabled:opacity-40"
-        >
+        <Button type="button" variant="primary" size="sm" loading={submitting} onClick={submit}>
           {submitting ? "Publishing…" : "Publish"}
-        </button>
-        <button type="button" disabled={submitting} onClick={() => setOpen(false)} className="px-3 py-2 text-sm text-doc-ink/55 hover:text-doc-ink">
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          disabled={submitting}
+          onClick={() => setOpen(false)}
+        >
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   );

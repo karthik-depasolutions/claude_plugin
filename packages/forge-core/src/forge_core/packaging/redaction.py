@@ -39,10 +39,46 @@ def denied_columns_by_table(profile: SchemaProfile, pack: IndustryPack) -> dict[
     bindings` binds KPIs against), whose structural role category the pack's
     guardrails deny outright (e.g. `free_text`)."""
     denied: dict[str, set[str]] = {}
+    effective = pack.guardrails.effective_denied_categories()
     for col in profile.structural.columns:
-        if col.guessed_role.value in pack.guardrails.denied_role_categories:
+        if col.guessed_role.value in effective:
             denied.setdefault(col.table, set()).add(col.name)
     return denied
+
+
+def redact_schema_model_dict(model: dict, denied_columns: set[str]) -> dict:
+    """Strip sampled values for denied columns from a `SchemaModel.model_dump()`
+    before it ships as `config/schema_model.json`: the per-column `example` and
+    `enum`, any `value_sets` entry for the column, and any `quality_findings`
+    row about it. The `meaning` prose stays (it describes, it isn't data).
+
+    ponytail: `statistics` (correlations/segments/temporal) is not deep-filtered
+    - the deterministic miner already skips high-cardinality free_text / email /
+      phone columns, so there is nothing there to strip in practice.
+    """
+    if not denied_columns:
+        return model
+    denied = {c.lower() for c in denied_columns}
+
+    for table in model.get("tables", []):
+        for col in table.get("columns", []):
+            if str(col.get("name", "")).lower() in denied:
+                col["example"] = None
+                col["enum"] = None
+
+    vs = model.get("value_sets")
+    if isinstance(vs, dict):
+        model["value_sets"] = {
+            k: v for k, v in vs.items() if k.split(".")[-1].lower() not in denied
+        }
+
+    qf = model.get("quality_findings")
+    if isinstance(qf, list):
+        model["quality_findings"] = [
+            f for f in qf if str(f.get("column", "")).lower() not in denied
+        ]
+
+    return model
 
 
 def _exclude_clause(columns: set[str]) -> str:

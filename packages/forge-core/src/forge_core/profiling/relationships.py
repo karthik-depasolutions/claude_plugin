@@ -11,6 +11,14 @@ table with a `customer_id`/`id` primary key. Precision is then enforced by
 the value-containment check, not by the name heuristic.
 
 No relationship at all is a normal outcome, not an error.
+
+agent_schema mode (catalog + budget)
+-------------------------------------
+When a `CatalogFacts` object is supplied, any pair covered by a declared
+FK constraint is emitted directly — with `source="declared"` and
+`confidence=1.0` — without running any probe queries against the data.
+The `budget` argument then caps the remaining heuristic probes to prevent
+O(n²) query volume on large databases.
 """
 
 from __future__ import annotations
@@ -73,23 +81,85 @@ def detect_relationships(
     data_source: DataSource,
     columns: list[ColumnProfile],
     con: duckdb.DuckDBPyConnection,
+    *,
+    catalog: CatalogFacts | None = None,  # type: ignore[name-defined]  # noqa: F821
+    budget: ProfilingBudget | None = None,  # type: ignore[name-defined]  # noqa: F821
 ) -> list[RelationshipCandidate]:
+    """Detect join/FK candidates.
+
+    Parameters
+    ----------
+    catalog:
+        When supplied (agent_schema mode), pairs with a declared FK constraint
+        are emitted as ``source="declared"`` candidates without any probe query.
+    budget:
+        Caps the number of heuristic probe queries.  When ``None`` the
+        legacy unlimited behaviour is preserved (backward-compatible).
+    """
+    # Import here to avoid circular imports; these are lightweight dataclasses.
+    from forge_core.ingestion.catalog import CatalogFacts  # noqa: PLC0415
+    from forge_core.profiling.budget import ProfilingBudget  # noqa: PLC0415
+
+    _catalog: CatalogFacts = catalog if catalog is not None else CatalogFacts()
+    _budget: ProfilingBudget = budget if budget is not None else ProfilingBudget()
+
     row_counts = {t.name: t.row_count for t in data_source.tables}
     physical_ref = {t.name: t.physical_ref for t in data_source.tables}
     by_table: dict[str, list[ColumnProfile]] = {}
     for c in columns:
         by_table.setdefault(c.table, []).append(c)
 
+    # ------------------------------------------------------------------ #
+    # Pass 1 — declared FK relationships (zero probe queries)              #
+    # ------------------------------------------------------------------ #
+    declared_pairs = _catalog.declared_fk_pairs()
+    seen: set[tuple[str, str, str, str]] = set()
+    candidates: list[RelationshipCandidate] = []
+
+    for fk in _catalog.foreign_keys:
+        for from_col, to_col in zip(fk.from_columns, fk.to_columns, strict=False):
+            key = (fk.from_table, from_col, fk.to_table, to_col)
+            if key in seen:
+                continue
+            seen.add(key)
+            candidates.append(
+                RelationshipCandidate(
+                    from_table=fk.from_table,
+                    from_column=from_col,
+                    to_table=fk.to_table,
+                    to_column=to_col,
+                    confidence=1.0,
+                    strength="strong",
+                    evidence=(
+                        f"Declared FK constraint {fk.constraint_name!r}: "
+                        f"{fk.from_table}.{from_col} -> {fk.to_table}.{to_col}"
+                    ),
+                    source="declared",
+                )
+            )
+
+    # ------------------------------------------------------------------ #
+    # Pass 2 — heuristic probes (name-match + value-overlap)               #
+    # ------------------------------------------------------------------ #
     parents: list[ColumnProfile] = [
         c for c in columns if _is_pk_candidate(c, row_counts.get(c.table, 0))
     ]
 
-    seen: set[tuple[str, str, str, str]] = set()
-    candidates: list[RelationshipCandidate] = []
+    probe_count = 0
     for parent in parents:
         for child_table, child_cols in by_table.items():
             if child_table == parent.table:
                 continue
+
+            # Skip probing if either side is too large for the budget.
+            child_rows = row_counts.get(child_table, 0)
+            parent_rows = row_counts.get(parent.table, 0)
+            if (
+                child_rows > _budget.relationship_probe_row_threshold
+                or parent_rows > _budget.relationship_probe_row_threshold
+            ):
+                continue
+
             for child in child_cols:
                 key = (child.table, child.name, parent.table, parent.name)
                 if key in seen:
@@ -98,9 +168,22 @@ def detect_relationships(
                     continue
                 if not _plausible_fk_dtype(child):
                     continue
+
+                # Already covered by a declared FK — skip the probe.
+                if key in declared_pairs:
+                    seen.add(key)
+                    continue
+
+                if probe_count >= _budget.max_inferred_relationship_probes:
+                    # Budget exhausted — stop probing but keep all candidates
+                    # found so far (declared ones are already included).
+                    break
+
                 overlap = _overlap_ratio(
                     con, physical_ref[child.table], child.name, physical_ref[parent.table], parent.name
                 )
+                probe_count += 1
+
                 if overlap < WEAK_OVERLAP:
                     continue
                 seen.add(key)
@@ -117,8 +200,13 @@ def detect_relationships(
                             f"{overlap * 100:.1f}% of distinct {child.table}.{child.name} values "
                             f"exist in {parent.table}.{parent.name} (a unique/PK-like column)"
                         ),
+                        source="inferred",
                     )
                 )
+            else:
+                continue
+            break  # inner budget-exhausted break propagates
+
     candidates.sort(key=lambda r: (r.from_table, r.from_column, r.to_table))
     return candidates
 

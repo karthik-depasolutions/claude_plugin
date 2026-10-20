@@ -16,8 +16,15 @@ from typing import IO, Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
+from forge_core.ingestion.postgres import PostgresAdapter
 from forge_core.ingestion.registry import prepare_source_for_persistence
-from forge_core.ingestion.warehouse import deprovision_client_schema, provision_client_schema
+from forge_core.ingestion.warehouse import (
+    CloneTooLargeError,
+    WarehouseCredentials,
+    deprovision_client_schema,
+    provision_client_schema,
+    provision_client_schema_from_postgres,
+)
 from forge_core.models.common import RunStage, RunStatus
 from forge_core.models.run import RunRecord, StageEvent
 from forge_core.packaging import bind_http_mcp, ensure_mcp_token, hosted_mcp_url, zip_plugin
@@ -34,6 +41,8 @@ from forge_api.schemas import (
     ConfirmIndustryRequest,
     CreateRunFromPathRequest,
     DataAnswersRequest,
+    KnowledgePackOut,
+    PackFitOut,
     PublishGithubRequest,
     PublishGithubResponse,
     RunDetail,
@@ -54,34 +63,74 @@ def _new_run_id() -> str:
 @router.post("", response_model=RunSummary, status_code=201)
 async def create_run_from_path(body: CreateRunFromPathRequest) -> RunSummary:
     # `body.source_path` may be a filesystem path *or* a live-database
-    # connection string (postgresql://...) - prepare_source_for_persistence
-    # tells them apart and, for the latter, stashes the credential in this
-    # process's environment and hands back a `${VAR}` placeholder so the
-    # raw connection string is never stored on the RunRecord, the jobs DB,
-    # or echoed back in a response.
-    source_for_run = prepare_source_for_persistence(body.source_path)
-    is_live_database = source_for_run.startswith("${")
-    if not is_live_database and not Path(source_for_run).exists():
-        raise HTTPException(404, f"source_path does not exist on the API host: {source_for_run}")
-
+    # connection string (postgresql://...). `prepare_source_for_persistence`
+    # tells them apart and, for the latter, stashes the credential in `creds`
+    # (bound for just this run's pipeline thread) and hands back a `${VAR}`
+    # placeholder, so the raw connection string never reaches the RunRecord,
+    # the jobs DB, or a response.
+    settings = get_settings()
     run_id = _new_run_id()
-    output_dir = str(get_settings().runs_dir / run_id)
+    creds: dict[str, str] = {}
+    warehouse_conn: str | None = None
+    warehouse_schema: str | None = None
+    is_live_database = False
+
+    if body.clone:
+        if not PostgresAdapter().supports(body.source_path):
+            raise HTTPException(422, "clone is only supported for a postgresql:// source.")
+        if not settings.client_warehouse_enabled:
+            raise HTTPException(
+                422,
+                "Cloning needs the Forge data warehouse configured "
+                "(FORGE_CLIENT_WAREHOUSE_URL + FORGE_CLIENT_WAREHOUSE_PUBLIC_HOST).",
+            )
+        try:
+            wc = await asyncio.to_thread(
+                _provision_clone_and_get_source, run_id, body.source_path, body.label
+            )
+        except CloneTooLargeError as exc:
+            raise HTTPException(413, str(exc)) from exc
+        warehouse_conn, warehouse_schema = wc.connection_string, wc.schema_name
+        source_for_run = prepare_source_for_persistence(wc.connection_string, into=creds)
+    else:
+        source_for_run = prepare_source_for_persistence(body.source_path, into=creds)
+        is_live_database = source_for_run.startswith("${")
+        if not is_live_database and not Path(source_for_run).exists():
+            raise HTTPException(404, f"source_path does not exist on the API host: {source_for_run}")
+
+    if body.publish_agents_to_source and not is_live_database:
+        raise HTTPException(
+            422,
+            "publish_agents_to_source requires a live postgresql:// source (not a file upload "
+            "or a clone) - the AGENTS.* schema is written into that same database.",
+        )
+
+    output_dir = str(settings.runs_dir / run_id)
     ctx = await pipeline_runner.start_run(
         run_id,
         source_for_run,
         output_dir,
         industry_override=body.industry,
         use_agent=body.use_agent,
+        agent_schema=body.agent_schema,
+        no_llm=body.no_llm,
         label=body.label,
+        source_credentials=creds,
+        warehouse_schema=warehouse_schema,
+        publish_agents_to_source=body.publish_agents_to_source,
     )
+    if warehouse_conn is not None:
+        ctx.warehouse_connection_string = warehouse_conn
     return _summary(ctx.record)
 
 
 @router.post("/upload", response_model=RunSummary, status_code=201)
-async def create_run_from_upload(
+async def create_run_from_upload(  # noqa: PLR0917 - FastAPI query params, all keyword in practice
     files: list[UploadFile],
     industry: str | None = None,
     use_agent: bool = False,
+    agent_schema: bool = False,
+    no_llm: bool = False,
     label: str | None = None,
 ) -> RunSummary:
     """Accepts one or more files - multiple CSVs (or a mix of CSV/Excel/JSON/
@@ -103,15 +152,18 @@ async def create_run_from_upload(
     ingest_path = _save_uploads(files, source_dir)
 
     settings = get_settings()
+    creds: dict[str, str] = {}
     warehouse_connection_string: str | None = None
+    warehouse_schema: str | None = None
     if settings.client_warehouse_enabled:
-        warehouse_connection_string = await asyncio.to_thread(
+        wc = await asyncio.to_thread(
             _provision_and_get_source, run_id, ingest_path, source_dir, label
         )
+        warehouse_connection_string, warehouse_schema = wc.connection_string, wc.schema_name
         # Never let the raw credential reach RunRecord/the jobs DB/a log line -
-        # same placeholder scheme create_run_from_path already uses for a
-        # customer-supplied postgresql:// source.
-        source_for_run = prepare_source_for_persistence(warehouse_connection_string)
+        # bound to this run's pipeline thread only, same as a customer-supplied
+        # postgresql:// source.
+        source_for_run = prepare_source_for_persistence(wc.connection_string, into=creds)
     else:
         source_for_run = str(ingest_path)
 
@@ -122,7 +174,11 @@ async def create_run_from_upload(
         output_dir,
         industry_override=industry,
         use_agent=use_agent,
+        agent_schema=agent_schema,
+        no_llm=no_llm,
         label=label,
+        source_credentials=creds,
+        warehouse_schema=warehouse_schema,
     )
     if warehouse_connection_string is not None:
         ctx.warehouse_connection_string = warehouse_connection_string
@@ -145,11 +201,10 @@ def _label_for_upload(ingest_path: Path) -> str | None:
 
 def _provision_and_get_source(
     run_id: str, ingest_path: Path, source_dir: Path, label: str | None = None
-) -> str:
-    """Loads the upload into the warehouse and returns the raw connection
-    string - the caller immediately passes this through
-    `prepare_source_for_persistence` before it touches `RunRecord`, exactly
-    like a customer-supplied live-database source already works today.
+) -> WarehouseCredentials:
+    """Loads the upload into the warehouse and returns the credentials - the
+    caller passes `.connection_string` through `prepare_source_for_persistence`
+    (never storing the raw string) and persists `.schema_name`.
 
     `label`, if the caller supplied one, wins over the auto-derived-from-
     filename default - resolved once, up front, so the except branch's
@@ -162,7 +217,7 @@ def _provision_and_get_source(
     assert settings.client_warehouse_url and settings.client_warehouse_public_host  # checked by caller
     label = label or _label_for_upload(ingest_path)
     try:
-        creds = provision_client_schema(
+        return provision_client_schema(
             settings.client_warehouse_url,
             run_id,
             ingest_path,
@@ -179,7 +234,33 @@ def _provision_and_get_source(
         # The uploaded files' only job was to get loaded into Postgres above;
         # don't leave a second, unredacted copy sitting on our own disk.
         shutil.rmtree(source_dir, ignore_errors=True)
-    return creds.connection_string
+
+
+def _provision_clone_and_get_source(
+    run_id: str, raw_source: str, label: str | None = None
+) -> WarehouseCredentials:
+    """Clones one schema of a customer's live Postgres into a dedicated
+    warehouse schema and returns its scoped credentials. `CloneTooLargeError`
+    is raised before anything is created; any other failure rolls back a
+    partial schema. Runs on a thread (real network I/O)."""
+    settings = get_settings()
+    assert settings.client_warehouse_url and settings.client_warehouse_public_host  # checked by caller
+    try:
+        return provision_client_schema_from_postgres(
+            settings.client_warehouse_url,
+            run_id,
+            raw_source,
+            public_host=settings.client_warehouse_public_host,
+            public_port=settings.client_warehouse_public_port,
+            database=settings.client_warehouse_database,
+            label=label,
+            public_username_suffix=settings.client_warehouse_public_username_suffix,
+        )
+    except CloneTooLargeError:
+        raise
+    except Exception:
+        deprovision_client_schema(settings.client_warehouse_url, run_id, label=label)
+        raise
 
 
 def _save_uploads(files: list[UploadFile], source_dir: Path) -> Path:
@@ -236,17 +317,72 @@ async def list_runs(session: SessionDep) -> list[RunSummary]:
             current_stage=r.current_stage,
             error=r.error,
             total_tokens=r.llm_total_tokens,
+            estimated_cost_usd=r.llm_estimated_cost_usd or 0.0,
+            pack_fit=_pack_fit_out(r),
         )
         for r in rows
     ]
 
 
+def _pack_fit_out(row: RunORM) -> PackFitOut:
+    return PackFitOut(
+        primary_pack_slug=row.primary_pack_slug,
+        pack_confidence=row.pack_confidence,
+        kpis_compiled=row.kpis_compiled,
+        kpis_skipped=row.kpis_skipped,
+    )
+
+
+def _knowledge_pack_out(row: RunORM) -> KnowledgePackOut:
+    return KnowledgePackOut(
+        cookbook_pass_rate=row.cookbook_pass_rate,
+        schema_coverage=row.schema_coverage,
+        schema_model_cache_hit=row.schema_model_cache_hit,
+    )
+
+
 @router.get("/{run_id}", response_model=RunDetail)
 async def get_run(run_id: str, session: SessionDep) -> RunDetail:
-    detail = RunDetail.model_validate((await _load_record(run_id, session)).model_dump())
+    # `profile` is orchestrator working state (the full structural profile of
+    # every column) - persisted so a resume can skip re-profiling, but never
+    # part of the API surface, and far too big to ship on every status poll.
+    record = await _load_record(run_id, session)
+    detail = RunDetail.model_validate(record.model_dump(exclude={"profile"}))
     usage = await _token_usage(run_id, session)
     detail.token_usage = TokenUsageOut(**usage) if usage else None
+    row = await session.get(RunORM, run_id)
+    if row is not None:
+        detail.pack_fit = _pack_fit_out(row)
+        detail.knowledge_pack = _knowledge_pack_out(row)
+        detail.warehouse_schema = row.warehouse_schema
     return detail
+
+
+@router.delete("/{run_id}", status_code=204)
+async def delete_run(run_id: str, session: SessionDep) -> None:
+    """Remove a run: drop its warehouse schema + scoped role (if it had one -
+    an upload loaded into the warehouse, or a cloned source database), then
+    delete the jobs-DB row and the run's output directory. Refuses while the
+    run is still executing."""
+    row = await session.get(RunORM, run_id)
+    if row is None:
+        raise HTTPException(404, f"No run {run_id}.")
+    ctx = registry.get(run_id)
+    if ctx is not None and ctx.running:
+        raise HTTPException(409, "Run is still executing; wait for it to finish or fail.")
+
+    settings = get_settings()
+    if row.warehouse_schema and settings.client_warehouse_enabled:
+        await asyncio.to_thread(
+            deprovision_client_schema,
+            settings.client_warehouse_url,
+            run_id,
+            schema_name=row.warehouse_schema,
+        )
+    await session.delete(row)
+    await session.commit()
+    registry.discard(run_id)
+    shutil.rmtree(settings.runs_dir / run_id, ignore_errors=True)
 
 
 async def _token_usage(run_id: str, session: SessionDep) -> dict | None:
@@ -268,10 +404,14 @@ async def stream_run_events(run_id: str, session: SessionDep) -> StreamingRespon
             ctx = registry.get(run_id)
             if ctx is None:
                 # Not live in this process (e.g. after a restart) - emit what's on
-                # disk once and close; there is nothing further to stream.
+                # disk once and close. Still send the terminal/paused status so a
+                # reconnecting client learns the run is needs_input / failed /
+                # succeeded instead of hanging on "running" forever.
                 record = await _load_record(run_id, session)
                 for event in record.events[sent:]:
                     yield _sse(event.model_dump(mode="json"))
+                if record.status != RunStatus.RUNNING:
+                    yield _sse({"final": True, "status": record.status.value})
                 return
 
             events = ctx.record.events
@@ -384,11 +524,11 @@ async def publish_run_to_github(
     if not plugin_dir.is_dir():
         raise HTTPException(410, "Packaged plugin output is no longer on disk.")
 
-    token = os.environ.get("GITHUB_TOKEN")
+    settings = get_settings()
+    token = settings.github_token or os.environ.get("GITHUB_TOKEN")
     if not token:
         raise HTTPException(400, "GITHUB_TOKEN is not configured on the API server; can't publish to GitHub.")
 
-    settings = get_settings()
     if not settings.public_base_url:
         raise HTTPException(
             400,
@@ -405,7 +545,7 @@ async def publish_run_to_github(
             plugin_dir,
             token=token,
             repo_name=body.repo_name,
-            owner=body.owner or os.environ.get("GITHUB_ORG"),
+            owner=body.owner or settings.github_org or os.environ.get("GITHUB_ORG"),
             private=body.private,
         )
     except Exception as exc:  # GithubException, ValueError from an invalid plugin, network errors, ...
@@ -442,10 +582,18 @@ def _require_status(record: RunRecord, expected: RunStatus) -> None:
 
 
 async def _require_live_context(run_id: str, session: SessionDep) -> registry.RunContext:
-    await _load_record(run_id, session)  # 404s if unknown
+    record = await _load_record(run_id, session)  # 404s if unknown
     ctx = registry.get(run_id)
     if ctx is None:
-        raise HTTPException(409, "Run isn't live in this API process (e.g. after a restart); can't resume.")
+        is_live_db = str(record.source_path).startswith("${")
+        detail = (
+            "This run was paused before the API restarted. Its source is a live database "
+            "and the connection credential is only held in memory (never persisted), so it "
+            "cannot be resumed - start a new run."
+            if is_live_db
+            else "Run isn't live in this API process (e.g. after a restart); start a new run."
+        )
+        raise HTTPException(409, detail)
     return ctx
 
 

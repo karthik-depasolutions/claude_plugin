@@ -64,6 +64,51 @@ def test_mcp_smoke_skips_without_config_dir():
     assert result.status == CheckStatus.SKIPPED
 
 
+def test_mcp_smoke_hands_the_subprocess_the_runs_credential_not_the_process_env(tmp_path, monkeypatch):
+    """The spawned runtime must connect to the same database every in-process
+    stage used - the run's credential overlay - not a stale FORGE_SOURCE_DB_URL
+    left in the API server's own environment. Regression for run 6c51a51a1c8c."""
+    from forge_core.ingestion.credentials import set_credentials
+    from forge_core.validation.mcp_smoke import _plugin_connection_credentials
+
+    cfg = tmp_path / "config"
+    cfg.mkdir()
+    (cfg / "data_source.json").write_text(
+        json.dumps(
+            {"connection": {"duckdb_attach_sql": [
+                "INSTALL postgres; LOAD postgres;",
+                "ATTACH '${FORGE_SOURCE_DB_URL}' AS srcdb (TYPE POSTGRES, READ_ONLY)",
+            ]}}
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("FORGE_SOURCE_DB_URL", "postgresql://stale@server-env/db")
+
+    with set_credentials({"FORGE_SOURCE_DB_URL": "postgresql://real@run-overlay/db"}):
+        assert _plugin_connection_credentials(cfg) == {
+            "FORGE_SOURCE_DB_URL": "postgresql://real@run-overlay/db"
+        }
+    # no overlay (the CLI) -> process env, unchanged behaviour
+    assert _plugin_connection_credentials(cfg) == {"FORGE_SOURCE_DB_URL": "postgresql://stale@server-env/db"}
+    # a file-source plugin has no ${VAR} to resolve
+    (cfg / "data_source.json").write_text(
+        json.dumps({"connection": {"duckdb_attach_sql": ["CREATE VIEW t AS SELECT * FROM '{DATA_DIR}/t.csv'"]}}),
+        encoding="utf-8",
+    )
+    assert _plugin_connection_credentials(cfg) == {}
+
+
+def test_looks_unreachable_distinguishes_dead_db_from_a_flaky_query():
+    from forge_core.validation.mcp_smoke import _looks_unreachable
+
+    assert _looks_unreachable(
+        "{'code': 'query_failed', 'message': 'IO Error: Unable to connect to Postgres at ...'}"
+    )
+    assert _looks_unreachable("FATAL: (ECIRCUITBREAKER) too many authentication failures")
+    assert not _looks_unreachable("{'code': 'query_failed', 'message': 'syntax error near \"GROUP\"'}")
+    assert not _looks_unreachable(None)
+
+
 def test_mcp_smoke_passes_against_real_generated_config(bookings_config_dir):
     config_dir, data_dir, kpi_defs = bookings_config_dir
     result = check_mcp_smoke(config_dir, data_dir, kpi_defs)

@@ -70,14 +70,36 @@ async def test_full_run_lifecycle_succeeds_and_is_downloadable(client: AsyncClie
     assert row.llm_input_tokens == 0
     assert row.llm_output_tokens == 0
     assert row.llm_token_usage_json == {
-        "input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "calls": 0, "by_model": {}, "by_role": {}
+        "input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "calls": 0,
+        "estimated_cost_usd": 0.0, "by_model": {}, "by_role": {},
     }
+    assert row.llm_estimated_cost_usd == 0.0
 
     # ...and surfaced on the API response.
     assert final["token_usage"]["total_tokens"] == 0
     assert final["token_usage"]["calls"] == 0
+    assert final["token_usage"]["estimated_cost_usd"] == 0.0
     summary = next(r for r in (await client.get("/runs")).json() if r["run_id"] == run_id)
     assert summary["total_tokens"] == 0
+    assert summary["estimated_cost_usd"] == 0.0
+
+    # knowledge-pack coverage is recorded and surfaced. The fake provider makes
+    # a thin pack: no verified cookbook, only generic (low-confidence) column
+    # docs -> both ratios 0.0. cache_hit is a populated bool (True/False depends
+    # on whether an earlier test already synthesized this schema to disk).
+    kp = final["knowledge_pack"]
+    assert isinstance(kp["schema_model_cache_hit"], bool)
+    assert kp["schema_coverage"] == 0.0
+    assert kp["cookbook_pass_rate"] == 0.0
+
+    # a plain file run holds no data on the Forge warehouse
+    assert final["warehouse_schema"] is None
+
+    # pack-fit demand signal is recorded and surfaced (bookings -> healthcare, 7 KPIs).
+    assert final["pack_fit"]["primary_pack_slug"] == "healthcare-diagnostics"
+    assert final["pack_fit"]["kpis_compiled"] == 7
+    assert final["pack_fit"]["kpis_skipped"] == 0
+    assert summary["pack_fit"]["primary_pack_slug"] == "healthcare-diagnostics"
 
     confirm_url = f"/runs/{run_id}/confirm-industry"
     confirm_after_success = await client.post(confirm_url, json={"industry": "finance"})
@@ -104,6 +126,32 @@ async def test_data_clarification_pause_can_be_answered(client: AsyncClient):
         assert final["status"] in ("succeeded", "needs_input")  # may still pause for industry
     else:
         assert paused["status"] in ("succeeded", "needs_input")
+
+
+async def test_no_llm_agent_schema_run_completes_fast_without_pausing(client: AsyncClient):
+    """`no_llm` + `agent_schema`: no clarification pause (data_answers auto-set),
+    the fast profiling budget, and the sharded config/catalog/ is still written."""
+    create = await client.post(
+        "/runs",
+        json={"source_path": str(RETAIL_ORDERS_DIR), "agent_schema": True, "no_llm": True},
+    )
+    run_id = create.json()["run_id"]
+
+    # auto_answer=False proves it never pauses for clarification of its own accord.
+    final = await _wait_for_terminal(client, run_id, auto_answer=False)
+    assert final["status"] in ("succeeded", "failed"), final
+    # fast mode: the data-quality review is skipped, so no questions
+    assert not final["data_review"]["questions"]
+
+    detail = (await client.get(f"/runs/{run_id}")).json()
+    plugin_dir = Path(detail["output_dir"])
+    catalogs = list(plugin_dir.rglob("config/catalog/index.json"))
+    assert catalogs, "agent_schema run must write config/catalog/index.json"
+    idx = json.loads(catalogs[0].read_text())
+    assert idx["table_count"] == 3
+
+    # zero real LLM spend - the stub provider is not metered
+    assert detail.get("token_usage") in (None, {}) or detail["token_usage"]["total_tokens"] == 0
 
 
 async def test_upload_accepts_multiple_csv_files_as_one_multi_table_run(client: AsyncClient):
@@ -205,11 +253,45 @@ async def test_upload_routes_through_the_client_warehouse_when_configured(
 
     detail = await client.get(f"/runs/{run_id}")
     assert detail.json()["source_path"] == "${FORGE_SOURCE_DB_URL}"
+    assert detail.json()["warehouse_schema"] == "client_fake"
     assert "s3cr3t" not in detail.text
 
     creds_response = await client.get(f"/runs/{run_id}/warehouse-credentials")
     assert creds_response.status_code == 200
     assert creds_response.json()["connection_string"] == fake_connection_string
+
+
+async def test_clone_requires_the_warehouse_to_be_configured(client: AsyncClient, monkeypatch):
+    # empty wins over any real value in .env - client_warehouse_enabled is bool(url and host)
+    monkeypatch.setenv("FORGE_CLIENT_WAREHOUSE_URL", "")
+    monkeypatch.setenv("FORGE_CLIENT_WAREHOUSE_PUBLIC_HOST", "")
+    response = await client.post(
+        "/runs",
+        json={"source_path": "postgresql://u:p@db.example:5432/app", "clone": True},
+    )
+    assert response.status_code == 422
+    assert "warehouse" in response.text.lower()
+
+
+async def test_clone_is_rejected_for_a_non_postgres_source(client: AsyncClient, monkeypatch):
+    monkeypatch.setenv("FORGE_CLIENT_WAREHOUSE_URL", "postgresql://a:b@127.0.0.1:5432/forge_warehouse")
+    monkeypatch.setenv("FORGE_CLIENT_WAREHOUSE_PUBLIC_HOST", "example.invalid")
+    response = await client.post(
+        "/runs", json={"source_path": str(BOOKINGS_CSV), "clone": True}
+    )
+    assert response.status_code == 422
+    assert "postgresql://" in response.text
+
+
+async def test_delete_run_removes_the_row(client: AsyncClient):
+    create = await client.post("/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False})
+    run_id = create.json()["run_id"]
+    await _wait_for_terminal(client, run_id)
+
+    deleted = await client.delete(f"/runs/{run_id}")
+    assert deleted.status_code == 204
+    assert (await client.get(f"/runs/{run_id}")).status_code == 404
+    assert run_id not in [r["run_id"] for r in (await client.get("/runs")).json()]
 
 
 async def test_warehouse_credentials_404_for_a_run_that_did_not_use_the_warehouse(client: AsyncClient):
@@ -235,7 +317,7 @@ async def test_publish_to_github_requires_a_successful_run(client: AsyncClient, 
 
 
 async def test_publish_to_github_requires_a_configured_token(client: AsyncClient, monkeypatch):
-    monkeypatch.delenv("GITHUB_TOKEN", raising=False)
+    monkeypatch.setenv("GITHUB_TOKEN", "")  # conftest default, made explicit
     create_response = await client.post(
         "/runs", json={"source_path": str(BOOKINGS_CSV), "use_llm": False}
     )
@@ -306,9 +388,9 @@ async def test_publish_to_github_creates_a_repo_and_returns_install_commands(
     assert captured["private"] is False
     assert captured["token"] == "fake-token"
     mcp = json.loads((captured["plugin_dir"] / ".mcp.json").read_text(encoding="utf-8"))
-    url = mcp["mcpServers"]["mis-mcp-runtime"]["url"]
-    assert url.startswith("https://forge.example/mcp/")
-    assert mcp["mcpServers"]["mis-mcp-runtime"]["type"] == "http"
+    server = mcp["mcpServers"]["mis-mcp-healthcare-diagnostics"]  # per-plugin key
+    assert server["url"].startswith("https://forge.example/mcp/")
+    assert server["type"] == "http"
 
 
 async def test_hosted_mcp_rejects_a_bad_token_and_serves_tools_with_a_good_one(
@@ -362,3 +444,93 @@ async def test_sse_stream_replays_events_for_a_finished_run(client: AsyncClient)
     body = "".join(chunks)
     assert "compile_kpis" in body
     assert '"final": true' in body
+
+
+def test_agents_publish_target_selects_warehouse_or_source_or_nothing():
+    """Unit: `_agents_publish_target` routing without touching a database."""
+    from types import SimpleNamespace
+
+    from forge_api import registry
+    from forge_api.pipeline_runner import _agents_publish_target
+    from forge_core.ingestion.postgres import CREDENTIAL_ENV_VAR
+    from forge_core.models.run import RunRecord
+
+    def _ctx(**kw) -> registry.RunContext:
+        rec = RunRecord(run_id="r1", source_path="s", output_dir="o", industry_override=None, label=None)
+        ctx = registry.RunContext(record=rec)
+        for k, v in kw.items():
+            setattr(ctx, k, v)
+        return ctx
+
+    wh_on = SimpleNamespace(client_warehouse_enabled=True, client_warehouse_url="postgresql://wh/db")
+    src = f"postgresql://u:p@host:5432/db?options=-csearch_path%3Danalytics"
+
+    # warehouse-backed + agent_schema -> the Forge warehouse
+    assert _agents_publish_target(
+        _ctx(warehouse_schema="client_r1", agent_schema=True), wh_on
+    ) == ("postgresql://wh/db", "client_r1")
+    # warehouse-backed but not agent_schema -> nothing
+    assert _agents_publish_target(_ctx(warehouse_schema="client_r1", agent_schema=False), wh_on) is None
+    # live + opt-in -> the customer's own source DB, at its search_path schema
+    assert _agents_publish_target(
+        _ctx(publish_agents_to_source=True, source_credentials={CREDENTIAL_ENV_VAR: src}), wh_on
+    ) == (src, "analytics")
+    # live, no opt-in -> nothing
+    assert _agents_publish_target(
+        _ctx(source_credentials={CREDENTIAL_ENV_VAR: src}), wh_on
+    ) is None
+    # opt-in but no source credential (a file upload) -> nothing
+    assert _agents_publish_target(_ctx(publish_agents_to_source=True), wh_on) is None
+
+
+async def test_publish_agents_to_source_rejected_for_a_file_source(client: AsyncClient):
+    response = await client.post(
+        "/runs",
+        json={"source_path": str(BOOKINGS_CSV), "use_llm": False, "publish_agents_to_source": True},
+    )
+    assert response.status_code == 422
+    assert "live postgresql" in response.json()["detail"]
+
+
+def test_record_json_falls_back_instead_of_crashing_on_a_bad_leaf():
+    """A non-JSON-native value deep in the record must not lose the whole run."""
+    from forge_api.pipeline_runner import _record_json
+    from forge_core.models.common import RunStage
+    from forge_core.models.run import RunRecord
+
+    rec = RunRecord(run_id="r1", source_path="s", output_dir="o", industry_override=None, label=None)
+    rec.log(RunStage.INGEST, "x")
+    rec.events[0].data = {"weird": object()}  # no known serialization -> mode="json" raises
+    out = _record_json(rec)
+    assert out["run_id"] == "r1"
+    assert isinstance(out["events"][0]["data"]["weird"], str)
+
+
+def test_settings_reads_bare_github_env_vars(monkeypatch):
+    """GITHUB_TOKEN / GITHUB_ORG have no FORGE_ prefix - they must still land
+    on Settings (from .env or the process env) or the publish endpoint 400s
+    even when the token is configured."""
+    from forge_api.config import Settings
+
+    monkeypatch.setenv("GITHUB_TOKEN", "ghp_from_env")
+    monkeypatch.setenv("GITHUB_ORG", "acme")
+    s = Settings(_env_file=None)
+    assert s.github_token == "ghp_from_env"
+    assert s.github_org == "acme"
+
+
+async def test_app_startup_does_not_inject_a_global_source_db_url(monkeypatch):
+    """The API keeps no process-global FORGE_SOURCE_DB_URL - each run carries
+    its own credential. A warehouse URL in settings must not leak into
+    os.environ (that was the 'hosted MCP connects to the wrong DB' bug)."""
+    import os
+
+    monkeypatch.setenv("FORGE_CLIENT_WAREHOUSE_URL", "postgresql://admin:pw@wh.example:5432/x")
+    monkeypatch.setenv("FORGE_CLIENT_WAREHOUSE_PUBLIC_HOST", "wh.example")
+    monkeypatch.delenv("FORGE_SOURCE_DB_URL", raising=False)
+
+    from forge_api.main import create_app
+
+    app = create_app()
+    async with app.router.lifespan_context(app):
+        assert "FORGE_SOURCE_DB_URL" not in os.environ
